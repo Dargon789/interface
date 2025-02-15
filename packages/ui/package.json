@@ -14,7 +14,7 @@
     "@tamagui/remove-scroll": "1.114.4",
     "@tamagui/theme-base": "1.114.4",
     "@testing-library/react-hooks": "7.0.2",
-    "ethers": "5.7.2",
+    "ethers": "6.0.0",
     "expo-linear-gradient": "12.7.2",
     "i18next": "23.10.0",
     "qrcode": "1.5.1",

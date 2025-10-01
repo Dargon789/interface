@@ -33,11 +33,27 @@ jobs:
           custom_tag: ${{ steps.version.outputs.content }}
           tag_prefix: ""
 
-      - name: 🪽 Release
-        uses: actions/create-release@8e3b4a5e184b498423d5b25ca5ceb5a9258c92c2
+      - name: 🪽 Create release
+      
+        on:
+          push:
+          tags:
+            - v*
+
+          permissions:
+          contents: write
+
+      jobs:
+          release:
+          name: Release pushed tag
+          runs-on: ubuntu-24.04
+          steps:
+            - name: Create release
         env:
-           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Or use your PAT
-        with:
-          tag_name: ${{ steps.github-tag-action.outputs.new_tag }}
-          release_name: Release ${{ steps.github-tag-action.outputs.new_tag }}
-          body: ${{ steps.release-notes.outputs.content }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create "$tag" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+              --generate-notes

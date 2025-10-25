@@ -1,4 +1,3 @@
-import { GetHelpHeader } from 'components/Modal/GetHelpHeader'
 import ms from 'ms'
 import { useBuyFormContext } from 'pages/Swap/Buy/BuyFormContext'
 import { ProviderConnectedView } from 'pages/Swap/Buy/ProviderConnectedView'
@@ -10,18 +9,25 @@ import { useTranslation } from 'react-i18next'
 import { Flex, Text } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
 import { CurrencyLogo } from 'uniswap/src/components/CurrencyLogo/CurrencyLogo'
+import { GetHelpHeader } from 'uniswap/src/components/dialog/GetHelpHeader'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { EdgeFade } from 'uniswap/src/features/fiatOnRamp/EdgeFade/EdgeFade'
 import { PaymentMethodFilter } from 'uniswap/src/features/fiatOnRamp/PaymentMethodFilter/PaymentMethodFilter'
-import { FORFilters, FORQuote, FORServiceProvider, RampDirection } from 'uniswap/src/features/fiatOnRamp/types'
+import {
+  type FORFilters,
+  type FORQuote,
+  type FORServiceProvider,
+  RampDirection,
+} from 'uniswap/src/features/fiatOnRamp/types'
 import { filterQuotesByPaymentMethod } from 'uniswap/src/features/fiatOnRamp/utils'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { useIsForFiltersEnabled } from 'uniswap/src/features/transactions/swap/hooks/useIsForFiltersEnabled'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { buildCurrencyId, currencyAddress } from 'uniswap/src/utils/currencyId'
 import { NumberType } from 'utilities/src/format/types'
 import { logger } from 'utilities/src/logger/logger'
@@ -35,7 +41,7 @@ interface ChooseProviderModal {
 
 function ChooseProviderModalContent({ closeModal }: ChooseProviderModal) {
   const { derivedBuyFormInfo, buyFormState, setBuyFormState } = useBuyFormContext()
-  const { quoteCurrency, selectedCountry, inputAmount, inputInFiat, rampDirection, moonpayOnly, paymentMethod } =
+  const { quoteCurrency, selectedCountry, inputAmount, inputInFiat, rampDirection, providers, paymentMethod } =
     buyFormState
   const { quotes, meldSupportedFiatCurrency, amountOut } = derivedBuyFormInfo
   const [errorProvider, setErrorProvider] = useState<FORServiceProvider>()
@@ -68,16 +74,20 @@ function ChooseProviderModalContent({ closeModal }: ChooseProviderModal) {
     if (!quotes?.quotes) {
       return undefined
     }
-    if (moonpayOnly) {
-      // Force moonpay when the user has arrived from an ad and there's a moonpay quote available
-      if (quotes.quotes.some((q: FORQuote) => q.serviceProviderDetails.serviceProvider.toLowerCase() === 'moonpay')) {
-        return quotes.quotes.filter(
-          (q: FORQuote) => q.serviceProviderDetails.serviceProvider.toLowerCase() === 'moonpay',
+
+    if (providers && providers.length > 0) {
+      // Force selected providers when the user has arrived from an ad
+      if (
+        quotes.quotes.some((q: FORQuote) => providers.includes(q.serviceProviderDetails.serviceProvider.toLowerCase()))
+      ) {
+        return quotes.quotes.filter((q: FORQuote) =>
+          providers.includes(q.serviceProviderDetails.serviceProvider.toLowerCase()),
         )
       }
     }
+
     return [...quotes.quotes].sort((a) => (a.isMostRecentlyUsedProvider ? -1 : 1))
-  }, [moonpayOnly, quotes])
+  }, [providers, quotes])
 
   const filteredQuotes = useMemo(() => {
     if (!quotes?.quotes) {
@@ -158,7 +168,7 @@ function ChooseProviderModalContent({ closeModal }: ChooseProviderModal) {
           closeDataTestId="ChooseProviderModal-close"
         />
         <Flex row alignItems="center" justifyContent="space-between">
-          <Text variant="subheading1" color="$neutral1">
+          <Text variant="subheading1" color="$neutral1" testID={TestID.BuyFormChooseProvider}>
             {rampDirection === RampDirection.ONRAMP ? t('fiatOnRamp.checkout.title') : t('fiatOffRamp.checkout.title')}
           </Text>
           <Flex row gap="$spacing12" alignItems="center" pr="$spacing2">

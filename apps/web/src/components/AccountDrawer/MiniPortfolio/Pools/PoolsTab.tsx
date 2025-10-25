@@ -9,7 +9,7 @@ import { PositionInfo } from 'components/Liquidity/types'
 import { getPositionUrl } from 'components/Liquidity/utils/getPositionUrl'
 import { parseRestPosition } from 'components/Liquidity/utils/parseFromRest'
 import { useAccount } from 'hooks/useAccount'
-import { useSwitchChain } from 'hooks/useSwitchChain'
+import useSelectChain from 'hooks/useSelectChain'
 import { useMemo, useReducer, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
@@ -209,7 +209,7 @@ function PositionListItem({
   const navigate = useNavigate()
   const accountDrawer = useAccountDrawer()
   const account = useAccount()
-  const switchChain = useSwitchChain()
+  const selectChain = useSelectChain()
   const positionUrl = getPositionUrl(positionInfo)
 
   const positionKey = getPositionKey(positionInfo)
@@ -217,7 +217,7 @@ function PositionListItem({
 
   const onPress = useEvent(async () => {
     if (account.chainId !== chainId) {
-      await switchChain(chainId)
+      await selectChain(chainId)
     }
 
     accountDrawer.close()

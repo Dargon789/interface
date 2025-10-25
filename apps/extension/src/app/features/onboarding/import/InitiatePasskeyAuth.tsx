@@ -14,7 +14,7 @@ import { bringWindowToFront, closeWindow, openPopupWindow } from 'src/app/naviga
 import { Button, Flex, IconButton, SpinningLoader, Text } from 'ui/src'
 import { X } from 'ui/src/components/icons'
 import { UniswapLogo } from 'ui/src/components/icons/UniswapLogo'
-import { fetchChallengeRequest } from 'uniswap/src/data/rest/embeddedWallet/requests'
+import { EmbeddedWalletApiClient } from 'uniswap/src/data/rest/embeddedWallet/requests'
 import { parseMessage } from 'uniswap/src/extension/messagePassing/platform'
 import {
   ExtensionToInterfaceRequestType,
@@ -129,7 +129,7 @@ function InitiatePasskeyAuthContent(): JSX.Element {
       try {
         const requestId = uuid()
 
-        const challengeResponse = await fetchChallengeRequest({
+        const challengeResponse = await EmbeddedWalletApiClient.fetchChallengeRequest({
           type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
           action: Action.EXPORT_SEED_PHRASE,
         })
@@ -235,7 +235,7 @@ function InitiatePasskeyAuthContent(): JSX.Element {
       // Will throw if window does not exist anymore.
       await chrome.windows.get(windowId)
       setShowBringWindowToFrontButton(true)
-    } catch (_e) {
+    } catch {
       // Window does not exist anymore.
       navigate(`/${TopLevelRoutes.Onboarding}/${OnboardingRoutes.SelectImportMethod}`, {
         replace: true,

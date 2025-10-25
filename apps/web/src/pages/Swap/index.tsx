@@ -7,11 +7,11 @@ import { PageWrapper } from 'components/swap/styled'
 import { useAccount } from 'hooks/useAccount'
 import { useDeferredComponent } from 'hooks/useDeferredComponent'
 import { PageType, useIsPage } from 'hooks/useIsPage'
-import { useMissingPlatformWalletPopup } from 'hooks/useMissingPlatformWalletPopup'
 import { useModalState } from 'hooks/useModalState'
 import { useResetOverrideOneClickSwapFlag } from 'pages/Swap/settings/OneClickSwap'
 import { useWebSwapSettings } from 'pages/Swap/settings/useWebSwapSettings'
-import { useCallback, useEffect, useMemo } from 'react'
+import { TDPContext } from 'pages/TokenDetails/TDPContext'
+import { useCallback, useContext, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router'
@@ -33,7 +33,6 @@ import { RampDirection } from 'uniswap/src/features/fiatOnRamp/types'
 import { FeatureFlags } from 'uniswap/src/features/gating/flags'
 import { useFeatureFlag } from 'uniswap/src/features/gating/hooks'
 import { useGetPasskeyAuthStatus } from 'uniswap/src/features/passkey/hooks/useGetPasskeyAuthStatus'
-import { chainIdToPlatform } from 'uniswap/src/features/platforms/utils/chains'
 import { WebFORNudgeProvider } from 'uniswap/src/features/providers/webForNudgeProvider'
 import { InterfaceEventName, InterfacePageName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
@@ -135,9 +134,7 @@ export function Swap({
   usePersistedFilteredChainIds?: boolean
   passkeyAuthStatus?: PasskeyAuthStatus
 }) {
-  const { isSwapTokenSelectorOpen, swapInputChainId, swapOutputChainId } = useUniswapContext()
-
-  useMissingPlatformWalletPopup(swapInputChainId ? chainIdToPlatform(swapInputChainId) : undefined) // show mismatching wallet platform popup if input chain id doesn't match
+  const { isSwapTokenSelectorOpen, swapOutputChainId } = useUniswapContext()
 
   const isExplorePage = useIsPage(PageType.EXPLORE)
   const isModeMismatch = useIsModeMismatch(chainId)
@@ -229,6 +226,10 @@ function UniversalSwapFlow({
   tokenColor?: string
 }) {
   const { currentTab, setCurrentTab } = useSwapAndLimitContext()
+
+  // Get TDP currency if available (will be null if not in TDP context)
+  const tdpCurrency = currencyToAsset(useContext(TDPContext)?.currency)
+
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -341,14 +342,14 @@ function UniversalSwapFlow({
         <BuyForm
           rampDirection={RampDirection.ONRAMP}
           disabled={disableTokenInputs}
-          initialCurrency={prefilledState?.output}
+          initialCurrency={tdpCurrency ?? prefilledState?.output}
         />
       )}
       {currentTab === SwapTab.Sell && BuyForm && (
         <BuyForm
           rampDirection={RampDirection.OFFRAMP}
           disabled={disableTokenInputs}
-          initialCurrency={prefilledState?.output}
+          initialCurrency={tdpCurrency ?? prefilledState?.output}
         />
       )}
     </Flex>

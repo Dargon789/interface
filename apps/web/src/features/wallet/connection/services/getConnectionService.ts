@@ -1,3 +1,8 @@
+import { useAccountDrawer } from 'components/AccountDrawer/MiniPortfolio/hooks'
+import {
+  getWalletRequiresSeparatePrompt,
+  useHasAcceptedSolanaConnectionPrompt,
+} from 'components/WalletModal/PendingWalletConnectionModal/state'
 import { useAccountsStore } from 'features/accounts/store/hooks'
 import type { ExternalConnector, ExternalWallet } from 'features/accounts/store/types'
 import {
@@ -28,15 +33,20 @@ function useGetConnector() {
 
 /** Returns a function capable of returning the proper connection service for a given wallet / platform. */
 export function useGetConnectionService(): GetConnectionServiceFn {
+  const accountDrawer = useAccountDrawer()
   const getConnector = useGetConnector()
   const svmConnectionService = useSolanaConnectionService(getConnector)
   const evmConnectionService = useMemo(() => getEVMConnectionService(getConnector), [getConnector])
+  const getShouldMultiConnect = useGetShouldMultiConnect()
+  const onRejectSVMConnection = useOnRejectSVMConnection()
 
   const multiPlatformService = useMemo(() => {
     return createMultiPlatformConnectionService({
       platformServices: { [Platform.EVM]: evmConnectionService, [Platform.SVM]: svmConnectionService },
+      onCompletedPlatform: accountDrawer.close,
+      onRejectSVMConnection,
     })
-  }, [evmConnectionService, svmConnectionService])
+  }, [evmConnectionService, svmConnectionService, accountDrawer.close, onRejectSVMConnection])
 
   const uniswapEmbeddedService = useUniswapEmbeddedConnectionService()
   const uniswapMobileService = useUniswapMobileConnectionService()
@@ -65,6 +75,30 @@ export function useGetConnectionService(): GetConnectionServiceFn {
       }
     }
 
+    // If multi-connection should not be used, return the EVM service. UI will prompt solana separately.
+    if (!getShouldMultiConnect(params)) {
+      return evmConnectionService
+    }
+
     return multiPlatformService
   })
+}
+
+function useOnRejectSVMConnection() {
+  const { setHasAcceptedSolanaConnectionPrompt } = useHasAcceptedSolanaConnectionPrompt()
+
+  return useEvent((walletId: string) => {
+    if (getWalletRequiresSeparatePrompt(walletId)) {
+      setHasAcceptedSolanaConnectionPrompt(false)
+    }
+  })
+}
+
+function useGetShouldMultiConnect() {
+  const { hasAcceptedSolanaConnectionPrompt } = useHasAcceptedSolanaConnectionPrompt()
+
+  return useEvent(
+    ({ wallet }: { wallet: ExternalWallet }) =>
+      !getWalletRequiresSeparatePrompt(wallet.id) || hasAcceptedSolanaConnectionPrompt,
+  )
 }

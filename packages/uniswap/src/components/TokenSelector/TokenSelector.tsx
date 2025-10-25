@@ -23,6 +23,8 @@ import { TradeableAsset } from 'uniswap/src/entities/assets'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
+import { FeatureFlags } from 'uniswap/src/features/gating/flags'
+import { useFeatureFlag } from 'uniswap/src/features/gating/hooks'
 import { SearchContext } from 'uniswap/src/features/search/SearchModal/analytics/SearchContext'
 import { useFilterCallbacks } from 'uniswap/src/features/search/SearchModal/hooks/useFilterCallbacks'
 import { SearchTextInput } from 'uniswap/src/features/search/SearchTextInput'
@@ -55,6 +57,8 @@ export enum TokenSelectorVariation {
   SwapOutput = 'swap-output', // suggested bases, balances, recent searches, favorites, popular
 }
 
+export const SNAP_POINTS = ['65%', '100%']
+
 export interface TokenSelectorProps {
   variation: TokenSelectorVariation
   isModalOpen: boolean
@@ -74,12 +78,12 @@ export interface TokenSelectorProps {
   onSelectCurrency: ({
     currency,
     field,
-    forceIsBridgePair,
+    allowCrossChainPair,
     isPreselectedAsset,
   }: {
     currency: Currency
     field: CurrencyField
-    forceIsBridgePair: boolean
+    allowCrossChainPair: boolean
     isPreselectedAsset: boolean
   }) => void
 }
@@ -99,13 +103,15 @@ export function TokenSelectorContent({
   onClose,
   onSelectChain,
   onSelectCurrency,
-}: Omit<TokenSelectorProps, 'isModalOpen'>): JSX.Element {
+  renderedInModal,
+}: Omit<TokenSelectorProps, 'isModalOpen'> & { renderedInModal: boolean }): JSX.Element {
   const { onChangeChainFilter, onChangeText, searchFilter, chainFilter, parsedChainFilter, parsedSearchFilter } =
     useFilterCallbacks(chainId ?? null, flowToModalName(flow))
   const debouncedSearchFilter = useDebounce(searchFilter)
   const debouncedParsedSearchFilter = useDebounce(parsedSearchFilter)
   const scrollbarStyles = useScrollbarStyles()
   const { navigateToBuyOrReceiveWithEmptyWallet } = useUniswapContext()
+  const isChainedActionsEnabled = useFeatureFlag(FeatureFlags.ChainedActions)
 
   const media = useMedia()
   const isSmallScreen = (media.sm && isWebApp) || isMobileApp || isMobileWeb
@@ -171,15 +177,17 @@ export function TokenSelectorContent({
         preselect_asset: false,
       })
 
-      const forceIsBridgePair = section.sectionKey === OnchainItemSectionName.BridgingTokens
+      const allowCrossChainPair =
+        isChainedActionsEnabled || section.sectionKey === OnchainItemSectionName.BridgingTokens
+
       onSelectCurrency({
         currency: currencyInfo.currency,
         field: currencyField,
-        forceIsBridgePair,
+        allowCrossChainPair,
         isPreselectedAsset: false,
       })
     },
-    [debouncedSearchFilter, chainFilter, flow, page, currencyField, onSelectCurrency],
+    [debouncedSearchFilter, chainFilter, flow, page, currencyField, onSelectCurrency, isChainedActionsEnabled],
   )
 
   const handlePaste = async (): Promise<void> => {
@@ -214,6 +222,7 @@ export function TokenSelectorContent({
           evmAddress={evmAddress}
           svmAddress={svmAddress}
           chainFilter={chainFilter}
+          renderedInModal={renderedInModal}
           onSelectCurrency={onSelectCurrencyCallback}
         />
       )
@@ -231,6 +240,7 @@ export function TokenSelectorContent({
           parsedChainFilter={parsedChainFilter}
           searchFilter={searchFilter}
           input={input}
+          renderedInModal={renderedInModal}
           onSelectCurrency={onSelectCurrencyCallback}
         />
       )
@@ -243,6 +253,7 @@ export function TokenSelectorContent({
             evmAddress={evmAddress}
             svmAddress={svmAddress}
             chainFilter={chainFilter}
+            renderedInModal={renderedInModal}
             onEmptyActionPress={onSendEmptyActionPress}
             onSelectCurrency={onSelectCurrencyCallback}
           />
@@ -254,6 +265,7 @@ export function TokenSelectorContent({
             evmAddress={evmAddress}
             svmAddress={svmAddress}
             chainFilter={chainFilter}
+            renderedInModal={renderedInModal}
             onSelectCurrency={onSelectCurrencyCallback}
           />
         )
@@ -264,6 +276,7 @@ export function TokenSelectorContent({
             evmAddress={evmAddress}
             svmAddress={svmAddress}
             chainFilter={chainFilter}
+            renderedInModal={renderedInModal}
             onSelectCurrency={onSelectCurrencyCallback}
           />
         )
@@ -285,6 +298,7 @@ export function TokenSelectorContent({
     input,
     onSendEmptyActionPress,
     output,
+    renderedInModal,
   ])
 
   return (
@@ -360,7 +374,7 @@ function TokenSelectorModalContent(props: TokenSelectorProps): JSX.Element {
     }
   }, [isModalOpen])
 
-  return <TokenSelectorContent {...props} isSurfaceReady={isSheetReady} />
+  return <TokenSelectorContent {...props} isSurfaceReady={isSheetReady} renderedInModal={true} />
 }
 
 function _TokenSelectorModal(props: TokenSelectorProps): JSX.Element {
@@ -380,7 +394,7 @@ function _TokenSelectorModal(props: TokenSelectorProps): JSX.Element {
       maxHeight={isWebApp ? TOKEN_SELECTOR_WEB_MAX_HEIGHT : undefined}
       name={ModalName.TokenSelector}
       padding="$none"
-      snapPoints={['65%', '100%']}
+      snapPoints={SNAP_POINTS}
       height={isWebApp ? '100vh' : undefined}
       focusHook={focusHook}
       onClose={onClose}

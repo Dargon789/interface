@@ -19,7 +19,7 @@ import { MouseoverTooltip } from 'components/Tooltip'
 import { useAccount } from 'hooks/useAccount'
 import useHoverProps from 'hooks/useHoverProps'
 import { useLpIncentivesFormattedEarnings } from 'hooks/useLpIncentivesFormattedEarnings'
-import { useSwitchChain } from 'hooks/useSwitchChain'
+import useSelectChain from 'hooks/useSelectChain'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
@@ -96,7 +96,7 @@ function useDropdownOptions({
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const account = useAccount()
-  const switchChain = useSwitchChain()
+  const selectChain = useSelectChain()
 
   return useMemo(() => {
     const chainInfo = getChainInfo(liquidityPosition.chainId)
@@ -153,7 +153,7 @@ function useDropdownOptions({
         ? {
             onPress: async () => {
               if (liquidityPosition.chainId !== account.chainId) {
-                await switchChain(liquidityPosition.chainId)
+                await selectChain(liquidityPosition.chainId)
               }
               navigate(`/migrate/v2/${liquidityPosition.liquidityToken.address}`)
             },
@@ -217,7 +217,7 @@ function useDropdownOptions({
     liquidityPosition,
     navigate,
     showVisibilityOption,
-    switchChain,
+    selectChain,
     t,
   ])
 }

@@ -94,7 +94,7 @@ const InitialPriceInput = () => {
         })
         setOtherCurrencyPrice(parsedPrice?.invert().toSignificant(8))
       }
-    } catch (_error) {
+    } catch {
       setOtherCurrencyPrice(undefined)
     }
   }, [baseCurrency, quoteCurrency, initialPrice, priceInverted])
@@ -481,7 +481,7 @@ export const SelectPriceRangeStep = ({
             <Trans i18nKey="position.setRange" />
           </Text>
         </Flex>
-        {!initialPosition?.isOutOfRange && !isD3LiquidityRangeChartEnabled && (
+        {!initialPosition?.isOutOfRange && (
           <SegmentedControl
             options={segmentedControlRangeOptions}
             selectedOption={priceRangeState.fullRange ? RangeSelection.FULL : RangeSelection.CUSTOM}
@@ -534,6 +534,7 @@ export const SelectPriceRangeStep = ({
                 poolOrPairLoading={poolOrPairLoading}
                 price={price}
                 currentPrice={Number(price?.toSignificant())}
+                inputMode={priceRangeState.inputMode}
                 minPrice={rangeInputMinPrice}
                 maxPrice={rangeInputMaxPrice}
                 isFullRange={priceRangeState.fullRange}
@@ -546,6 +547,9 @@ export const SelectPriceRangeStep = ({
                 }}
                 setIsFullRange={(isFullRange: boolean) => {
                   handleSelectRange(isFullRange ? RangeSelection.FULL : RangeSelection.CUSTOM)
+                }}
+                setInputMode={(inputMode) => {
+                  setPriceRangeState((prev) => ({ ...prev, inputMode }))
                 }}
               />
             ) : (
@@ -605,7 +609,6 @@ export const SelectPriceRangeStep = ({
             <Flex row gap="$gap4" $lg={{ row: false }}>
               <RangeAmountInput
                 input={RangeSelectionInput.MIN}
-                // TODO: [WEB-8003: `useRangeHopCallbacks` should look at priceInverted and then return the appropriate callback depending on that rather than doing that check here.](https://linear.app/uniswap/issue/WEB-8003/userangehopcallbacks-should-look-at-priceinverted-and-then-return-the)
                 decrement={priceRangeState.priceInverted ? getIncrementUpper : getDecrementLower}
                 increment={priceRangeState.priceInverted ? getDecrementUpper : getIncrementLower}
                 isIncrementDisabled={false}

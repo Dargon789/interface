@@ -20,6 +20,7 @@ import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { setIsTestnetModeEnabled } from 'uniswap/src/features/settings/slice'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { useEvent } from 'utilities/src/react/hooks'
 
 function useOnDisconnect() {
@@ -50,7 +51,7 @@ function DisconnectTraceWrapper({ children }: PropsWithChildren) {
     <Trace
       logPress
       element={ElementName.DisconnectWalletButton}
-      properties={{ evm_connector_id: evmConnectorId, svm_connector_id: svmConnectorId }}
+      properties={{ connector_id: evmConnectorId, svm_connector_id: svmConnectorId }}
     >
       {children}
     </Trace>
@@ -84,7 +85,7 @@ function PowerIconButton({ onPress, pointer }: { onPress?: () => void; pointer: 
     <IconButton
       size="small"
       emphasis="text-only"
-      data-testid="wallet-disconnect"
+      data-testid={TestID.WalletDisconnect}
       icon={<Power height={24} width={24} color={theme.neutral2} />}
       borderRadius="$rounded32"
       hoverStyle={{
@@ -118,10 +119,11 @@ function DisconnectMenuButtonRow({ children, onPress }: PropsWithChildren<{ onPr
       hoverStyle={{
         backgroundColor: '$surface2',
       }}
-      px="$spacing12"
-      py="$padding12"
+      px="$spacing8"
+      py="$padding8"
       borderRadius="$rounded8"
       cursor="pointer"
+      minHeight="$spacing36"
     >
       {children}
     </Button>
@@ -253,7 +255,7 @@ function SwitchWalletButtonRow({ variant, platform }: { variant: SwitchButtonVar
   return (
     <DisconnectMenuButtonRow onPress={onPress}>
       {icon}
-      <Text variant="buttonLabel3" color="$neutral1">
+      <Text variant="buttonLabel3" color="$neutral1" lineHeight={20}>
         {text}
       </Text>
     </DisconnectMenuButtonRow>
@@ -269,7 +271,7 @@ function InLineDisconnectButton() {
     <DisconnectTraceWrapper>
       <DisconnectMenuButtonRow onPress={onDisconnect}>
         <Power height={16} width={16} color={theme.neutral1} />
-        <Text variant="buttonLabel3" color="$neutral1">
+        <Text variant="buttonLabel3" color="$neutral1" lineHeight={20}>
           {t('common.button.disconnect')}
         </Text>
       </DisconnectMenuButtonRow>
@@ -288,7 +290,7 @@ function SwitchWalletButtons() {
 
 function DisconnectMenu() {
   return (
-    <Flex gap="$spacing2">
+    <Flex gap="$gap8">
       <SwitchWalletButtons />
       <InLineDisconnectButton />
     </Flex>

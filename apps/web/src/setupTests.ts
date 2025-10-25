@@ -136,6 +136,15 @@ globalThis.origin = 'https://app.uniswap.org'
   globalThis.React = React
 }
 
+const IntersectionObserverMock = vi.fn(() => ({
+  disconnect: vi.fn(),
+  observe: vi.fn(),
+  takeRecords: vi.fn(),
+  unobserve: vi.fn(),
+}))
+
+vi.stubGlobal('IntersectionObserver', IntersectionObserverMock)
+
 vi.mock('react-native-svg', () => require('@tamagui/react-native-svg'))
 
 vi.mock('expo-blur', () => ({
@@ -230,6 +239,10 @@ vi.mock('uniswap/src/features/telemetry/Trace', () => ({
   Trace: ({ children }: any) => {
     return React.createElement(React.Fragment, {}, children)
   },
+}))
+
+vi.mock('uniswap/src/features/accounts/store/hooks', () => ({
+  useConnectionStatus: vi.fn(() => ({ isConnecting: false })),
 }))
 
 vi.mock('expo-web-browser', () => ({

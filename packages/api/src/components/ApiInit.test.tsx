@@ -2,16 +2,19 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, waitFor } from '@testing-library/react'
 import { ApiInit } from '@universe/api/src/components/ApiInit'
 import {
+  ChallengeType,
   createChallengeSolverService,
   createDeviceIdService,
   createSessionInitializationService,
   createSessionRepository,
   createSessionService,
   createSessionStorage,
+  createUniswapIdentifierService,
   type DeviceIdService,
   type SessionInitializationService,
   type SessionService,
   type SessionStorage,
+  type UniswapIdentifierService,
 } from '@universe/sessions'
 import React from 'react'
 import { sleep } from 'utilities/src/time/timing'
@@ -22,11 +25,6 @@ vi.mock('utilities/src/platform', () => ({
   isWeb: false,
   isExtension: true,
   isInterface: false,
-}))
-
-// Mock the session service enabled flag
-vi.mock('@universe/api/src/getIsSessionServiceEnabled', () => ({
-  getIsSessionServiceEnabled: vi.fn(() => true),
 }))
 
 describe('ApiInit Integration', () => {
@@ -41,11 +39,15 @@ describe('ApiInit Integration', () => {
   }
   let sessionStorage: SessionStorage
   let deviceIdService: DeviceIdService
+  let uniswapIdentifierService: UniswapIdentifierService
   let sessionService: SessionService
   let initService: SessionInitializationService
+  let isSessionServiceEnabled: boolean
 
   beforeEach(() => {
     vi.clearAllMocks()
+    // Default to enabled
+    isSessionServiceEnabled = true
 
     // Mock only the boundaries (storage and network)
     mockStorage = new Map()
@@ -57,7 +59,7 @@ describe('ApiInit Integration', () => {
       }),
       challenge: vi.fn().mockResolvedValue({
         challengeId: 'challenge-456',
-        botDetectionType: 'Turnstile',
+        challengeType: ChallengeType.TURNSTILE,
         extra: { sitekey: 'mock-sitekey' },
       }),
       verify: vi.fn().mockResolvedValue({
@@ -89,6 +91,16 @@ describe('ApiInit Integration', () => {
       },
     })
 
+    uniswapIdentifierService = createUniswapIdentifierService({
+      getUniswapIdentifier: async () => mockStorage.get('uniswapIdentifier') || null,
+      setUniswapIdentifier: async (identifier) => {
+        mockStorage.set('uniswapIdentifier', identifier)
+      },
+      removeUniswapIdentifier: async () => {
+        mockStorage.delete('uniswapIdentifier')
+      },
+    })
+
     const sessionRepository = createSessionRepository({
       client: mockApiClient as any,
     })
@@ -96,6 +108,7 @@ describe('ApiInit Integration', () => {
     sessionService = createSessionService({
       sessionStorage,
       deviceIdService,
+      uniswapIdentifierService,
       sessionRepository,
     })
 
@@ -106,8 +119,9 @@ describe('ApiInit Integration', () => {
     })
 
     initService = createSessionInitializationService({
-      sessionService,
+      getSessionService: () => sessionService,
       challengeSolverService,
+      getIsSessionUpgradeAutoEnabled: () => true,
     })
 
     // Fresh query client for each test
@@ -129,7 +143,7 @@ describe('ApiInit Integration', () => {
     // Act: Render the component
     render(
       <QueryClientProvider client={queryClient}>
-        <ApiInit sessionInitService={initService} />
+        <ApiInit getSessionInitService={() => initService} isSessionServiceEnabled={isSessionServiceEnabled} />
       </QueryClientProvider>,
     )
 
@@ -160,7 +174,7 @@ describe('ApiInit Integration', () => {
     // Act
     render(
       <QueryClientProvider client={queryClient}>
-        <ApiInit sessionInitService={initService} />
+        <ApiInit getSessionInitService={() => initService} isSessionServiceEnabled={isSessionServiceEnabled} />
       </QueryClientProvider>,
     )
 
@@ -188,7 +202,7 @@ describe('ApiInit Integration', () => {
     // Act
     render(
       <QueryClientProvider client={queryClient}>
-        <ApiInit sessionInitService={initService} />
+        <ApiInit getSessionInitService={() => initService} isSessionServiceEnabled={isSessionServiceEnabled} />
       </QueryClientProvider>,
     )
 
@@ -231,7 +245,7 @@ describe('ApiInit Integration', () => {
     // Act
     render(
       <QueryClientProvider client={retryClient}>
-        <ApiInit sessionInitService={initService} />
+        <ApiInit getSessionInitService={() => initService} isSessionServiceEnabled={isSessionServiceEnabled} />
       </QueryClientProvider>,
     )
 
@@ -256,7 +270,7 @@ describe('ApiInit Integration', () => {
   it('prevents duplicate initialization on re-renders', async () => {
     const { rerender } = render(
       <QueryClientProvider client={queryClient}>
-        <ApiInit sessionInitService={initService} />
+        <ApiInit getSessionInitService={() => initService} isSessionServiceEnabled={isSessionServiceEnabled} />
       </QueryClientProvider>,
     )
 
@@ -267,13 +281,13 @@ describe('ApiInit Integration', () => {
     // Re-render multiple times
     rerender(
       <QueryClientProvider client={queryClient}>
-        <ApiInit sessionInitService={initService} />
+        <ApiInit getSessionInitService={() => initService} isSessionServiceEnabled={isSessionServiceEnabled} />
       </QueryClientProvider>,
     )
 
     rerender(
       <QueryClientProvider client={queryClient}>
-        <ApiInit sessionInitService={initService} />
+        <ApiInit getSessionInitService={() => initService} isSessionServiceEnabled={isSessionServiceEnabled} />
       </QueryClientProvider>,
     )
 
@@ -285,13 +299,12 @@ describe('ApiInit Integration', () => {
   })
 
   it('should not initialize session when feature flag is disabled', async () => {
-    // Mock the feature flag as disabled
-    const { getIsSessionServiceEnabled } = await import('@universe/api/src/getIsSessionServiceEnabled')
-    vi.mocked(getIsSessionServiceEnabled).mockReturnValue(false)
+    // Set feature flag as disabled
+    isSessionServiceEnabled = false
 
     render(
       <QueryClientProvider client={queryClient}>
-        <ApiInit sessionInitService={initService} />
+        <ApiInit getSessionInitService={() => initService} isSessionServiceEnabled={isSessionServiceEnabled} />
       </QueryClientProvider>,
     )
 
@@ -302,5 +315,45 @@ describe('ApiInit Integration', () => {
     expect(mockApiClient.initSession).not.toHaveBeenCalled()
     expect(mockApiClient.challenge).not.toHaveBeenCalled()
     expect(mockApiClient.upgradeSession).not.toHaveBeenCalled()
+  })
+
+  it('should wait for feature flag to be enabled before initializing session', async () => {
+    // Start with feature flag disabled (simulating Statsig loading)
+    isSessionServiceEnabled = false
+
+    const { rerender } = render(
+      <QueryClientProvider client={queryClient}>
+        <ApiInit getSessionInitService={() => initService} isSessionServiceEnabled={isSessionServiceEnabled} />
+      </QueryClientProvider>,
+    )
+
+    // Assert that initialization does not happen while flag is disabled
+    // Use a try/catch with waitFor to verify the call never happens
+    await expect(
+      waitFor(
+        () => {
+          expect(mockApiClient.initSession).toHaveBeenCalled()
+        },
+        { timeout: 100 },
+      ),
+    ).rejects.toThrow()
+
+    // Verify it still hasn't been called
+    expect(mockApiClient.initSession).not.toHaveBeenCalled()
+
+    // Now simulate feature flag becoming enabled (Statsig loaded)
+    isSessionServiceEnabled = true
+
+    // Trigger a re-render
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <ApiInit getSessionInitService={() => initService} isSessionServiceEnabled={isSessionServiceEnabled} />
+      </QueryClientProvider>,
+    )
+
+    // Now session initialization should occur
+    await waitFor(() => {
+      expect(mockApiClient.initSession).toHaveBeenCalled()
+    })
   })
 })

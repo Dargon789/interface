@@ -1,10 +1,5 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { PortfolioLogo } from 'components/AccountDrawer/MiniPortfolio/PortfolioLogo'
-import { EtherscanLogo } from 'components/Icons/Etherscan'
-import { ExplorerIcon } from 'components/Icons/ExplorerIcon'
-import { Globe } from 'components/Icons/Globe'
 import { Share as ShareIcon } from 'components/Icons/Share'
-import { TwitterXLogo } from 'components/Icons/TwitterX'
 import { POPUP_MEDIUM_DISMISS_MS } from 'components/Popups/constants'
 import { popupRegistry } from 'components/Popups/registry'
 import { PopupType } from 'components/Popups/types'
@@ -25,10 +20,13 @@ import { Flex, Text, TextProps, TouchableArea, useMedia, useSporeColors, WebBott
 import { ChartBarCrossed } from 'ui/src/components/icons/ChartBarCrossed'
 import { Check } from 'ui/src/components/icons/Check'
 import { Flag } from 'ui/src/components/icons/Flag'
+import { GlobeFilled } from 'ui/src/components/icons/GlobeFilled'
 import { MoreHorizontal } from 'ui/src/components/icons/MoreHorizontal'
+import { XTwitter } from 'ui/src/components/icons/XTwitter'
+import { getBlockExplorerIcon } from 'uniswap/src/components/chains/BlockExplorerIcon'
 import { ReportTokenDataModal } from 'uniswap/src/components/reporting/ReportTokenDataModal'
 import { ReportTokenIssueModalPropsAtom } from 'uniswap/src/components/reporting/ReportTokenIssueModal'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { ExplorerDataType, getExplorerLink } from 'uniswap/src/utils/linking'
 import { useEvent } from 'utilities/src/react/hooks'
@@ -55,7 +53,6 @@ export const TokenDetailsHeader = () => {
   const media = useMedia()
   const isMobileScreen = media.sm
 
-  const isDataReportingEnabled = useFeatureFlag(FeatureFlags.DataReportingAbilities)
   const { openModal } = useModalState(ModalName.ReportTokenIssue)
   const [, setModalProps] = useAtom(ReportTokenIssueModalPropsAtom)
   const openReportTokenModal = useEvent(() => {
@@ -86,6 +83,8 @@ export const TokenDetailsHeader = () => {
     data: address,
     type: currency.isNative ? ExplorerDataType.NATIVE : ExplorerDataType.TOKEN,
   })
+  const BlockExplorerIcon = getBlockExplorerIcon(currency.chainId)
+  const explorerName = getChainInfo(currency.chainId).explorer.name
 
   const { homepageUrl, twitterName } = tokenQuery.data?.token?.project ?? {}
   const twitterUrl = twitterName && `https://x.com/${twitterName}`
@@ -102,30 +101,25 @@ export const TokenDetailsHeader = () => {
   const desktopHeaderActions: HeaderAction[] = useMemo(() => {
     return [
       {
-        title: t('common.explorer'),
-        icon:
-          currency.chainId === UniverseChainId.Mainnet ? (
-            <EtherscanLogo width="18px" height="18px" fill={colors.neutral1.val} />
-          ) : (
-            <ExplorerIcon width="18px" height="18px" fill={colors.neutral1.val} />
-          ),
+        title: explorerName,
+        icon: <BlockExplorerIcon size="$icon.18" color="$neutral1" />,
         onPress: () => window.open(explorerUrl, '_blank'),
         show: !!explorerUrl,
       },
       {
         title: t('common.website'),
-        icon: <Globe width="18px" height="18px" fill={colors.neutral1.val} />,
+        icon: <GlobeFilled size="$icon.18" color="$neutral1" />,
         onPress: () => window.open(homepageUrl, '_blank'),
         show: !!homepageUrl,
       },
       {
         title: t('common.twitter'),
-        icon: <TwitterXLogo width="18px" height="18px" fill={colors.neutral1.val} />,
+        icon: <XTwitter size="$icon.18" color="$neutral1" />,
         onPress: () => window.open(twitterUrl, '_blank'),
         show: !!twitterUrl,
       },
     ]
-  }, [t, explorerUrl, colors.neutral1.val, currency.chainId, homepageUrl, twitterUrl])
+  }, [t, explorerUrl, BlockExplorerIcon, homepageUrl, twitterUrl, explorerName])
 
   const mobileHeaderActionSections: HeaderActionSection[] = useMemo(() => {
     return [
@@ -154,28 +148,24 @@ export const TokenDetailsHeader = () => {
           },
         ],
       },
-      ...(isDataReportingEnabled
-        ? [
-            {
-              title: t('common.report'),
-              actions: [
-                {
-                  title: t('reporting.token.data.title'),
-                  icon: <ChartBarCrossed size="$icon.18" color="$neutral1" />,
-                  onPress: openReportDataIssueModal,
-                  show: true,
-                },
-                {
-                  title: t('reporting.token.report.title'),
-                  textColor: '$statusCritical',
-                  icon: <Flag size="$icon.18" color="$statusCritical" />,
-                  onPress: openReportTokenModal,
-                  show: !currency.isNative,
-                },
-              ],
-            },
-          ]
-        : []),
+      {
+        title: t('common.report'),
+        actions: [
+          {
+            title: t('reporting.token.data.title'),
+            icon: <ChartBarCrossed size="$icon.18" color="$neutral1" />,
+            onPress: openReportDataIssueModal,
+            show: true,
+          },
+          {
+            title: t('reporting.token.report.title'),
+            textColor: '$statusCritical',
+            icon: <Flag size="$icon.18" color="$statusCritical" />,
+            onPress: openReportTokenModal,
+            show: !currency.isNative,
+          },
+        ],
+      },
     ]
   }, [
     t,
@@ -188,7 +178,6 @@ export const TokenDetailsHeader = () => {
     openReportDataIssueModal,
     desktopHeaderActions,
     currency.isNative,
-    isDataReportingEnabled,
     twitterShareName,
   ])
 
@@ -307,7 +296,6 @@ function DesktopTokenActions({
   openReportTokenModal,
   openReportDataIssueModal,
 }: DesktopTokenActionsProps) {
-  const isDataReportingEnabled = useFeatureFlag(FeatureFlags.DataReportingAbilities)
   return (
     <Flex row gap="$gap8" alignItems="center">
       {HeaderActions.map(
@@ -321,9 +309,7 @@ function DesktopTokenActions({
           ),
       )}
       <ShareButton name={twitterShareName} utmSource="share-tdp" />
-      {isDataReportingEnabled && (
-        <MoreButton openReportTokenModal={openReportTokenModal} openReportDataIssueModal={openReportDataIssueModal} />
-      )}
+      <MoreButton openReportTokenModal={openReportTokenModal} openReportDataIssueModal={openReportDataIssueModal} />
     </Flex>
   )
 }

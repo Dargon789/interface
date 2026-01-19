@@ -8,7 +8,7 @@ import { ChartType, PriceChartType } from 'components/Charts/utils'
 import { VolumeChart } from 'components/Charts/VolumeChart'
 import { SingleHistogramData } from 'components/Charts/VolumeChart/renderer'
 import { AdvancedPriceChartToggle } from 'components/Tokens/TokenDetails/ChartSection/AdvancedPriceChartToggle'
-import { ChartTypeDropdown } from 'components/Tokens/TokenDetails/ChartSection/ChartTypeSelector'
+import { ChartTypeToggle } from 'components/Tokens/TokenDetails/ChartSection/ChartTypeToggle'
 import {
   useTDPPriceChartData,
   useTDPTVLChartData,
@@ -25,14 +25,14 @@ import { useAtomValue } from 'jotai/utils'
 import { useTDPContext } from 'pages/TokenDetails/TDPContext'
 import { useMemo, useState } from 'react'
 import { Trans } from 'react-i18next'
-import { ThemeProvider } from 'theme'
 import { Flex, SegmentedControl, SegmentedControlOption, styled, useMedia } from 'ui/src'
 import { useTokenPriceChange } from 'uniswap/src/features/dataApi/tokenDetails/useTokenDetailsData'
 import { currencyId } from 'uniswap/src/utils/currencyId'
 
 export const TDP_CHART_HEIGHT_PX = 356
-const TDP_CHART_SELECTOR_OPTIONS = [ChartType.PRICE, ChartType.VOLUME, ChartType.TVL] as const
-type TokenDetailsChartType = (typeof TDP_CHART_SELECTOR_OPTIONS)[number]
+
+type TokenDetailsChartType = ChartType.PRICE | ChartType.VOLUME | ChartType.TVL
+const TOKEN_DETAILS_CHART_OPTIONS: TokenDetailsChartType[] = [ChartType.PRICE, ChartType.VOLUME, ChartType.TVL]
 
 export const DEFAULT_PILL_TIME_SELECTOR_OPTIONS = ORDERED_TIMES.map((time: TimePeriod) => ({
   value: DISPLAYS[time],
@@ -122,6 +122,22 @@ export default function ChartSection() {
   const currencyIdValue = useMemo(() => currencyId(currency), [currency])
   const priceChange24h = useTokenPriceChange(currencyIdValue)
 
+  // Calculate percentage change from chart data for the selected duration
+  const calculatedPriceChange = useMemo(() => {
+    if (activeQuery.chartType !== ChartType.PRICE || !activeQuery.entries.length) {
+      return undefined
+    }
+    const openPrice = activeQuery.entries[0].close
+    const closePrice = activeQuery.entries[activeQuery.entries.length - 1].close
+    if (!openPrice || !closePrice || openPrice === 0) {
+      return undefined
+    }
+    return ((closePrice - openPrice) / openPrice) * 100
+  }, [activeQuery])
+
+  // Use API's 24hr change for 1d, calculated change for other durations
+  const pricePercentChange = timePeriod === TimePeriod.DAY ? priceChange24h : calculatedPriceChange
+
   // eslint-disable-next-line consistent-return
   const getSection = () => {
     if (activeQuery.dataQuality === DataQuality.INVALID) {
@@ -144,28 +160,35 @@ export default function ChartSection() {
             type={priceChartType}
             stale={stale}
             timePeriod={toHistoryDuration(timePeriod)}
-            pricePercentChange24h={priceChange24h}
+            pricePercentChange={pricePercentChange}
+            overrideColor={tokenColor}
           />
         )
       case ChartType.VOLUME:
         return (
-          <VolumeChart data={activeQuery.entries} height={TDP_CHART_HEIGHT_PX} timePeriod={timePeriod} stale={stale} />
+          <VolumeChart
+            data={activeQuery.entries}
+            height={TDP_CHART_HEIGHT_PX}
+            timePeriod={timePeriod}
+            stale={stale}
+            overrideColor={tokenColor}
+          />
         )
       case ChartType.TVL:
-        return <LineChart data={activeQuery.entries} height={TDP_CHART_HEIGHT_PX} stale={stale} />
+        return (
+          <LineChart data={activeQuery.entries} height={TDP_CHART_HEIGHT_PX} stale={stale} overrideColor={tokenColor} />
+        )
     }
   }
 
   return (
-    <ThemeProvider accent1={tokenColor}>
-      <Flex
-        data-cy={`tdp-${activeQuery.chartType}-chart-container`}
-        testID={`tdp-${activeQuery.chartType}-chart-container`}
-      >
-        {getSection()}
-        <ChartControls />
-      </Flex>
-    </ThemeProvider>
+    <Flex
+      data-cy={`tdp-${activeQuery.chartType}-chart-container`}
+      testID={`tdp-${activeQuery.chartType}-chart-container`}
+    >
+      {getSection()}
+      <ChartControls />
+    </Flex>
   )
 }
 
@@ -191,9 +214,10 @@ function ChartControls() {
         gap="$gap8"
         $md={{
           width: '100%',
+          gap: '$gap16',
           '$platform-web': {
             display: 'grid',
-            gridTemplateColumns: showAdvancedPriceChartToggle ? '1fr 1fr' : '1fr',
+            gridTemplateColumns: '1fr',
           },
         }}
       >
@@ -204,16 +228,18 @@ function ChartControls() {
             disableCandlestickUI={disableCandlestickUI}
           />
         )}
-        <ChartTypeDropdown
-          options={TDP_CHART_SELECTOR_OPTIONS}
-          currentChartType={activeQuery.chartType}
-          onSelectOption={(c) => {
-            setChartType(c)
-            if (c === ChartType.PRICE) {
-              setPriceChartType(PriceChartType.LINE)
-            }
-          }}
-        />
+        <Flex $md={{ width: '100%' }}>
+          <ChartTypeToggle
+            availableOptions={TOKEN_DETAILS_CHART_OPTIONS}
+            currentChartType={activeQuery.chartType}
+            onChartTypeChange={(c: ChartType) => {
+              setChartType(c as TokenDetailsChartType)
+              if (c === ChartType.PRICE) {
+                setPriceChartType(PriceChartType.LINE)
+              }
+            }}
+          />
+        </Flex>
       </Flex>
       <Flex $md={{ width: '100%' }}>
         <SegmentedControl

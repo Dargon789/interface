@@ -430,6 +430,7 @@ export type TradeWithSlippage = Exclude<Trade, BridgeTrade>
 
 // TODO(WALL-4573) - Cleanup usage of optionality/null/undefined
 export interface TradeWithStatus<T extends Trade = Trade> {
+  quoteHash?: string
   isLoading: boolean
   isFetching?: boolean
   error: Error | null
@@ -834,7 +835,6 @@ export class UnwrapTrade extends BaseWrapTrade<TradingApi.Routing.UNWRAP, Unwrap
   }
 }
 
-// TODO: SWAP-458 - Subject to change.
 export class ChainedActionTrade {
   readonly routing = TradingApi.Routing.CHAINED
   quote: ChainedQuoteResponse
@@ -866,12 +866,12 @@ export class ChainedActionTrade {
     this.quote = quote
 
     const inputAmount = getCurrencyAmount({
-      value: this.quote.quote.input?.amount,
+      value: this.quote.quote.input.amount,
       valueType: ValueType.Raw,
       currency: currencyIn,
     })
     const outputAmount = getCurrencyAmount({
-      value: this.quote.quote.output?.amount,
+      value: this.quote.quote.output.amount,
       valueType: ValueType.Raw,
       currency: currencyOut,
     })

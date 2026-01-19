@@ -66,6 +66,7 @@ export const ARBITRUM_CHAIN_INFO = {
   tokens,
   statusPage: undefined,
   supportsV4: true,
+  supportsNFTs: true,
   urlParam: 'arbitrum',
   rpcUrls: {
     [RPCType.Public]: { http: [getQuicknodeEndpointUrl(UniverseChainId.ArbitrumOne)] },
@@ -87,4 +88,5 @@ export const ARBITRUM_CHAIN_INFO = {
   },
   gasConfig: GENERIC_L2_GAS_CONFIG,
   tradingApiPollingIntervalMs: 150,
+  acrossProtocolAddress: '0xe35e9842fceaca96570b734083f4a58e8f7c5f2a',
 } as const satisfies UniverseChainInfo

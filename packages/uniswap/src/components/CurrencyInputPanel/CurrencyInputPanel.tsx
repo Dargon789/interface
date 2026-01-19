@@ -1,3 +1,4 @@
+//! tamagui-ignore
 /* eslint-disable complexity */
 import { forwardRef, memo, useCallback } from 'react'
 import { Flex, TouchableArea, useIsShortMobileDevice, useShakeAnimation } from 'ui/src'
@@ -49,6 +50,8 @@ export const CurrencyInputPanel = memo(
         headerLabel,
         transactionType,
         customPanelStyle,
+        maxValuationPresets,
+        onSetMaxValuation,
       } = props
       const account = useWallet().evmAccount
       const isShortMobileDevice = useIsShortMobileDevice()
@@ -144,11 +147,13 @@ export const CurrencyInputPanel = memo(
               indicativeQuoteTextDisplay={display}
               showInsufficientBalanceWarning={showInsufficientBalanceWarning}
               showDefaultTokenOptions={showDefaultTokenOptions}
+              maxValuationPresets={maxValuationPresets}
               onPressIn={onPressIn}
               onSelectionChange={selectionChange}
               onSetExactAmount={onSetExactAmount}
               onShowTokenSelector={onShowTokenSelector}
               onPressDisabledWithShakeAnimation={onPressDisabledWithShakeAnimation}
+              onSetMaxValuation={onSetMaxValuation}
             />
             <Flex
               row
@@ -183,6 +188,7 @@ export const CurrencyInputPanel = memo(
                     currencyBalance={currencyBalance}
                     currencyInfo={currencyInfo}
                     showInsufficientBalanceWarning={showInsufficientBalanceWarning}
+                    hideBalance={!!maxValuationPresets}
                   />
                   {/* Max button */}
                   {showMaxButton && onSetPresetValue && (

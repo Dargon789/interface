@@ -18,7 +18,7 @@ export enum UniverseChainId {
   Blast = UniswapSDKChainId.BLAST,
   Bnb = UniswapSDKChainId.BNB,
   Celo = UniswapSDKChainId.CELO,
-  MonadTestnet = UniswapSDKChainId.MONAD_TESTNET,
+  Monad = UniswapSDKChainId.MONAD,
   Optimism = UniswapSDKChainId.OPTIMISM,
   Polygon = UniswapSDKChainId.POLYGON,
   Sepolia = UniswapSDKChainId.SEPOLIA,
@@ -129,6 +129,7 @@ export interface UniverseChainInfo extends WagmiChain {
   readonly statusPage?: string
   readonly subblockTimeMs?: number // in milliseconds, used for subblock balance checks
   readonly supportsV4: boolean
+  readonly supportsNFTs: boolean
   readonly urlParam: string
   readonly wrappedNativeCurrency: {
     name: string // 'Wrapped Ether',
@@ -147,4 +148,10 @@ export interface UniverseChainInfo extends WagmiChain {
     }
   }
   readonly tradingApiPollingIntervalMs: number
+  /**
+   * Address used to bridge tokens across protocols. Do not use this to send a TX
+   * as it's not guaranteed to be the most up to date address.
+   * This is used for being able to detect if a DAPP request is a bridge request.
+   **/
+  readonly acrossProtocolAddress?: string
 }

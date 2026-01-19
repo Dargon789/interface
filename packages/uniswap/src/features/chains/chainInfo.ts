@@ -25,6 +25,7 @@ export function getChainInfo(chainId: UniverseChainId): UniverseChainInfo {
 export const ORDERED_CHAINS = [
   MAINNET_CHAIN_INFO,
   UNICHAIN_CHAIN_INFO,
+  MONAD_CHAIN_INFO,
   SOLANA_CHAIN_INFO,
   POLYGON_CHAIN_INFO,
   ARBITRUM_CHAIN_INFO,
@@ -40,7 +41,6 @@ export const ORDERED_CHAINS = [
   ZKSYNC_CHAIN_INFO,
   SEPOLIA_CHAIN_INFO,
   UNICHAIN_SEPOLIA_CHAIN_INFO,
-  MONAD_CHAIN_INFO,
 ] as const satisfies UniverseChainInfo[]
 
 type ConstChainInfo<P extends Platform = Platform> = Extract<(typeof ORDERED_CHAINS)[number], { platform: P }>
@@ -83,9 +83,9 @@ export const UNIVERSE_CHAIN_INFO = {
   [UniverseChainId.Soneium]: SONEIUM_CHAIN_INFO,
   [UniverseChainId.Zora]: ZORA_CHAIN_INFO,
   [UniverseChainId.Zksync]: ZKSYNC_CHAIN_INFO,
+  [UniverseChainId.Monad]: MONAD_CHAIN_INFO,
 
   // TESTNET
-  [UniverseChainId.MonadTestnet]: MONAD_CHAIN_INFO,
   [UniverseChainId.Sepolia]: SEPOLIA_CHAIN_INFO,
   [UniverseChainId.UnichainSepolia]: UNICHAIN_SEPOLIA_CHAIN_INFO,
 

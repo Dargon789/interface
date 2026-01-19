@@ -4,6 +4,7 @@ import type { ImageSourcePropType } from 'react-native'
 import { CELO_LOGO, ETH_LOGO } from 'ui/src/assets'
 import {
   ARB,
+  AUSD_MONAD,
   BUSD_BSC,
   DAI,
   DAI_ARBITRUM_ONE,
@@ -22,6 +23,7 @@ import {
   USDC_BSC,
   USDC_CELO,
   USDC_MAINNET,
+  USDC_MONAD,
   USDC_OPTIMISM,
   USDC_POLYGON,
   USDC_SEPOLIA,
@@ -35,7 +37,6 @@ import {
   USDT_ARBITRUM_ONE,
   USDT_AVALANCHE,
   USDT_BSC,
-  USDT_MONAD_TESTNET,
   USDT_OPTIMISM,
   USDT_POLYGON,
   WBTC,
@@ -108,10 +109,11 @@ export const COMMON_BASES: ChainCurrencyList = {
 
   [UniverseChainId.Celo]: [nativeOnChain(UniverseChainId.Celo), USDC_CELO].map(buildPartialCurrencyInfo),
 
-  [UniverseChainId.MonadTestnet]: [
-    nativeOnChain(UniverseChainId.MonadTestnet),
-    WRAPPED_NATIVE_CURRENCY[UniverseChainId.MonadTestnet] as Token,
-    USDT_MONAD_TESTNET,
+  [UniverseChainId.Monad]: [
+    nativeOnChain(UniverseChainId.Monad),
+    WRAPPED_NATIVE_CURRENCY[UniverseChainId.Monad] as Token,
+    USDC_MONAD,
+    AUSD_MONAD,
   ].map(buildPartialCurrencyInfo),
 
   [UniverseChainId.Optimism]: [

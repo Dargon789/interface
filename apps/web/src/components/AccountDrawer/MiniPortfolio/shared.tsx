@@ -1,13 +1,13 @@
 import Column from 'components/deprecated/Column'
 import Row from 'components/deprecated/Row'
-import styled, { useTheme } from 'lib/styled-components'
+import { deprecatedStyled } from 'lib/styled-components'
 import { ReactNode } from 'react'
 import { ArrowRight } from 'react-feather'
 import { ThemedText } from 'theme/components'
 import { ClickableStyle } from 'theme/components/styles'
-import { Text } from 'ui/src'
+import { Text, useSporeColors } from 'ui/src'
 
-const Container = styled.button`
+const Container = deprecatedStyled.button`
   border-radius: 16px;
   border: none;
   background: ${({ theme }) => theme.surface2};
@@ -26,7 +26,7 @@ interface TabButtonProps {
 }
 
 export function TabButton({ text, icon, extraWarning, onClick, disabled, className }: TabButtonProps) {
-  const theme = useTheme()
+  const colors = useSporeColors()
 
   return (
     <Container onClick={onClick} disabled={disabled} className={className}>
@@ -40,7 +40,7 @@ export function TabButton({ text, icon, extraWarning, onClick, disabled, classNa
             {extraWarning && <ThemedText.LabelMicro>{extraWarning}</ThemedText.LabelMicro>}
           </Column>
         </Row>
-        <ArrowRight color={theme.neutral2} size="20px" />
+        <ArrowRight color={colors.neutral2.val} size="20px" />
       </Row>
     </Container>
   )

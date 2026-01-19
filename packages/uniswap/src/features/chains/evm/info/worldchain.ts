@@ -72,6 +72,7 @@ export const WORLD_CHAIN_INFO = {
   statusPage: undefined,
   tokens,
   supportsV4: true,
+  supportsNFTs: true,
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
     symbol: 'WETH',
@@ -81,4 +82,5 @@ export const WORLD_CHAIN_INFO = {
   testnet: false,
   gasConfig: GENERIC_L2_GAS_CONFIG,
   tradingApiPollingIntervalMs: 250,
+  acrossProtocolAddress: '0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64',
 } as const satisfies UniverseChainInfo

@@ -10,7 +10,7 @@ import { useAccountIdentifier } from 'components/Web3Status/useAccountIdentifier
 import { useShowPendingAfterDelay } from 'components/Web3Status/useShowPendingAfterDelay'
 import { useModalState } from 'hooks/useModalState'
 import { atom, useAtom } from 'jotai'
-import styled from 'lib/styled-components'
+import { deprecatedStyled } from 'lib/styled-components'
 import { forwardRef, RefObject, useCallback, useEffect, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { AnimatePresence, Button, ButtonProps, Flex, Popover, Text } from 'ui/src'
@@ -23,7 +23,7 @@ import Trace from 'uniswap/src/features/telemetry/Trace'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { isIFramed } from 'utils/isIFramed'
 
-const TextStyled = styled.span<{ marginRight?: number }>`
+const TextStyled = deprecatedStyled.span<{ marginRight?: number }>`
   flex: 1 1 auto;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -55,7 +55,7 @@ const Web3StatusGeneric = forwardRef<HTMLDivElement, ButtonProps>(function Web3S
   )
 })
 
-const AddressAndChevronContainer = styled.div<{ $loading?: boolean }>`
+const AddressAndChevronContainer = deprecatedStyled.div<{ $loading?: boolean }>`
   display: flex;
   opacity: ${({ $loading, theme }) => $loading && theme.opacity.disabled};
   align-items: center;
@@ -90,7 +90,7 @@ const ExistingUserCTAButton = forwardRef<HTMLDivElement, { onPress: () => void }
   )
 })
 
-export const Web3StatusRef = atom<RefObject<HTMLElement> | undefined>(undefined)
+export const Web3StatusRef = atom<RefObject<HTMLElement | null> | undefined>(undefined)
 
 function Web3StatusInner() {
   const activeAddresses = useActiveAddresses()
@@ -109,9 +109,12 @@ function Web3StatusInner() {
     accountDrawer.toggle()
   }, [accountDrawer])
 
-  const { hasPendingActivity, pendingActivityCount, isOnlyUnichainPendingActivity } = usePendingActivity()
+  const { hasPendingActivity, pendingActivityCount, hasL1PendingActivity } = usePendingActivity()
   const { accountIdentifier, hasUnitag } = useAccountIdentifier()
-  const showLoadingState = useShowPendingAfterDelay(hasPendingActivity, isOnlyUnichainPendingActivity)
+  const showLoadingState = useShowPendingAfterDelay({
+    hasPendingActivity,
+    hasL1PendingActivity,
+  })
 
   // TODO(WEB-4173): Remove isIFrame check when we can update wagmi to version >= 2.9.4
   if (isConnecting && !isIFramed()) {

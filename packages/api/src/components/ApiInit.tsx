@@ -1,21 +1,27 @@
 import { queryOptions, useQuery } from '@tanstack/react-query'
-import { getIsSessionServiceEnabled } from '@universe/api/src/getIsSessionServiceEnabled'
 import type { SessionInitializationService, SessionInitResult } from '@universe/sessions'
 import { SessionError } from '@universe/sessions'
-import { useMemo } from 'react'
+import { useState } from 'react'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 
 interface ApiInitProps {
-  sessionInitService: SessionInitializationService
+  getSessionInitService: () => SessionInitializationService
+  isSessionServiceEnabled: boolean
 }
 
+/**
+ * Query key for session initialization.
+ * Shared between ApiInit (which triggers the query) and InitializationStatusProvider (which observes it).
+ */
+export const SESSION_INIT_QUERY_KEY = [ReactQueryCacheKey.Session, 'initialization'] as const
+
 function createInitServiceQuery(ctx: {
-  sessionInitService: SessionInitializationService
+  getSessionInitService: () => SessionInitializationService
 }): ReturnType<typeof queryOptions<SessionInitResult>> {
   return queryOptions<SessionInitResult>({
-    queryKey: [ReactQueryCacheKey.Session, 'initialization'],
+    queryKey: SESSION_INIT_QUERY_KEY,
     queryFn: async (): Promise<SessionInitResult> => {
-      return await ctx.sessionInitService.initialize()
+      return await ctx.getSessionInitService().initialize()
     },
     retry: (failureCount, error) => {
       // Don't retry any session-related errors - these are terminal errors
@@ -32,15 +38,12 @@ function createInitServiceQuery(ctx: {
   })
 }
 
-function ApiInit({ sessionInitService }: ApiInitProps): null {
-  const query = useMemo(() => createInitServiceQuery({ sessionInitService }), [sessionInitService])
-
-  // Short-circuit if session service is disabled
-  const shouldInitialize = getIsSessionServiceEnabled()
+function ApiInit({ getSessionInitService, isSessionServiceEnabled }: ApiInitProps): null {
+  const [query] = useState(() => createInitServiceQuery({ getSessionInitService }))
 
   useQuery({
     ...query,
-    enabled: shouldInitialize,
+    enabled: isSessionServiceEnabled,
   })
 
   return null

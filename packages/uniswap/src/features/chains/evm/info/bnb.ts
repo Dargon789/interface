@@ -66,6 +66,7 @@ export const BNB_CHAIN_INFO = {
   tokens,
   statusPage: undefined,
   supportsV4: true,
+  supportsNFTs: false,
   urlParam: 'bnb',
   wrappedNativeCurrency: {
     name: 'Wrapped BNB',
@@ -75,4 +76,5 @@ export const BNB_CHAIN_INFO = {
   },
   gasConfig: GENERIC_L2_GAS_CONFIG,
   tradingApiPollingIntervalMs: 200,
+  acrossProtocolAddress: '0x4e8E101924eDE233C13e2D8622DC8aED2872d505',
 } as const satisfies UniverseChainInfo

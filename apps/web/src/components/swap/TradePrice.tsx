@@ -1,6 +1,6 @@
 import { Currency, Price } from '@uniswap/sdk-core'
 import { useUSDPrice } from 'hooks/useUSDPrice'
-import styled from 'lib/styled-components'
+import { deprecatedStyled } from 'lib/styled-components'
 import tryParseCurrencyAmount from 'lib/utils/tryParseCurrencyAmount'
 import { useCallback, useMemo, useState } from 'react'
 import { ThemedText } from 'theme/components'
@@ -11,7 +11,7 @@ interface TradePriceProps {
   price: Price<Currency, Currency>
 }
 
-const StyledPriceContainer = styled.button`
+const StyledPriceContainer = deprecatedStyled.button`
   background-color: transparent;
   border: none;
   cursor: pointer;

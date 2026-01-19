@@ -1,14 +1,14 @@
 import { PreferencesHeader } from 'components/NavBar/PreferencesMenu/Header'
 import { PreferencesView } from 'components/NavBar/PreferencesMenu/shared'
-import styled, { useTheme } from 'lib/styled-components'
+import { deprecatedStyled } from 'lib/styled-components'
 import { ChevronRight } from 'react-feather'
 import { Trans, useTranslation } from 'react-i18next'
 import { ThemeSelector } from 'theme/components/ThemeToggle'
-import { Flex, Text } from 'ui/src'
+import { Flex, Text, useSporeColors } from 'ui/src'
 import { useAppFiatCurrency } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useCurrentLanguage, useLanguageInfo } from 'uniswap/src/features/language/hooks'
 
-const Pref = styled.div`
+const Pref = deprecatedStyled.div`
   display: flex;
   flex-direction: row;
   width: 100%;
@@ -16,10 +16,10 @@ const Pref = styled.div`
   align-items: center;
   gap: 12px;
 `
-const StyledChevron = styled(ChevronRight)`
+const StyledChevron = deprecatedStyled(ChevronRight)`
   opacity: 0.8;
 `
-const SelectButtonContainer = styled.div`
+const SelectButtonContainer = deprecatedStyled.div`
   display: flex;
   align-items: center;
   gap: 4px;
@@ -33,13 +33,13 @@ const SelectButtonContainer = styled.div`
 `
 
 function SelectButton({ label, onClick }: { label: string; onClick?: () => void }) {
-  const theme = useTheme()
+  const colors = useSporeColors()
   return (
     <SelectButtonContainer onClick={onClick}>
       <Text variant="buttonLabel2" color="$neutral1">
         {label}
       </Text>
-      <StyledChevron size={24} color={theme.neutral1} />
+      <StyledChevron size={24} color={colors.neutral1.val} />
     </SelectButtonContainer>
   )
 }

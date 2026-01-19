@@ -1,13 +1,9 @@
 import { Portal } from 'components/Popups/Portal'
-import { DropdownIcon } from 'components/Table/icons'
 import { useOnClickOutside } from 'hooks/useOnClickOutside'
-import deprecatedStyled from 'lib/styled-components'
 import { RefObject, useCallback, useRef } from 'react'
 import { Checkbox, Flex, styled, Text, useMedia } from 'ui/src'
+import { SortVertical } from 'ui/src/components/icons/SortVertical'
 
-const StyledDropdownIcon = deprecatedStyled(DropdownIcon)`
-  position: relative;
-`
 const FilterDropdown = styled(Flex, {
   position: 'absolute',
   p: '$padding8',
@@ -50,7 +46,7 @@ interface FilterProps<T extends string> {
   setFilters: (filter: T[]) => void
   isOpen: boolean
   toggleFilterModal: () => void
-  anchorRef: RefObject<HTMLElement>
+  anchorRef: RefObject<HTMLElement | null>
 }
 
 export function Filter<T extends string>({
@@ -79,7 +75,7 @@ export function Filter<T extends string>({
 
   return (
     <>
-      <StyledDropdownIcon />
+      <SortVertical color="$neutral3" size="$icon.16" />
       {isOpen && anchorRef.current && (
         <Portal>
           <FilterDropdown

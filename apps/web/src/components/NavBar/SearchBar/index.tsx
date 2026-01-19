@@ -3,10 +3,10 @@ import { NavIcon } from 'components/NavBar/NavIcon'
 import { SearchModal } from 'components/NavBar/SearchBar/SearchModal'
 import { useIsSearchBarVisible } from 'components/NavBar/SearchBar/useIsSearchBarVisible'
 import { useModalState } from 'hooks/useModalState'
-import styled, { useTheme } from 'lib/styled-components'
+import { deprecatedStyled } from 'lib/styled-components'
 import { Search } from 'react-feather'
 import { useTranslation } from 'react-i18next'
-import { Flex, Text, TouchableArea } from 'ui/src'
+import { Flex, Text, TouchableArea, useSporeColors } from 'ui/src'
 import { ElementName, InterfaceEventName, ModalName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { KeyAction } from 'utilities/src/device/keyboard/types'
@@ -15,7 +15,7 @@ import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 
 const NAV_SEARCH_MIN_WIDTH = '340px'
 
-const KeyShortcut = styled.div`
+const KeyShortcut = deprecatedStyled.div`
   background-color: ${({ theme }) => theme.surface3};
   color: ${({ theme }) => theme.neutral2};
   padding: 0px 8px;
@@ -32,7 +32,7 @@ const KeyShortcut = styled.div`
   backdrop-filter: blur(60px);
 `
 
-const SearchIcon = styled.div`
+const SearchIcon = deprecatedStyled.div`
   width: 20px;
   height: 20px;
 `
@@ -41,7 +41,7 @@ export const SearchBar = () => {
   const poolSearchEnabled = useFeatureFlag(FeatureFlags.PoolSearch)
   const isNavSearchInputVisible = useIsSearchBarVisible()
 
-  const theme = useTheme()
+  const colors = useSporeColors()
   const { t } = useTranslation() // subscribe to locale changes
 
   const {
@@ -93,7 +93,7 @@ export const SearchBar = () => {
           >
             <Flex row gap="$spacing12">
               <SearchIcon data-cy="nav-search-icon">
-                <Search width="20px" height="20px" color={theme.neutral2} />
+                <Search width="20px" height="20px" color={colors.neutral2.val} />
               </SearchIcon>
               <Trace
                 logFocus
@@ -112,7 +112,7 @@ export const SearchBar = () => {
       ) : (
         <NavIcon onClick={openSearchModal} label={placeholderText}>
           <SearchIcon data-cy="nav-search-icon">
-            <Search width="20px" height="20px" color={theme.neutral2} />
+            <Search width="20px" height="20px" color={colors.neutral2.val} />
           </SearchIcon>
         </NavIcon>
       )}

@@ -48,8 +48,8 @@ export function RelativeChangeText({
   shouldTreatAsStablecoin = false,
 }: {
   loading: boolean
-  /** 24hr price change from API (used when not scrubbing chart) */
-  spotRelativeChange?: SharedValue<number>
+  /** Price change for selected duration (used when not scrubbing chart) */
+  spotRelativeChange?: SharedValue<number | undefined>
   startingPrice?: number
   shouldTreatAsStablecoin?: boolean
 }): JSX.Element {
@@ -85,7 +85,9 @@ export function RelativeChangeText({
   })
 
   const changeColor = useDerivedValue(() => {
-    if (relativeChange.value === 0) {
+    // Round the range to 2 decimal places to check if is equal to 0
+    const absRelativeChange = Math.round(Math.abs(relativeChange.value) * 100)
+    if (absRelativeChange === 0) {
       return colors.neutral3.val
     }
     return relativeChange.value > 0 ? colors.statusSuccess.val : colors.statusCritical.val
@@ -120,17 +122,17 @@ export function RelativeChangeText({
       mt={isAndroid ? '$none' : '$spacing2'}
       testID={TestID.RelativePriceChange}
     >
-      {loading ? (
+      {loading && (
         // We use `no-shimmer` here to speed up the first render and so that this skeleton renders
         // at the exact same time as the animated number skeleton.
         // TODO(WALL-5215): we can remove `no-shimmer` once we have a better Skeleton component.
         <Text loading="no-shimmer" loadingPlaceholderText="00.00%" variant="body1" />
-      ) : (
-        <>
-          <AnimatedCaretChange size="$icon.16" strokeWidth={2} style={caretStyle} />
-          <AnimatedText style={styles} testID="relative-change-text" text={combinedText} variant="body1" />
-        </>
       )}
+      {/* Must always mount this component to avoid stale values on initial render */}
+      <Flex row alignItems="center" gap="$spacing2" style={{ opacity: loading ? 0 : 1 }}>
+        <AnimatedCaretChange size="$icon.16" strokeWidth={2} style={caretStyle} />
+        <AnimatedText style={styles} testID="relative-change-text" text={combinedText} variant="body1" />
+      </Flex>
     </Flex>
   )
 }

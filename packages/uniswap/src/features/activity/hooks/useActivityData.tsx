@@ -14,6 +14,7 @@ import { SwapSummaryCallbacks } from 'uniswap/src/components/activity/types'
 import { BaseCard } from 'uniswap/src/components/BaseCard/BaseCard'
 import { useFormattedTransactionDataForActivity } from 'uniswap/src/features/activity/hooks/useFormattedTransactionDataForActivity'
 import { AuthTrigger } from 'uniswap/src/features/auth/types'
+import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { PaginationControls } from 'uniswap/src/features/dataApi/types'
 import { useHideSpamTokensSetting } from 'uniswap/src/features/settings/hooks'
 import { isWebPlatform } from 'utilities/src/platform'
@@ -22,7 +23,7 @@ export type UseActivityDataProps = {
   evmOwner?: Address
   svmOwner?: Address
   ownerAddresses: Address[]
-  swapCallbacks: SwapSummaryCallbacks
+  swapCallbacks?: SwapSummaryCallbacks
   fiatOnRampParams: PartialMessage<FiatOnRampParams> | undefined
   authTrigger?: AuthTrigger
   isExternalProfile?: boolean
@@ -30,6 +31,8 @@ export type UseActivityDataProps = {
   skip?: boolean
   extraTransactions?: ActivityItem[]
   onPressEmptyState?: () => void
+  chainIds?: UniverseChainId[]
+  showLoadingOnRefetch?: boolean
 }
 
 export type ActivityRenderData = PaginationControls & {
@@ -38,6 +41,7 @@ export type ActivityRenderData = PaginationControls & {
   sectionData: ActivityItem[] | undefined
   keyExtractor: (item: ActivityItem) => string
   isLoading: boolean
+  isFetching: boolean
   refetch: () => Promise<void>
 }
 
@@ -46,12 +50,14 @@ export function useActivityData({
   svmOwner,
   ownerAddresses,
   authTrigger,
-  isExternalProfile,
   onPressEmptyState,
   swapCallbacks,
   fiatOnRampParams,
   skip,
   extraTransactions,
+  chainIds,
+  isExternalProfile = false,
+  showLoadingOnRefetch = false,
 }: UseActivityDataProps): ActivityRenderData {
   const { t } = useTranslation()
 
@@ -64,18 +70,30 @@ export function useActivityData({
       sectionHeaderElement: SectionTitle,
       swapCallbacks,
       authTrigger,
+      isExternalProfile,
     })
-  }, [swapCallbacks, authTrigger])
+  }, [swapCallbacks, authTrigger, isExternalProfile])
 
-  const { isLoading, onRetry, isError, sectionData, keyExtractor, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useFormattedTransactionDataForActivity({
-      evmAddress: evmOwner,
-      svmAddress: svmOwner,
-      ownerAddresses,
-      fiatOnRampParams,
-      hideSpamTokens,
-      skip,
-    })
+  const {
+    isLoading,
+    isFetching,
+    onRetry,
+    isError,
+    sectionData,
+    keyExtractor,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useFormattedTransactionDataForActivity({
+    evmAddress: evmOwner,
+    svmAddress: svmOwner,
+    ownerAddresses,
+    fiatOnRampParams,
+    hideSpamTokens,
+    skip,
+    chainIds,
+    showLoadingOnRefetch,
+  })
 
   const sectionDataWithExtra: ActivityItem[] | undefined = useMemo(() => {
     if (extraTransactions?.length) {
@@ -129,6 +147,7 @@ export function useActivityData({
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isFetching,
     refetch: onRetry,
   }
 }

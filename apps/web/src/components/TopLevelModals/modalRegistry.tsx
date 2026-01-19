@@ -1,8 +1,10 @@
+import ErrorBoundary from 'components/ErrorBoundary'
 import { ModalRegistry, ModalWrapperProps } from 'components/TopLevelModals/types'
 import { useModalState } from 'hooks/useModalState'
 import { memo, Suspense } from 'react'
 import { useAppSelector } from 'state/hooks'
 import { ModalName, ModalNameType } from 'uniswap/src/features/telemetry/constants'
+import { logger } from 'utilities/src/logger/logger'
 import { createLazy } from 'utils/lazyWithRetry'
 
 const AddressClaimModal = createLazy(() => import('components/claim/AddressClaimModal'))
@@ -11,8 +13,8 @@ const PendingWalletConnectionModal = createLazy(
   () => import('components/WalletModal/PendingWalletConnectionModal/PendingWalletConnectionModal'),
 )
 const UniwalletModal = createLazy(() => import('components/AccountDrawer/UniwalletModal'))
-const Banners = createLazy(() =>
-  import('components/Banner/shared/Banners').then((module) => ({ default: module.Banners })),
+const OutageBanners = createLazy(() =>
+  import('components/Banner/shared/OutageBanners').then((module) => ({ default: module.OutageBanners })),
 )
 const OffchainActivityModal = createLazy(() =>
   import('components/AccountDrawer/MiniPortfolio/Activity/OffchainActivityModal').then((module) => ({
@@ -35,7 +37,6 @@ const PrivacyChoicesModal = createLazy(() =>
   import('components/PrivacyChoices').then((module) => ({ default: module.PrivacyChoicesModal })),
 )
 const FeatureFlagModal = createLazy(() => import('components/FeatureFlagModal/FeatureFlagModal'))
-const SolanaPromoModal = createLazy(() => import('components/Banner/SolanaPromo/SolanaPromoModal'))
 const DevFlagsBox = createLazy(() => import('dev/DevFlagsBox'))
 const TokenNotFoundModal = createLazy(() => import('components/NotFoundModal/TokenNotFoundModal'))
 const PoolNotFoundModal = createLazy(() => import('components/NotFoundModal/PoolNotFoundModal'))
@@ -88,13 +89,29 @@ const ReportTokenModal = createLazy(() =>
     default: module.ReportTokenIssueModal,
   })),
 )
-const ModalLoadingFallback = memo(() => null)
-ModalLoadingFallback.displayName = 'ModalLoadingFallback'
+function ModalLoadingFallback(): null {
+  return null
+}
+
+function ModalErrorFallback({ error }: { error: Error }): null {
+  logger.error(error, {
+    tags: {
+      file: 'modalRegistry',
+      function: 'ModalErrorFallback',
+    },
+    extra: {
+      message: 'Modal failed to load - error caught by ErrorBoundary. Modal will not be displayed.',
+    },
+  })
+  return null
+}
 
 const ModalWrapper = memo(({ Component, componentProps }: ModalWrapperProps) => (
-  <Suspense fallback={<ModalLoadingFallback />}>
-    <Component {...componentProps} />
-  </Suspense>
+  <ErrorBoundary fallback={ModalErrorFallback}>
+    <Suspense fallback={<ModalLoadingFallback />}>
+      <Component {...componentProps} />
+    </Suspense>
+  </ErrorBoundary>
 ))
 ModalWrapper.displayName = 'ModalWrapper'
 
@@ -113,7 +130,7 @@ export const modalRegistry: ModalRegistry = {
     shouldMount: () => true,
   },
   [ModalName.Banners]: {
-    component: Banners,
+    component: OutageBanners,
     shouldMount: () => true,
   },
   [ModalName.OffchainActivity]: {
@@ -147,10 +164,6 @@ export const modalRegistry: ModalRegistry = {
   [ModalName.FeatureFlags]: {
     component: FeatureFlagModal,
     shouldMount: (state) => state.application.openModal?.name === ModalName.FeatureFlags,
-  },
-  [ModalName.SolanaPromo]: {
-    component: SolanaPromoModal,
-    shouldMount: (state) => state.application.openModal?.name === ModalName.SolanaPromo,
   },
   [ModalName.AddLiquidity]: {
     component: IncreaseLiquidityModal,

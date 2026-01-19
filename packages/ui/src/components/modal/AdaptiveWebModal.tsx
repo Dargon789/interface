@@ -103,7 +103,6 @@ export function WebBottomSheet({
         disableDrag={isTouchDevice && !isHandlePressed}
         open={isOpen}
         snapPointsMode="fit"
-        zIndex={zIndexes.modal}
         onOpenChange={handleClose}
       >
         <Sheet.Frame
@@ -113,7 +112,6 @@ export function WebBottomSheet({
           borderTopRightRadius="$rounded16"
           borderWidth="$spacing1"
           px="$spacing8"
-          zIndex={zIndexes.modal}
           {...sheetOverrideStyles}
           {...sheetHeightStyles}
         >
@@ -140,7 +138,6 @@ export function WebBottomSheet({
           backgroundColor="$scrim"
           enterStyle={{ opacity: 0 }}
           exitStyle={{ opacity: 0 }}
-          zIndex={zIndexes.modalBackdrop}
         />
       </Sheet>
     </RemoveScroll>
@@ -184,6 +181,7 @@ export function AdaptiveWebModal({
   p,
   zIndex,
   hideHandlebar,
+  borderWidth,
   ...rest
 }: ModalProps): JSX.Element {
   const filteredRest = Object.fromEntries(Object.entries(rest).filter(([_, v]) => v !== undefined)) // Filter out undefined properties from rest
@@ -214,7 +212,7 @@ export function AdaptiveWebModal({
       </VisuallyHidden>
       {adaptToSheet &&
         !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
-          <Adapt when="sm">
+          <Adapt when="md">
             <WebBottomSheet
               isOpen={isOpen}
               gap={gap ?? '$spacing4'}
@@ -230,11 +228,8 @@ export function AdaptiveWebModal({
           </Adapt>
         )}
 
-      {/* TODO(WEB-7196): on latest Tamagui upgrade to 1.125.17, stacking sheets/dialogs on mweb is broken because Adapt isn't playing nice with Dialog.Portal zIndexes.
-       * Dialog.Portal also does not like zIndex={undefined}, so temp giving it a dummy value of zIndexes.background
-       */}
       <Dialog.Portal zIndex={zIndex ?? zIndexes.modal}>
-        <Overlay key="overlay" zIndex={zIndexes.modalBackdrop} />
+        <Overlay key="overlay" />
         <Flex
           grow
           maxHeight={filteredRest.maxHeight ?? 'calc(100vh - 32px)'}
@@ -245,11 +240,12 @@ export function AdaptiveWebModal({
         >
           <Dialog.Content
             key="content"
-            bordered
             elevate
+            bordered={borderWidth !== 0}
             animateOnly={['transform', 'opacity']}
             animation={isOpen ? 'fast' : 'fastExit'}
             borderColor="$surface3"
+            borderWidth={borderWidth}
             borderRadius="$rounded16"
             enterStyle={{ x: 0, y: isTopAligned ? -12 : 12, opacity: 0 }}
             exitStyle={{ x: 0, y: isTopAligned ? -12 : 10, opacity: 0 }}
@@ -262,7 +258,6 @@ export function AdaptiveWebModal({
             py={py ?? p ?? '$spacing16'}
             style={Object.assign({}, scrollbarStyles, style)}
             width="calc(100vw - 32px)"
-            zIndex={zIndexes.modal}
             {...filteredRest}
           >
             {children}
@@ -289,6 +284,7 @@ export function WebModalWithBottomAttachment({
   gap,
   zIndex,
   hideHandlebar,
+  borderWidth,
   ...rest
 }: ModalProps & { bottomAttachment?: ReactNode }): JSX.Element {
   const shadowProps = useShadowPropsShort()
@@ -313,7 +309,7 @@ export function WebModalWithBottomAttachment({
       </VisuallyHidden>
       {adaptToSheet &&
         !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
-          <Adapt when="sm">
+          <Adapt when="md">
             <WebBottomSheet
               isOpen={isOpen}
               style={style}
@@ -327,7 +323,7 @@ export function WebModalWithBottomAttachment({
         )}
 
       <Dialog.Portal zIndex={zIndex ?? zIndexes.modal}>
-        <Overlay key="overlay" zIndex={zIndexes.modalBackdrop} />
+        <Overlay key="overlay" />
 
         <Dialog.Content
           key="content"
@@ -343,7 +339,6 @@ export function WebModalWithBottomAttachment({
           p="$none"
           style={style}
           width="calc(100vw - 32px)"
-          zIndex={zIndexes.modal}
         >
           <Flex height="100%" width="100%" gap="$spacing8">
             <Flex
@@ -351,7 +346,7 @@ export function WebModalWithBottomAttachment({
               backgroundColor={backgroundColor}
               borderColor="$surface3"
               borderRadius="$rounded16"
-              borderWidth="$spacing1"
+              borderWidth={borderWidth ?? '$spacing1'}
               px="$spacing24"
               py="$spacing16"
               gap={gap ?? '$gap4'}

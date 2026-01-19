@@ -1,12 +1,12 @@
 import { Currency } from '@uniswap/sdk-core'
-import { TokenReportEventType } from '@universe/api/src/clients/data/createDataServiceApiClient'
+import { ReportAssetType, TokenReportEventType } from '@universe/api'
 import { atom } from 'jotai'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { Flag } from 'ui/src/components/icons/Flag'
 import { BaseModalProps } from 'uniswap/src/components/BridgedAsset/BridgedAssetModal'
-import { ReportOption, ReportTokenModal } from 'uniswap/src/components/reporting/ReportModal'
+import { ReportModal, ReportOption } from 'uniswap/src/components/reporting/ReportModal'
 import { DataServiceApiClient } from 'uniswap/src/data/apiClients/dataApi/DataApiClient'
 import { normalizeCurrencyIdForMapLookup } from 'uniswap/src/data/cache'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
@@ -69,6 +69,7 @@ export function ReportTokenIssueModal({
           chainId: currency.chainId,
           address: currency.address,
           event: TokenReportEventType.FalseNegative,
+          assetType: ReportAssetType.Token,
         }).catch((error: unknown) => {
           // Still show success since analytics and local hiding succeeded, but log the issue for monitoring
           logger.warn('ReportTokenIssueModal', 'submitReport', 'Failed to submit token report to backend', {
@@ -117,9 +118,9 @@ export function ReportTokenIssueModal({
   )
 
   return (
-    <ReportTokenModal
+    <ReportModal
       modalName={ModalName.ReportTokenIssue}
-      currency={currency}
+      modalTitle={t('reporting.token.report.title.withSymbol', { symbol: currency?.symbol ?? '' })}
       icon={Flag}
       reportOptions={reportOptions}
       textOptionValue={TokenReportOption.Other}

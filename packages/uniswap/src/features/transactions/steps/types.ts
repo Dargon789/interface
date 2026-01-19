@@ -1,4 +1,6 @@
 import type { TransactionResponse } from '@ethersproject/abstract-provider'
+import { Currency } from '@uniswap/sdk-core'
+import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import type { CollectFeesSteps } from 'uniswap/src/features/transactions/liquidity/steps/collectFeesSteps'
 import type { CollectLpIncentiveRewardsSteps } from 'uniswap/src/features/transactions/liquidity/steps/collectIncentiveRewardsSteps'
 import type { DecreaseLiquiditySteps } from 'uniswap/src/features/transactions/liquidity/steps/decreaseLiquiditySteps'
@@ -9,15 +11,15 @@ import type { SignTypedDataStepFields } from 'uniswap/src/features/transactions/
 import type { Permit2TransactionStep } from 'uniswap/src/features/transactions/steps/permit2Transaction'
 import { TokenRevocationTransactionStep } from 'uniswap/src/features/transactions/steps/revoke'
 import { WrapTransactionStep } from 'uniswap/src/features/transactions/steps/wrap'
-import { ExtractedBaseTradeAnalyticsProperties } from 'uniswap/src/features/transactions/swap/analytics'
+import { PlanSagaAnalytics } from 'uniswap/src/features/transactions/swap/plan/types'
 import type { ClassicSwapSteps } from 'uniswap/src/features/transactions/swap/steps/classicSteps'
+import { UniswapXPlanSignatureStep } from 'uniswap/src/features/transactions/swap/steps/signOrder'
 import { SwapTransactionStep, SwapTransactionStepAsync } from 'uniswap/src/features/transactions/swap/steps/swap'
 import type { UniswapXSwapSteps } from 'uniswap/src/features/transactions/swap/steps/uniswapxSteps'
 import { SetCurrentStepFn } from 'uniswap/src/features/transactions/swap/types/swapCallback'
 import { BridgeTrade, ChainedActionTrade, ClassicTrade } from 'uniswap/src/features/transactions/swap/types/trade'
 import { TransactionTypeInfo } from 'uniswap/src/features/transactions/types/transactionDetails'
 import type { ValidatedTransactionRequest } from 'uniswap/src/features/transactions/types/transactionRequests'
-import { AccountDetails } from 'uniswap/src/features/wallet/types/AccountDetails'
 
 export enum TransactionStepType {
   TokenApprovalTransaction = 'TokenApproval',
@@ -29,8 +31,15 @@ export enum TransactionStepType {
   Permit2Signature = 'Permit2Signature',
   Permit2Transaction = 'Permit2Transaction',
   UniswapXSignature = 'UniswapXSignature',
+  /**
+   * UniswapX type for use in a /plan execution which uses a different flow
+   * than UniswapXSignatureStep. The signature is submitted to the TAPI which
+   * then submits the order.
+   */
+  UniswapXPlanSignature = 'UniswapXPlanSignature',
   IncreasePositionTransaction = 'IncreasePositionTransaction',
   IncreasePositionTransactionAsync = 'IncreasePositionTransactionAsync',
+  IncreasePositionTransactionBatched = 'IncreasePositionTransactionBatched',
   DecreasePositionTransaction = 'DecreasePositionTransaction',
   MigratePositionTransaction = 'MigratePositionTransaction',
   MigratePositionTransactionAsync = 'MigratePositionTransactionAsync',
@@ -42,6 +51,7 @@ export enum TransactionStepType {
 export type TransactionStep =
   | ClassicSwapSteps
   | UniswapXSwapSteps
+  | UniswapXPlanSignatureStep
   | IncreaseLiquiditySteps
   | DecreaseLiquiditySteps
   | MigrationSteps
@@ -60,10 +70,22 @@ export interface OnChainTransactionFieldsBatched {
   batchedTxRequests: ValidatedTransactionRequest[]
 }
 
-export interface HandleOnChainStepParams<T extends OnChainTransactionStep = OnChainTransactionStep> {
-  account: AccountDetails
+export interface RevokeApproveFields extends OnChainTransactionFields {
+  type: TransactionStepType.TokenApprovalTransaction | TransactionStepType.TokenRevocationTransaction
+  tokenAddress: Address
+  chainId: UniverseChainId
+  amount: string
+  pair?: [Currency, Currency]
+  spender: string
+}
+
+export interface HandleOnChainStepParams<
+  T extends OnChainTransactionStep = OnChainTransactionStep,
+  TExtra extends object = object,
+> {
+  address: Address
   info: TransactionTypeInfo
-  step: T
+  step: T & TExtra
   setCurrentStep: SetCurrentStepFn
   /** Controls whether the function allow submitting a duplicate tx (a tx w/ identical `info` to another recent/pending tx). Defaults to false. */
   allowDuplicativeTx?: boolean
@@ -77,24 +99,32 @@ export interface HandleOnChainStepParams<T extends OnChainTransactionStep = OnCh
   ) => void | Generator<unknown, void, unknown>
 }
 
-export interface HandleSignatureStepParams<T extends SignatureTransactionStep = SignatureTransactionStep> {
-  account: AccountDetails
-  step: T
+export interface HandleSignatureStepParams<
+  T extends SignatureTransactionStep = SignatureTransactionStep,
+  TExtra extends object = object,
+> {
+  address: Address
+  step: T & TExtra
   setCurrentStep: SetCurrentStepFn
   ignoreInterrupt?: boolean
 }
 
-export type HandleApprovalStepParams = Omit<
-  HandleOnChainStepParams<TokenApprovalTransactionStep | TokenRevocationTransactionStep>,
+export type HandleApprovalStepParams<TExtra extends object = object> = Omit<
+  HandleOnChainStepParams<TokenApprovalTransactionStep | TokenRevocationTransactionStep, TExtra>,
   'info'
 >
 
 export type HandleOnChainPermit2TransactionStep = Omit<HandleOnChainStepParams<Permit2TransactionStep>, 'info'>
 
-export interface HandleSwapStepParams extends Omit<HandleOnChainStepParams, 'step' | 'info'> {
-  step: SwapTransactionStep | SwapTransactionStepAsync
+export interface HandleSwapStepParams<TExtra extends object = object>
+  extends Omit<HandleOnChainStepParams<OnChainTransactionStep, TExtra>, 'step' | 'info'> {
+  step: (SwapTransactionStep | SwapTransactionStepAsync) & TExtra
   signature?: string
   trade: ClassicTrade | BridgeTrade | ChainedActionTrade
-  analytics: ExtractedBaseTradeAnalyticsProperties
+  analytics: PlanSagaAnalytics
   onTransactionHash?: (hash: string) => void
+}
+
+export interface HandleUniswapXPlanSignatureStepParams extends HandleSignatureStepParams<UniswapXPlanSignatureStep> {
+  analytics: PlanSagaAnalytics
 }

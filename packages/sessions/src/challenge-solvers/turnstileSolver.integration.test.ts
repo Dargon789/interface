@@ -26,7 +26,16 @@ beforeAll(() => {
   })
 
   vi.spyOn(document.head, 'appendChild').mockImplementation((node) => {
-    if (node instanceof HTMLScriptElement && node.src.includes('challenges.cloudflare.com')) {
+    let isTurnstileScript = false
+    if (node instanceof HTMLScriptElement && node.src) {
+      try {
+        const url = new URL(node.src, window.location.origin)
+        isTurnstileScript = url.hostname === 'challenges.cloudflare.com'
+      } catch {
+        isTurnstileScript = false
+      }
+    }
+    if (isTurnstileScript) {
       // Simulate script load immediately
       setTimeout(() => {
         // Set up the mock turnstile API

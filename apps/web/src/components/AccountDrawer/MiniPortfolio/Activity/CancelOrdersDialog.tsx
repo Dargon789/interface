@@ -6,12 +6,13 @@ import { ColumnCenter } from 'components/deprecated/Column'
 import Row from 'components/deprecated/Row'
 import { LoaderV3 } from 'components/Icons/LoadingSpinner'
 import { DetailLineItem } from 'components/swap/DetailLineItem'
-import styled, { useTheme } from 'lib/styled-components'
+import { deprecatedStyled } from 'lib/styled-components'
+import { useMemo } from 'react'
 import { Slash } from 'react-feather'
 import { Trans, useTranslation } from 'react-i18next'
 import { ThemedText } from 'theme/components'
 import { ExternalLink } from 'theme/components/Links'
-import { Flex, Text } from 'ui/src'
+import { Flex, Text, useSporeColors } from 'ui/src'
 import { Dialog } from 'uniswap/src/components/dialog/Dialog'
 import { GetHelpHeader } from 'uniswap/src/components/dialog/GetHelpHeader'
 import { Modal } from 'uniswap/src/components/modals/Modal'
@@ -24,11 +25,11 @@ import { UniswapXOrderDetails } from 'uniswap/src/features/transactions/types/tr
 import { ExplorerDataType, getExplorerLink } from 'uniswap/src/utils/linking'
 import { NumberType } from 'utilities/src/format/types'
 
-const ModalHeader = styled(GetHelpHeader)`
+const ModalHeader = deprecatedStyled(GetHelpHeader)`
   padding: 4px 0px;
 `
 
-const Container = styled(ColumnCenter)`
+const Container = deprecatedStyled(ColumnCenter)`
   background-color: ${({ theme }) => theme.surface1};
   border-radius: 16px;
   padding: 16px 24px 24px 24px;
@@ -56,7 +57,7 @@ function useCancelOrdersDialogContent(
   state: CancellationState,
   orders: UniswapXOrderDetails[],
 ): { title?: JSX.Element; icon: JSX.Element } {
-  const theme = useTheme()
+  const colors = useSporeColors()
   switch (state) {
     case CancellationState.REVIEWING_CANCELLATION:
       return {
@@ -66,12 +67,12 @@ function useCancelOrdersDialogContent(
           ) : (
             <Trans i18nKey="common.cancelOrder" />
           ),
-        icon: <Slash color={theme.neutral1} />,
+        icon: <Slash color={colors.neutral1.val} />,
       }
     case CancellationState.PENDING_SIGNATURE:
       return {
         title: <Trans i18nKey="common.confirmCancellation" />,
-        icon: <LoaderV3 size="64px" color={theme.accent1} />,
+        icon: <LoaderV3 size="64px" color={colors.accent1.val} />,
       }
     case CancellationState.PENDING_CONFIRMATION:
       return {
@@ -98,6 +99,22 @@ export function CancelOrdersDialog(props: CancelOrdersDialogProps) {
   const { title, icon } = useCancelOrdersDialogContent(cancelState, orders)
 
   const cancellationGasFeeInfo = useCancelOrdersGasEstimate(orders)
+
+  const primaryButton = useMemo(
+    () => ({
+      text: t('common.neverMind'),
+      onPress: onCancel,
+      variant: 'default' as const,
+      emphasis: 'secondary' as const,
+    }),
+    [t, onCancel],
+  )
+
+  const secondaryButton = useMemo(
+    () => ({ text: t('common.proceed'), onPress: onConfirm, variant: 'critical' as const }),
+    [t, onConfirm],
+  )
+
   if (
     [CancellationState.PENDING_SIGNATURE, CancellationState.PENDING_CONFIRMATION, CancellationState.CANCELLED].includes(
       cancelState,
@@ -155,18 +172,10 @@ export function CancelOrdersDialog(props: CancelOrdersDialogProps) {
           </Text>
         }
         modalName={ModalName.CancelOrders}
-        primaryButtonText={t('common.neverMind')}
-        primaryButtonOnClick={onCancel}
-        primaryButtonVariant="default"
-        primaryButtonEmphasis="secondary"
-        secondaryButtonText={t('common.proceed')}
-        secondaryButtonOnClick={onConfirm}
-        secondaryButtonVariant="critical"
-        buttonContainerProps={{
-          flexDirection: 'row',
-        }}
+        primaryButton={primaryButton}
+        secondaryButton={secondaryButton}
         displayHelpCTA
-        hasIconBackground
+        iconBackgroundColor="$surface3"
       >
         {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
         <GasEstimateDisplay chainId={orders[0].chainId} gasEstimateValue={cancellationGasFeeInfo?.gasFeeDisplayValue} />
@@ -185,15 +194,7 @@ function GasEstimateDisplay({ gasEstimateValue, chainId }: { gasEstimateValue?: 
   const gasFeeFormatted = convertFiatAmountFormatted(gasFeeUSD?.toExact(), NumberType.PortfolioBalance)
 
   return (
-    <Flex
-      row
-      mt="$spacing16"
-      pt="$spacing16"
-      borderColor="$transparent"
-      borderTopColor="$surface3"
-      borderWidth="$spacing1"
-      width="100%"
-    >
+    <Flex row width="100%">
       <DetailLineItem
         LineItem={{
           Label: () => <Trans i18nKey="common.networkCost" />,

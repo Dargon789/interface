@@ -1,13 +1,13 @@
-import { TableText } from 'components/Table/styled'
+import { EmptyTableCell } from 'pages/Portfolio/EmptyTableCell'
 import { memo } from 'react'
 import { EM_DASH, Flex, Text } from 'ui/src'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { getSymbolDisplayText } from 'uniswap/src/utils/currency'
 
-const TokenDisplay = memo(function TokenDisplay({ currencyInfo }: { currencyInfo: CurrencyInfo | null }) {
+export const TokenDisplay = memo(function TokenDisplay({ currencyInfo }: { currencyInfo: CurrencyInfo | null }) {
   if (!currencyInfo) {
-    return <TableText>{EM_DASH}</TableText>
+    return <EmptyTableCell />
   }
 
   const { currency } = currencyInfo
@@ -33,5 +33,3 @@ const TokenDisplay = memo(function TokenDisplay({ currencyInfo }: { currencyInfo
   )
 })
 TokenDisplay.displayName = 'TokenDisplay'
-
-export default TokenDisplay

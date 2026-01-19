@@ -14,7 +14,7 @@ import { PoolDetailsStats } from 'components/Pools/PoolDetails/PoolDetailsStats'
 import { PoolDetailsStatsButtons } from 'components/Pools/PoolDetails/PoolDetailsStatsButtons'
 import { PoolDetailsTableTab } from 'components/Pools/PoolDetails/PoolDetailsTable'
 import { useColor } from 'hooks/useColor'
-import styled, { useTheme } from 'lib/styled-components'
+import { deprecatedStyled } from 'lib/styled-components'
 import { ExploreTab } from 'pages/Explore/constants'
 import { useDynamicMetatags } from 'pages/metatags'
 import { getPoolDetailPageTitle } from 'pages/PoolDetails/utils'
@@ -24,7 +24,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import { Text } from 'rebass'
 import { ThemeProvider } from 'theme'
-import { Flex } from 'ui/src'
+import { Flex, useIsDarkMode, useSporeColors } from 'ui/src'
 import { breakpoints } from 'ui/src/theme'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { InterfacePageName, ModalName } from 'uniswap/src/features/telemetry/constants'
@@ -33,7 +33,7 @@ import { AddressStringFormat, normalizeAddress } from 'uniswap/src/utils/address
 import { isEVMAddress } from 'utilities/src/addresses/evm/evm'
 import { useChainIdFromUrlParam } from 'utils/chainParams'
 
-const PageWrapper = styled(Row)`
+const PageWrapper = deprecatedStyled(Row)`
   padding: 0 20px 52px;
   justify-content: center;
   width: 100%;
@@ -50,7 +50,7 @@ const PageWrapper = styled(Row)`
   }
 `
 
-const LeftColumn = styled(Column)`
+const LeftColumn = deprecatedStyled(Column)`
   gap: 40px;
   max-width: 780px;
   overflow: hidden;
@@ -62,12 +62,12 @@ const LeftColumn = styled(Column)`
   }
 `
 
-const HR = styled.hr`
+const HR = deprecatedStyled.hr`
   border: 0.5px solid ${({ theme }) => theme.surface3};
   width: 100%;
 `
 
-const TokenDetailsWrapper = styled(Column)`
+const TokenDetailsWrapper = deprecatedStyled(Column)`
   gap: 24px;
   padding: 20px;
 
@@ -82,14 +82,14 @@ const TokenDetailsWrapper = styled(Column)`
   }
 `
 
-const TokenDetailsHeader = styled(Text)`
+const TokenDetailsHeader = deprecatedStyled(Text)`
   width: 100%;
   font-size: 24px;
   font-weight: 485;
   line-height: 32px;
 `
 
-const LinksContainer = styled(Column)`
+const LinksContainer = deprecatedStyled(Column)`
   gap: 16px;
   width: 100%;
 `
@@ -143,14 +143,15 @@ export default function PoolDetailsPage() {
   )
   const navigate = useNavigate()
 
-  const { darkMode, surface2, accent1 } = useTheme()
+  const colors = useSporeColors()
+  const isDarkMode = useIsDarkMode()
   const color0 = useColor(token0 && gqlToCurrency(token0), {
-    backgroundColor: surface2,
-    darkMode,
+    backgroundColor: colors.surface2.val,
+    darkMode: isDarkMode,
   })
   const color1 = useColor(token1 && gqlToCurrency(token1), {
-    backgroundColor: surface2,
-    darkMode,
+    backgroundColor: colors.surface2.val,
+    darkMode: isDarkMode,
   })
 
   const isInvalidPool = !poolAddress || !chainInfo
@@ -189,7 +190,10 @@ export default function PoolDetailsPage() {
   }
 
   return (
-    <ThemeProvider token0={color0 !== accent1 ? color0 : undefined} token1={color1 !== accent1 ? color1 : undefined}>
+    <ThemeProvider
+      token0={color0 !== colors.accent1.val ? color0 : undefined}
+      token1={color1 !== colors.accent1.val ? color1 : undefined}
+    >
       <Helmet>
         <title>{getPoolDetailPageTitle(t, poolData)}</title>
         {metatags.map((tag, index) => (
@@ -240,6 +244,8 @@ export default function PoolDetailsPage() {
                 loading={loading}
                 isReversed={isReversed}
                 chain={chainInfo.backendChain.chain}
+                tokenAColor={isReversed ? color1 : color0}
+                tokenBColor={isReversed ? color0 : color1}
               />
             </Column>
             <HR />
@@ -257,6 +263,7 @@ export default function PoolDetailsPage() {
                 token0={token0}
                 token1={token1}
                 feeTier={poolData?.feeTier?.feeAmount}
+                tickSpacing={poolData?.feeTier?.tickSpacing}
                 hookAddress={poolData?.hookAddress}
                 isDynamic={poolData?.feeTier?.isDynamic}
                 protocolVersion={poolData?.protocolVersion}
@@ -272,7 +279,14 @@ export default function PoolDetailsPage() {
             {showRewardsDistribution && (
               <LpIncentivesPoolDetailsRewardsDistribution rewardsCampaign={poolData?.rewardsCampaign} />
             )}
-            <PoolDetailsStats poolData={poolData} isReversed={isReversed} chainId={chainInfo.id} loading={loading} />
+            <PoolDetailsStats
+              poolData={poolData}
+              isReversed={isReversed}
+              tokenAColor={color0}
+              tokenBColor={color1}
+              chainId={chainInfo.id}
+              loading={loading}
+            />
             <TokenDetailsWrapper>
               <TokenDetailsHeader>
                 <Trans i18nKey="common.links" />

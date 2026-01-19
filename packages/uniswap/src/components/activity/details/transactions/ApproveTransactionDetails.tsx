@@ -2,6 +2,7 @@ import { SharedEventName } from '@uniswap/analytics-events'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, TouchableArea } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
+import { formatApprovalAmount } from 'uniswap/src/components/activity/utils'
 import { CurrencyLogo } from 'uniswap/src/components/CurrencyLogo/CurrencyLogo'
 import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
@@ -16,11 +17,8 @@ import {
 } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { getSymbolDisplayText } from 'uniswap/src/utils/currency'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
-import { NumberType } from 'utilities/src/format/types'
 import { isWebPlatform } from 'utilities/src/platform'
 
-const INFINITE_AMOUNT = 'INF'
-const ZERO_AMOUNT = '0.0'
 export function ApproveTransactionDetails({
   transactionDetails,
   typeInfo,
@@ -41,12 +39,11 @@ export function ApproveTransactionDetails({
 
   const approvalAmount = typeInfo.type === TransactionType.Approve ? typeInfo.approvalAmount : typeInfo.amount
 
-  const amount =
-    approvalAmount === INFINITE_AMOUNT
-      ? t('transaction.amount.unlimited')
-      : approvalAmount && approvalAmount !== ZERO_AMOUNT
-        ? formatNumberOrString({ value: approvalAmount, type: NumberType.TokenNonTx })
-        : ''
+  const amount = formatApprovalAmount({
+    approvalAmount,
+    formatNumberOrString,
+    t,
+  })
 
   const symbol = getSymbolDisplayText(currencyInfo?.currency.symbol)
 

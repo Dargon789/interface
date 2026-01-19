@@ -5,26 +5,31 @@ import type {
   FetchClientContext,
   StandardFetchOptions,
 } from '@universe/api/src/clients/base/types'
-import { getSessionService } from '@universe/api/src/getSessionService'
 
 export function createFetchClient({
   baseUrl,
-  headers: additionalHeaders = {},
-  getSessionServiceBaseUrl,
+  getHeaders,
+  getSessionService,
+  defaultOptions = {},
 }: FetchClientContext): FetchClient {
   return {
     get context() {
-      return () => ({
-        baseUrl,
-        headers: additionalHeaders,
-        getSessionServiceBaseUrl,
-      })
+      return () => {
+        return {
+          baseUrl,
+          getHeaders,
+          getSessionService,
+          defaultOptions,
+        }
+      }
     },
 
     get fetch() {
       return async <T = Response>(path: string, options: StandardFetchOptions): Promise<T> => {
-        const sessionService = getSessionService({ getBaseUrl: getSessionServiceBaseUrl })
+        const sessionService = getSessionService()
         const sessionState = await sessionService.getSessionState()
+
+        const additionalHeaders = getHeaders?.() ?? {}
 
         const headers = new Headers({
           ...additionalHeaders,
@@ -34,11 +39,8 @@ export function createFetchClient({
           headers.set('x-session-id', sessionState.sessionId)
         }
         return fetch(`${baseUrl}${path}`, {
+          ...defaultOptions,
           ...options,
-          // Do NOT remove this, session cookies need to be sent with the request!
-          // Note: this causes CORS errors when running web locally
-          // TODO(app-infra): Re-enable this when we have a solution
-          // credentials: 'include',
           headers,
         }) as Promise<T>
       }

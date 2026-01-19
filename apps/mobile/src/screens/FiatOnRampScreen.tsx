@@ -121,7 +121,7 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
   const [selectingCountry, setSelectingCountry] = useState(false)
   const [decimalPadReady, setDecimalPadReady] = useState(false)
   const decimalPadRef = useRef<DecimalPadInputRef>(null)
-  const selectionRef = useRef<TextInputProps['selection']>()
+  const selectionRef = useRef<TextInputProps['selection']>(undefined)
   const amountUpdatedTimeRef = useRef<number>(0)
   const [value, setValue] = useState('')
   const valueRef = useRef<string>('')
@@ -566,6 +566,7 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
               id={DecimalPadCalculatedSpaceId.FiatOnRamp}
               decimalPadRef={decimalPadRef}
               additionalElementsHeight={DECIMAL_PAD_EXTRA_ELEMENTS_HEIGHT}
+              isDecimalPadReady={decimalPadReady}
             />
 
             <AnimatedFlex

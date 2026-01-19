@@ -14,7 +14,7 @@ import { SwitchNetworkAction } from 'components/Popups/types'
 import CurrencySearchModal from 'components/SearchModal/CurrencySearchModal'
 import { MouseoverTooltip } from 'components/Tooltip'
 import { useAccount } from 'hooks/useAccount'
-import styled, { useTheme } from 'lib/styled-components'
+import { deprecatedStyled } from 'lib/styled-components'
 import ms from 'ms'
 import type { ReactNode } from 'react'
 import { forwardRef, useCallback, useEffect, useState } from 'react'
@@ -24,7 +24,7 @@ import { useCurrencyBalance } from 'state/connection/hooks'
 import { useMultichainContext } from 'state/multichain/useMultichainContext'
 import { ThemedText } from 'theme/components'
 import { flexColumnNoWrap, flexRowNoWrap } from 'theme/styles'
-import { AnimatePresence, Button, Flex, Text } from 'ui/src'
+import { AnimatePresence, Button, Flex, Text, useSporeColors } from 'ui/src'
 import { useIsSupportedChainId } from 'uniswap/src/features/chains/hooks/useSupportedChainId'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
@@ -32,7 +32,7 @@ import Trace from 'uniswap/src/features/telemetry/Trace'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { NumberType } from 'utilities/src/format/types'
 
-export const InputPanel = styled.div<{ hideInput?: boolean }>`
+export const InputPanel = deprecatedStyled.div<{ hideInput?: boolean }>`
   ${flexColumnNoWrap};
   position: relative;
   border-radius: ${({ hideInput }) => (hideInput ? '16px' : '20px')};
@@ -42,7 +42,7 @@ export const InputPanel = styled.div<{ hideInput?: boolean }>`
   will-change: height;
 `
 
-const FixedContainer = styled.div`
+const FixedContainer = deprecatedStyled.div`
   width: 100%;
   height: 100%;
   position: absolute;
@@ -53,7 +53,7 @@ const FixedContainer = styled.div`
   z-index: 2;
 `
 
-const Container = styled.div<{ hideInput: boolean }>`
+const Container = deprecatedStyled.div<{ hideInput: boolean }>`
   min-height: 44px;
   border-radius: ${({ hideInput }) => (hideInput ? '16px' : '20px')};
   width: ${({ hideInput }) => (hideInput ? '100%' : 'initial')};
@@ -67,7 +67,7 @@ interface CurrencySelectProps {
   animateShake?: boolean
 }
 
-const CurrencySelect = styled.button<CurrencySelectProps>`
+const CurrencySelect = deprecatedStyled.button<CurrencySelectProps>`
   align-items: center;
   background-color: ${({ selected, theme }) => (selected ? theme.surface1 : theme.accent1)};
   opacity: ${({ disabled }) => (!disabled ? 1 : 0.4)};
@@ -148,14 +148,14 @@ const CurrencySelect = styled.button<CurrencySelectProps>`
   animation: ${({ animateShake }) => (animateShake ? 'horizontal-shaking 300ms' : 'none')};
 `
 
-const InputRow = styled.div`
+const InputRow = deprecatedStyled.div`
   ${flexRowNoWrap};
   align-items: center;
   justify-content: space-between;
   margin-top: 4px;
 `
 
-const LabelRow = styled.div`
+const LabelRow = deprecatedStyled.div`
   ${flexRowNoWrap};
   align-items: center;
   color: ${({ theme }) => theme.neutral2};
@@ -163,20 +163,20 @@ const LabelRow = styled.div`
   line-height: 1rem;
 `
 
-const FiatRow = styled(LabelRow)`
+const FiatRow = deprecatedStyled(LabelRow)`
   justify-content: flex-end;
   min-height: 24px;
   padding: 8px 0px 0px 0px;
 `
 
-const Aligner = styled.span`
+const Aligner = deprecatedStyled.span`
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
 `
 
-const StyledDropDown = styled(DropDown)<{ selected: boolean }>`
+const StyledDropDown = deprecatedStyled(DropDown)<{ selected: boolean }>`
   margin: 0 0.25rem 0 0.35rem;
   height: 35%;
   margin-left: 8px;
@@ -187,7 +187,7 @@ const StyledDropDown = styled(DropDown)<{ selected: boolean }>`
   }
 `
 
-const StyledTokenName = styled.span<{ active?: boolean }>`
+const StyledTokenName = deprecatedStyled.span<{ active?: boolean }>`
   ${({ active }) => (active ? '  margin: 0 0.25rem 0 0.25rem;' : '  margin: 0 0.25rem 0 0.25rem;')}
   font-size: 16px;
   font-weight: 535;
@@ -254,7 +254,7 @@ const SwapCurrencyInputPanel = forwardRef<HTMLInputElement, SwapCurrencyInputPan
     const { chainId, isUserSelectedToken } = useMultichainContext()
     const chainAllowed = useIsSupportedChainId(chainId)
     const selectedCurrencyBalance = useCurrencyBalance(account.address, currency ?? undefined)
-    const theme = useTheme()
+    const colors = useSporeColors()
     const { formatCurrencyAmount } = useLocalizationContext()
     const { t } = useTranslation()
 
@@ -395,7 +395,7 @@ const SwapCurrencyInputPanel = forwardRef<HTMLInputElement, SwapCurrencyInputPan
                   <RowFixed style={{ height: '16px' }}>
                     <ThemedText.DeprecatedBody
                       data-testid="balance-text"
-                      color={theme.neutral2}
+                      color={colors.neutral2.val}
                       fontWeight={485}
                       fontSize={14}
                       style={{ display: 'inline' }}

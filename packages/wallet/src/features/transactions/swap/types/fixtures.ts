@@ -44,7 +44,6 @@ export const mockTransactionService: jest.Mocked<TransactionService> = {
 export const mockTransactionSigner: jest.Mocked<TransactionSigner> = {
   signTypedData: jest.fn(),
   signTransaction: jest.fn(),
-  signAndSendTransaction: jest.fn(),
   prepareTransaction: jest.fn(),
   sendTransaction: jest.fn(),
   sendTransactionSync: jest.fn(),
@@ -273,4 +272,6 @@ export const prepareExecuteSwapSagaParams = createFixture<SwapParams>()(() => ({
   onFailure: jest.fn(),
   onPending: jest.fn(),
   preSignedTransaction: preparePreSignedSwapTransaction(),
+  setCurrentStep: jest.fn(),
+  setSteps: jest.fn(),
 }))

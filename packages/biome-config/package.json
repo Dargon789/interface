@@ -9,7 +9,11 @@
     ".": "./compiled/base.json"
   },
   "scripts": {
-    "prepare": "bun ./scripts/generate.js && biome check --write"
+    "prepare": "nx prepare biome-config",
+    "test": "nx test biome-config"
+  },
+  "nx": {
+    "includedScripts": []
   },
   "keywords": ["biome", "config", "linting", "formatting"],
   "license": "MIT"

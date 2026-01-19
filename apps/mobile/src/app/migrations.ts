@@ -18,7 +18,9 @@ import {
   TransactionType,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
 import {
+  addActivityVisibility,
   addDismissedBridgedAndCompatibleWarnings,
+  migrateDismissedTokenWarnings,
   migrateSearchHistory,
   removeThaiBahtFromFiatCurrency,
   unchecksumDismissedTokenWarningKeys,
@@ -649,7 +651,8 @@ export const migrations = {
         const newNftKey = nftKey && tokenId && getNFTAssetKey(nftKey, tokenId)
 
         const accountNftsData = nftsData[accountAddress]
-        if (newNftKey && accountNftsData) {
+
+        if (newNftKey) {
           accountNftsData[newNftKey] = { isHidden: true }
         }
       }
@@ -1084,6 +1087,8 @@ export const migrations = {
 
   93: migrateSearchHistory,
   94: addDismissedBridgedAndCompatibleWarnings,
+  95: addActivityVisibility,
+  96: migrateDismissedTokenWarnings,
 }
 
-export const MOBILE_STATE_VERSION = 94
+export const MOBILE_STATE_VERSION = 96

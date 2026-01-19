@@ -1,17 +1,16 @@
-import { TableText } from 'components/Table/styled'
 import { memo } from 'react'
-import { Flex, Progress } from 'ui/src'
+import { Flex, Progress, Text } from 'ui/src'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 
-const Allocation = memo(function Allocation({ value }: { value: number }): JSX.Element {
+export const Allocation = memo(function Allocation({ value }: { value: number }): JSX.Element {
   const { formatPercent } = useLocalizationContext()
 
   return (
     <Flex row alignItems="center" gap="$spacing8">
-      <TableText>{formatPercent(value, 1)}</TableText>
+      <Text variant="body3">{formatPercent(value, 1)}</Text>
       <Flex width={52} height="$spacing8" borderRadius="$roundedFull" backgroundColor="$surface3">
         <Progress
-          key={value}
+          key={`${value}`}
           height="$spacing4"
           margin="$spacing2"
           backgroundColor="$transparent"
@@ -24,5 +23,3 @@ const Allocation = memo(function Allocation({ value }: { value: number }): JSX.E
   )
 })
 Allocation.displayName = 'Allocation'
-
-export default Allocation

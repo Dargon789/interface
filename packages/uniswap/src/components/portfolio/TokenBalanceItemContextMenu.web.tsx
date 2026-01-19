@@ -1,21 +1,24 @@
-import { PropsWithChildren, useCallback, useMemo } from 'react'
+import { memo, PropsWithChildren, useCallback, useMemo } from 'react'
 import { TouchableArea } from 'ui/src'
 import { ContextMenu } from 'uniswap/src/components/menus/ContextMenuV2'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
 import { TokenBalanceItemContextMenuProps } from 'uniswap/src/components/portfolio/TokenBalanceItemContextMenu'
 import { TokenList } from 'uniswap/src/features/dataApi/types'
 import { useTokenContextMenuOptions } from 'uniswap/src/features/portfolio/balances/hooks/useTokenContextMenuOptions'
+import { ElementName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import { isExtensionApp } from 'utilities/src/platform'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 
-export function TokenBalanceItemContextMenu({
+export const TokenBalanceItemContextMenu = memo(function TokenBalanceItemContextMenu({
   children,
   portfolioBalance,
   excludedActions,
   openContractAddressExplainerModal,
+  openReportTokenModal,
   copyAddressToClipboard,
   triggerMode,
   onPressToken: onPressToken,
+  disableNotifications,
 }: PropsWithChildren<TokenBalanceItemContextMenuProps>): JSX.Element {
   const { value: isOpen, setTrue: openMenu, setFalse: closeMenu } = useBooleanState(false)
   const isPrimaryTriggerMode = isExtensionApp || triggerMode === ContextMenuTriggerMode.Primary
@@ -27,8 +30,10 @@ export function TokenBalanceItemContextMenu({
     tokenSymbolForNotification: portfolioBalance.currencyInfo.currency.symbol,
     portfolioBalance,
     openContractAddressExplainerModal,
+    openReportTokenModal,
     copyAddressToClipboard,
     closeMenu,
+    disableNotifications,
   })
 
   const ignoreDefault = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -47,12 +52,15 @@ export function TokenBalanceItemContextMenu({
 
   return (
     <ContextMenu
+      trackItemClicks
       menuItems={menuActions}
       triggerMode={isPrimaryTriggerMode ? ContextMenuTriggerMode.Primary : ContextMenuTriggerMode.Secondary}
       isOpen={isOpen}
       closeMenu={closeMenu}
+      elementName={ElementName.PortfolioTokenContextMenu}
+      sectionName={SectionName.PortfolioTokensTab}
     >
       {actionableItem}
     </ContextMenu>
   )
-}
+})

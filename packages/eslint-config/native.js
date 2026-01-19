@@ -37,7 +37,6 @@ module.exports = {
     // Complexity Rules
     'max-depth': ['error', 4], // prevent deeply nested code paths which are hard to read
     'max-nested-callbacks': ['error', 3],
-    'max-lines': ['error', 500], // cap file length
     complexity: ['error', 20], // restrict cyclomatic complexity (number of linearly independent paths)
 
     // disable prettier linting, as we format with biome:
@@ -201,6 +200,8 @@ module.exports = {
         '@jambit/typed-redux-saga/use-typed-effects': 'error',
         '@jambit/typed-redux-saga/delegate-effects': 'error',
         'no-console': 'error',
+        // React Native specific: Percentage transforms crash on Android
+        'local-rules/no-transform-percentage-strings': 'error',
         'react/forbid-elements': [
           'error',
           {

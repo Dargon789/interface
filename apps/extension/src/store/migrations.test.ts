@@ -36,7 +36,10 @@ import {
   v24Schema,
   v25Schema,
   v26Schema,
+  v27Schema,
+  v29Schema,
 } from 'src/store/schema'
+import { USDC } from 'uniswap/src/constants/tokens'
 import { initialUniswapBehaviorHistoryState } from 'uniswap/src/features/behaviorHistory/slice'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { initialFavoritesState } from 'uniswap/src/features/favorites/slice'
@@ -44,11 +47,16 @@ import { FiatCurrency } from 'uniswap/src/features/fiatCurrency/constants'
 import { initialNotificationsState } from 'uniswap/src/features/notifications/slice/slice'
 import { initialSearchHistoryState } from 'uniswap/src/features/search/searchHistorySlice'
 import { initialUserSettingsState } from 'uniswap/src/features/settings/slice'
-import { initialTokensState } from 'uniswap/src/features/tokens/slice/slice'
+import { initialTokensState } from 'uniswap/src/features/tokens/warnings/slice/slice'
 import { initialTransactionsState } from 'uniswap/src/features/transactions/slice'
 import { TransactionStatus, TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { initialVisibilityState } from 'uniswap/src/features/visibility/slice'
-import { testMigrateSearchHistory, testRemoveTHBFromCurrency } from 'uniswap/src/state/uniswapMigrationTests'
+import {
+  testAddActivityVisibility,
+  testMigrateDismissedTokenWarnings,
+  testMigrateSearchHistory,
+  testRemoveTHBFromCurrency,
+} from 'uniswap/src/state/uniswapMigrationTests'
 import { getAllKeysOfNestedObject } from 'utilities/src/primitives/objects'
 import { initialAppearanceSettingsState } from 'wallet/src/features/appearance/slice'
 import { initialBatchedTransactionsState } from 'wallet/src/features/batchedTransactions/slice'
@@ -346,5 +354,25 @@ describe('Redux state migrations', () => {
 
   it('migrates from v26 to v27', () => {
     testMigrateSearchHistory(migrations[27], v26Schema)
+  })
+
+  it('migrates from v27 to v29', () => {
+    testAddActivityVisibility(migrations[29], v27Schema)
+  })
+
+  it('migrates from v29 to v30', () => {
+    testMigrateDismissedTokenWarnings(migrations[30], {
+      ...v29Schema,
+      tokens: {
+        dismissedTokenWarnings: {
+          [UniverseChainId.Mainnet]: {
+            [USDC.address]: {
+              chainId: UniverseChainId.Mainnet,
+              address: USDC.address,
+            },
+          },
+        },
+      },
+    })
   })
 })

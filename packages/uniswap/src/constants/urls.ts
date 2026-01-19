@@ -27,6 +27,7 @@ export const uniswapUrls = {
     batchedSwapsReview: createHelpArticleUrl('36394497329933'),
     cexTransferKorea: createHelpArticleUrl('29425131525901-How-to-transfer-crypto-to-a-Uniswap-Wallet-in-Korea'),
     contractAddressExplainer: createHelpArticleUrl('26757826138637-What-is-a-token-contract-address'),
+    dappProtectionInfo: createHelpArticleUrl('37781087046029'),
     extensionBiometricsEnrollment: createHelpArticleUrl('38225957094541'),
     extensionHelp: createHelpArticleUrl('24458735271181'),
     extensionDappTroubleshooting: createHelpArticleUrl(
@@ -50,7 +51,7 @@ export const uniswapUrls = {
     mismatchedImports: createHelpArticleUrl('36393527081997'),
     mobileWalletHelp: createHelpArticleUrl('20317941356429'),
     moonpayRegionalAvailability: createHelpArticleUrl('11306664890381-Why-isn-t-MoonPay-available-in-my-region-'),
-    multichainDelegation: createHelpArticleUrl('36392482755341'),
+    multichainDelegation: createHelpArticleUrl('36391987158797'),
     networkFeeInfo: createHelpArticleUrl('8370337377805-What-is-a-network-fee-'),
     poolOutOfSync: createHelpArticleUrl('25845512413069'),
     positionsLearnMore: createHelpArticleUrl('8829880740109'),
@@ -126,6 +127,9 @@ export const uniswapUrls = {
     config.scantasticApiUrlOverride || `${getCloudflareApiBaseUrl(TrafficFlows.Scantastic)}/v2/scantastic`,
   forApiUrl: config.forApiUrlOverride || `${getCloudflareApiBaseUrl(TrafficFlows.FOR)}/v2/FOR.v1.FORService`,
   tradingApiUrl: config.tradingApiUrlOverride || getCloudflareApiBaseUrl(TrafficFlows.TradingApi),
+  liquidityServiceUrl:
+    config.liquidityServiceUrlOverride ||
+    'https://liquidity.backend-prod.api.uniswap.org/uniswap.liquidity.v1.LiquidityService',
 
   // Merkl Docs for LP Incentives
   merklDocsUrl: 'https://docs.merkl.xyz/earn-with-merkl/faq-earn#how-are-aprs-calculated',
@@ -153,6 +157,7 @@ export const uniswapUrls = {
     poolInfo: `${tradingApiVersionPrefix}/lp/pool_info`,
     order: `${tradingApiVersionPrefix}/order`,
     orders: `${tradingApiVersionPrefix}/orders`,
+    plan: `${tradingApiVersionPrefix}/plan`,
     priceDiscrepancy: `${tradingApiVersionPrefix}/lp/price_discrepancy`,
     quote: `${tradingApiVersionPrefix}/quote`,
     swap: `${tradingApiVersionPrefix}/swap`,
@@ -160,7 +165,6 @@ export const uniswapUrls = {
     swap7702: `${tradingApiVersionPrefix}/swap_7702`,
     swappableTokens: `${tradingApiVersionPrefix}/swappable_tokens`,
     swaps: `${tradingApiVersionPrefix}/swaps`,
-    trade: `${tradingApiVersionPrefix}/trade`,
     wallet: {
       checkDelegation: `${tradingApiVersionPrefix}/wallet/check_delegation`,
       encode7702: `${tradingApiVersionPrefix}/wallet/encode_7702`,

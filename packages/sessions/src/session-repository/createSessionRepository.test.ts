@@ -1,9 +1,11 @@
 import type { PromiseClient } from '@connectrpc/connect'
-import type { SessionService } from '@uniswap/client-platform-service/dist/uniswap/sessionservice/v1/sessionService_connect'
+import type { SessionService } from '@uniswap/client-platform-service/dist/uniswap/platformservice/v1/sessionService_connect'
 import {
   ChallengeResponse,
+  GetChallengeTypesResponse,
   InitSessionResponse,
-} from '@uniswap/client-platform-service/dist/uniswap/sessionservice/v1/sessionService_pb'
+  SignoutResponse,
+} from '@uniswap/client-platform-service/dist/uniswap/platformservice/v1/sessionService_pb'
 import { createSessionRepository } from '@universe/sessions/src/session-repository/createSessionRepository'
 import { describe, expect, it, type MockedFunction, vi } from 'vitest'
 
@@ -19,16 +21,18 @@ describe('createSessionRepository', () => {
       extra: {},
     }),
     challenge: vi.fn().mockResolvedValue({
-      // Proto returns challenge as JSON string
-      challenge: JSON.stringify({
-        challengeId: 'challenge-123',
-        botDetectionType: 1,
-        extra: { sitekey: 'test-key' },
-      }),
+      challengeId: 'challenge-123',
+      challengeType: 1,
+      extra: { sitekey: 'test-key' },
     }),
-    upgradeSession: vi.fn().mockResolvedValue({}),
+    verify: vi.fn().mockResolvedValue({
+      retry: false,
+    }),
+    updateSession: vi.fn().mockResolvedValue({}),
     deleteSession: vi.fn().mockResolvedValue({}),
-    introspect: vi.fn().mockResolvedValue({}), // Required by proto but not used
+    introspectSession: vi.fn().mockResolvedValue({}), // Required by proto but not used
+    getChallengeTypes: vi.fn().mockResolvedValue(new GetChallengeTypesResponse({ challengeTypes: [] })),
+    signout: vi.fn().mockResolvedValue(new SignoutResponse({})),
   })
 
   describe('session initialization behaviors', () => {
@@ -83,14 +87,14 @@ describe('createSessionRepository', () => {
 
       expect(result).toEqual({
         challengeId: 'challenge-123',
-        botDetectionType: 1,
+        challengeType: 1,
         extra: { sitekey: 'test-key' },
       })
     })
 
     it('handles empty challenge response gracefully', async () => {
       const mockClient = createMockClient()
-      mockClient.challenge.mockResolvedValue(new ChallengeResponse({ challenge: undefined }))
+      mockClient.challenge.mockResolvedValue(new ChallengeResponse({ challengeId: undefined }))
 
       const repository = createSessionRepository({ client: mockClient })
       const result = await repository.challenge({})
@@ -98,7 +102,7 @@ describe('createSessionRepository', () => {
       // Should return defaults when no challenge data
       expect(result).toEqual({
         challengeId: '',
-        botDetectionType: 0,
+        challengeType: 0,
         extra: {},
       })
     })
@@ -123,7 +127,13 @@ describe('createSessionRepository', () => {
         challengeId: 'challenge-123',
       })
 
-      // Always returns retry: false for now (proto doesn't support retry yet)
+      // Verify the client was called correctly
+      expect(mockClient.verify).toHaveBeenCalledWith({
+        solution: 'solution-token',
+        challengeId: 'challenge-123',
+      })
+
+      // Should return retry status
       expect(result).toEqual({ retry: false })
     })
 
@@ -143,7 +153,7 @@ describe('createSessionRepository', () => {
 
     it('provides meaningful error when upgrade fails', async () => {
       const mockClient = createMockClient()
-      mockClient.upgradeSession.mockRejectedValue(new Error('Invalid solution'))
+      mockClient.verify.mockRejectedValue(new Error('Invalid solution'))
 
       const repository = createSessionRepository({ client: mockClient })
 

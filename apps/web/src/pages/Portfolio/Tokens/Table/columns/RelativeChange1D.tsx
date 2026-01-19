@@ -1,15 +1,10 @@
-import { TableText } from 'components/Table/styled'
-import { useTableSize } from 'components/Table/TableSizeProvider'
+import { EmptyTableCell } from 'pages/Portfolio/EmptyTableCell'
 import { memo } from 'react'
-import { EM_DASH } from 'ui/src'
-import { breakpoints } from 'ui/src/theme'
 import { RelativeChange } from 'uniswap/src/components/RelativeChange/RelativeChange'
 
-const RelativeChange1D = memo(function RelativeChange1D({ value }: { value: number | undefined }): JSX.Element {
-  const { width: tableWidth } = useTableSize()
-
+export const RelativeChange1D = memo(function RelativeChange1D({ value }: { value: number | undefined }): JSX.Element {
   if (!value && value !== 0) {
-    return <TableText>{EM_DASH}</TableText>
+    return <EmptyTableCell />
   }
 
   return (
@@ -18,11 +13,10 @@ const RelativeChange1D = memo(function RelativeChange1D({ value }: { value: numb
       arrowSize="$icon.16"
       negativeChangeColor="$statusCritical"
       positiveChangeColor="$statusSuccess"
-      variant={tableWidth <= breakpoints.lg ? 'body3' : 'body2'}
+      color="$neutral1"
+      variant="body3"
       alignRight
     />
   )
 })
 RelativeChange1D.displayName = 'RelativeChange1D'
-
-export default RelativeChange1D

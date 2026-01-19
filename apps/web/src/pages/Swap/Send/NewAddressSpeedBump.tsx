@@ -1,5 +1,6 @@
 import { UserIcon } from 'components/Icons/UserIcon'
 import { SendModalProps } from 'pages/Swap/Send/SendReviewModal'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecipientData } from 'state/send/hooks'
 import { useSendContext } from 'state/send/SendContext'
@@ -45,37 +46,40 @@ export const NewAddressSpeedBumpModal = ({ isOpen, onDismiss, onConfirm }: SendM
     derivedSendInfo: { recipientData },
   } = useSendContext()
 
+  const primaryButton = useMemo(
+    () => ({
+      text: t('common.button.continue'),
+      onPress: onConfirm,
+      variant: 'default' as const,
+      emphasis: 'primary' as const,
+    }),
+    [t, onConfirm],
+  )
+
+  const secondaryButton = useMemo(
+    () => ({
+      text: t('common.button.close'),
+      onPress: onDismiss,
+      variant: 'default' as const,
+      emphasis: 'secondary' as const,
+    }),
+    [t, onDismiss],
+  )
+
   return (
     <Dialog
       isOpen={isOpen}
       onClose={onDismiss}
       icon={<UserIcon fill={colors.neutral2.val} width={28} height={28} />}
-      hasIconBackground
+      iconBackgroundColor="$surface3"
       title={t('speedBump.newAddress.warning.title')}
       subtext={t('speedBump.newAddress.warning.description')}
       modalName={ModalName.NewAddressSpeedBump}
-      primaryButtonText={t('common.button.close')}
-      primaryButtonOnClick={onDismiss}
-      primaryButtonVariant="default"
-      primaryButtonEmphasis="secondary"
-      secondaryButtonText={t('common.button.continue')}
-      secondaryButtonOnClick={onConfirm}
-      secondaryButtonVariant="branded"
+      primaryButton={primaryButton}
+      secondaryButton={secondaryButton}
       displayHelpCTA
-      buttonContainerProps={{
-        flexDirection: 'row',
-      }}
     >
-      <Flex
-        centered
-        borderWidth="$spacing1"
-        borderColor="$surface3"
-        borderRadius="$rounded20"
-        py="$padding20"
-        width="100%"
-      >
-        <RecipientDisplay recipientData={recipientData} />
-      </Flex>
+      <RecipientDisplay recipientData={recipientData} />
     </Dialog>
   )
 }

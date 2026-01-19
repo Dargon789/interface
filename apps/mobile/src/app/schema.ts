@@ -721,8 +721,18 @@ delete v92SchemaIntermediate.cloudBackup
 
 export const v92Schema = v92SchemaIntermediate
 
-const v93Schema = v92Schema
+export const v93Schema = v92Schema
+
+export const v95Schema = {
+  ...v93Schema,
+  visibility: {
+    ...v93Schema.visibility,
+    activity: {},
+  },
+}
+
+const v96Schema = v95Schema
 
 // TODO: [MOB-201] use function with typed output when API reducers are removed from rootReducer
 // export const getSchema = (): RootState => v0Schema
-export const getSchema = (): typeof v93Schema => v93Schema
+export const getSchema = (): typeof v96Schema => v96Schema

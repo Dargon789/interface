@@ -9,7 +9,7 @@ import { LoadingBubble } from 'components/Tokens/loading'
 import { MouseoverTooltip, TooltipSize } from 'components/Tooltip'
 import { NATIVE_CHAIN_ID } from 'constants/tokens'
 import useCopyClipboard from 'hooks/useCopyClipboard'
-import styled, { useTheme } from 'lib/styled-components'
+import { deprecatedStyled } from 'lib/styled-components'
 import { useCallback, useState } from 'react'
 import { ChevronRight, Copy } from 'react-feather'
 import { Trans, useTranslation } from 'react-i18next'
@@ -17,7 +17,7 @@ import { useNavigate } from 'react-router'
 import { ThemedText } from 'theme/components'
 import { ExternalLink } from 'theme/components/Links'
 import { ClickableStyle, EllipsisStyle } from 'theme/components/styles'
-import { Flex } from 'ui/src'
+import { Flex, useSporeColors } from 'ui/src'
 import { breakpoints } from 'ui/src/theme'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -27,7 +27,7 @@ import { ExplorerDataType, getExplorerLink } from 'uniswap/src/utils/linking'
 import { shortenAddress } from 'utilities/src/addresses'
 import { getChainUrlParam } from 'utils/chainParams'
 
-const TokenName = styled(ThemedText.BodyPrimary)`
+const TokenName = deprecatedStyled(ThemedText.BodyPrimary)`
   display: none;
 
   @media (max-width: ${breakpoints.xl}px) and (min-width: ${breakpoints.xs}px) {
@@ -36,14 +36,14 @@ const TokenName = styled(ThemedText.BodyPrimary)`
   ${EllipsisStyle}
 `
 
-const TokenTextWrapper = styled(Row)<{ isClickable?: boolean }>`
+const TokenTextWrapper = deprecatedStyled(Row)<{ isClickable?: boolean }>`
   gap: 8px;
   margin-right: 12px;
   ${EllipsisStyle}
   ${({ isClickable }) => isClickable && ClickableStyle}
 `
 
-const SymbolText = styled(ThemedText.BodyPrimary)`
+const SymbolText = deprecatedStyled(ThemedText.BodyPrimary)`
   flex-shrink: 0;
 
   @media (max-width: ${breakpoints.xl}px) and (min-width: ${breakpoints.xs}px) {
@@ -51,7 +51,7 @@ const SymbolText = styled(ThemedText.BodyPrimary)`
   }
 `
 
-const CopyAddress = styled(Row)`
+const CopyAddress = deprecatedStyled(Row)`
   gap: 8px;
   padding: 8px 12px;
   border-radius: 20px;
@@ -63,14 +63,14 @@ const CopyAddress = styled(Row)`
   flex-shrink: 0;
   ${ClickableStyle}
 `
-const StyledCopyIcon = styled(Copy)`
+const StyledCopyIcon = deprecatedStyled(Copy)`
   width: 16px;
   height: 16px;
   color: ${({ theme }) => theme.neutral2};
   flex-shrink: 0;
 `
 
-const ExplorerWrapper = styled.div`
+const ExplorerWrapper = deprecatedStyled.div`
   padding: 8px;
   border-radius: 20px;
   background-color: ${({ theme }) => theme.surface3};
@@ -78,7 +78,7 @@ const ExplorerWrapper = styled.div`
   ${ClickableStyle}
 `
 
-const ButtonsRow = styled(Row)`
+const ButtonsRow = deprecatedStyled(Row)`
   gap: 8px;
   flex-shrink: 0;
   width: max-content;
@@ -92,7 +92,7 @@ interface PoolDetailsLinkProps {
 }
 
 export function PoolDetailsLink({ address, chainId, tokens, loading }: PoolDetailsLinkProps) {
-  const theme = useTheme()
+  const colors = useSporeColors()
   const { t } = useTranslation()
   const currency = tokens[0] && gqlToCurrency(tokens[0])
   const [isCopied, setCopied] = useCopyClipboard()
@@ -167,7 +167,7 @@ export function PoolDetailsLink({ address, chainId, tokens, loading }: PoolDetai
             `${tokens[0]?.symbol} / ${tokens[1]?.symbol}`
           ) : (
             <Row gap="4px">
-              {tokens[0]?.symbol} <ChevronRight size={16} color={theme.neutral2} />
+              {tokens[0]?.symbol} <ChevronRight size={16} color={colors.neutral2.val} />
             </Row>
           )}
         </SymbolText>
@@ -195,9 +195,9 @@ export function PoolDetailsLink({ address, chainId, tokens, loading }: PoolDetai
           <ExternalLink href={explorerUrl} data-testid={`explorer-url-${explorerUrl}`}>
             <ExplorerWrapper>
               {chainId === UniverseChainId.Mainnet ? (
-                <EtherscanLogo width="16px" height="16px" fill={theme.neutral1} />
+                <EtherscanLogo width="16px" height="16px" fill={colors.neutral1.val} />
               ) : (
-                <ExplorerIcon width="16px" height="16px" fill={theme.neutral1} />
+                <ExplorerIcon width="16px" height="16px" fill={colors.neutral1.val} />
               )}
             </ExplorerWrapper>
           </ExternalLink>

@@ -12,6 +12,7 @@ import {
 } from 'wallet/src/features/transactions/executeTransaction/eip7702Utils'
 import type { Provider } from 'wallet/src/features/transactions/executeTransaction/services/providerService'
 import type { TransactionSigner } from 'wallet/src/features/transactions/executeTransaction/services/TransactionSignerService/transactionSignerService'
+import { cleanTransactionGasFields } from 'wallet/src/features/transactions/utils/cleanTransactionGasFields'
 import { NativeSigner } from 'wallet/src/features/wallet/signing/NativeSigner'
 import type { SignerManager } from 'wallet/src/features/wallet/signing/SignerManager'
 
@@ -30,7 +31,9 @@ export function createTransactionSignerService(ctx: {
   // public methods
   const prepareTransaction: TransactionSigner['prepareTransaction'] = async (input) => {
     const signer = await getSigner()
-    const populatedRequest = await signer.populateTransaction(input.request)
+    // Clean up malformed transactions from dapps before populating
+    const cleanedRequest = cleanTransactionGasFields(input.request)
+    const populatedRequest = await signer.populateTransaction(cleanedRequest)
     return populatedRequest
   }
 
@@ -68,20 +71,12 @@ export function createTransactionSignerService(ctx: {
     return jsonRpcProvider.formatter.receipt(rawReceipt)
   }
 
-  const signAndSendTransaction = getSignAndSendTransaction({
-    prepareTransaction,
-    signTransaction,
-    signTypedData,
-    sendTransaction,
-  })
-
   return {
     prepareTransaction,
     signTransaction,
     signTypedData,
     sendTransaction,
     sendTransactionSync,
-    signAndSendTransaction,
   }
 }
 
@@ -188,27 +183,5 @@ export function createBundledDelegationTransactionSignerService(ctx: {
     signTypedData,
     sendTransaction,
     sendTransactionSync,
-    signAndSendTransaction: getSignAndSendTransaction({
-      prepareTransaction: baseTransactionSignerService.prepareTransaction,
-      signTransaction,
-      signTypedData,
-      sendTransaction,
-    }),
-  }
-}
-
-function getSignAndSendTransaction(ctx: {
-  prepareTransaction: TransactionSigner['prepareTransaction']
-  signTransaction: TransactionSigner['signTransaction']
-  signTypedData: TransactionSigner['signTypedData']
-  sendTransaction: TransactionSigner['sendTransaction']
-}): TransactionSigner['signAndSendTransaction'] {
-  return async (input) => {
-    const populatedRequest = await ctx.prepareTransaction(input)
-    const timestampBeforeSign = Date.now()
-    const signedTx = await ctx.signTransaction(populatedRequest)
-    const timestampBeforeSend = Date.now()
-    const transactionHash = await ctx.sendTransaction({ signedTx })
-    return { transactionHash, populatedRequest, timestampBeforeSign, timestampBeforeSend }
   }
 }

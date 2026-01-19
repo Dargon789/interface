@@ -46,20 +46,26 @@ import { isExtensionApp, isWebPlatform } from 'utilities/src/platform'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 
 type TransactionDetailsModalProps = {
+  isExternalProfile?: boolean
+  transactionDetails: TransactionDetails
   authTrigger?: AuthTrigger
   onClose: () => void
-  transactionDetails: TransactionDetails
+  onReportSuccess?: () => void
+  onUnhideTransaction?: () => void
 }
 
 export function TransactionDetailsHeader({
   transactionDetails,
   transactionActions,
+  hideTransactionActions = false,
 }: {
   transactionDetails: TransactionDetails
   transactionActions: MenuOptionItem[]
+  hideTransactionActions?: boolean
 }): JSX.Element {
   const { t } = useTranslation()
   const { value: isContextMenuOpen, setTrue: openContextMenu, setFalse: closeContextMenu } = useBooleanState(false)
+  const showTransactionActions = transactionActions.length > 0 && !hideTransactionActions
 
   const dateString = useFormattedDateTime(dayjs(transactionDetails.addedTime), FORMAT_DATE_TIME_MEDIUM)
   const title = getTransactionSummaryTitle(transactionDetails, t)
@@ -81,7 +87,7 @@ export function TransactionDetailsHeader({
           </Text>
         </Flex>
       </Flex>
-      {transactionActions.length > 0 && (
+      {showTransactionActions && (
         <ContextMenu
           menuItems={transactionActions}
           triggerMode={ContextMenuTriggerMode.Primary}
@@ -169,10 +175,14 @@ const isNFTActivity = (typeInfo: TransactionTypeInfo): boolean => {
   return isNft
 }
 
+// eslint-disable-next-line complexity
 export function TransactionDetailsModal({
+  isExternalProfile = false,
+  transactionDetails,
   authTrigger,
   onClose,
-  transactionDetails,
+  onReportSuccess,
+  onUnhideTransaction,
 }: TransactionDetailsModalProps): JSX.Element {
   const { t } = useTranslation()
   const { typeInfo, status, addedTime } = transactionDetails
@@ -188,9 +198,13 @@ export function TransactionDetailsModal({
   const readonly = evmAccount?.accountType === AccountType.Readonly
   const isCancelable = useIsCancelable(transactionDetails) && !readonly
 
+  const hideTransactionActions = readonly || isExternalProfile
   const transactionActions = useTransactionActions({
-    authTrigger,
     transaction: transactionDetails,
+    authTrigger,
+    onClose,
+    onReportSuccess,
+    onUnhideTransaction,
   })
 
   const { openCancelModal, renderModals, menuItems } = transactionActions
@@ -232,7 +246,11 @@ export function TransactionDetailsModal({
         onClose={onClose}
       >
         <Flex gap="$spacing12" pb={isWebPlatform ? '$none' : '$spacing12'} px={isWebPlatform ? '$none' : '$spacing24'}>
-          <TransactionDetailsHeader transactionActions={menuItems} transactionDetails={transactionDetails} />
+          <TransactionDetailsHeader
+            hideTransactionActions={hideTransactionActions}
+            transactionActions={menuItems}
+            transactionDetails={transactionDetails}
+          />
           {!hideTopSeparator && <Separator />}
           {detailsContent}
           {!hideBottomSeparator && detailsContent !== null && hasMoreInfoRows && (

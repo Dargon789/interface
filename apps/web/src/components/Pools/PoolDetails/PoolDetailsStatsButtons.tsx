@@ -10,7 +10,7 @@ import { LoadingBubble } from 'components/Tokens/loading'
 import { NATIVE_CHAIN_ID } from 'constants/tokens'
 import { useAccount } from 'hooks/useAccount'
 import { ScrollDirection, useScroll } from 'hooks/useScroll'
-import styled from 'lib/styled-components'
+import { deprecatedStyled } from 'lib/styled-components'
 import { Swap } from 'pages/Swap'
 import { ReactNode, useCallback, useReducer, useState } from 'react'
 import { Plus, X } from 'react-feather'
@@ -23,15 +23,15 @@ import { breakpoints } from 'ui/src/theme'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
-import { TokenWarningCard } from 'uniswap/src/features/tokens/TokenWarningCard'
-import TokenWarningModal from 'uniswap/src/features/tokens/TokenWarningModal'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
+import { TokenWarningCard } from 'uniswap/src/features/tokens/warnings/TokenWarningCard'
+import TokenWarningModal from 'uniswap/src/features/tokens/warnings/TokenWarningModal'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
 import { currencyId } from 'uniswap/src/utils/currencyId'
 import { getChainUrlParam } from 'utils/chainParams'
 
-const PoolDetailsStatsButtonsRow = styled(Row)`
+const PoolDetailsStatsButtonsRow = deprecatedStyled(Row)`
   gap: 12px;
   z-index: 1;
 
@@ -48,7 +48,7 @@ const PoolDetailsStatsButtonsRow = styled(Row)`
   }
 `
 
-const SwapModalWrapper = styled(Column)<{ open?: boolean }>`
+const SwapModalWrapper = deprecatedStyled(Column)<{ open?: boolean }>`
   z-index: 0;
   gap: 24px;
   visibility: ${({ open }) => (open ? 'visible' : 'hidden')};
@@ -77,6 +77,7 @@ interface PoolDetailsStatsButtonsProps {
   token0?: GraphQLApi.Token
   token1?: GraphQLApi.Token
   feeTier?: number
+  tickSpacing?: number
   hookAddress?: string
   isDynamic?: boolean
   protocolVersion?: GraphQLApi.ProtocolVersion
@@ -146,6 +147,7 @@ export function PoolDetailsStatsButtons({
   token0,
   token1,
   feeTier,
+  tickSpacing,
   hookAddress,
   isDynamic,
   protocolVersion,
@@ -180,14 +182,9 @@ export function PoolDetailsStatsButtons({
         queryParams.set('currencyA', currency0Address)
         queryParams.set('currencyB', currency1Address)
         queryParams.set('chain', chainUrlParam)
-        if (feeTier) {
-          queryParams.set('feeTier', feeTier.toString())
-        }
+        queryParams.set('fee', JSON.stringify({ feeAmount: feeTier, tickSpacing, isDynamic }))
         if (hookAddress) {
           queryParams.set('hook', hookAddress)
-        }
-        if (isDynamic) {
-          queryParams.set('isDynamic', 'true')
         }
         const url = `/positions/create/${protocolVersion?.toLowerCase()}?${queryParams.toString()}`
         navigate(url, {

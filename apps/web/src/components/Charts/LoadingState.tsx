@@ -1,17 +1,17 @@
 import { ChartType } from 'components/Charts/utils'
 import Column from 'components/deprecated/Column'
 import Row from 'components/deprecated/Row'
-import { MissingDataIcon } from 'components/Table/icons'
-import styled, { useTheme } from 'lib/styled-components'
+import { ChartBarCrossedWithBackground } from 'components/Table/ErrorBox'
+import { deprecatedStyled } from 'lib/styled-components'
 import { lighten } from 'polished'
 import { PropsWithChildren, ReactNode } from 'react'
 import { Trans } from 'react-i18next'
 import { ThemedText } from 'theme/components'
 import { textFadeIn } from 'theme/styles'
-import { Flex } from 'ui/src'
+import { useSporeColors } from 'ui/src'
 import { opacify } from 'ui/src/theme'
 
-const ChartErrorContainer = styled(Row)`
+const ChartErrorContainer = deprecatedStyled(Row)`
   position: absolute;
   width: max-content;
   align-items: flex-start;
@@ -27,16 +27,14 @@ const ChartErrorContainer = styled(Row)`
   ${textFadeIn};
   z-index: 1;
 `
-const ErrorTextColumn = styled(Column)`
+const ErrorTextColumn = deprecatedStyled(Column)`
   white-space: normal;
 `
 
 export function ChartErrorView({ children }: PropsWithChildren) {
   return (
     <ChartErrorContainer data-cy="chart-error-view">
-      <Flex>
-        <MissingDataIcon />
-      </Flex>
+      <ChartBarCrossedWithBackground />
       <ErrorTextColumn gap="xs">
         <ThemedText.SubHeader color="neutral1">
           <Trans i18nKey="chart.missingData" />
@@ -95,7 +93,7 @@ function ChartLoadingStateMask({
   id: string
   chartTransform?: string
 }) {
-  const theme = useTheme()
+  const colors = useSporeColors()
 
   switch (type) {
     case ChartType.TVL:
@@ -104,13 +102,13 @@ function ChartLoadingStateMask({
         <>
           <defs>
             <linearGradient id={`${id}-gradient`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0" stopColor={theme.neutral3}>
+              <stop offset="0" stopColor={colors.neutral3.val}>
                 <animate attributeName="offset" values="-1;3" dur="1.3s" repeatCount="indefinite" />
               </stop>
-              <stop offset="0.5" stopColor={lighten(0.24, theme.neutral3)}>
+              <stop offset="0.5" stopColor={lighten(0.24, colors.neutral3.val)}>
                 <animate attributeName="offset" values="-0.5;3.5" dur="1.3s" repeatCount="indefinite" />
               </stop>
-              <stop offset="1" stopColor={theme.neutral3}>
+              <stop offset="1" stopColor={colors.neutral3.val}>
                 <animate attributeName="offset" values="0;4" dur="1.3s" repeatCount="indefinite" />
               </stop>
             </linearGradient>
@@ -131,13 +129,13 @@ function ChartLoadingStateMask({
         <>
           <defs>
             <linearGradient id={`${id}-gradient`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0" stopColor={theme.neutral3}>
+              <stop offset="0" stopColor={colors.neutral3.val}>
                 <animate attributeName="offset" values="-0.2;3.3" dur="1.3s" repeatCount="indefinite" />
               </stop>
-              <stop offset="0.1" stopColor={lighten(0.05, theme.neutral3)}>
+              <stop offset="0.1" stopColor={lighten(0.05, colors.neutral3.val)}>
                 <animate attributeName="offset" values="-0.1;3.4" dur="1.3s" repeatCount="indefinite" />
               </stop>
-              <stop offset="0.2" stopColor={theme.neutral3}>
+              <stop offset="0.2" stopColor={colors.neutral3.val}>
                 <animate attributeName="offset" values="0;3.5" dur="1.3s" repeatCount="indefinite" />
               </stop>
             </linearGradient>
@@ -180,11 +178,11 @@ export function ChartSkeleton({
   hideYAxis?: boolean
   hidePriceIndicators?: boolean
 }) {
-  const theme = useTheme()
-  const neutral3Opacified = theme.neutral3
+  const colors = useSporeColors()
+  const neutral3Opacified = colors.neutral3.val
 
-  const fillColor = errorText || dim ? neutral3Opacified : theme.neutral3
-  const tickColor = errorText ? opacify(12.5, theme.neutral3) : neutral3Opacified
+  const fillColor = errorText || dim ? neutral3Opacified : colors.neutral3.val
+  const tickColor = errorText ? opacify(12.5, colors.neutral3.val) : neutral3Opacified
 
   const maskId = `mask-${type}-${height}`
 

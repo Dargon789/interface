@@ -1,6 +1,6 @@
 {
   "defaultSrc": ["'self'"],
-  "scriptSrc": ["'self'", "'wasm-unsafe-eval'"],
+  "scriptSrc": ["'self'", "'wasm-unsafe-eval'", "https://challenges.cloudflare.com"],
   "styleSrc": [
     "'self'",
     "'unsafe-inline'",
@@ -20,7 +20,8 @@
     "https://buy.moonpay.com/",
     "https://verify.walletconnect.com/",
     "https://verify.walletconnect.org/",
-    "https://id.porto.sh"
+    "https://id.porto.sh",
+    "https://wrapped.uniswap.org"
   ],
   "mediaSrc": ["self", "*"],
   "formAction": ["'none'"],

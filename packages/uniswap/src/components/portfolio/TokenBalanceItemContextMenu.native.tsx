@@ -87,8 +87,10 @@ export function TokenBalanceItemContextMenu({
   portfolioBalance,
   excludedActions,
   openContractAddressExplainerModal,
+  openReportTokenModal,
   copyAddressToClipboard,
   onPressToken: onPressToken,
+  disableNotifications,
 }: PropsWithChildren<TokenBalanceItemContextMenuProps>): JSX.Element {
   const menuActions = useTokenContextMenuOptions({
     excludedActions,
@@ -97,8 +99,10 @@ export function TokenBalanceItemContextMenu({
     tokenSymbolForNotification: portfolioBalance.currencyInfo.currency.symbol,
     portfolioBalance,
     openContractAddressExplainerModal,
+    openReportTokenModal,
     copyAddressToClipboard,
     closeMenu: () => {},
+    disableNotifications,
   })
 
   const { longPressGesture, handlePress } = useLongPressGesture({
@@ -137,4 +141,5 @@ const actionToIcon: Record<string, string> = {
   share: 'square.and.arrow.up',
   toggleVisibility: 'eye',
   copyAddress: 'doc.on.doc',
+  reportToken: 'flag',
 }

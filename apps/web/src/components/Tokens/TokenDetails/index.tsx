@@ -1,7 +1,11 @@
 import { getTokenDetailsURL } from 'appGraphql/data/util'
 import { Currency } from '@uniswap/sdk-core'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { BreadcrumbNavContainer, BreadcrumbNavLink, CurrentPageBreadcrumb } from 'components/BreadcrumbNav'
 import { MobileBottomBar, TDPActionTabs } from 'components/NavBar/MobileBottomBar'
+import { POPUP_MEDIUM_DISMISS_MS } from 'components/Popups/constants'
+import { popupRegistry } from 'components/Popups/registry'
+import { PopupType } from 'components/Popups/types'
 import { ActivitySection } from 'components/Tokens/TokenDetails/ActivitySection'
 import BalanceSummary, { PageChainBalanceSummary } from 'components/Tokens/TokenDetails/BalanceSummary'
 import { BridgedAssetSection } from 'components/Tokens/TokenDetails/BridgedAssetSection'
@@ -14,25 +18,37 @@ import { TokenDetailsHeader } from 'components/Tokens/TokenDetails/TokenDetailsH
 import { NATIVE_CHAIN_ID } from 'constants/tokens'
 import { useCurrency } from 'hooks/Tokens'
 import { ScrollDirection, useScroll } from 'hooks/useScroll'
-import deprecatedStyled from 'lib/styled-components'
+import { deprecatedStyled } from 'lib/styled-components'
 import { Swap } from 'pages/Swap'
 import { useTDPContext } from 'pages/TokenDetails/TDPContext'
 import { PropsWithChildren, useCallback, useMemo, useState } from 'react'
 import { ChevronRight } from 'react-feather'
-import { Trans } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { CurrencyState } from 'state/swap/types'
-import { Flex, useIsTouchDevice, useMedia } from 'ui/src'
+import { Flex, GeneratedIcon, Text, useIsTouchDevice, useMedia } from 'ui/src'
+import { InlineWarningCard } from 'uniswap/src/components/InlineWarningCard/InlineWarningCard'
+import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
+import { WarningModal } from 'uniswap/src/components/modals/WarningModal/WarningModal'
+import { LearnMoreLink } from 'uniswap/src/components/text/LearnMoreLink'
+import WarningIcon from 'uniswap/src/components/warnings/WarningIcon'
 import { getNativeAddress } from 'uniswap/src/constants/addresses'
 import { useUrlContext } from 'uniswap/src/contexts/UrlContext'
 import { isUniverseChainId, toGraphQLChain } from 'uniswap/src/features/chains/utils'
-import { InterfacePageName } from 'uniswap/src/features/telemetry/constants'
+import { InterfacePageName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
-import { TokenWarningCard } from 'uniswap/src/features/tokens/TokenWarningCard'
-import TokenWarningModal from 'uniswap/src/features/tokens/TokenWarningModal'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
+import { TokenWarningCard } from 'uniswap/src/features/tokens/warnings/TokenWarningCard'
+import TokenWarningModal from 'uniswap/src/features/tokens/warnings/TokenWarningModal'
+import {
+  AZTEC_ADDRESS,
+  AZTEC_URL,
+} from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/getAztecUnavailableWarning'
+import { useShouldShowAztecWarning } from 'uniswap/src/hooks/useShouldShowAztecWarning'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
 import { areCurrenciesEqual, currencyId } from 'uniswap/src/utils/currencyId'
+import { useEvent } from 'utilities/src/react/hooks'
+import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { getInitialLogoUrl } from 'utils/getInitialLogoURL'
 
 const DividerLine = deprecatedStyled(Hr)`
@@ -114,6 +130,7 @@ function includesToken(tokens: CurrencyState | undefined, token: Currency | unde
 }
 
 function TDPSwapComponent() {
+  const { t } = useTranslation()
   const { address, currency, currencyChainId, tokenColor } = useTDPContext()
   const navigate = useNavigate()
 
@@ -203,6 +220,14 @@ function TDPSwapComponent() {
   const [showWarningModal, setShowWarningModal] = useState(false)
   const closeWarningModal = useCallback(() => setShowWarningModal(false), [])
 
+  const onTokenWarningReportSuccess = useEvent(() => {
+    popupRegistry.addPopup(
+      { type: PopupType.Success, message: t('common.reported') },
+      'report-token-warning-success',
+      POPUP_MEDIUM_DISMISS_MS,
+    )
+  })
+
   return (
     <Flex gap="$gap12">
       <Swap
@@ -221,6 +246,7 @@ function TDPSwapComponent() {
           isInfoOnlyWarning
           isVisible={showWarningModal}
           closeModalOnly={closeWarningModal}
+          onReportSuccess={onTokenWarningReportSuccess}
           onAcknowledge={closeWarningModal}
         />
       )}
@@ -246,14 +272,44 @@ function TDPAnalytics({ children }: PropsWithChildren) {
   )
 }
 
+function AztecWarningBanner(): JSX.Element | null {
+  const { t } = useTranslation()
+  const { address } = useTDPContext()
+  const showAztecWarning = useShouldShowAztecWarning(address)
+
+  if (!showAztecWarning) {
+    return null
+  }
+
+  return (
+    <Flex mt="$spacing24">
+      <InlineWarningCard
+        severity={WarningSeverity.Low}
+        Icon={WarningIcon as GeneratedIcon}
+        heading={t('web.explore.tokenDetails.data.warning')}
+      />
+    </Flex>
+  )
+}
+
 export default function TokenDetails() {
-  const { tokenQuery, currencyChain, multiChainMap } = useTDPContext()
+  const { tokenQuery, currencyChain, multiChainMap, address } = useTDPContext()
   const tokenQueryData = tokenQuery.data?.token
   const pageChainBalance = multiChainMap[currencyChain]?.balance
   const media = useMedia()
   const showRightPanel = !media.xl
   const { direction: scrollDirection } = useScroll()
   const isTouchDevice = useIsTouchDevice()
+  const { t } = useTranslation()
+  const isAztecDisabled = useFeatureFlag(FeatureFlags.DisableAztecToken)
+  const isAztec = address.toLowerCase() === AZTEC_ADDRESS
+  const showAztecWarning = isAztec && isAztecDisabled
+
+  const {
+    value: isAztecWarningModalOpen,
+    setTrue: openAztecWarningModal,
+    setFalse: closeAztecWarningModal,
+  } = useBooleanState(false)
 
   return (
     <TDPAnalytics>
@@ -262,6 +318,7 @@ export default function TokenDetails() {
           <TDPBreadcrumb />
           <TokenDetailsHeader />
           <ChartSection />
+          <AztecWarningBanner />
           {!showRightPanel && !!pageChainBalance && (
             <Flex mt="$spacing40" gap="$gap24">
               <PageChainBalanceSummary pageChainBalance={pageChainBalance} alignLeft />
@@ -285,10 +342,29 @@ export default function TokenDetails() {
           {/* TODO(WEB-4800): data-testid is not passed to ui/src elements when animation is set */}
           {/* Remove this extra div when WEB-4800 is fixed */}
           <Flex data-testid="tdp-mobile-bottom-bar">
-            <TDPActionTabs />
+            <TDPActionTabs onAztecActionPress={openAztecWarningModal} />
           </Flex>
         </MobileBottomBar>
       </TokenDetailsLayout>
+      {showAztecWarning && isAztecWarningModalOpen && (
+        <WarningModal
+          isOpen={isAztecWarningModalOpen}
+          modalName={ModalName.SwapWarning}
+          severity={WarningSeverity.Blocked}
+          title={t('swap.warning.aztecUnavailable.title')}
+          captionComponent={
+            <Flex centered gap="$spacing12">
+              <Text color="$neutral2" textAlign="center" variant="body3">
+                {t('swap.warning.aztecUnavailable.message')}
+              </Text>
+              <LearnMoreLink display="inline" textColor="$neutral1" textVariant="buttonLabel3" url={AZTEC_URL} />
+            </Flex>
+          }
+          acknowledgeText={t('common.button.close')}
+          onClose={closeAztecWarningModal}
+          onAcknowledge={closeAztecWarningModal}
+        />
+      )}
     </TDPAnalytics>
   )
 }

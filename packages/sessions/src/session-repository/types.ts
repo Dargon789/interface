@@ -1,11 +1,4 @@
-/**
- * Bot detection types from protobuf enum
- */
-enum BotDetectionType {
-  None = 0,
-  Turnstile = 1,
-  Hashcash = 2,
-}
+import { ChallengeType } from '@uniswap/client-platform-service/dist/uniswap/platformservice/v1/sessionService_pb'
 
 /**
  * Response from session initialization
@@ -40,8 +33,8 @@ interface ChallengeResponse {
   /** Unique challenge identifier */
   challengeId: string // string challenge_id = 1
 
-  /** Type of bot detection to use */
-  botDetectionType: BotDetectionType // BotDetectionType bot_detection_type = 2
+  /** Type of challenge to use */
+  challengeType: ChallengeType // ChallengeType challenge_type = 2
 
   /** Extra data for challenge (e.g., Turnstile sitekey, HashCash params) */
   extra: Record<string, string> // map<string, string> extra = 3

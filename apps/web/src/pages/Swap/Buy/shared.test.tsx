@@ -20,11 +20,6 @@ vi.mock('ui/src', () => ({
   useSporeColors: () => ({}),
 }))
 
-// Mock styled-components
-vi.mock('lib/styled-components', () => ({
-  useTheme: () => ({}),
-}))
-
 // Mock SVG
 vi.mock('ui/src/assets/backgrounds/for-connecting-v2.svg', () => ({
   ReactComponent: 'svg',
@@ -228,9 +223,9 @@ describe('getCountryFromLocale', () => {
 
   it.each([
     [Locale.EnglishUnitedStates, 'US'],
-    [Locale.ItalianItaly, 'IT'],
     [Locale.JapaneseJapan, 'JP'],
     [Locale.PortugueseBrazil, 'BR'],
+    [Locale.PortuguesePortugal, 'PT'],
   ])('should extract country code %s correctly as %s', (locale, expectedCountryCode) => {
     // Arrange
     mockNavigatorLocale.mockReturnValue(locale)

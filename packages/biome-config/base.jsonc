@@ -275,6 +275,10 @@
               {
                 "group": ["ui/src/assets/icons/*.svg"],
                 "message": "Please do not import SVG files directly from `ui/src/assets/icons/*.svg`. Use generated icon components instead, e.g., `ui/src/components/icons/{iconName}`."
+              },
+              {
+                "group": ["@universe/*/src", "@universe/*/src/*"],
+                "message": "Deep imports from @universe/* packages are forbidden. Import from the package root instead (e.g., '@universe/api', '@universe/config'). All public APIs are exported from package roots."
               }
             ]
           }
@@ -445,6 +449,9 @@
   // OVERRIDES
   // ===================================================================
   "overrides": [
+    // Auto-generate overrides for @universe/* packages
+    // This marker is replaced by the generator script with actual override configurations
+    "__AUTO_GENERATE_UNIVERSE_OVERRIDES__",
     // GLOBAL: Test files
     {
       "includes": ["**/*.test.ts", "**/*.test.tsx", "**/test/**", "**/tests/**", "**/*.spec.ts", "**/*.spec.tsx"],
@@ -588,7 +595,7 @@
                     "importNames": ["UNIVERSE_CHAIN_INFO"],
                     "message": "Use useChainInfo or helpers in packages/uniswap/src/features/chains/utils.ts when possible!"
                   },
-                  "uniswap/src/data/graphql/uniswap-data-api/__generated__/types-and-hooks": {
+                  "uniswap/src/data/graphql/uniswap-data-api/__generated__/react-hooks": {
                     "importNames": ["useAccountListQuery"],
                     "message": "Use `useAccountListData` instead."
                   }
@@ -1001,6 +1008,17 @@
                 "patterns": ["__INCLUDE_GLOBAL_VALUES__"]
               }
             }
+          }
+        }
+      }
+    },
+    // apps/cli
+    {
+      "includes": ["apps/cli/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
           }
         }
       }

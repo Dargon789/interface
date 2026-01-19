@@ -15,3 +15,21 @@ export function createSignUniswapXOrderStep(
 ): UniswapXSignatureStep {
   return { type: TransactionStepType.UniswapXSignature, deadline: quote.orderInfo.deadline, quote, ...permitData }
 }
+
+export interface UniswapXPlanSignatureStep extends SignTypedDataStepFields, TradingApi.PlanStep {
+  type: TransactionStepType.UniswapXPlanSignature
+  deadline: number
+}
+
+export function createUniswapXPlanSignatureStep(
+  permitData: ValidatedPermit,
+  step: TradingApi.PlanStep,
+): UniswapXPlanSignatureStep {
+  const uniswapXPlanSignatureStep: UniswapXPlanSignatureStep = {
+    ...step,
+    ...permitData,
+    type: TransactionStepType.UniswapXPlanSignature,
+    deadline: Number(permitData.values.deadline),
+  }
+  return uniswapXPlanSignatureStep
+}

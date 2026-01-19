@@ -125,7 +125,7 @@ export function SendTokenForm(): JSX.Element {
   // Decimal pad logic
   const decimalPadRef = useRef<DecimalPadInputRef>(null)
   const maxDecimals = isFiatInput ? MAX_FIAT_INPUT_DECIMALS : (currencyIn?.decimals ?? 0)
-  const selectionRef = useRef<TextInputProps['selection']>()
+  const selectionRef = useRef<TextInputProps['selection']>(undefined)
 
   const onInputSelectionChange = useCallback(
     (start: number, end: number) => {
@@ -295,7 +295,7 @@ export function SendTokenForm(): JSX.Element {
               style={StyleSheet.absoluteFill}
             >
               <Flex alignItems="center" bottom={TRANSFER_DIRECTION_BUTTON_SIZE / 2} position="absolute">
-                <SwapArrowButton disabled backgroundColor="$surface1" />
+                <SwapArrowButton disabled opacity={1} />
               </Flex>
             </Flex>
           </Flex>
@@ -364,7 +364,11 @@ export function SendTokenForm(): JSX.Element {
 
         {!nftIn && (
           <>
-            <DecimalPadCalculateSpace id={DecimalPadCalculatedSpaceId.Send} decimalPadRef={decimalPadRef} />
+            <DecimalPadCalculateSpace
+              id={DecimalPadCalculatedSpaceId.Send}
+              decimalPadRef={decimalPadRef}
+              isDecimalPadReady={decimalPadReady}
+            />
 
             <Flex
               animation="quick"

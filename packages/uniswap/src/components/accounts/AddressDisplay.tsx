@@ -48,7 +48,6 @@ type AddressDisplayProps = {
   gapBetweenLines?: SpaceTokens
   showViewOnlyBadge?: boolean
   addressNumVisibleCharacters?: 4 | 6
-  accountIconTransition?: string
 
   // TODO WALL-4545 Added flag to disable forced width causing trouble in other screens
   disableForcedWidth?: boolean
@@ -87,7 +86,7 @@ export function AddressDisplay({
   captionTextColor = '$neutral2',
   captionVariant = 'subheading2',
   centered,
-  hideAddressInSubtitle,
+  hideAddressInSubtitle = false,
   direction = 'row',
   flexGrow = true,
   showCopy = false,
@@ -103,7 +102,6 @@ export function AddressDisplay({
   disableForcedWidth = false,
   displayNameTextAlign,
   addressNumVisibleCharacters = 6,
-  accountIconTransition,
 }: AddressDisplayProps): JSX.Element {
   const dispatch = useDispatch()
   const { useWalletDisplayName } = useUniswapContext()
@@ -147,10 +145,9 @@ export function AddressDisplay({
         showBorder={showIconBorder}
         showViewOnlyBadge={showViewOnlyBadge}
         size={size}
-        transition={accountIconTransition}
       />
     )
-  }, [address, showIconBackground, showIconBorder, showViewOnlyBadge, size, accountIconTransition])
+  }, [address, showIconBackground, showIconBorder, showViewOnlyBadge, size])
 
   return (
     <Flex
@@ -194,7 +191,6 @@ export function AddressDisplay({
             )}
           </Flex>
         </CopyButtonWrapper>
-        {/* TODO(PORT-453): re-add HeightAnimator on web */}
         {showAddressAsSubtitle && (
           <AddressSubtitle
             address={address}

@@ -63,6 +63,7 @@ export const UNICHAIN_CHAIN_INFO = {
   statusPage: undefined,
   subblockTimeMs: 200,
   supportsV4: true,
+  supportsNFTs: true,
   urlParam: 'unichain',
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
@@ -73,6 +74,7 @@ export const UNICHAIN_CHAIN_INFO = {
   testnet: false,
   gasConfig: GENERIC_L2_GAS_CONFIG,
   tradingApiPollingIntervalMs: 150,
+  acrossProtocolAddress: '0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64',
 } as const satisfies UniverseChainInfo
 
 const testnetTokens = buildChainTokens({
@@ -129,6 +131,7 @@ export const UNICHAIN_SEPOLIA_CHAIN_INFO = {
   statusPage: undefined,
   subblockTimeMs: 200,
   supportsV4: true,
+  supportsNFTs: false,
   urlParam: 'unichain_sepolia',
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',

@@ -55,7 +55,10 @@ export function useAllFeeTierPoolData({
     const feeTierData: Record<string, FeeTierData> = {}
     if (poolData && liquiditySum && sdkCurrencies.TOKEN0 && sdkCurrencies.TOKEN1) {
       for (const pool of poolData.pools) {
-        const key = getFeeTierKey(pool.fee, pool.isDynamicFee)
+        const key = getFeeTierKey({ feeTier: pool.fee, tickSpacing: pool.tickSpacing, isDynamicFee: pool.isDynamicFee })
+        if (!key) {
+          continue
+        }
         const totalLiquidityUsdTruncated = Number(pool.totalLiquidityUsd.split('.')[0] ?? '0')
         const percentage = liquiditySum.isZero()
           ? new Percent(0, 100)

@@ -25,7 +25,7 @@ import { useSwapSigning } from 'wallet/src/features/transactions/swap/hooks/useS
 /**
  * Custom hook that provides SwapHandlers with improved caching for prepared transactions
  */
-export function useSwapHandlers(): SwapHandlers | undefined {
+export function useSwapHandlers(): SwapHandlers {
   const dispatch = useDispatch()
   const formatter = useLocalizationContext()
   const swapStartTimestamp = useSelector(selectSwapStartTimestamp)
@@ -56,6 +56,8 @@ export function useSwapHandlers(): SwapHandlers | undefined {
         onPending,
         txId,
         isFiatInputMode,
+        setCurrentStep,
+        setSteps,
       } = params
 
       const { trade, gasFee } = swapTxContext
@@ -73,6 +75,7 @@ export function useSwapHandlers(): SwapHandlers | undefined {
         trace,
         includesDelegation: swapTxContext.includesDelegation,
         isSmartWalletTransaction,
+        swapStartTimestamp,
       })
 
       // Get the best available signed transaction
@@ -94,6 +97,8 @@ export function useSwapHandlers(): SwapHandlers | undefined {
           onFailure,
           onPending,
           preSignedTransaction,
+          setCurrentStep,
+          setSteps,
         }),
       )
 
@@ -118,13 +123,10 @@ export function useSwapHandlers(): SwapHandlers | undefined {
   )
 
   return useMemo(
-    () =>
-      getFeatureFlag(FeatureFlags.SwapPreSign)
-        ? {
-            prepareAndSign: signing.prepareAndSign,
-            execute,
-          }
-        : undefined,
+    () => ({
+      prepareAndSign: signing.prepareAndSign,
+      execute,
+    }),
     [execute, signing.prepareAndSign],
   )
 }

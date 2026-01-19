@@ -7,12 +7,11 @@ import { useAbbreviatedTimeString } from 'components/Table/utils'
 import { MouseoverTooltip, TooltipSize } from 'components/Tooltip'
 import { NATIVE_CHAIN_ID } from 'constants/tokens'
 import { useCurrency } from 'hooks/Tokens'
-import deprecatedStyled from 'lib/styled-components'
 import { PropsWithChildren } from 'react'
 import { ArrowDown } from 'react-feather'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
-import { ClickableStyle, ClickableTamaguiStyle } from 'theme/components/styles'
+import { ClickableTamaguiStyle } from 'theme/components/styles'
 import { Anchor, Flex, styled, Text, TextProps, View } from 'ui/src'
 import { breakpoints, zIndexes } from 'ui/src/theme'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
@@ -52,7 +51,7 @@ export const TableBodyContainer = styled(Flex, {
   '$platform-web': {
     overscrollBehaviorX: 'none',
     overflowX: 'auto',
-    overflowY: 'scroll',
+    overflowY: 'auto',
   },
   variants: {
     v2: {
@@ -116,7 +115,10 @@ export const DataRow = styled(TableRow, {
   variants: {
     v2: {
       true: {
-        hoverStyle: { backgroundColor: '$surface2Hovered' },
+        hoverStyle: {
+          backgroundColor: '$surface1Hovered',
+          transition: 'background-color 0ms',
+        },
       },
       false: {
         hoverStyle: { backgroundColor: '$surface1Hovered' },
@@ -186,17 +188,20 @@ export const StyledExternalLink = styled(Anchor, {
   target: '_blank',
   rel: 'noopener noreferrer',
 })
-const StyledInternalLink = deprecatedStyled(Link)`
-  text-decoration: none;
-  ${ClickableStyle}
-  color: ${({ theme }) => theme.neutral1};
-`
+const StyledInternalLink = styled(Link, {
+  ...ClickableTamaguiStyle,
+  color: '$neutral1',
+  '$platform-web': {
+    textDecoration: 'none',
+  },
+})
 
-export const TableRowLink = deprecatedStyled(Link)`
-  color: none;
-  text-decoration: none;
-  cursor: pointer;
-`
+export const TableRowLink = styled(Link, {
+  cursor: 'pointer',
+  '$platform-web': {
+    textDecoration: 'none',
+  },
+})
 
 export const ClickableHeaderRow = styled(Flex, {
   row: true,
@@ -246,8 +251,7 @@ export const FilterHeaderRow = styled(Flex, {
   alignItems: 'center',
   userSelect: 'none',
   gap: '$gap4',
-  animation: 'fast',
-
+  transition: 'all 0.1s ease-in-out',
   ...ClickableTamaguiStyle,
 
   variants: {

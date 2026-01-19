@@ -1,3 +1,4 @@
+import { FeatureFlags, getFeatureFlag } from '@universe/gating'
 import { useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { AccountMeta } from 'uniswap/src/features/accounts/types'

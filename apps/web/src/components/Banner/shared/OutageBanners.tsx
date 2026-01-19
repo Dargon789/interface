@@ -1,23 +1,25 @@
+import { manualChainOutageAtom, useChainOutageConfig } from 'featureFlags/flags/outageBanner'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { BridgingPopularTokensBanner } from 'components/Banner/BridgingPopularTokens/BridgingPopularTokensBanner'
 import { getOutageBannerSessionStorageKey, OutageBanner } from 'components/Banner/Outage/OutageBanner'
-import { useChainOutageConfig } from 'hooks/useChainOutageConfig'
+import { SOLANA_PROMO_BANNER_STORAGE_KEY, SolanaPromoBanner } from 'components/Banner/SolanaPromo/SolanaPromoBanner'
 import { useAtomValue } from 'jotai/utils'
 import { useMemo } from 'react'
 import { useLocation } from 'react-router'
-import { manualChainOutageAtom } from 'state/outage/atoms'
+import { useAppSelector } from 'state/hooks'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { InterfacePageName } from 'uniswap/src/features/telemetry/constants'
 import { getChainIdFromChainUrlParam, isChainUrlParam } from 'utils/chainParams'
 import { getCurrentPageFromLocation } from 'utils/urlRoutes'
 
-/**
- * OutageBanners component handles displaying outage banners in the bottom-right corner.
- *
- * Note: This component only handles OutageBanner. SolanaPromoBanner and BridgingPopularTokensBanner
- * have been migrated to the notification system (see createBannersNotificationDataSource).
- */
-export function OutageBanners() {
+export function Banners() {
   const { pathname } = useLocation()
   const currentPage = getCurrentPageFromLocation(pathname)
+  const isSolanaPromoEnabled = useFeatureFlag(FeatureFlags.SolanaPromo)
+  const isBridgedAssetsBannerV2Enabled = useFeatureFlag(FeatureFlags.BridgedAssetsBannerV2)
+  const hasDismissedBridgedAssetsBannerV2 = useAppSelector(
+    (state) => state.uniswapBehaviorHistory.hasDismissedBridgedAssetsBannerV2,
+  )
 
   // Read from both sources: error-detected (from GraphQL failures) and Statsig (manual config)
   const statsigOutage = useChainOutageConfig()
@@ -48,8 +50,18 @@ export function OutageBanners() {
     )
   }, [currentPage, currentPageHasOutage, pageChainId])
 
+  // Outage Banners should take precedence over other promotional banners
   if (pageChainId && showOutageBanner) {
     return <OutageBanner chainId={pageChainId} version={currentPageHasOutage ? outage?.version : undefined} />
+  }
+
+  const userAlreadySeenSolanaPromo = localStorage.getItem(SOLANA_PROMO_BANNER_STORAGE_KEY) === 'true'
+  if (isSolanaPromoEnabled && !userAlreadySeenSolanaPromo) {
+    return <SolanaPromoBanner />
+  }
+
+  if (isBridgedAssetsBannerV2Enabled && !hasDismissedBridgedAssetsBannerV2) {
+    return <BridgingPopularTokensBanner />
   }
 
   return null

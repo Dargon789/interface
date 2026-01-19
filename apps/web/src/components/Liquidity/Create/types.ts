@@ -38,12 +38,11 @@ export interface InitialPosition {
   tickLower: number
   tickUpper: number
   isOutOfRange: boolean
-  fee: FeeData
 }
 
 export interface PositionState {
   protocolVersion: ProtocolVersion
-  fee?: FeeData
+  fee: FeeData
   hook?: string
   userApprovedHook?: string // address of approved hook. If different from `hook`, user needs to reapprove the new hook
   // Initial position is provided for migration purposes.
@@ -57,7 +56,7 @@ export const DEFAULT_FEE_DATA = {
 }
 
 export const DEFAULT_POSITION_STATE: PositionState = {
-  fee: undefined,
+  fee: DEFAULT_FEE_DATA,
   hook: undefined,
   userApprovedHook: undefined,
   protocolVersion: ProtocolVersion.V4,
@@ -105,7 +104,7 @@ export type CreatePositionInfo = CreateV4PositionInfo | CreateV3PositionInfo | C
 
 export interface DynamicFeeTierSpeedbumpData {
   open: boolean
-  wishFeeData?: FeeData
+  wishFeeData: FeeData
 }
 
 export type PriceDifference = {

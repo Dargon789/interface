@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { Currency } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
@@ -213,7 +212,7 @@ export function LiquidityRangeInput({
     }
   }, [dataMax, dataMin, midPrice, currentPrice, priceData.entries, zoomFactor])
 
-  const chartModelRef = useRef<LPPriceChartModel>(undefined)
+  const chartModelRef = useRef<LPPriceChartModel>()
 
   const containerRef = useRef<HTMLDivElement>(null)
   const sizes = useRangeInputSizes(containerRef.current?.clientWidth)

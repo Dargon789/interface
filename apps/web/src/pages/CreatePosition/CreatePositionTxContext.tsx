@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
 import { Pair } from '@uniswap/v2-sdk'
@@ -24,10 +23,9 @@ import {
   useState,
 } from 'react'
 import { PositionField } from 'types/position'
-import { useUniswapContextSelector } from 'uniswap/src/contexts/UniswapContext'
+import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
 import { useCheckLpApprovalQuery } from 'uniswap/src/data/apiClients/tradingApi/useCheckLpApprovalQuery'
 import { useCreateLpPositionCalldataQuery } from 'uniswap/src/data/apiClients/tradingApi/useCreateLpPositionCalldataQuery'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { toSupportedChainId } from 'uniswap/src/features/chains/utils'
 import { useTransactionGasFee, useUSDCurrencyAmountOfGasFee } from 'uniswap/src/features/gas/hooks'
 import { InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
@@ -51,13 +49,13 @@ export function generateAddLiquidityApprovalParams({
   protocolVersion,
   displayCurrencies,
   currencyAmounts,
-  canBatchTransactions,
+  generatePermitAsTransaction,
 }: {
   address?: string
   protocolVersion: ProtocolVersion
   displayCurrencies: { [field in PositionField]: Maybe<Currency> }
   currencyAmounts?: { [field in PositionField]?: Maybe<CurrencyAmount<Currency>> }
-  canBatchTransactions?: boolean
+  generatePermitAsTransaction?: boolean
 }): TradingApi.CheckApprovalLPRequest | undefined {
   const apiProtocolItems = getProtocolItems(protocolVersion)
 
@@ -80,7 +78,7 @@ export function generateAddLiquidityApprovalParams({
     token1: getTokenOrZeroAddress(displayCurrencies.TOKEN1),
     amount0: currencyAmounts.TOKEN0.quotient.toString(),
     amount1: currencyAmounts.TOKEN1.quotient.toString(),
-    generatePermitAsTransaction: protocolVersion === ProtocolVersion.V4 ? canBatchTransactions : undefined,
+    generatePermitAsTransaction: protocolVersion === ProtocolVersion.V4 ? generatePermitAsTransaction : undefined,
   } satisfies TradingApi.CheckApprovalLPRequest
 }
 
@@ -228,7 +226,7 @@ export function generateCreateCalldataQueryParams({
         tickSpacing,
         token0: getTokenOrZeroAddress(displayCurrencies.TOKEN0),
         token1: getTokenOrZeroAddress(displayCurrencies.TOKEN1),
-        fee: positionState.fee?.isDynamic ? DYNAMIC_FEE_DATA.feeAmount : positionState.fee?.feeAmount,
+        fee: positionState.fee.isDynamic ? DYNAMIC_FEE_DATA.feeAmount : positionState.fee.feeAmount,
         hooks: positionState.hook,
       },
     },
@@ -245,7 +243,6 @@ export function generateCreatePositionTxRequest({
   createCalldataQueryParams,
   currencyAmounts,
   poolOrPair,
-  canBatchTransactions,
 }: {
   protocolVersion: ProtocolVersion
   approvalCalldata?: TradingApi.CheckApprovalLPResponse
@@ -253,7 +250,6 @@ export function generateCreatePositionTxRequest({
   createCalldataQueryParams?: TradingApi.CreateLPPositionRequest
   currencyAmounts?: { [field in PositionField]?: Maybe<CurrencyAmount<Currency>> }
   poolOrPair: Pair | undefined
-  canBatchTransactions: boolean
 }): CreatePositionTxAndGasInfo | undefined {
   if (!createCalldata || !currencyAmounts?.TOKEN0 || !currencyAmounts.TOKEN1) {
     return undefined
@@ -300,8 +296,8 @@ export function generateCreatePositionTxRequest({
 
   return {
     type: LiquidityTransactionType.Create,
-    canBatchTransactions,
     unsigned: Boolean(validatedPermitRequest),
+    protocolVersion,
     createPositionRequestArgs: queryParams,
     action: {
       type: LiquidityTransactionType.Create,
@@ -389,9 +385,7 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
     customDeadline: s.customDeadline,
     customSlippageTolerance: s.customSlippageTolerance,
   }))
-  const canBatchTransactions =
-    (useUniswapContextSelector((ctx) => ctx.getCanBatchTransactions?.(poolOrPair?.chainId)) ?? false) &&
-    poolOrPair?.chainId !== UniverseChainId.Monad
+  const generatePermitAsTransaction = useUniswapContext().getCanSignPermits?.(poolOrPair?.chainId)
 
   const [transactionError, setTransactionError] = useState<string | boolean>(false)
 
@@ -401,9 +395,9 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
       protocolVersion,
       displayCurrencies: currencies.display,
       currencyAmounts,
-      canBatchTransactions,
+      generatePermitAsTransaction,
     })
-  }, [account?.address, protocolVersion, currencies.display, currencyAmounts, canBatchTransactions])
+  }, [account?.address, protocolVersion, currencies.display, currencyAmounts, generatePermitAsTransaction])
 
   const {
     data: approvalCalldata,
@@ -556,17 +550,8 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
       createCalldataQueryParams,
       currencyAmounts,
       poolOrPair: protocolVersion === ProtocolVersion.V2 ? poolOrPair : undefined,
-      canBatchTransactions,
     })
-  }, [
-    approvalCalldata,
-    createCalldata,
-    createCalldataQueryParams,
-    currencyAmounts,
-    poolOrPair,
-    protocolVersion,
-    canBatchTransactions,
-  ])
+  }, [approvalCalldata, createCalldata, createCalldataQueryParams, currencyAmounts, poolOrPair, protocolVersion])
 
   const value = useMemo(
     (): CreatePositionTxContextType => ({

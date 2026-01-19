@@ -1,10 +1,9 @@
 import { PositionStatus, ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import { InitialPosition } from 'components/Liquidity/Create/types'
 import { PositionInfo } from 'components/Liquidity/types'
 import { useMemo } from 'react'
 import { unwrappedToken } from 'utils/unwrappedToken'
 
-export default function useInitialPosition(positionInfo?: PositionInfo): InitialPosition | undefined {
+export default function useInitialPosition(positionInfo?: PositionInfo) {
   return useMemo(() => {
     if (!positionInfo) {
       return undefined

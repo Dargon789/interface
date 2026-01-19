@@ -1,14 +1,14 @@
 # @universe/notifications
 
-Client-side notification service for fetching, processing, storing, and displaying notifications from a backend service.
+Client-side notification system for fetching, processing, storing, and displaying notifications from a backend service.
 
 ## Architecture
 
 ```
-NotificationService (orchestrator)
+NotificationSystem (orchestrator)
 ├── NotificationDataSource        → Fetch/websocket notification data
-├── NotificationTracker           → No-op (backend handles deduplication)
-├── NotificationProcessor         → Filter & prioritize notifications
+├── NotificationTracker           → Track shown/dismissed state
+├── NotificationProcessor         → Filter & prioritize notifications  
 ├── NotificationChainCoordinator  → Handle multi-step notification flows
 └── NotificationRenderer          → Platform-specific UI rendering
 ```
@@ -32,33 +32,33 @@ Notifications can trigger follow-up notifications based on user actions:
 
 ## Usage
 
-### Initialize the Service
+### Initialize the System
 
 ```typescript
-import { createNotificationService } from '@universe/notifications'
+import { createNotificationSystem } from '@universe/notifications'
 
-const notificationService = createNotificationService({
+const notificationSystem = createNotificationSystem({
   dataSources: [getFetchNotificationDataSource({ apiClient })],
-  tracker: createNoopNotificationTracker(),
+  tracker: createLocalNotificationTracker({ storageDriver }),
   processor: createNotificationProcessor(),
   renderer: createNotificationRenderer(),
   chainCoordinator: createNotificationChainCoordinator()
 })
 
-await notificationService.initialize()
+await notificationSystem.initialize()
 ```
 
 ### Handle User Actions
 
 ```typescript
 // When user clicks a button
-notificationService.onButtonClick(notificationName, button)
+notificationSystem.onButtonClick(notificationName, button)
 
 // When user dismisses
-notificationService.onDismiss(notificationName)
+notificationSystem.onDismiss(notificationName)
 
 // When user clicks background
-notificationService.onBackgroundClick(notificationName)
+notificationSystem.onBackgroundClick(notificationName)
 ```
 
 ### React Integration
@@ -69,5 +69,5 @@ notificationService.onBackgroundClick(notificationName)
 
 // Container reads from Zustand store
 const activeNotifications = useNotificationStore(state => state.activeNotifications)
-const notificationService = useNotificationStore(state => state.notificationService)
+const notificationSystem = useNotificationStore(state => state.notificationSystem)
 ```

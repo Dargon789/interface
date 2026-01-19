@@ -1,54 +1,29 @@
 import { SelectOption } from 'components/Dropdowns/DropdownSelector'
-import { Box } from 'ui/src/components/icons/Box'
-import { Coin } from 'ui/src/components/icons/Coin'
-import { CoinConvert } from 'ui/src/components/icons/CoinConvert'
-import { Lock } from 'ui/src/components/icons/Lock'
-import { Minus } from 'ui/src/components/icons/Minus'
-import { MoneyHand } from 'ui/src/components/icons/MoneyHand'
+import { Approve } from 'ui/src/components/icons/Approve'
+import { ArrowChange } from 'ui/src/components/icons/ArrowChange'
+import { ArrowDownCircle } from 'ui/src/components/icons/ArrowDownCircle'
+import { ArrowUpCircle } from 'ui/src/components/icons/ArrowUpCircle'
+import { Dollar } from 'ui/src/components/icons/Dollar'
 import { Plus } from 'ui/src/components/icons/Plus'
-import { Pools } from 'ui/src/components/icons/Pools'
 import { ReceiveAlt } from 'ui/src/components/icons/ReceiveAlt'
 import { SendAction } from 'ui/src/components/icons/SendAction'
+import { Sparkle } from 'ui/src/components/icons/Sparkle'
+import { Swap } from 'ui/src/components/icons/Swap'
 import { AppTFunction } from 'ui/src/i18n/types'
-import { ActivityItem } from 'uniswap/src/components/activity/generateActivityItemRenderer'
-import { isLoadingItem, isSectionHeader } from 'uniswap/src/components/activity/utils'
-import { TransactionDetails, TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
 
-export enum ActivityFilterType {
+enum ActivityFilterType {
   All = 'all',
   Sends = 'sends',
   Receives = 'receives',
   Swaps = 'swaps',
   Wraps = 'wraps',
-  Approvals = 'approvals',
+  Approves = 'approves',
   CreatePool = 'create-pool',
   AddLiquidity = 'add-liquidity',
   RemoveLiquidity = 'remove-liquidity',
   Mints = 'mints',
   ClaimFees = 'claim-fees',
-}
-
-/**
- * Type guard to check if an ActivityItem is a TransactionDetails
- * @param item ActivityItem to check
- * @returns true if the item is a TransactionDetails
- */
-function isTransactionDetails(item: ActivityItem): item is TransactionDetails {
-  // Validate that the item has required TransactionDetails properties
-  return (
-    'typeInfo' in item && 'addedTime' in item && typeof item.typeInfo === 'object' && typeof item.addedTime === 'number'
-  )
-}
-
-/**
- * Filters out loading items and section headers, leaving only TransactionDetails
- * @param transactions ActivityItems to filter
- * @returns only TransactionDetails items
- */
-export function filterTransactionDetailsFromActivityItems(transactions: ActivityItem[]): TransactionDetails[] {
-  return transactions.filter(
-    (item): item is TransactionDetails => !isLoadingItem(item) && !isSectionHeader(item) && isTransactionDetails(item),
-  )
 }
 
 export function getTransactionTypeFilterOptions(t: AppTFunction): Record<string, SelectOption> {
@@ -59,43 +34,43 @@ export function getTransactionTypeFilterOptions(t: AppTFunction): Record<string,
     },
     [ActivityFilterType.Swaps]: {
       label: t('portfolio.activity.filters.transactionType.swaps'),
-      icon: CoinConvert,
+      icon: Swap,
     },
     [ActivityFilterType.Sends]: {
-      label: t('portfolio.activity.filters.transactionType.sends'),
+      label: t('common.sent'),
       icon: SendAction,
     },
     [ActivityFilterType.Receives]: {
-      label: t('portfolio.activity.filters.transactionType.receives'),
+      label: t('common.received'),
       icon: ReceiveAlt,
     },
     [ActivityFilterType.Wraps]: {
       label: t('portfolio.activity.filters.transactionType.wraps'),
-      icon: Box,
+      icon: ArrowChange,
     },
-    [ActivityFilterType.Approvals]: {
+    [ActivityFilterType.Approves]: {
       label: t('portfolio.activity.filters.transactionType.approvals'),
-      icon: Lock,
+      icon: Approve,
     },
     [ActivityFilterType.CreatePool]: {
       label: t('portfolio.activity.filters.transactionType.createPool'),
-      icon: Pools,
+      icon: Plus,
     },
     [ActivityFilterType.AddLiquidity]: {
       label: t('portfolio.activity.filters.transactionType.addLiquidity'),
-      icon: Plus,
+      icon: ArrowDownCircle,
     },
     [ActivityFilterType.RemoveLiquidity]: {
       label: t('portfolio.activity.filters.transactionType.removeLiquidity'),
-      icon: Minus,
-    },
-    [ActivityFilterType.ClaimFees]: {
-      label: t('portfolio.activity.filters.transactionType.claimFees'),
-      icon: MoneyHand,
+      icon: ArrowUpCircle,
     },
     [ActivityFilterType.Mints]: {
       label: t('portfolio.activity.filters.transactionType.mints'),
-      icon: Coin,
+      icon: Sparkle,
+    },
+    [ActivityFilterType.ClaimFees]: {
+      label: t('portfolio.activity.filters.transactionType.claimFees'),
+      icon: Dollar,
     },
   }
 }
@@ -113,7 +88,7 @@ export function getTransactionTypesForFilter(filterType: string): TransactionTyp
       return [TransactionType.Swap, TransactionType.Bridge]
     case ActivityFilterType.Wraps:
       return [TransactionType.Wrap]
-    case ActivityFilterType.Approvals:
+    case ActivityFilterType.Approves:
       return [TransactionType.Approve]
     case ActivityFilterType.CreatePool:
       return [TransactionType.CreatePool, TransactionType.CreatePair]

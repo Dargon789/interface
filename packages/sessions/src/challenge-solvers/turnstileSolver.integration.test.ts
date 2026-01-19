@@ -253,12 +253,19 @@ describe('Turnstile Solver Integration Tests', () => {
   it('handles script loading failures', async () => {
     // Mock script loading failure
     vi.spyOn(document.head, 'appendChild').mockImplementationOnce((node) => {
-      if (node instanceof HTMLScriptElement && node.src.includes('challenges.cloudflare.com')) {
-        setTimeout(() => {
-          if (node.onerror) {
-            node.onerror({} as Event)
+      if (node instanceof HTMLScriptElement && node.src) {
+        try {
+          const url = new URL(node.src, window.location.origin)
+          if (url.hostname === 'challenges.cloudflare.com') {
+            setTimeout(() => {
+              if (node.onerror) {
+                node.onerror({} as Event)
+              }
+            }, 0)
           }
-        }, 0)
+        } catch {
+          // If the URL is invalid, do not treat it as the Turnstile script
+        }
       }
       return node
     })

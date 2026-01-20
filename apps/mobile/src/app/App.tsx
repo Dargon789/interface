@@ -3,17 +3,26 @@ import { loadDevMessages, loadErrorMessages } from '@apollo/client/dev'
 import { DdRum, RumActionType } from '@datadog/mobile-react-native'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { PerformanceProfiler, RenderPassReport } from '@shopify/react-native-performance'
+import { ApiInit, getEntryGatewayUrl, provideSessionService } from '@universe/api'
 import {
   DatadogSessionSampleRateKey,
   DynamicConfigs,
   Experiments,
   getDynamicConfigValue,
+  getIsSessionServiceEnabled,
+  getIsSessionUpgradeAutoEnabled,
   getStatsigClient,
   StatsigCustomAppValue,
   StatsigUser,
   Storage,
+  useIsSessionServiceEnabled,
   WALLET_FEATURE_FLAG_NAMES,
 } from '@universe/gating'
+import {
+  createChallengeSolverService,
+  createSessionInitializationService,
+  SessionInitializationService,
+} from '@universe/sessions'
 import { MMKVWrapper } from 'apollo3-cache-persist'
 import { default as React, StrictMode, useCallback, useEffect, useMemo, useRef } from 'react'
 import { I18nextProvider } from 'react-i18next'
@@ -127,6 +136,17 @@ initOneSignal()
 initAppsFlyer()
 
 initializePortfolioQueryOverrides({ store })
+
+const provideSessionInitializationService = (): SessionInitializationService =>
+  createSessionInitializationService({
+    getSessionService: () =>
+      provideSessionService({
+        getBaseUrl: getEntryGatewayUrl,
+        getIsSessionServiceEnabled,
+      }),
+    challengeSolverService: createChallengeSolverService(),
+    getIsSessionUpgradeAutoEnabled,
+  })
 
 function App(): JSX.Element | null {
   useEffect(() => {
@@ -342,6 +362,7 @@ function DataUpdaters(): JSX.Element {
   const { locale } = useCurrentLanguageInfo()
   const { code } = useAppFiatCurrencyInfo()
   const finishedOnboarding = useSelector(selectFinishedOnboarding)
+  const isSessionServiceEnabled = useIsSessionServiceEnabled()
 
   useDatadogUserAttributesTracking({ isOnboarded: !!finishedOnboarding })
   useHeartbeatReporter({ isOnboarded: !!finishedOnboarding })
@@ -366,6 +387,10 @@ function DataUpdaters(): JSX.Element {
   return (
     <>
       <TraceUserProperties />
+      <ApiInit
+        getSessionInitService={provideSessionInitializationService}
+        isSessionServiceEnabled={isSessionServiceEnabled}
+      />
       <TransactionHistoryUpdater />
     </>
   )

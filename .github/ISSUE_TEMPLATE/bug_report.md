@@ -3,8 +3,6 @@ name: Bug Report
 about: Report a bug or unexpected behavior in the Uniswap interfaces.
 title: "[Bug] "
 labels: bug
-assignees: ''
-
 ---
 
 ## 📱 Interface Affected

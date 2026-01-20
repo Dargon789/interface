@@ -2,6 +2,9 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "extends": "nx/presets/npm.json",
   "defaultBase": "main",
+  "tui": {
+    "enabled": false
+  },
   "targetDefaults": {
     "prepare": {
       "inputs": ["default", "dependencies"],
@@ -26,7 +29,7 @@
       "cache": true
     },
     "typecheck": {
-      "command": "tsc -b",
+      "command": "NODE_OPTIONS=--max_old_space_size=8192 tsc -b",
       "options": {
         "cwd": "{projectRoot}"
       },
@@ -39,15 +42,11 @@
         "{projectRoot}/src/**/*.ts",
         "{projectRoot}/src/**/*.tsx",
         "{projectRoot}/src/**/*.json",
-        "!{projectRoot}/src/**/*.spec.ts",
-        "!{projectRoot}/src/**/*.spec.tsx",
-        "!{projectRoot}/src/**/*.test.ts",
-        "!{projectRoot}/src/**/*.test.tsx",
         {
           "dependentTasksOutputFiles": "**/*.d.ts"
         }
       ],
-      "outputs": [],
+      "outputs": ["{workspaceRoot}/dist/out-tsc/{projectRoot}"],
       "cache": true
     },
     "lint:biome": {
@@ -55,30 +54,46 @@
       "options": {
         "cwd": "{projectRoot}"
       },
-      "dependsOn": ["@uniswap/biome-config:prepare"]
+      "dependsOn": ["@uniswap/biome-config:prepare"],
+      "cache": true,
+      "inputs": [
+        "default",
+        "{workspaceRoot}/.biome*",
+        "{workspaceRoot}/biome.json",
+        "{workspaceRoot}/packages/biome-config/**/*"
+      ]
     },
     "lint:biome:fix": {
       "command": "biome check . --write",
       "options": {
         "cwd": "{projectRoot}"
       },
-      "dependsOn": ["@uniswap/biome-config:prepare"]
+      "dependsOn": ["@uniswap/biome-config:prepare"],
+      "cache": false
     },
     "lint:eslint": {
       "command": "eslint . --ext ts,tsx --max-warnings=0",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "cache": true,
+      "inputs": [
+        "default",
+        "{workspaceRoot}/.eslint*",
+        "{projectRoot}/.eslint*",
+        "{workspaceRoot}/packages/eslint-config/**/*"
+      ]
     },
     "lint:eslint:fix": {
       "command": "eslint . --ext ts,tsx --fix",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "cache": false
     },
     "lint": {
       "executor": "nx:noop",
-      "dependsOn": ["typecheck", "check:circular", "lint:eslint", "lint:biome"],
+      "dependsOn": ["typecheck", "check:circular", "lint:biome", "lint:eslint"],
       "inputs": ["default"],
       "cache": true
     },
@@ -154,9 +169,7 @@
         "{projectRoot}/src/data/**/*.graphql"
       ],
       "outputs": [
-        "{projectRoot}/src/**/types-and-hooks.ts",
         "{projectRoot}/src/data/graphql/**/__generated__/**",
-        "{projectRoot}/src/data/tradingApi/__generated__/**",
         "{projectRoot}/data/__generated__/**",
         "{projectRoot}/graphql/__generated__/**"
       ],

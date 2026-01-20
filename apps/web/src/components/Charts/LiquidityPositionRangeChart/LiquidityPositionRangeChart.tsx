@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { PositionStatus, ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { Currency, Price } from '@uniswap/sdk-core'
 import { Pair } from '@uniswap/v2-sdk'
@@ -264,8 +265,8 @@ export class LPPriceChartModel extends ChartModel<PriceChartData> {
     if (params.positionPriceLower !== undefined && params.positionPriceUpper !== undefined) {
       if (!this.bandIndicator) {
         this.bandIndicator = new BandsIndicator({
-          lineColor: opacify(40, params.theme.neutral1),
-          fillColor: params.theme.surface3,
+          lineColor: opacify(40, params.colors.neutral1.val),
+          fillColor: params.colors.surface3.val,
           lineWidth: 1.5,
           upperValue: this.positionRangeMax,
           lowerValue: this.positionRangeMin,
@@ -273,8 +274,8 @@ export class LPPriceChartModel extends ChartModel<PriceChartData> {
         this.rangeBandSeries?.attachPrimitive(this.bandIndicator)
       } else {
         this.bandIndicator.updateOptions({
-          lineColor: opacify(10, params.theme.neutral1),
-          fillColor: params.theme.surface3,
+          lineColor: opacify(10, params.colors.neutral1.val),
+          fillColor: params.colors.surface3.val,
           lineWidth: 1,
           upperValue: this.positionRangeMax,
           lowerValue: this.positionRangeMin,

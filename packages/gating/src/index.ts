@@ -1,7 +1,6 @@
 export type {
   DatadogIgnoredErrorsValType,
   DatadogSessionSampleRateValType,
-  DeepLinkUrlAllowlist,
   DynamicConfigKeys,
   ForceUpgradeStatus,
   ForceUpgradeTranslations,
@@ -17,7 +16,6 @@ export {
   ChainsConfigKey,
   DatadogIgnoredErrorsConfigKey,
   DatadogSessionSampleRateKey,
-  DeepLinkUrlAllowlistConfigKey,
   DynamicConfigs,
   EmbeddedWalletConfigKey,
   ExtensionBiometricUnlockConfigKey,
@@ -47,11 +45,14 @@ export {
   WebFORNudgesProperties,
 } from '@universe/gating/src/experiments'
 export {
+  FeatureFlagClient,
   FeatureFlags,
   getFeatureFlagName,
   WALLET_FEATURE_FLAG_NAMES,
   WEB_FEATURE_FLAG_NAMES,
 } from '@universe/gating/src/flags'
+export { getIsSessionServiceEnabled, useIsSessionServiceEnabled } from '@universe/gating/src/getIsSessionServiceEnabled'
+export { getIsSessionUpgradeAutoEnabled } from '@universe/gating/src/getIsSessionUpgradeAutoEnabled'
 export { getStatsigEnvName } from '@universe/gating/src/getStatsigEnvName'
 export {
   getDynamicConfigValue,

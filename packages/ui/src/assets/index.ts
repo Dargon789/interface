@@ -4,7 +4,7 @@ export const OPTIMISM_LOGO = require('./logos/png/optimism-logo.png')
 export const ARBITRUM_LOGO = require('./logos/png/arbitrum-logo.png')
 export const BASE_LOGO = require('./logos/png/base-logo.png')
 export const BNB_LOGO = require('./logos/png/bnb-logo.png')
-export const MONAD_LOGO = require('./logos/png/monad-logo.png')
+export const MONAD_LOGO_FILLED = require('./logos/png/monad-logo-filled.png')
 export const POLYGON_LOGO = require('./logos/png/polygon-logo.png')
 export const BLAST_LOGO = require('./logos/png/blast-logo.png')
 export const AVALANCHE_LOGO = require('./logos/png/avalanche-logo.png')
@@ -55,6 +55,8 @@ export const UNITAG_LIGHT_SMALL = require('./graphics/unitag-light-small.png')
 
 export const PUSH_NOTIFICATIONS_CARD_BANNER = require('./graphics/push-notifications-card-banner.png')
 export const BRIDGED_ASSETS_CARD_BANNER = require('./graphics/bridged-assets-card-banner.png')
+export const BRIDGED_ASSETS_V2_CARD_BANNER_DARK = require('./graphics/bridged-assets-v2-card-banner-dark.png')
+export const BRIDGED_ASSETS_V2_CARD_BANNER_LIGHT = require('./graphics/bridged-assets-v2-card-banner-light.png')
 export const BRIDGED_ASSETS_V2_WEB_BANNER = require('./graphics/bridged-assets-v2-web-banner.png')
 
 export const ONBOARDING_NOTIFICATIONS_DARK = {
@@ -73,6 +75,7 @@ export const CRYPTO_PURCHASE_BACKGROUND_DARK = require('./backgrounds/coins-back
 
 export const SOLANA_BANNER_LIGHT = require('./backgrounds/solana-banner-light.png')
 export const SOLANA_BANNER_DARK = require('./backgrounds/solana-banner-dark.png')
+export const MONAD_TEST_BANNER_LIGHT = require('./backgrounds/monad-test-banner-light.png')
 
 export const SECURITY_SCREEN_BACKGROUND_DARK = {
   ios: require(`./backgrounds/ios/security-background-dark.png`),
@@ -104,3 +107,7 @@ export const UNITAGS_SPENCER_DARK = require('./graphics/unitags/spencer-dark.png
 
 export const SMART_WALLET_UPGRADE_VIDEO = require('./videos/smart-wallet-upgrade.mp4')
 export const SMART_WALLET_UPGRADE_FALLBACK = require('./graphics/smart-wallet-image.png')
+
+export const NO_UNISWAP_INTERFACE_FEES_BANNER_LIGHT = require('./backgrounds/dots-banner-light.png')
+export const NO_UNISWAP_INTERFACE_FEES_BANNER_DARK = require('./backgrounds/dots-banner-dark.png')
+export const NO_FEES_ICON = require('./graphics/zero-percent.png')

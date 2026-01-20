@@ -1,4 +1,3 @@
-import { DeepLinkUrlAllowlist } from '@universe/gating'
 import { getScantasticQueryParams } from 'src/components/Requests/ScanSheet/util'
 import { UNISWAP_URL_SCHEME_UWU_LINK } from 'src/components/Requests/Uwulink/utils'
 import {

@@ -97,7 +97,7 @@
     "swc-loader": "0.2.6",
     "tamagui-loader": "1.125.17",
     "typescript": "5.3.3",
-    "webpack": "5.94.0",
+    "webpack": "5.104.1",
     "webpack-cli": "5.1.4",
     "webpack-dev-server": "5.2.1"
   },

@@ -38,7 +38,7 @@
     "@universe/config": "workspace:^",
     "@universe/sessions": "workspace:^",
     "expo-secure-store": "14.0.1",
-    "graphql": "16.6.0",
+    "graphql": "16.8.1",
     "react": "19.0.3",
     "utilities": "workspace:^"
   },

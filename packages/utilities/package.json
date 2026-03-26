@@ -27,7 +27,7 @@
     "dayjs": "1.11.7",
     "expo-clipboard": "7.1.5",
     "expo-localization": "16.1.6",
-    "graphql": "16.6.0",
+    "graphql": "16.8.1",
     "jsbi": "3.2.5",
     "promise": "8.3.0",
     "react": "19.0.3",

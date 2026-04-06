@@ -1,5 +1,5 @@
 // TODO(MOB-203): reduce component complexity
-/* eslint-disable complexity */
+/* oxlint-disable complexity */
 import { BigNumber } from '@ethersproject/bignumber'
 import { Direction, OnChainTransaction, OnChainTransactionLabel } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { GraphQLApi } from '@universe/api'
@@ -53,7 +53,7 @@ export default function parseTradeTransaction(
 
   // for detecting wraps
   const nativeCurrencyID = buildNativeCurrencyId(chainId).toLocaleLowerCase()
-  const wrappedCurrencyID = buildWrappedNativeCurrencyId(chainId).toLocaleLowerCase()
+  const wrappedCurrencyID = buildWrappedNativeCurrencyId(chainId)?.toLocaleLowerCase()
 
   const sent = txAssetChanges.find((t) => t.direction === GraphQLApi.TransactionDirection.Out)
 
@@ -141,22 +141,23 @@ export default function parseTradeTransaction(
 
     const transactedUSDValue = parseUSDValueFromAssetChange(sent.transactedValue)
 
+    if (!inputCurrencyId || !outputCurrencyId) {
+      return undefined
+    }
+
     // Data API marks wrap as a swap.
     if (
-      (inputCurrencyId?.toLocaleLowerCase() === nativeCurrencyID &&
-        outputCurrencyId?.toLocaleLowerCase() === wrappedCurrencyID) ||
-      (inputCurrencyId?.toLocaleLowerCase() === wrappedCurrencyID &&
-        outputCurrencyId?.toLocaleLowerCase() === nativeCurrencyID)
+      wrappedCurrencyID &&
+      ((inputCurrencyId.toLocaleLowerCase() === nativeCurrencyID &&
+        outputCurrencyId.toLocaleLowerCase() === wrappedCurrencyID) ||
+        (inputCurrencyId.toLocaleLowerCase() === wrappedCurrencyID &&
+          outputCurrencyId.toLocaleLowerCase() === nativeCurrencyID))
     ) {
       return {
         type: TransactionType.Wrap,
         unwrapped: outputCurrencyId.toLocaleLowerCase() === nativeCurrencyID.toLocaleLowerCase(),
         currencyAmountRaw: inputCurrencyAmountRaw,
       }
-    }
-
-    if (!inputCurrencyId || !outputCurrencyId) {
-      return undefined
     }
 
     return {

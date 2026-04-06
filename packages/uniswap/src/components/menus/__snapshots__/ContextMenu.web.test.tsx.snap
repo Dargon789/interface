@@ -29,6 +29,9 @@ exports[`ContextMenu > renders without error 1`] = `
     <div
       style="display: contents;"
     />
+    <div
+      style="display: contents;"
+    />
   </span>
 </DocumentFragment>
 `;

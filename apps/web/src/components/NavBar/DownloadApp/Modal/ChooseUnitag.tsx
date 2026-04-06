@@ -18,14 +18,14 @@ export function ChooseUnitagModal({
   setUnitag: Dispatch<SetStateAction<string>>
   setPage: Dispatch<SetStateAction<Page>>
   onClose: () => void
-  goBack: () => void
+  goBack?: () => void
 }) {
   const { t } = useTranslation()
 
   const onContinue = useCallback(
     (unitag: string) => {
       setUnitag(unitag)
-      setPage(Page.PasskeyGeneration)
+      setPage(Page.KeyManagement)
     },
     [setPage, setUnitag],
   )

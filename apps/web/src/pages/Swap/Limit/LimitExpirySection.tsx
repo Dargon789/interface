@@ -31,7 +31,7 @@ const LimitExpiryButton = deprecatedStyled.button<{ $selected: boolean }>`
 
 const EXPIRY_OPTIONS = [LimitsExpiry.Day, LimitsExpiry.Week, LimitsExpiry.Month, LimitsExpiry.Year]
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 function getExpiryLabelText(t: TFunction, expiry: LimitsExpiry): string {
   switch (expiry) {
     case LimitsExpiry.Day:

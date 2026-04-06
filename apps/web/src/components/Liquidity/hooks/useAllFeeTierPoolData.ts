@@ -14,6 +14,7 @@ import {
   MAX_FEE_TIER_DECIMALS,
   mergeFeeTiers,
 } from '~/components/Liquidity/utils/feeTiers'
+import { NEW_TOKEN_PLACEHOLDER_ADDRESS } from '~/pages/Liquidity/CreateAuction/types'
 
 /**
  * @returns map of fee tier (in hundredths of bips) to more data about the Pool
@@ -35,6 +36,12 @@ export function useAllFeeTierPoolData({
   const { t } = useTranslation()
   const { formatPercent } = useLocalizationContext()
 
+  const isPlaceholderToken = (c: Maybe<Currency>) => c?.isToken && c.address === NEW_TOKEN_PLACEHOLDER_ADDRESS
+  const shouldFetchPools =
+    Boolean(chainId && sdkCurrencies.TOKEN0 && sdkCurrencies.TOKEN1) &&
+    !isPlaceholderToken(sdkCurrencies.TOKEN0) &&
+    !isPlaceholderToken(sdkCurrencies.TOKEN1)
+
   const { data: poolData } = useGetPoolsByTokens(
     {
       chainId,
@@ -43,7 +50,7 @@ export function useAllFeeTierPoolData({
       token1: getTokenOrZeroAddress(sdkCurrencies.TOKEN1),
       hooks: hook,
     },
-    Boolean(chainId && sdkCurrencies.TOKEN0 && sdkCurrencies.TOKEN1),
+    shouldFetchPools,
   )
 
   return useMemo(() => {
@@ -63,7 +70,7 @@ export function useAllFeeTierPoolData({
         const percentage = liquiditySum.isZero()
           ? new Percent(0, 100)
           : new Percent(totalLiquidityUsdTruncated, liquiditySum.toString())
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (feeTierData[key]) {
           feeTierData[key].totalLiquidityUsd += totalLiquidityUsdTruncated
           feeTierData[key].percentage = feeTierData[key].percentage.add(percentage)

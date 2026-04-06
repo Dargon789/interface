@@ -1,6 +1,5 @@
-import { Circle as _Circle, ClipPath, Defs, G, Path, Rect, Svg } from 'react-native-svg'
-
-// eslint-disable-next-line no-relative-import-paths/no-relative-import-paths
+import { Circle, ClipPath, Defs, G, Path, Rect, Svg } from 'react-native-svg'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths
 import { createIcon } from '../factories/createIcon'
 
 export const [LoadingPriceCurve, AnimatedLoadingPriceCurve] = createIcon({
@@ -18,7 +17,7 @@ export const [LoadingPriceCurve, AnimatedLoadingPriceCurve] = createIcon({
         <G mask="url(#mask0_6507_58835)">
           <Rect width="224" height="76.9609" rx="1.2514" fill="currentColor" fillOpacity="0.12" />
           <G filter="url(#filter0_f_6507_58835)">
-            <_Circle cx="-0.156054" cy="19.1994" r="17.676" fill="currentColor" fillOpacity="0.24" />
+            <Circle cx="-0.156054" cy="19.1994" r="17.676" fill="currentColor" fillOpacity="0.24" />
           </G>
         </G>
       </G>

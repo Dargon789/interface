@@ -10,7 +10,7 @@ import {
 
 const SEARCH_HISTORY_LENGTH = 5
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 export function searchResultId(searchResult: SearchHistoryResult): string {
   const { type } = searchResult
   const address = isPoolSearchHistoryResult(searchResult) ? searchResult.poolId : searchResult.address
@@ -23,8 +23,6 @@ export function searchResultId(searchResult: SearchHistoryResult): string {
       return `wallet-${normalizedAddress}`
     case SearchHistoryResultType.Etherscan:
       return `etherscan-${normalizedAddress}`
-    case SearchHistoryResultType.NFTCollection:
-      return `nftCollection-${searchResult.chainId}-${normalizedAddress}`
     case SearchHistoryResultType.Pool:
       return `pool-${searchResult.chainId}-${normalizedAddress}-${searchResult.feeTier}`
   }
@@ -56,7 +54,7 @@ const slice = createSlice({
       state.results.unshift({ ...searchResult, searchId })
       // Filter out to only uniques & keep size under SEARCH_HISTORY_LENGTH
       state.results = state.results
-        // eslint-disable-next-line max-params
+        // oxlint-disable-next-line max-params
         .filter((result, index, self) => index === self.findIndex((value) => value.searchId === result.searchId))
         .slice(0, SEARCH_HISTORY_LENGTH)
     },

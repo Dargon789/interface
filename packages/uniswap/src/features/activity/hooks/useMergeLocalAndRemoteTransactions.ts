@@ -103,7 +103,7 @@ export function useMergeLocalAndRemoteTransactions({
   const { chains } = useEnabledChains()
 
   // Merge local and remote txs into one array and reconcile data discrepancies
-  // biome-ignore lint/correctness/useExhaustiveDependencies: trackedPlanKey is a signal dep that triggers re-computation when activePlanStore changes so withDisplayStatusForTrackedPlans reads fresh state.
+  // oxlint-disable-next-line react/exhaustive-deps -- trackedPlanKey is a signal dep that triggers re-computation when activePlanStore changes so withDisplayStatusForTrackedPlans reads fresh state.
   return useMemo((): TransactionDetails[] | undefined => {
     if (!remoteTransactions?.length) {
       return localTransactions?.map(withDisplayStatusForTrackedPlans)
@@ -288,5 +288,6 @@ export function useMergeLocalAndRemoteTransactions({
 
       return timeA > timeB ? -1 : 1
     })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [dispatch, localTransactions, remoteTransactions, chains, trackedPlansKey])
 }

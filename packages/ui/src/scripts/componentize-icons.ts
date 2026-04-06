@@ -1,11 +1,11 @@
-/** biome-ignore-all lint/suspicious/noConsole: misc script, so it's okay */
-/** biome-ignore-all lint/suspicious/noExplicitAny: misc script, so it's okay */
+/* oxlint-disable no-console -- misc script, so it's okay */
+/* oxlint-disable typescript/no-explicit-any -- misc script, so it's okay */
 
 import path, { join } from 'node:path'
 import camelcase from 'camelcase'
 import { load } from 'cheerio'
 import { ensureDirSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'fs-extra'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// oxlint-disable-next-line typescript/ban-ts-comment
 // @ts-expect-error
 import uppercamelcase from 'uppercamelcase'
 
@@ -69,6 +69,19 @@ async function createSVGComponents(dirs: DirectoryPair, skipExisting: boolean): 
     }
   }
 
+  // Also export hand-written components that exist in the output directory
+  // but don't have corresponding SVG sources (e.g. multi-color logos)
+  const generatedClassNames = new Set(fileNames.map(generateClassName))
+  const existingComponents = readdirSync(dirs.output)
+    .filter((name: string) => name.endsWith('.tsx'))
+    .map((name: string) => path.basename(name, '.tsx'))
+    .filter((name: string) => !generatedClassNames.has(name))
+    .filter((name: string) => name !== 'index' && name !== 'exported')
+
+  for (const className of existingComponents) {
+    indexFile += `\nexport * from './${className}'`
+  }
+
   // Write index file (without formatting)
   console.log('Writing index file...')
   const indexPath = join(dirs.output, 'exported.ts')
@@ -87,9 +100,10 @@ function generateSVGComponentString(svg: string, fileName: string): string {
   // Because CSS does not exist on Native platforms
   // We need to duplicate the styles applied to the
   // SVG to its children
-  // biome-ignore lint/style/noNonNullAssertion: SVG element is guaranteed to exist after cheerio parsing
+  // oxlint-disable-next-line typescript/no-non-null-assertion -- SVG element is guaranteed to exist after cheerio parsing
   const svgAttribs = $('svg')[0]!.attribs
   delete svgAttribs['xmlns']
+  // oxlint-disable-next-line typescript/no-explicit-any -- biome-parity: oxlint is stricter here
   const attribsOfInterest: Record<string, any> = {}
 
   Object.keys(svgAttribs).forEach((key) => {
@@ -98,6 +112,7 @@ function generateSVGComponentString(svg: string, fileName: string): string {
     }
   })
 
+  // oxlint-disable-next-line typescript/no-explicit-any -- biome-parity: oxlint is stricter here
   $('*').each((_, el: any) => {
     Object.keys(el.attribs).forEach((x) => {
       if (x.includes('-')) {
@@ -128,8 +143,8 @@ function generateSVGComponentString(svg: string, fileName: string): string {
     .replace(/height="[0-9]+"/, '')
     .replace('<svg', '<Svg')
     .replace('</svg', '</Svg')
-    .replace(/<circle/g, '<_Circle')
-    .replace(/<\/circle/g, '</_Circle')
+    .replace(/<circle/g, '<Circle')
+    .replace(/<\/circle/g, '</Circle')
     .replace(/<ellipse/g, '<Ellipse')
     .replace(/<\/ellipse/g, '</Ellipse')
     .replace(/<g/g, '<G')
@@ -150,8 +165,8 @@ function generateSVGComponentString(svg: string, fileName: string): string {
     .replace(/<\/rect/g, '</Rect')
     .replace(/<symbol/g, '<Symbol')
     .replace(/<\/symbol/g, '</Symbol')
-    .replace(/<text/g, '<_Text')
-    .replace(/<\/text/g, '</_Text')
+    .replace(/<text/g, '<Text')
+    .replace(/<\/text/g, '</Text')
     .replace(/<use/g, '<Use')
     .replace(/<\/use/g, '</Use')
     .replace(/<defs/g, '<Defs')
@@ -185,11 +200,11 @@ Use,
 Defs,
 Stop,
 ClipPath,
-Text as _Text,
-Circle as _Circle,
+Text,
+Circle,
 } from 'react-native-svg'
 
-// eslint-disable-next-line no-relative-import-paths/no-relative-import-paths
+// oxlint-disable-next-line universe-custom/no-relative-import-paths
 import { createIcon } from '../factories/createIcon'
 
 export const [${className}, Animated${className}] = createIcon({

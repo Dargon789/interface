@@ -8,7 +8,7 @@ export function AuctionGraduatedSkeleton(): JSX.Element {
         position="relative"
         overflow="hidden"
         borderRadius="$rounded24"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3"
         backgroundColor="$surface1"
         minHeight={344}

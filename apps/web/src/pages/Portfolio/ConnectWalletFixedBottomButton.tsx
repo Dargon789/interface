@@ -103,7 +103,7 @@ export function ConnectWalletFixedBottomButton({ shouldShow = false }: ConnectWa
           p="$spacing16"
           gap="$spacing24"
           cursor="default"
-          borderWidth={1}
+          borderWidth="$spacing1"
           borderColor="$surface3"
         >
           <Text variant="body2" color="$neutral2">

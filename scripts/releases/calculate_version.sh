@@ -2,45 +2,42 @@
 
 # Calculate next version for mobile/extension releases
 # Usage: ./calculate_version.sh <current_version> <format>
-# Format: "mobile" (X.YY or X.YY.1) or "extension" (X.YY.0 or X.YY.1)
+# Format: "mobile" (X.YY) or "extension" (X.YY.0)
+#
+# With biweekly releases, every cut bumps the minor version.
+# Patch versions (.1) are reserved for hotfixes only.
 #
 # Examples:
-#   ./calculate_version.sh 1.64 mobile      → 1.64.1
-#   ./calculate_version.sh 1.64.1 mobile    → 1.65
-#   ./calculate_version.sh 1.64.0 extension → 1.64.1
-#   ./calculate_version.sh 1.64.1 extension → 1.65.0
+#   ./calculate_version.sh 1.70 mobile      → 1.71
+#   ./calculate_version.sh 1.71 mobile      → 1.72
+#   ./calculate_version.sh 1.70.0 extension → 1.71.0
+#   ./calculate_version.sh 1.71.0 extension → 1.72.0
+#
+# Legacy .1 versions are handled gracefully (bumps to next minor):
+#   ./calculate_version.sh 1.70.1 mobile    → 1.71
+#   ./calculate_version.sh 1.70.1 extension → 1.71.0
 
 calculate_next_version() {
   local current=$1
   local format=$2  # "mobile" or "extension"
 
-  # Check if version ends with .1
-  if [[ $current == *.1 ]]; then
-    # Current ends with .1 (e.g., 1.64.1)
-    # Remove .1 to get base (e.g., 1.64)
-    local base=${current%.1}
+  # Strip any patch suffix (X.YY.Z → X.YY) to get the base
+  local base=$current
+  if [[ $current =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    base=${current%.*}
+  fi
 
-    # Extract major and minor from base
-    local major=${base%.*}    # Everything before last dot: 1.64 -> 1
-    local minor=${base##*.}   # Everything after last dot: 1.64 -> 64
+  # Extract major and minor from base
+  local major=${base%.*}    # Everything before last dot: 1.70 -> 1
+  local minor=${base##*.}   # Everything after last dot: 1.70 -> 70
 
-    # Increment minor version
-    local next_minor=$((minor + 1))
+  # Increment minor version
+  local next_minor=$((minor + 1))
 
-    if [ "$format" == "mobile" ]; then
-      echo "$major.$next_minor"
-    else
-      echo "$major.$next_minor.0"
-    fi
+  if [ "$format" == "mobile" ]; then
+    echo "$major.$next_minor"
   else
-    # Current is X.YY or X.YY.0, next is X.YY.1
-    if [[ $current == *.0 ]]; then
-      # Extension format: 1.65.0 -> 1.65.1
-      echo "${current%.0}.1"
-    else
-      # Mobile format: 1.65 -> 1.65.1
-      echo "$current.1"
-    fi
+    echo "$major.$next_minor.0"
   fi
 }
 

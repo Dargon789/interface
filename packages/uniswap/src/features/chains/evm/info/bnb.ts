@@ -1,6 +1,7 @@
 import { CurrencyAmount, Token } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
 import { BNB_LOGO } from 'ui/src/assets'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import { DEFAULT_NATIVE_ADDRESS_LEGACY, getQuicknodeEndpointUrl } from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
 import { GENERIC_L2_GAS_CONFIG } from 'uniswap/src/features/chains/gasDefaults'
@@ -45,6 +46,7 @@ export const BNB_CHAIN_INFO = {
     apiURL: 'https://api.bscscan.com',
   },
   interfaceName: 'bnb',
+  searchAliases: ['bnb', 'bnb chain', 'binance'],
   label: 'BNB Chain',
   logo: BNB_LOGO,
   name: 'BNB Smart Chain Mainnet',
@@ -68,7 +70,7 @@ export const BNB_CHAIN_INFO = {
   statusPage: undefined,
   supportsV4: true,
   supportsNFTs: false,
-  urlParam: 'bnb',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Bnb],
   wrappedNativeCurrency: {
     name: 'Wrapped BNB',
     symbol: 'WBNB',

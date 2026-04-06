@@ -15,8 +15,9 @@ import {
   ContentScriptUtilityMessageType,
   ExtensionToDappRequestType,
 } from 'src/background/messagePassing/types/requests'
-import { ExtensionEthMethodHandler } from 'src/contentScript/methodHandlers/ExtensionEthMethodHandler'
+import { isSandboxedFrame } from 'src/contentScript/isSandboxedFrame'
 import { emitAccountsChanged, emitChainChanged } from 'src/contentScript/methodHandlers/emitUtils'
+import { ExtensionEthMethodHandler } from 'src/contentScript/methodHandlers/ExtensionEthMethodHandler'
 import { ProviderDirectMethodHandler } from 'src/contentScript/methodHandlers/ProviderDirectMethodHandler'
 import { UniswapMethodHandler } from 'src/contentScript/methodHandlers/UniswapMethodHandler'
 import {
@@ -51,6 +52,11 @@ import { defineContentScript } from 'wxt/utils/define-content-script'
 import { ZodError } from 'zod'
 
 function makeInjected(): void {
+  // Do not inject into sandboxed frames without allow-same-origin.
+  if (isSandboxedFrame()) {
+    return
+  }
+
   // arc styles aren't available on load
   const ARC_STYLE_INJECTION_DELAY = ONE_SECOND_MS
 
@@ -285,7 +291,7 @@ function makeInjected(): void {
   // notify background script if arc browser detected so we can disable the extension
   window.addEventListener('load', () => {
     // if styles aren't available at all, then we cannot check for the arc styles
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     const isStylesAvailable = document.documentElement && !!getComputedStyle(document.documentElement).length
     if (!isStylesAvailable) {
       return
@@ -300,7 +306,7 @@ function makeInjected(): void {
   })
 }
 
-// eslint-disable-next-line import/no-unused-modules
+// oxlint-disable-next-line import/no-unused-modules
 export default defineContentScript({
   matches:
     __DEV__ || process.env.BUILD_ENV === 'dev'

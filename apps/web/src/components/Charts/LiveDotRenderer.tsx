@@ -15,6 +15,7 @@ interface LiveDotRendererProps {
   chartContainer?: HTMLElement | null
   overrideColor?: string
   dataKey?: string | number // Tracks when chart data changes (e.g., time period change)
+  coordinateOverride?: { x: number; y: number } | null // Synchronous coordinates from controller.update()
 }
 
 export function LiveDotRenderer({
@@ -25,6 +26,7 @@ export function LiveDotRenderer({
   chartContainer,
   overrideColor,
   dataKey,
+  coordinateOverride,
 }: LiveDotRendererProps) {
   const colors = useSporeColors()
   const [coordinates, setCoordinates] = useState<{ x: number; y: number } | null>(null)
@@ -102,11 +104,11 @@ export function LiveDotRenderer({
     return null
   }
 
-  if (!isHovering && !coordinates) {
+  if (!isHovering && !coordinateOverride && !coordinates) {
     return null
   }
 
-  const renderCoordinates = isHovering ? hoverCoordinates : coordinates
+  const renderCoordinates = isHovering ? hoverCoordinates : (coordinateOverride ?? coordinates)
   if (!renderCoordinates) {
     return null
   }

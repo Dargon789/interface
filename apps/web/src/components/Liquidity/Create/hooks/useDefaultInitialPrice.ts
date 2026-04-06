@@ -36,7 +36,7 @@ export function useDefaultInitialPrice({
   })
 
   // Reset price when currencyIn or currencyOut changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +currencyIn, +currencyOut
+  // oxlint-disable-next-line react/exhaustive-deps -- +currencyIn, +currencyOut
   useEffect(() => {
     setPrice(undefined)
   }, [currencyIn, currencyOut])

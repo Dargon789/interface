@@ -4,7 +4,6 @@ import {
   useTestnetModeBannerHeight,
 } from 'uniswap/src/features/settings/hooks'
 import { selectIsTestnetModeEnabled, selectWalletHideSpamTokensSetting } from 'uniswap/src/features/settings/selectors'
-
 import { renderHook } from 'uniswap/src/test/test-utils'
 import type { Mock } from 'vitest'
 

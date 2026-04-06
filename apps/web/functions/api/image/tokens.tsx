@@ -1,4 +1,4 @@
-// biome-ignore-all lint/correctness/noRestrictedElements: ignoring for the whole file
+/* oxlint-disable react/forbid-elements -- ignoring for the whole file */
 
 import { ImageResponse } from '@vercel/og'
 import { WATERMARK_URL } from 'functions/constants'

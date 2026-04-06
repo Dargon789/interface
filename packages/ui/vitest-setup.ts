@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: need to use any for test setup */
+/* oxlint-disable typescript/no-explicit-any -- need to use any for test setup */
 import React from 'react'
 import { vi } from 'vitest'
 

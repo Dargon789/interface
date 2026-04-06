@@ -7,9 +7,8 @@ import {
 import type { TransactionSettingConfig } from 'uniswap/src/features/transactions/components/settings/types'
 import { TransactionModal } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModal'
 import type { TransactionModalProps } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalProps'
-import { ActivePlanUpdater } from 'uniswap/src/features/transactions/swap/review/stores/activePlan/ActivePlanUpdater'
 import { activePlanStore } from 'uniswap/src/features/transactions/swap/review/stores/activePlan/activePlanStore'
-import { CurrentScreen } from 'uniswap/src/features/transactions/swap/SwapFlow/CurrentScreen'
+import { ActivePlanUpdater } from 'uniswap/src/features/transactions/swap/review/stores/activePlan/ActivePlanUpdater'
 import { SwapDependenciesStoreContext } from 'uniswap/src/features/transactions/swap/stores/swapDependenciesStore/SwapDependenciesStoreContext'
 import { useSwapDependenciesStoreBase } from 'uniswap/src/features/transactions/swap/stores/swapDependenciesStore/useSwapDependenciesStore'
 import type { SwapFormStore } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/createSwapFormStore'
@@ -17,6 +16,7 @@ import { SwapFormStoreContext } from 'uniswap/src/features/transactions/swap/sto
 import type { SwapFormState } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/types'
 import { useSwapFormStoreBase } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
 import { SwapTxStoreContextProvider } from 'uniswap/src/features/transactions/swap/stores/swapTxStore/SwapTxStoreContextProvider'
+import { CurrentScreen } from 'uniswap/src/features/transactions/swap/SwapFlow/CurrentScreen'
 import { signalSwapModalClosed } from 'uniswap/src/utils/saga'
 import { useEvent } from 'utilities/src/react/hooks'
 

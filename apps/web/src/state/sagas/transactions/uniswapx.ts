@@ -63,6 +63,7 @@ export function* handleUniswapXSignatureStep(params: HandleUniswapXSignatureStep
   const swapInfo = getSwapTransactionInfo({
     trade,
     swapStartTimestamp: analytics.swap_start_timestamp,
+    transactedUSDValue: analytics.token_in_amount_usd,
   })
   addTransactionBreadcrumb({ step, data: { routing, ...swapInfo }, status: TransactionBreadcrumbStatus.InProgress })
   sendAnalyticsEvent(

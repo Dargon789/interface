@@ -10,7 +10,7 @@
  */
 export function setupTurnstileCSPErrorFilter(): void {
   // Store the original console.error
-  // biome-ignore lint/suspicious/noConsole: Required to override console.error for filtering
+  // oxlint-disable-next-line no-console -- Required to override console.error for filtering
   const originalError = console.error
 
   /**
@@ -40,6 +40,7 @@ export function setupTurnstileCSPErrorFilter(): void {
   }
 
   // Override console.error to filter out Turnstile CSP errors
+  // oxlint-disable-next-line no-console -- biome-parity: oxlint is stricter here
   console.error = (...args: unknown[]): void => {
     // Convert all arguments to string for pattern matching
     const errorString = args

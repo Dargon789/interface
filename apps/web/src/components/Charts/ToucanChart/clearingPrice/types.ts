@@ -62,6 +62,10 @@ interface ClearingPriceChartControllerCallbacks {
   onHoverCoordinatesChange?: (coordinates: ChartCoordinates | null) => void
   /** Called when visible range / zoom state changes */
   onZoomStateChange?: (state: ClearingPriceZoomState) => void
+  /** Called when y-axis labels are computed (for custom overlay rendering) */
+  onYAxisLabelsChange?: (labels: YAxisLabel[]) => void
+  /** Called when the visible price range changes (zoom, pan, resize, data update) */
+  onVisiblePriceRangeChange?: (range: { min: number; max: number }) => void
 }
 
 export interface ClearingPriceChartControllerCreateParams {
@@ -113,6 +117,13 @@ export interface ClearingPriceChartControllerUpdateParams {
   hideXAxis?: boolean
   /** Whether zoom/pan interactions are enabled */
   isZoomEnabled?: boolean
+  /** When true, disables mouse wheel scroll/scale so an external handler can manage Y-axis pan/zoom */
+  disableMouseWheelInteractions?: boolean
+}
+
+export interface YAxisLabel {
+  label: string
+  y: number
 }
 
 export interface ClearingPriceTooltipState {

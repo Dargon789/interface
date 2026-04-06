@@ -28,7 +28,7 @@ export class OrderWatcher {
   // There is an issue on extension where the sagas are initialized multiple times.
   // The first instance of this polling utility will not have access to the latest store.
   // As a temporary fix, we can use an index to track & cancel the previous instance of the polling utility.
-  private static index = 0
+  private static index = 0;
 
   static *initialize(): Generator<unknown> {
     OrderWatcher.index++
@@ -135,7 +135,7 @@ export class OrderWatcher {
     const promise = new Promise<UniswapXOrderDetails>((resolve) => {
       resolvePromise = resolve
     })
-    // biome-ignore lint/style/noNonNullAssertion: Safe assertion in test or migration context -- Must appease typechecker since resolvePromise is assigned inside promise scope
+    // oxlint-disable-next-line typescript/no-non-null-assertion -- Safe assertion in test or migration context -- Must appease typechecker since resolvePromise is assigned inside promise scope
     OrderWatcher.listeners[orderHash] = { updateOrderStatus: resolvePromise!, promise }
 
     return yield* call(() => promise)

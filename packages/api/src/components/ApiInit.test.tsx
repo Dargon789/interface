@@ -341,7 +341,7 @@ describe('ApiInit Integration', () => {
         },
         { timeout: 100 },
       ),
-    ).rejects.toThrow()
+    ).rejects.toThrow('expected "spy" to be called at least once')
 
     // Verify it still hasn't been called
     expect(mockApiClient.initSession).not.toHaveBeenCalled()

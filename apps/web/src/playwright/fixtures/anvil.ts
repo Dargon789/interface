@@ -1,4 +1,5 @@
-// biome-ignore lint/style/noRestrictedImports: Anvil test fixtures need direct ethers imports
+/* oxlint-disable react-hooks/rules-of-hooks -- Playwright fixtures use `use()` which is not a React hook */
+// oxlint-disable-next-line no-restricted-imports -- Anvil test fixtures need direct ethers imports
 import { test as base } from '@playwright/test'
 import { MaxUint160, MaxUint256, permit2Address } from '@uniswap/permit2-sdk'
 import { WETH_ADDRESS } from '@uniswap/universal-router-sdk'
@@ -21,7 +22,18 @@ class WalletError extends Error {
   code?: number
 }
 
-const allowedErc20BalanceAddresses = [USDT.address, DAI.address, WETH_ADDRESS(UniverseChainId.Mainnet)]
+// Known balance mapping slots for tokens with non-standard storage layouts
+const KNOWN_BALANCE_SLOTS: Record<string, number> = {
+  // WEETH (ether.fi weETH) — balance mapping at slot 101
+  '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee': 101,
+}
+
+const allowedErc20BalanceAddresses = [
+  USDT.address,
+  DAI.address,
+  WETH_ADDRESS(UniverseChainId.Mainnet),
+  ...Object.keys(KNOWN_BALANCE_SLOTS),
+]
 
 // Helper to check if error is a timeout
 const isTimeoutError = (error: any): boolean => {
@@ -56,6 +68,7 @@ const createAnvilClient = () => {
         erc20Address: address,
         user: walletAddress,
         newBalance: balance,
+        knownSlot: KNOWN_BALANCE_SLOTS[address],
       })
     },
     async getErc20Balance(address: Address, owner?: Address) {
@@ -219,7 +232,7 @@ const createAnvilClient = () => {
 }
 
 export const test = base.extend<{ anvil: AnvilClient; delegateToZeroAddress?: void }>({
-  // biome-ignore lint/correctness/noEmptyPattern: it's ok here
+  // oxlint-disable-next-line no-empty-pattern -- it's ok here
   async anvil({}, use) {
     // Ensure Anvil is running and healthy
     if (!(await getAnvilManager().ensureHealthy())) {

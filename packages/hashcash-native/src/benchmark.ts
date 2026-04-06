@@ -4,7 +4,7 @@
  * Compares native vs JS hashcash implementation performance.
  * Run this in your app to measure the speedup from native code.
  */
-/** biome-ignore-all lint/suspicious/noConsole: dev only file */
+/* oxlint-disable no-console -- dev only file */
 
 import { HashcashNative } from './index'
 

@@ -1,10 +1,11 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import '@testing-library/jest-dom' // jest custom assertions
 import 'jest-styled-components' // adds style diffs to snapshot tests
 import '~/polyfills' // add polyfills
-// eslint-disable-next-line
+// oxlint-disable-next-line
 import './test-utils/mockTamagui' // mock problematic Tamagui components
-
+import { Readable } from 'stream'
+import { TextDecoder, TextEncoder } from 'util'
 import { type createPopper } from '@popperjs/core'
 import {
   BaseWalletAdapter,
@@ -18,11 +19,9 @@ import { config as loadEnv } from 'dotenv'
 import failOnConsole from 'jest-fail-on-console'
 import { disableNetConnect, restore as restoreNetConnect } from 'nock'
 import React from 'react'
-import { Readable } from 'stream'
 import { type UniverseChainId } from 'uniswap/src/features/chains/types'
 import { setupi18n } from 'uniswap/src/i18n/i18n-setup-interface'
 import { mockLocalizationContext } from 'uniswap/src/test/mocks/locale'
-import { TextDecoder, TextEncoder } from 'util'
 import { toBeVisible } from '~/test-utils/matchers'
 import { mocked } from '~/test-utils/mocked'
 
@@ -106,7 +105,7 @@ setupi18n()
 globalThis.origin = 'https://app.uniswap.org'
 
 // Polyfill browser APIs (jest is a node.js environment):
-// biome-ignore lint/complexity/noUselessLoneBlockStatements: block used to scope polyfill assignments
+// oxlint-disable-next-line no-lone-blocks -- block used to scope polyfill assignments
 {
   window.open = vi.fn()
   window.getComputedStyle = vi.fn()
@@ -119,7 +118,7 @@ globalThis.origin = 'https://app.uniswap.org'
   }
 
   globalThis.matchMedia =
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     globalThis.matchMedia ||
     ((query) => {
       const reducedMotion = query.match(/prefers-reduced-motion: ([a-zA-Z0-9-]+)/)
@@ -452,7 +451,7 @@ vi.mock('uniswap/src/features/chains/hooks/useOrderedChainIds', () => {
 })
 
 function muteStatsigWarnings() {
-  // biome-ignore lint/suspicious/noConsole: strictly for testing
+  // oxlint-disable-next-line no-console -- strictly for testing
   const originalWarn = console.warn
   vi.spyOn(console, 'warn').mockImplementation((message, ...args) => {
     const isStatsigWarning = args.some((arg) => {
@@ -468,7 +467,7 @@ function muteStatsigWarnings() {
   })
 }
 
-// biome-ignore lint/suspicious/noConsole: strictly for testing
+// oxlint-disable-next-line no-console -- strictly for testing
 const originalConsoleDebug = console.debug
 // Mocks are configured to reset between tests (by CRA), so they must be set in a beforeEach.
 beforeEach(() => {

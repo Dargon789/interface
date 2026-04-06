@@ -1,7 +1,7 @@
-// eslint-disable-next-line @typescript-eslint/triple-slash-reference
+// oxlint-disable-next-line typescript/triple-slash-reference
 /// <reference path="../../../index.d.ts" />
 
-/** biome-ignore-all lint/style/noNamespace: required to define process.env type */
+/* oxlint-disable typescript/no-namespace -- required to define process.env type */
 
 declare global {
   namespace NodeJS {
@@ -17,7 +17,7 @@ import { config } from 'ui/src/tamagui.config'
 type Conf = typeof config
 
 declare module 'tamagui' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
+  // oxlint-disable-next-line typescript/no-empty-interface
   interface TamaguiCustomConfig extends Conf {}
 
   interface TypeOverride {

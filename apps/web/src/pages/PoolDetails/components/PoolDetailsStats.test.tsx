@@ -1,5 +1,4 @@
 import '~/test-utils/tokens/mocks'
-
 import { enableNetConnect } from 'nock'
 import { dismissTokenWarning } from 'uniswap/src/features/tokens/warnings/slice/slice'
 import { TokenProtectionWarning } from 'uniswap/src/features/tokens/warnings/types'

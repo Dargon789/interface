@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* oxlint-disable typescript/no-unnecessary-condition */
 import { Token } from '@uniswap/sdk-core'
 import { type PersistState } from 'redux-persist'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -28,7 +28,7 @@ export const migration3 = createSafeMigration({
       }
       for (const [chainId, address] of Object.entries(USDCe_ADDRESSES)) {
         const chainIdKey = Number(chainId) as UniverseChainId
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (state.user.tokens?.[chainIdKey]?.[address]) {
           state.user.tokens[chainIdKey][address] = serializeToken(
             new Token(chainIdKey, address, 6, 'USDC.e', 'Bridged USDC'),
@@ -43,7 +43,7 @@ export const migration3 = createSafeMigration({
         'USDbC',
         'USD Base Coin',
       )
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (state.user.tokens?.[UniverseChainId.Base]?.[USDbC_BASE.address]) {
         state.user.tokens[UniverseChainId.Base][USDbC_BASE.address] = serializeToken(USDbC_BASE)
       }

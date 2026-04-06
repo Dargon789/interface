@@ -85,12 +85,13 @@ export enum DynamicConfigs {
 
   // Web
   AstroChain = 'astro_chain',
-  BlockedNftCollections = 'blocked_nft_collections',
+  EmbeddedWalletBetaPassphrases = 'embedded_wallet_beta_passphrases',
   ExternallyConnectableExtension = 'externally_connectable_extension',
   LPConfig = 'lp_config',
   AllowedV4WethHookAddresses = 'allowed_v4_weth_hook_addresses',
   OutageBannerChainId = 'outage_banner_chain_id',
   VerifiedAuctions = 'verified_auctions',
+  CreateAuction = 'create_auction_config',
 }
 
 // Config values go here for easy access
@@ -117,6 +118,8 @@ export enum SwapConfigKey {
   SolanaSendMinGasAmount = 'solanaSendMinGasAmount',
   GenericL2SwapMinGasAmount = 'genericL2SwapMinGasAmount',
   GenericL2SendMinGasAmount = 'genericL2SendMinGasAmount',
+  TempoSwapMinGasAmount = 'tempoSwapMinGasAmount',
+  TempoSendMinGasAmount = 'tempoSendMinGasAmount',
 
   LowBalanceWarningGasPercentage = 'lowBalanceWarningGasPercentage',
 }
@@ -187,10 +190,6 @@ export enum DatadogSessionSampleRateKey {
   Rate = 'rate',
 }
 
-export enum BlockedNftCollectionsConfigKey {
-  BlocklistedCollections = 'blocklistedCollections',
-}
-
 export enum ExternallyConnectableExtensionConfigKey {
   ExtensionId = 'extensionId',
 }
@@ -243,6 +242,15 @@ export enum OutageBannerChainIdConfigKey {
   ChainId = 'chainId',
 }
 
+export enum CreateAuctionConfigKey {
+  AllowedNetworks = 'allowedNetworks',
+  AllowedTokenCreationNetworks = 'allowedTokenCreationNetworks',
+}
+
+export enum EmbeddedWalletBetaPassphrasesKey {
+  Passphrases = 'passphrases',
+}
+
 export type DynamicConfigKeys = {
   // Shared
   [DynamicConfigs.Swap]: SwapConfigKey
@@ -262,13 +270,14 @@ export type DynamicConfigKeys = {
 
   // Web
   [DynamicConfigs.AstroChain]: AstroChainConfigKey
-  [DynamicConfigs.BlockedNftCollections]: BlockedNftCollectionsConfigKey
   [DynamicConfigs.ExternallyConnectableExtension]: ExternallyConnectableExtensionConfigKey
   [DynamicConfigs.LPConfig]: LPConfigKey
   [DynamicConfigs.AllowedV4WethHookAddresses]: AllowedV4WethHookAddressesConfigKey
   [DynamicConfigs.VerifiedAuctions]: VerifiedAuctionsConfigKey
   [DynamicConfigs.BlockedAsyncSubmissionChainIds]: BlockedAsyncSubmissionChainIdsConfigKey
   [DynamicConfigs.OutageBannerChainId]: OutageBannerChainIdConfigKey
+  [DynamicConfigs.CreateAuction]: CreateAuctionConfigKey
+  [DynamicConfigs.EmbeddedWalletBetaPassphrases]: EmbeddedWalletBetaPassphrasesKey
 }
 
 // This type must match the format in statsig dynamic config for uwulink

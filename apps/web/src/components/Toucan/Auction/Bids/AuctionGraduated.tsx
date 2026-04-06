@@ -1,27 +1,22 @@
+import '~/components/Toucan/Auction/Bids/AuctionGraduated.css'
 import { Currency, CurrencyAmount, Price } from '@uniswap/sdk-core'
 import JSBI from 'jsbi'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Flex, Text, useSporeColors } from 'ui/src'
+import { Flex, Text, useSporeColors } from 'ui/src'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { useCurrencyInfoWithLoading } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { NumberType } from 'utilities/src/format/types'
 import { formatUnits } from 'viem'
-import { q96ToPriceString } from '~/components/Toucan/Auction/BidDistributionChart/utils/q96'
-import { WithdrawModal } from '~/components/Toucan/Auction/Bids/WithdrawModal/WithdrawModal'
-import { useBidTokenInfo } from '~/components/Toucan/Auction/hooks/useBidTokenInfo'
-import { useWithdrawButtonState } from '~/components/Toucan/Auction/hooks/useWithdrawButtonState'
-import { BidInfoTab } from '~/components/Toucan/Auction/store/types'
-import { useAuctionStore } from '~/components/Toucan/Auction/store/useAuctionStore'
-import { SubscriptZeroPrice } from '~/components/Toucan/Shared/SubscriptZeroPrice'
-import { ToucanActionButton } from '~/components/Toucan/Shared/ToucanActionButton'
-import '~/components/Toucan/Auction/Bids/AuctionGraduated.css'
-import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import { useTokenLaunchedBannerColorData } from '~/components/Toucan/Auction/Banners/TokenLaunched/useTokenLaunchedBannerColorData'
+import { q96ToPriceString } from '~/components/Toucan/Auction/BidDistributionChart/utils/q96'
 import { AuctionGraduatedSkeleton } from '~/components/Toucan/Auction/Bids/AuctionGraduatedSkeleton'
+import { useBidTokenInfo } from '~/components/Toucan/Auction/hooks/useBidTokenInfo'
+import { useAuctionStore } from '~/components/Toucan/Auction/store/useAuctionStore'
 import { getClearingPrice } from '~/components/Toucan/Auction/utils/clearingPrice'
+import { SubscriptZeroPrice } from '~/components/Toucan/Shared/SubscriptZeroPrice'
 
 const AuctionGraduatedSuccess = ({
   auctionLogoUrl,
@@ -33,7 +28,6 @@ const AuctionGraduatedSuccess = ({
   chainId,
   claimBlock,
   currentBlockNumber,
-  onSetActiveTab,
 }: {
   auctionLogoUrl: Maybe<string>
   auctionCurrency: Currency
@@ -44,7 +38,6 @@ const AuctionGraduatedSuccess = ({
   chainId: number
   claimBlock: string | undefined
   currentBlockNumber: number | undefined
-  onSetActiveTab: (tab: BidInfoTab) => void
 }) => {
   const { t } = useTranslation()
   const { userBids, tokenColor } = useAuctionStore((state) => ({
@@ -55,20 +48,6 @@ const AuctionGraduatedSuccess = ({
   const { formatNumberOrString } = useLocalizationContext()
   const auctionTokenDecimals = auctionCurrency.decimals
   const bidTokenDecimals = bidTokenCurrency.decimals
-  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false)
-
-  // Get withdraw button state from shared hook
-  const {
-    label: withdrawLabel,
-    isDisabled: isWithdrawDisabled,
-    disabledTooltip,
-  } = useWithdrawButtonState({
-    isGraduated: true,
-    claimBlock,
-    currentBlockNumber,
-    chainId,
-  })
-
   // Check if we're in the withdrawal waiting period
   const isClaimPeriodNotOpen = useMemo(() => {
     if (!claimBlock || !currentBlockNumber) {
@@ -202,7 +181,7 @@ const AuctionGraduatedSuccess = ({
         position="relative"
         overflow="hidden"
         borderRadius="$rounded24"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3"
         backgroundColor="$surface1"
         minHeight={344}
@@ -328,32 +307,11 @@ const AuctionGraduatedSuccess = ({
           )}
         </Flex>
       </Flex>
-
-      <Button
-        flex={1}
-        size="medium"
-        emphasis="secondary"
-        variant="default"
-        onPress={() => onSetActiveTab(BidInfoTab.MY_BIDS)}
-      >
-        <Button.Text color="$neutral1">{t('toucan.auction.viewMyBids')}</Button.Text>
-      </Button>
-      {/* Hide on $lg and below - mobile uses AuctionChartContainer inline button or ToucanToken fixed button */}
-      <Flex display="flex" $lg={{ display: 'none' }}>
-        <ToucanActionButton
-          elementName={ElementName.AuctionWithdrawTokensButton}
-          label={withdrawLabel}
-          onPress={() => setIsWithdrawModalOpen(true)}
-          isDisabled={isWithdrawDisabled}
-          disabledTooltip={isWithdrawDisabled ? disabledTooltip : undefined}
-        />
-      </Flex>
-      <WithdrawModal isOpen={isWithdrawModalOpen} onClose={() => setIsWithdrawModalOpen(false)} />
     </Flex>
   )
 }
 
-export function AuctionGraduated({ onSetActiveTab }: { onSetActiveTab: (tab: BidInfoTab) => void }) {
+export function AuctionGraduated() {
   const { auctionDetails, checkpointData, currentBlockNumber } = useAuctionStore((state) => ({
     auctionDetails: state.auctionDetails,
     checkpointData: state.checkpointData,
@@ -399,7 +357,6 @@ export function AuctionGraduated({ onSetActiveTab }: { onSetActiveTab: (tab: Bid
       chainId={auctionDetails.chainId}
       claimBlock={auctionDetails.claimBlock}
       currentBlockNumber={currentBlockNumber}
-      onSetActiveTab={onSetActiveTab}
     />
   )
 }

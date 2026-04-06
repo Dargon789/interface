@@ -1,6 +1,7 @@
-import { Dispatch, SetStateAction } from 'react'
+import { Dispatch, SetStateAction, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex } from 'ui/src'
+import { Check } from 'ui/src/components/icons/Check'
 import { Faceid } from 'ui/src/components/icons/Faceid'
 import { Fingerprint } from 'ui/src/components/icons/Fingerprint'
 import { Passkey } from 'ui/src/components/icons/Passkey'
@@ -27,19 +28,19 @@ export function PasskeyGenerationModal({
 }) {
   const { t } = useTranslation()
   const { closeModal } = useModalState(ModalName.GetTheApp)
+  const [hasWalletCreationSuccess, setHasWalletCreationSuccess] = useState(false)
 
-  const onSuccess = useEvent(() => {
+  const onSuccess = useEvent(async () => {
+    setHasWalletCreationSuccess(true)
+    await new Promise((resolve) => setTimeout(resolve, 500)) // show success state for 500ms
     closeModal()
-    setPage(Page.GetStarted)
+    setPage(Page.DownloadApp)
   })
 
-  const { signInWithPasskey } = useSignInWithPasskey({
+  const { signInWithPasskey, isPending } = useSignInWithPasskey({
     createNewWallet: true,
     unitag,
     onSuccess,
-    onError: () => {
-      setPage(Page.GetStarted)
-    },
   })
 
   return (
@@ -73,7 +74,7 @@ export function PasskeyGenerationModal({
             </Flex>
           </Flex>
         }
-        learnMoreLink={uniswapUrls.helpArticleUrls.passkeysInfo} // TODO(WEB-7390): add learn more link
+        learnMoreLink={uniswapUrls.helpArticleUrls.passkeysInfo}
         onClose={onClose}
         goBack={goBack}
       >
@@ -82,12 +83,25 @@ export function PasskeyGenerationModal({
             <Button
               testID={TestID.CreatePasskey}
               fill={false}
-              icon={<Passkey size="$icon.24" />}
+              icon={
+                hasWalletCreationSuccess ? (
+                  <Check size="$icon.24" color="$neutral2" />
+                ) : (
+                  <Passkey size="$icon.24" color="$white" />
+                )
+              }
+              emphasis="primary"
               variant="branded"
               size="large"
+              isDisabled={hasWalletCreationSuccess}
+              loading={isPending && !hasWalletCreationSuccess}
               onPress={() => signInWithPasskey()}
             >
-              {t('onboarding.passkey.create')}
+              {hasWalletCreationSuccess
+                ? t('onboarding.passkey.create.success')
+                : isPending
+                  ? t('onboarding.passkey.create.pending')
+                  : t('onboarding.passkey.create')}
             </Button>
           </Trace>
         </Flex>

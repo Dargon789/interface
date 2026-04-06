@@ -1,7 +1,12 @@
-import { createFetchClient, createTradingApiClient, getEntryGatewayUrl, provideSessionService } from '@universe/api'
+import {
+  createFetchClient,
+  createTradingApiClient,
+  createWithSessionRetry,
+  getEntryGatewayUrl,
+  provideSessionService,
+  reinitializeSession,
+} from '@universe/api'
 import type { PlanEndpoints } from '@universe/api/src/clients/trading/createTradingApiClient'
-import { reinitializeSession } from '@universe/api/src/components/ApiInit'
-import { createWithSessionRetry } from '@universe/api/src/session/createWithSessionRetry'
 import { getConfig } from '@universe/config'
 import { FeatureFlags, getFeatureFlag } from '@universe/gating'
 import { BASE_UNISWAP_HEADERS } from 'uniswap/src/data/apiClients/createUniswapFetchClient'

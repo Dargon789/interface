@@ -8,7 +8,7 @@ type Props = PropsWithChildren<{
 
 const NOTIFICATION_DOT_SIZE = 12
 
-function _NotificationBadge({ children, address }: Props): JSX.Element {
+function NotificationBadgeInner({ children, address }: Props): JSX.Element {
   const hasNotifications = useSelectAddressHasNotifications(address)
   return (
     <Flex position="relative">
@@ -31,4 +31,4 @@ function _NotificationBadge({ children, address }: Props): JSX.Element {
   )
 }
 
-export const NotificationBadge = memo(_NotificationBadge)
+export const NotificationBadge = memo(NotificationBadgeInner)

@@ -25,7 +25,7 @@ export const ErrorModal = ({ header, subtitle }: { header: React.ReactNode; subt
     backgroundColor="$surface5"
     backdropFilter="blur(24px)"
     boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-    borderWidth={1}
+    borderWidth="$spacing1"
     borderColor="$surface3"
     borderRadius="$rounded20"
   >

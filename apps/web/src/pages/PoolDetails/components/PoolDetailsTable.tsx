@@ -15,7 +15,7 @@ enum PoolDetailsTableTabs {
 }
 
 const TableHeaderText = styled(Text, {
-  variant: 'heading2',
+  variant: 'heading3',
   userSelect: 'none',
 })
 
@@ -43,21 +43,23 @@ export function PoolDetailsTableTab({
   )
   return (
     <Flex gap="$gap24">
-      <Flex row gap="$gap16">
-        <TouchableArea onPress={() => setActiveTable(PoolDetailsTableTabs.TRANSACTIONS)} disabled={!positions?.length}>
-          <TableHeaderText color={activeTable === PoolDetailsTableTabs.TRANSACTIONS ? '$neutral1' : '$neutral2'}>
-            {t('common.transactions')}
-          </TableHeaderText>
-        </TouchableArea>
-        {Boolean(positions?.length) && (
+      {positions?.length ? (
+        <Flex row gap="$gap16">
+          <TouchableArea onPress={() => setActiveTable(PoolDetailsTableTabs.TRANSACTIONS)}>
+            <TableHeaderText color={activeTable === PoolDetailsTableTabs.TRANSACTIONS ? '$neutral1' : '$neutral2'}>
+              {t('common.transactions')}
+            </TableHeaderText>
+          </TouchableArea>
           <TouchableArea onPress={() => setActiveTable(PoolDetailsTableTabs.POSITIONS)}>
             <TableHeaderText color={activeTable === PoolDetailsTableTabs.POSITIONS ? '$neutral1' : '$neutral2'}>
               {t('pool.positions')}
-              {` (${positions?.length})`}
+              {` (${positions.length})`}
             </TableHeaderText>
           </TouchableArea>
-        )}
-      </Flex>
+        </Flex>
+      ) : (
+        <TableHeaderText color="$neutral1">{t('common.transactions')}</TableHeaderText>
+      )}
       {activeTable === PoolDetailsTableTabs.TRANSACTIONS ? (
         <PoolDetailsTransactionsTable
           poolAddress={poolAddress}

@@ -16,7 +16,7 @@ export default function Updater(): null {
 
   const [activeChainId, setActiveChainId] = useState(account.chainId)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +dispatch
+  // oxlint-disable-next-line react/exhaustive-deps -- +dispatch
   useEffect(() => {
     if (provider && account.chainId && windowVisible) {
       setActiveChainId(account.chainId)

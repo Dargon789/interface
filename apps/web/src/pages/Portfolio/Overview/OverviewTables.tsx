@@ -24,6 +24,10 @@ export const PortfolioOverviewTables = memo(function PortfolioOverviewTables({
   chainId,
   portfolioAddresses,
 }: PortfolioOverviewTablesProps) {
+  const evmAddress = portfolioAddresses.evmAddress
+  const showMiniPoolsTable = !!evmAddress
+  const showOpenLimitsTable = !!evmAddress && (!chainId || chainId === UniverseChainId.Mainnet)
+
   return (
     <Flex
       row
@@ -37,14 +41,10 @@ export const PortfolioOverviewTables = memo(function PortfolioOverviewTables({
     >
       <Flex gap="$spacing40" grow shrink $xl={{ width: '100%' }}>
         <MiniTokensTable maxTokens={MAX_TOKENS_ROWS} chainId={chainId} />
-        {portfolioAddresses.evmAddress && (
-          <MiniPoolsTable account={portfolioAddresses.evmAddress} maxPools={MAX_POOLS_ROWS} chainId={chainId} />
-        )}
+        {showMiniPoolsTable && <MiniPoolsTable account={evmAddress} maxPools={MAX_POOLS_ROWS} chainId={chainId} />}
       </Flex>
       <Flex width={OVERVIEW_RIGHT_COLUMN_WIDTH} gap="$spacing40" $xl={{ width: '100%' }}>
-        {portfolioAddresses.evmAddress && (!chainId || chainId === UniverseChainId.Mainnet) && (
-          <OpenLimitsTable account={portfolioAddresses.evmAddress} />
-        )}
+        {showOpenLimitsTable && <OpenLimitsTable account={evmAddress} />}
         <MiniActivityTable maxActivities={MAX_ACTIVITY_ROWS} activityData={activityData} />
       </Flex>
     </Flex>

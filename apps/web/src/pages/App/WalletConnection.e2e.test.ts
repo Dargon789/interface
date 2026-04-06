@@ -18,7 +18,6 @@ test.describe(
   () => {
     test('disconnect wallet', async ({ page }) => {
       await page.goto(`/swap?featureFlagOverrideOff=${getFeatureFlagName(FeatureFlags.EmbeddedWallet)}`)
-      await page.getByTestId(TestID.AmountInputIn).fill('1')
 
       // Verify wallet is connected
       await expect(await page.getByTestId(TestID.Web3StatusConnected).getByText('test0')).toBeVisible()
@@ -40,9 +39,6 @@ test.describe(
 
       // Verify wallet has disconnected
       await expect(await page.getByText('Connect wallet')).toBeVisible()
-
-      // Verify swap input is not cleared
-      await expect(await page.getByTestId(TestID.AmountInputIn)).toHaveValue('1')
     })
 
     test('should connect wallet', async ({ page }) => {

@@ -1,10 +1,11 @@
-import { CheckApprovalLPResponse } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
+import type { DecreasePositionResponse as V2DecreasePositionResponse } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
 import type { Currency } from '@uniswap/sdk-core'
 import { CurrencyAmount } from '@uniswap/sdk-core'
 import { TradingApi } from '@universe/api'
 import type { PropsWithChildren } from 'react'
 import { createContext, useContext, useEffect, useMemo } from 'react'
 import { useSelector } from 'react-redux'
+import type { NormalizedApprovalData } from 'uniswap/src/data/apiClients/liquidityService/normalizeApprovalResponse'
 import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { DelegatedState } from 'uniswap/src/features/smartWallet/delegation/types'
@@ -17,8 +18,8 @@ import { useRemoveLiquidityModalContext } from '~/pages/RemoveLiquidity/RemoveLi
 
 export type RemoveLiquidityTxInfo = {
   gasFeeEstimateUSD?: CurrencyAmount<Currency>
-  v2LpTokenApproval?: TradingApi.CheckApprovalLPResponse | CheckApprovalLPResponse
-  decreaseCalldata?: TradingApi.DecreaseLPPositionResponse
+  v2LpTokenApproval?: NormalizedApprovalData
+  decreaseCalldata?: TradingApi.DecreaseLPPositionResponse | V2DecreasePositionResponse
   decreaseCalldataLoading: boolean
   approvalLoading: boolean
   txContext?: ValidatedDecreasePositionTxAndGasInfo
@@ -37,7 +38,6 @@ export function RemoveLiquidityTxContextProvider({ children }: PropsWithChildren
 
   const removeLiquidityTxInfo = useRemoveLiquidityTxAndGasInfo({ account: evmAddress })
   const { approvalLoading, decreaseCalldataLoading, decreaseCalldata, error, refetch } = removeLiquidityTxInfo
-  const { sqrtRatioX96 } = decreaseCalldata || {}
 
   useEffect(() => {
     logContextUpdate('RemoveLiquidityTxContext', removeLiquidityTxInfo)
@@ -84,7 +84,6 @@ export function RemoveLiquidityTxContextProvider({ children }: PropsWithChildren
       token1PermitTransaction: undefined,
       positionTokenPermitTransaction: undefined,
       permit: undefined,
-      sqrtRatioX96,
     }
   }, [
     positionInfo,
@@ -95,7 +94,6 @@ export function RemoveLiquidityTxContextProvider({ children }: PropsWithChildren
     currency1,
     removeLiquidityTxInfo.v2LpTokenApproval?.positionTokenApproval,
     percent,
-    sqrtRatioX96,
     delegatedAddress,
   ])
 

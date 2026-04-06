@@ -184,6 +184,8 @@ interface AuctionState {
   awaitingConfirmationBidIds: Set<string>
   // Maps bidId -> txHash for tracking which transaction each bid is associated with
   withdrawalTxHashes: Map<string, string>
+  // Bid selected from chart marker click (used to open BidDetailsModal from the chart)
+  chartSelectedBid: { bidId: string; isInRange: boolean } | null
 }
 
 interface AuctionActions {
@@ -213,6 +215,7 @@ interface AuctionActions {
   setActiveBidFormTab: (tab: BidInfoTab) => void
   setOptimisticBid: (bid: OptimisticBid | null) => void
   setPreviousBidsCount: (count: number) => void
+  setChartSelectedBid: (bid: { bidId: string; isInRange: boolean } | null) => void
   // Per-bid withdrawal state management
   addPendingWithdrawalBid: (bidId: string, txHash: string) => void
   removePendingWithdrawalBid: (bidId: string) => void

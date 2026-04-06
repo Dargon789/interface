@@ -54,9 +54,9 @@ function createChallengeSolverService(ctx: CreateChallengeSolverServiceContext =
  */
 function createDefaultSolvers(): Map<ChallengeType, ChallengeSolver> {
   return new Map<ChallengeType, ChallengeSolver>([
-    [ChallengeType.UNSPECIFIED, createNoneMockSolver()],
-    [ChallengeType.TURNSTILE, createTurnstileMockSolver()],
     [ChallengeType.HASHCASH, createHashcashMockSolver()],
+    [ChallengeType.TURNSTILE, createTurnstileMockSolver()],
+    [ChallengeType.UNSPECIFIED, createNoneMockSolver()],
   ])
 }
 

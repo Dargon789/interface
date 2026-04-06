@@ -1,6 +1,5 @@
 import '@tamagui/core/reset.css'
 import 'src/app/Global.css'
-
 import { SharedEventName } from '@uniswap/analytics-events'
 import { useEffect, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
@@ -151,13 +150,14 @@ function useDappRequestPortListener(): void {
   const [currentPortChannel, setCurrentPortChannel] = useState<DappBackgroundPortChannel | undefined>()
   const [windowId, setWindowId] = useState<string | undefined>()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Only run on component mount for initial setup, disconnect cleanup is managed separately
+  // oxlint-disable-next-line react/exhaustive-deps -- Only run on component mount for initial setup, disconnect cleanup is managed separately
   useEffect(() => {
     chrome.windows.getCurrent((window) => {
       setWindowId(window.id?.toString())
     })
 
     return () => currentPortChannel?.port.disconnect()
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   useEffect(() => {

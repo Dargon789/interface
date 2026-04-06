@@ -7,7 +7,7 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { chainIdToHexadecimalString } from 'uniswap/src/features/chains/utils'
 import { DappResponseType } from 'uniswap/src/features/dappRequests/types'
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+// oxlint-disable-next-line typescript/explicit-function-return-type
 export function* getChainId({
   request,
   senderTabInfo: { id },
@@ -26,7 +26,7 @@ export function* getChainId({
   yield* call(dappResponseMessageChannel.sendMessageToTab, id, response)
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+// oxlint-disable-next-line typescript/explicit-function-return-type
 export function* getChainIdNoDappInfo({
   request,
   senderTabInfo: { id },

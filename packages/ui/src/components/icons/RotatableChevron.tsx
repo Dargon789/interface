@@ -13,7 +13,7 @@ type Props = {
 } & Omit<FlexProps, 'direction' | '$group-item-hover' | 'width' | 'height'> &
   Pick<IconProps, '$group-item-hover'>
 
-function _RotatableChevron({
+function RotatableChevronIcon({
   color,
   size = '$icon.24',
   direction = 'start',
@@ -45,4 +45,4 @@ function _RotatableChevron({
     </Flex>
   )
 }
-export const RotatableChevron = memo(_RotatableChevron)
+export const RotatableChevron = memo(RotatableChevronIcon)

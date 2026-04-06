@@ -126,7 +126,7 @@ export function AdaptiveDropdown({
   const [flipVertical, setFlipVertical] = useState(false)
   const [dropdownMaxHeight, setDropdownMaxHeight] = useState<number | undefined>(undefined)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +dropdownNode, +node
+  // oxlint-disable-next-line react/exhaustive-deps -- +dropdownNode, +node
   useEffect(() => {
     if (isOpen && !isSheet && node.current) {
       const rect = node.current.getBoundingClientRect()
@@ -165,7 +165,7 @@ export function AdaptiveDropdown({
           </Flex>
         </VisuallyHidden>
       )}
-      {/* biome-ignore lint/correctness/noRestrictedElements: needed here */}
+      {/* oxlint-disable-next-line react/forbid-elements -- needed here */}
       <div ref={node} style={{ width: '100%', ...containerStyle }}>
         <DropdownContainer>
           {trigger && (

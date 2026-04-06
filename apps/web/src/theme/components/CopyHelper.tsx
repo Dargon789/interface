@@ -102,9 +102,13 @@ export const CopyHelper = forwardRef<CopyHelperRefType, CopyHelperProps>(
   ) => {
     const [isCopied, setCopied] = useCopyClipboard(1000)
 
-    const copy = useCallback(() => {
-      setCopied(toCopy)
-    }, [toCopy, setCopied])
+    const copy = useCallback(
+      (e?: { preventDefault: () => void }) => {
+        e?.preventDefault()
+        setCopied(toCopy)
+      },
+      [toCopy, setCopied],
+    )
 
     useImperativeHandle(ref, () => ({
       forceCopy() {
@@ -126,6 +130,7 @@ export const CopyHelper = forwardRef<CopyHelperRefType, CopyHelperProps>(
     const showIcon =
       alwaysShowIcon || Boolean(iconPosition === 'left' || isHover || externalHover || isTouchable || isCopied)
     const offset = showIcon ? gap + iconSize : 0
+
     return (
       <Flex
         row

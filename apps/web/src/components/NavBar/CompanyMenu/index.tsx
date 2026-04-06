@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router'
-import { Flex, Popover, styled, Text, useIsTouchDevice, useMedia } from 'ui/src'
+import { Flex, Popover, styled, Text, useMedia } from 'ui/src'
 import { Hamburger } from 'ui/src/components/icons/Hamburger'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
@@ -29,18 +29,16 @@ export function CompanyMenu() {
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +popoverRef
+  // oxlint-disable-next-line react/exhaustive-deps -- +popoverRef
   const closeMenu = useCallback(() => {
     popoverRef.current?.close()
   }, [popoverRef])
-  // biome-ignore lint/correctness/useExhaustiveDependencies: location dependency is sufficient for this effect
+  // oxlint-disable-next-line react/exhaustive-deps -- location dependency is sufficient for this effect
   useEffect(() => {
     // Immediately reset state to prevent flash during transitions
     setIsOpen(false)
     closeMenu()
   }, [location, closeMenu])
-
-  const isTouchDevice = useIsTouchDevice()
 
   return (
     <Popover ref={popoverRef} placement="bottom" hoverable={!media.xl} stayInFrame allowFlip onOpenChange={setIsOpen}>
@@ -66,8 +64,8 @@ export function CompanyMenu() {
               </Flex>
             </Link>
           </Trace>
-          {(media.md || isTouchDevice) && <Hamburger size={22} color="$neutral2" cursor="pointer" ml="16px" />}
-          {!media.md && !isTouchDevice && (
+          {media.md && <Hamburger size={22} color="$neutral2" cursor="pointer" ml="16px" />}
+          {!media.md && (
             <ArrowDownWrapper open={isOpen}>
               <ArrowChangeDown width="12px" height="12px" />
             </ArrowDownWrapper>

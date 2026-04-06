@@ -22,7 +22,6 @@ export const Mocks = {
     openOrder: path.resolve(__dirname, '../mocks/rest/uniswapX/open_order.json'),
     filledOrders: path.resolve(__dirname, '../mocks/rest/uniswapX/filled_orders.json'),
     expiredOrders: path.resolve(__dirname, '../mocks/rest/uniswapX/expired_orders.json'),
-    activity: path.resolve(__dirname, '../mocks/graphql/UniswapX/uniswapx_activity.json'),
   },
   PortfolioBalances: PortfolioBalancesMocks,
   Token: {
@@ -58,10 +57,29 @@ export const Mocks = {
   DataApiService: {
     get_portfolio: path.resolve(__dirname, '../mocks/dataApiService/get_portfolio.json'),
     get_portfolio_empty: path.resolve(__dirname, '../mocks/dataApiService/get_portfolio_empty.json'),
+    get_rewards: path.resolve(__dirname, '../mocks/dataApiService/get_rewards.json'),
+    get_rewards_empty: path.resolve(__dirname, '../mocks/dataApiService/get_rewards_empty.json'),
     list_transactions: path.resolve(__dirname, '../mocks/dataApiService/list_transactions.json'),
     list_transactions_empty: path.resolve(__dirname, '../mocks/dataApiService/list_transactions_empty.json'),
+    list_transactions_uniswapx: path.resolve(__dirname, '../mocks/dataApiService/list_transactions_uniswapx.json'),
+  },
+  PoolPriceHistory: {
+    eth_weeth: path.resolve(__dirname, '../mocks/graphql/PoolPriceHistory/eth_weeth.json'),
+  },
+  AllV4Ticks: {
+    eth_weeth: path.resolve(__dirname, '../mocks/graphql/AllV4Ticks/eth_weeth.json'),
+  },
+  LiquidityService: {
+    pool_info_eth_weeth: path.resolve(__dirname, '../mocks/liquidityService/pool_info_eth_weeth.json'),
   },
   TradingApi: {
     swap: path.resolve(__dirname, '../mocks/tradingApi/swap.json'),
+  },
+  EmbeddedWallet: {
+    list_authenticators_multi: path.resolve(__dirname, '../mocks/embeddedWallet/list_authenticators_multi.json'),
+    list_authenticators_single: path.resolve(__dirname, '../mocks/embeddedWallet/list_authenticators_single.json'),
+    start_authenticated_session: path.resolve(__dirname, '../mocks/embeddedWallet/start_authenticated_session.json'),
+    add_authenticator: path.resolve(__dirname, '../mocks/embeddedWallet/add_authenticator.json'),
+    delete_authenticator: path.resolve(__dirname, '../mocks/embeddedWallet/delete_authenticator.json'),
   },
 }

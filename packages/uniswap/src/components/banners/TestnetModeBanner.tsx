@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Flex, FlexProps, Text, TouchableArea } from 'ui/src'
 import { Wrench } from 'ui/src/components/icons/Wrench'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { useDeviceInsets } from 'ui/src/hooks/useDeviceInsets'
 import { zIndexes } from 'ui/src/theme'
 import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'

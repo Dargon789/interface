@@ -160,13 +160,13 @@ const D3LiquidityRangeChart = ({
   ])
 
   // Update renderers when state changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: minTick, maxTick, zoomLevel, panY should trigger re-renders
+  // oxlint-disable-next-line react/exhaustive-deps -- minTick, maxTick, zoomLevel, panY should trigger re-renders
   useEffect(() => {
     drawAll()
   }, [minTick, maxTick, zoomLevel, panY, drawAll])
 
   // Reset the chart when the price data changes (currentPrice omitted), maintaining the price range from the URL
-  // biome-ignore lint/correctness/useExhaustiveDependencies: priceRangeState should not trigger re-renders
+  // oxlint-disable-next-line react/exhaustive-deps -- priceRangeState should not trigger re-renders
   useEffect(() => {
     let minTick
     let maxTick
@@ -186,6 +186,7 @@ const D3LiquidityRangeChart = ({
       minTick,
       maxTick,
     })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [priceData.dataHash, initialPosition, reset])
 
   return (
@@ -210,6 +211,7 @@ const D3LiquidityRangeChart = ({
           }}
           onMouseEnter={() => setChartState({ isChartHovered: true })}
           onMouseLeave={() => setChartState({ isChartHovered: false })}
+          // oxlint-disable-next-line react/self-closing-comp -- biome-parity: oxlint is stricter here
         ></svg>
         <svg
           ref={timescaleSvgRef}
@@ -218,6 +220,7 @@ const D3LiquidityRangeChart = ({
           style={{
             touchAction: 'none',
           }}
+          // oxlint-disable-next-line react/self-closing-comp -- biome-parity: oxlint is stricter here
         ></svg>
         <LiquidityActiveTooltips
           quoteCurrency={quoteCurrency}

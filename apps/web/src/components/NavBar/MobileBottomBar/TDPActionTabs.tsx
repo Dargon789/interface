@@ -8,7 +8,7 @@ import { isEVMChain } from 'uniswap/src/features/platforms/utils/chains'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 import { useActiveAccount } from '~/features/accounts/store/hooks'
 import useSelectChain from '~/hooks/useSelectChain'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 
 const TDP_ACTION_TABS_MAX_WIDTH = 780
 
@@ -20,7 +20,13 @@ type TabItem = {
 
 export function TDPActionTabs() {
   const { t } = useTranslation()
-  const { currencyChain, currencyChainId, address, tokenColor, multiChainMap } = useTDPContext()
+  const { currencyChain, currencyChainId, address, tokenColor, multiChainMap } = useTDPStore((s) => ({
+    currencyChain: s.currencyChain,
+    currencyChainId: s.currencyChainId,
+    address: s.address,
+    tokenColor: s.tokenColor,
+    multiChainMap: s.multiChainMap,
+  }))
   const selectChain = useSelectChain()
   const navigate = useNavigate()
 

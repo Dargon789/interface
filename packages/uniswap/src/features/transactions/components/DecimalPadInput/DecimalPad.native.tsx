@@ -130,7 +130,7 @@ export const DecimalPad = memo(function DecimalPad({
     setCurrentHeight(event.nativeEvent.layout.height)
   }, [])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +sizeMultiplier, onReady
+  // oxlint-disable-next-line react/exhaustive-deps -- +sizeMultiplier, onReady
   useEffect(() => {
     // skip resize if the layout is still the same height as before
     if (currentHeightRef.current === currentHeight) {
@@ -164,6 +164,7 @@ export const DecimalPad = memo(function DecimalPad({
       lineHeight: sizeMultiplier.lineHeight * 0.95,
       padding: sizeMultiplier.padding * 0.8,
     })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [currentHeight, maxHeight])
 
   if (maxHeight === null) {
@@ -233,6 +234,7 @@ const KeyButton = memo(function KeyButton({
     onPress?.(label, action)
     scale.value = withSequence(withTiming(1.3, animationOptions), withTiming(1, animationOptions))
     opacity.value = withSequence(withTiming(0.75, animationOptions), withTiming(1, animationOptions))
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [action, label, onPress])
 
   const handleLongPressStart = useCallback((): void => {

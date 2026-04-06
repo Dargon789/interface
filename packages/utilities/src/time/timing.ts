@@ -37,7 +37,7 @@ export async function promiseMinDelay(promise: Promise<unknown>, milliseconds: n
 }
 
 // https://usehooks-typescript.com/react-hook/use-interval
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 export function useInterval(callback: () => void, delay: number | null, immediateStart?: boolean): void {
   const savedCallback = useRef<() => void | null>(undefined)
 
@@ -49,9 +49,9 @@ export function useInterval(callback: () => void, delay: number | null, immediat
   // Set up the interval.
   useEffect(() => {
     const tick = (): void => {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (typeof savedCallback?.current !== 'undefined') {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         savedCallback?.current()
       }
     }
@@ -131,7 +131,7 @@ export function useDebounceWithStatus<T>({
     // Cancel the timeout if value changes (also on delay change or unmount)
     // This is how we prevent debounced value from updating if value is changed ...
     // .. within the delay period. Timeout gets cleared and restarted.
-    // eslint-disable-next-line consistent-return
+    // oxlint-disable-next-line consistent-return
     return () => {
       clearTimeout(handler)
     }

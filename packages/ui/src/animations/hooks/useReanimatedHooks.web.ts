@@ -69,7 +69,7 @@ export function useAnimatedStyle<T extends ViewStyle>(updater: () => T, deps?: D
 
   // Subscribe to shared value updates
   // Users must pass shared values in deps array for reactivity
-  // biome-ignore lint/correctness/useExhaustiveDependencies: deps is the user-provided dependency array containing shared values
+  // oxlint-disable-next-line react/exhaustive-deps -- deps is the user-provided dependency array containing shared values
   useEffect(() => {
     const cleanups: (() => void)[] = []
 
@@ -86,10 +86,11 @@ export function useAnimatedStyle<T extends ViewStyle>(updater: () => T, deps?: D
     return () => {
       cleanups.forEach((cleanup) => cleanup())
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [triggerUpdate, ...(deps || [])])
 
   // Run the updater and return the style
-  // biome-ignore lint/correctness/useExhaustiveDependencies: deps is the user-provided dependency array
+  // oxlint-disable-next-line react/exhaustive-deps -- deps is the user-provided dependency array
   const style = useMemo(() => {
     try {
       return updaterRef.current()
@@ -97,6 +98,7 @@ export function useAnimatedStyle<T extends ViewStyle>(updater: () => T, deps?: D
       // If the updater fails (e.g., accessing undefined shared value), return empty style
       return {} as T
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [triggerUpdate, ...(deps || [])])
 
   return style

@@ -8,7 +8,7 @@ import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { CurrencyId } from 'uniswap/src/types/currency'
 import { WidgetEvent } from 'uniswap/src/types/widgets'
 import { isAndroid } from 'utilities/src/platform'
-// biome-ignore lint/style/noRestrictedImports: Required for analytics initialization
+// oxlint-disable-next-line no-restricted-imports -- Required for analytics initialization
 import { analytics } from 'utilities/src/telemetry/analytics/analytics'
 import { Account } from 'wallet/src/features/wallet/accounts/types'
 
@@ -122,6 +122,6 @@ async function hasWidgetsInstalled(): Promise<boolean> {
   if (isAndroid) {
     return false
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  // oxlint-disable-next-line typescript/no-unsafe-return
   return await RNWidgets.hasWidgetsInstalled()
 }

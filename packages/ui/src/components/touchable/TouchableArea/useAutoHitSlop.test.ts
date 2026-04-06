@@ -93,6 +93,7 @@ describe('getHitSlop', () => {
     })
   })
 
+  // oxlint-disable-next-line jest/no-disabled-tests -- suppressed
   it.skip('calculates hit slop for iOS devices correctly', () => {
     // Skip this test as dynamic module mocking doesn't work the same way in Vitest
     // The MIN_WIDTH/MIN_HEIGHT constants are set at module level based on isIOS

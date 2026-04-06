@@ -43,6 +43,9 @@ test.describe(
       await page.getByText(`Fee (${portionBips / 100}%)`)
       await page.getByTestId(TestID.Swap).click()
 
+      // UI wait for tx to complete
+      await expect(page.getByTestId(TestID.ActivityPopup).getByText('Swapped')).toBeVisible()
+
       // Verify fee recipient received fee
       const finalRecipientBalance = await anvil.getErc20Balance(assume0xAddress(USDC_MAINNET.address), portionRecipient)
       await expect(finalRecipientBalance).toBeGreaterThan(portionRecipientBalance)

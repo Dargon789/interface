@@ -329,7 +329,7 @@ export function decodeMessage(value: string): string {
  * `signTypedData` params are ordered as [account, message]
  * See https://docs.walletconnect.com/2.0/advanced/rpc-reference/ethereum-rpc#personal_sign
  */
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 function getAddressAndMessageToSign(
   ethMethod: EthSignMethod,
   params: WalletKitTypes.SessionRequest['params']['request']['params'],

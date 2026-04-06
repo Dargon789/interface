@@ -13,7 +13,7 @@ import { selectHasViewedContractAddressExplainer } from 'uniswap/src/features/be
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 
-export const TokenDetailsHeader = memo(function _TokenDetailsHeader(): JSX.Element {
+export const TokenDetailsHeader = memo(function TokenDetailsHeaderInner(): JSX.Element {
   const { currencyId, openContractAddressExplainerModal, copyAddressToClipboard } = useTokenDetailsContext()
   const hasViewedContractAddressExplainer = useSelector(selectHasViewedContractAddressExplainer)
 

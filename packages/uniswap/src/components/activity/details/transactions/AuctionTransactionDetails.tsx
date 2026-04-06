@@ -27,7 +27,7 @@ export function AuctionTransactionDetails({
 
   const currencyInfo = useCurrencyInfo(buildCurrencyId(transactionDetails.chainId, tokenAddress))
 
-  const { amount, value } = useFormattedCurrencyAmountAndUSDValue({
+  const { amount, value, isLoading } = useFormattedCurrencyAmountAndUSDValue({
     currency: currencyInfo?.currency,
     currencyAmountRaw: typeInfo.amountRaw,
     formatter,
@@ -40,6 +40,7 @@ export function AuctionTransactionDetails({
   return (
     <CurrencyTransferContent
       currencyInfo={currencyInfo}
+      isLoading={isLoading}
       tokenAmountWithSymbol={tokenAmountWithSymbol}
       value={value}
       onClose={onClose}

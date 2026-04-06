@@ -22,7 +22,7 @@ import { isIFramed } from '~/utils/isIFramed'
 interface SignInWithPasskeyOptions {
   createNewWallet?: boolean
   unitag?: string
-  onSuccess?: () => void
+  onSuccess?: () => Promise<void> | void
   onError?: (error: Error) => void
 }
 
@@ -35,7 +35,7 @@ interface SignInWithPasskeyOptions {
  *
  * @param {Object} options - Configuration options for the sign-in process
  * @param {boolean} [options.createNewWallet=false] - If true, creates a new embedded wallet instead of signing in with existing passkey
- * @param {() => void} [options.onSuccess] - Optional callback function to execute after successful sign-in
+ * @param {() => Promise<void> | void} [options.onSuccess] - Optional callback function to execute after successful sign-in
  * @param {(error: Error) => void} [options.onError] - Optional callback function to handle any errors during sign-in
  * @returns {() => Promise<void>} Async function that initiates the sign-in process
  */
@@ -110,7 +110,8 @@ export function useSignInWithPasskey({
       }
     },
     {
-      onSuccess: ({ walletAddress, walletId, exported }) => {
+      onSuccess: async ({ walletAddress, walletId, exported }) => {
+        await onSuccess?.()
         dispatch(updateIsEmbeddedWalletBackedUp({ isEmbeddedWalletBackedUp: exported ?? false }))
         setWalletAddress(walletAddress)
         setWalletId(walletId)
@@ -126,7 +127,6 @@ export function useSignInWithPasskey({
             wallet_address: walletAddress,
           })
         }
-        onSuccess?.()
       },
       onError: (error: Error) => {
         if (createNewWallet) {

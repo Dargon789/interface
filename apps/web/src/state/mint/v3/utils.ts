@@ -25,9 +25,9 @@ export function tryParsePrice<T extends Currency>({
 
   const [whole, fraction] = decimalValue.split('.')
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const decimals = fraction?.length ?? 0
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const withoutDecimals = JSBI.BigInt((whole ?? '') + (fraction ?? ''))
 
   return new Price(

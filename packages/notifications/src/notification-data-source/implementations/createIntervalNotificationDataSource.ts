@@ -69,5 +69,9 @@ export function createIntervalNotificationDataSource(
     currentCallback = null
   }
 
-  return createNotificationDataSource({ start, stop })
+  const refresh = async (): Promise<void> => {
+    await pollAndEmit('refresh')
+  }
+
+  return { ...createNotificationDataSource({ start, stop }), refresh }
 }

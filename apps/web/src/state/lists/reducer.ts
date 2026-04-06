@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* oxlint-disable typescript/no-unnecessary-condition */
 import { createReducer } from '@reduxjs/toolkit'
 import { getVersionUpgrade, VersionUpgrade } from '@uniswap/token-lists'
 import { DEFAULT_INACTIVE_LIST_URLS } from '~/constants/lists'
@@ -81,13 +81,13 @@ export default createReducer(initialState, (builder) =>
       }
     })
     .addCase(addList, (state, { payload: url }) => {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (!state.byUrl[url]) {
         state.byUrl[url] = NEW_LIST_STATE
       }
     })
     .addCase(removeList, (state, { payload: url }) => {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (state.byUrl[url]) {
         delete state.byUrl[url]
       }

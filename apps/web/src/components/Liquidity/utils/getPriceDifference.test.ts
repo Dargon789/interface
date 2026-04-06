@@ -5,7 +5,7 @@ import { getPriceDifference } from '~/components/Liquidity/utils/getPriceDiffere
 import tryParseCurrencyAmount from '~/lib/utils/tryParseCurrencyAmount'
 import { ETH_MAINNET } from '~/test-utils/constants'
 
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 function getInitialPrice(base: Currency, quote: Currency, input: string) {
   const parsedQuoteAmount = tryParseCurrencyAmount(input, quote)
   const baseAmount = tryParseCurrencyAmount('1', base)

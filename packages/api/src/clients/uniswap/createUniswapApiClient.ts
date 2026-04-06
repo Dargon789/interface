@@ -10,7 +10,6 @@ import { isWebApp } from 'utilities/src/platform'
 // TODO(app-infra), de-duplicate with uniswapUrls when other consumers are migrated to use this client
 const UNISWAP_API_PATHS = {
   gasFee: '/v1/gas-fee',
-  trmScreen: '/v1/screen',
 }
 
 type FetchGasFn = ({
@@ -23,14 +22,6 @@ type FetchGasFn = ({
   smartContractDelegationAddress?: Address
 }) => Promise<GasFeeResultWithoutState>
 
-export type ScreenResponse = {
-  block: boolean
-}
-
-export type ScreenRequest = {
-  address: string
-}
-
 export interface UniswapApiClientContext {
   fetchClient: FetchClient
   processGasFeeResponse: (gasFeeResponse: GasFeeResponse, gasStrategy: GasStrategy) => GasFeeResultWithoutState
@@ -42,7 +33,6 @@ export interface UniswapApiClientContext {
 
 export interface UniswapApiClient {
   fetchGasFee: FetchGasFn
-  fetchTrmScreen: (params: ScreenRequest) => Promise<ScreenResponse>
 }
 
 export function createUniswapApiClient(ctx: UniswapApiClientContext): UniswapApiClient {
@@ -87,14 +77,7 @@ export function createUniswapApiClient(ctx: UniswapApiClientContext): UniswapApi
     }
   }
 
-  const fetchTrmScreen = async (params: ScreenRequest): Promise<ScreenResponse> => {
-    return await client.post<ScreenResponse>(UNISWAP_API_PATHS.trmScreen, {
-      body: JSON.stringify(params),
-    })
-  }
-
   return {
     fetchGasFee,
-    fetchTrmScreen,
   }
 }

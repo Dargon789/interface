@@ -68,12 +68,19 @@ export async function setErc20BalanceWithMultipleSlots({
   erc20Address,
   user,
   newBalance,
+  knownSlot,
 }: {
   client: AnvilClient
   erc20Address: Address
   user: Address
   newBalance: bigint
+  knownSlot?: number
 }) {
+  if (knownSlot !== undefined) {
+    await setErc20BalanceViaStorage({ client, erc20Address, user, newBalance, mappingSlot: knownSlot })
+    return
+  }
+
   // Try common slots used by different ERC20 implementations
   const commonSlots = [0, 1, 2, 3, 9]
 

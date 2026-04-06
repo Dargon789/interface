@@ -1,5 +1,4 @@
 import '~/test-utils/tokens/mocks'
-
 import { USDC_MAINNET } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { dismissTokenWarning } from 'uniswap/src/features/tokens/warnings/slice/slice'

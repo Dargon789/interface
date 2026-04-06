@@ -120,6 +120,11 @@ export const useMenuContent = (args?: {
             href: uniswapUrls.helpRequestUrl,
             elementName: ElementName.NavbarCompanyMenuContactUs,
           },
+          {
+            label: t('common.bugBounty'),
+            href: uniswapUrls.bugBountyUrl,
+            elementName: ElementName.NavbarCompanyMenuBugBounty,
+          },
         ],
       },
     }

@@ -40,6 +40,7 @@ export const Switch = memo(function Switch({
     if (checked !== undefined && checked !== (progress.value === 1)) {
       progress.value = withTiming(checked ? 1 : 0, ANIMATION_CONFIG)
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [checked])
 
   const trackStyle = useAnimatedStyle(() => {

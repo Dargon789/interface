@@ -52,7 +52,7 @@ export function UniswapWrapped2025Card({ onPress }: UniswapWrapped2025CardProps)
   }
 
   return (
-    // biome-ignore lint/correctness/noRestrictedElements: Web-only mouse tracking for glow effect
+    // oxlint-disable-next-line react/forbid-elements -- Web-only mouse tracking for glow effect
     <div
       style={{ position: 'relative', width: '100%' }}
       onMouseLeave={mouseInteraction?.handleMouseLeave}
@@ -64,7 +64,7 @@ export function UniswapWrapped2025Card({ onPress }: UniswapWrapped2025CardProps)
           borderRadius="$rounded20"
           overflow="hidden"
           boxShadow="-2px -3px 6px 0 rgba(255, 255, 255, 0.22) inset, 0 2px 5px -2px rgba(18, 18, 23, 0.03)"
-          borderWidth={1}
+          borderWidth="$spacing1"
           borderColor={darkColors.surface3.val}
           height={CARD_HEIGHT}
         >

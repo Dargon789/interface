@@ -122,7 +122,7 @@ export function CurrencyRow({
   const blockedTokenOpacity = '0.6'
 
   const { balanceMap } = useTokenBalances({ cacheFirst: true })
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const { usdValue, balance: cachedBalance } = balanceMap[currencyKey(currency)] ?? {}
   const tokenBalance = balance ? balance.toExact() : cachedBalance
 
@@ -142,7 +142,7 @@ export function CurrencyRow({
         text={<ThemedText.Caption textAlign="center">{tooltip}</ThemedText.Caption>}
         size={TooltipSize.ExtraSmall}
       >
-        {/* biome-ignore lint/correctness/noRestrictedElements: Wrapper needs DOM props (onKeyDown, onClick, tabIndex) for a11y; MenuItem is Tamagui Flex and doesn't type them */}
+        {/* oxlint-disable-next-line react/forbid-elements -- Wrapper needs DOM props (onKeyDown, onClick, tabIndex) for a11y; MenuItem is Tamagui Flex and doesn't type them */}
         <div
           role="button"
           tabIndex={0}

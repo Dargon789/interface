@@ -8,7 +8,7 @@ import { DEFAULT_TXN_DISMISS_MS } from '~/constants/misc'
 
 export function PopupRenderer() {
   useEffect(() => {
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     const unsubscribe = popupRegistry.addListener((content: PopupContent, key: string, removeAfterMs?: number) => {
       const toastId = toast(
         <PopupItem key={key} content={content} onClose={() => popupRegistry.removePopup(key)} popKey={key} />,

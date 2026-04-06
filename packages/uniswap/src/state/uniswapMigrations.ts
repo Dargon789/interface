@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* biome-ignore-all lint/suspicious/noExplicitAny: legacy code needs review */
+/* oxlint-disable typescript/no-unsafe-return */
+/* oxlint-disable typescript/no-explicit-any -- legacy code needs review */
 import { FiatCurrency } from 'uniswap/src/features/fiatCurrency/constants'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import {
@@ -151,7 +151,7 @@ export const migrateSearchHistory = createSafeMigration({
           case PreV55SearchResultType.NFTCollection:
             // NFTCollection: 3 → 2
             return {
-              type: SearchHistoryResultType.NFTCollection,
+              type: 2,
               chainId: result.chainId,
               address: result.address,
               name: result.name,

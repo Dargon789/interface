@@ -24,7 +24,7 @@ type SeedPhraseInputProps = NativeSeedPhraseInputProps & {
   navigation: NativeStackNavigationProp<OnboardingStackParamList, OnboardingScreens.SeedPhraseInput>
 }
 
-export const SeedPhraseInput = forwardRef<NativeSeedPhraseInputRef, SeedPhraseInputProps>(function _SeedPhraseInput(
+export const SeedPhraseInput = forwardRef<NativeSeedPhraseInputRef, SeedPhraseInputProps>(function SeedPhraseInputInner(
   { navigation, ...rest },
   ref,
 ) {

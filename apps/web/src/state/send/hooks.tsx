@@ -167,7 +167,7 @@ export function useDerivedSendInfo(state: SendState): SendInfo {
       totalAmount = totalAmount.add(parsedTokenAmount)
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (!totalAmount || nativeCurrencyBalance.lessThan(totalAmount)) {
       return SendInputError.INSUFFICIENT_FUNDS_FOR_GAS
     }

@@ -319,7 +319,6 @@ describe('hooks', () => {
         navigateToExternalProfile: () => {},
         navigateToPoolDetails: () => {},
         navigateToNftDetails: () => {},
-        navigateToNftCollection: () => {},
         navigateToSendFlow: () => {},
         navigateToReceive: () => {},
         handleShareToken: () => {},
@@ -434,6 +433,7 @@ describe('hooks', () => {
     })
 
     describe('Connected wallet with balance', () => {
+      // oxlint-disable-next-line vitest/hoisted-apis-on-top -- suppressed
       vi.mock('~/appGraphql/data/apollo/TokenBalancesProvider', () => ({
         TokenBalancesProvider: ({ children }: { children: ReactNode }) => children,
         useTokenBalancesQuery: () => ({

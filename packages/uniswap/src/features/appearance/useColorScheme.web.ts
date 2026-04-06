@@ -59,21 +59,21 @@ export function useColorScheme(): ColorScheme {
 
     try {
       // Modern browsers
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (mediaQuery.addEventListener) {
         mediaQuery.addEventListener('change', handleChange)
 
-        // eslint-disable-next-line consistent-return
+        // oxlint-disable-next-line consistent-return
         return (): void => {
           mediaQuery.removeEventListener('change', handleChange)
         }
       }
       // Legacy browsers (Safari < 14)
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       else if (mediaQuery.addListener) {
         mediaQuery.addListener(handleChange)
 
-        // eslint-disable-next-line consistent-return
+        // oxlint-disable-next-line consistent-return
         return (): void => {
           mediaQuery.removeListener(handleChange)
         }

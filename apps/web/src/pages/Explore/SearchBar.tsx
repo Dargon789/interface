@@ -84,7 +84,7 @@ export function SearchBar({ tab }: { tab?: string }) {
           onChangeText={(value) => setLocalFilterString(value)}
           backgroundColor="$surface1"
           borderRadius={12}
-          borderWidth={1}
+          borderWidth="$spacing1"
           borderColor={isOpen ? '$accent1' : '$surface3'}
           height="100%"
           width={isOpen ? 200 : 0}

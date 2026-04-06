@@ -8,8 +8,10 @@ import { ContextMenu, ContextMenuProps, MenuOptionItem } from 'uniswap/src/compo
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
 import { UNISWAP_WEB_URL } from 'uniswap/src/constants/urls'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { ElementName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import { getPoolDetailsURL } from 'uniswap/src/utils/linking'
 import { setClipboard } from 'utilities/src/clipboard/clipboard'
+import { isWebPlatform } from 'utilities/src/platform'
 
 const COPY_CLOSE_DELAY = 400
 
@@ -30,7 +32,7 @@ interface PoolOptionItemContextMenuProps {
   triggerMode?: ContextMenuTriggerMode
 }
 
-function _PoolOptionItemContextMenu({
+function PoolOptionItemContextMenuInner({
   children,
   poolId,
   chainId,
@@ -101,16 +103,19 @@ function _PoolOptionItemContextMenu({
 
   return (
     <ContextMenu
+      trackItemClicks
       triggerMode={triggerMode}
       menuItems={dropdownOptions}
       isOpen={isOpen}
       closeMenu={closeMenu}
       openMenu={openMenu}
       offsetY={4}
+      elementName={ElementName.SearchPoolContextMenu}
+      sectionName={isWebPlatform ? SectionName.NavbarSearch : SectionName.ExploreSearch}
     >
       {children}
     </ContextMenu>
   )
 }
 
-export const PoolOptionItemContextMenu = React.memo(_PoolOptionItemContextMenu)
+export const PoolOptionItemContextMenu = React.memo(PoolOptionItemContextMenuInner)

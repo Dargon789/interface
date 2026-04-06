@@ -13,7 +13,6 @@ import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { useEvent } from 'utilities/src/react/hooks'
 import { ONE_SECOND_MS } from 'utilities/src/time/time'
 import { Dropdown, InternalMenuItem } from '~/components/Dropdowns/Dropdown'
-import { baseActionButtonStyles } from '~/components/Dropdowns/FilterButton'
 import { useActiveAddresses } from '~/features/accounts/store/hooks'
 import useCopyClipboard from '~/hooks/useCopyClipboard'
 import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
@@ -103,9 +102,9 @@ export function SharePortfolioButton({
         toggleOpen={setIsOpen}
         menuLabel={
           <Flex testID={TestID.PortfolioShareButton} row alignItems="center" gap="$gap8">
-            <ShareArrow size={iconSize} color="$neutral1" />
+            <ShareArrow size={iconSize} color="$neutral1" transition={transition} />
             {showLabel && (
-              <Text variant={textVariant} color="$neutral1">
+              <Text variant={textVariant} color="$neutral1" transition={transition}>
                 {t('common.button.share')}
               </Text>
             )}
@@ -113,14 +112,12 @@ export function SharePortfolioButton({
         }
         hideChevron
         buttonStyle={{
-          ...baseActionButtonStyles,
           height: size === 'small' ? 32 : 40,
           gap: size === 'small' ? '$gap6' : '$gap8',
           px: '$spacing12',
         }}
         dropdownStyle={{ minWidth: 220 }}
         alignRight
-        transition={transition}
       >
         {/* Multi-wallet: show copy link for each wallet with chain icon */}
         {hasMultipleConnectedWallets ? (

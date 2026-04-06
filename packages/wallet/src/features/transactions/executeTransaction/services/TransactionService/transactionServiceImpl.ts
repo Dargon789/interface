@@ -19,6 +19,7 @@ import { ONE_SECOND_MS } from 'utilities/src/time/time'
 import { isPrivateRpcSupportedOnChain } from 'wallet/src/features/providers/utils'
 import type { ExecuteTransactionParams } from 'wallet/src/features/transactions/executeTransaction/executeTransactionSaga'
 import type { AnalyticsService } from 'wallet/src/features/transactions/executeTransaction/services/analyticsService'
+import type { TransactionConfigService } from 'wallet/src/features/transactions/executeTransaction/services/transactionConfigService'
 import type { TransactionRepository } from 'wallet/src/features/transactions/executeTransaction/services/TransactionRepository/transactionRepository'
 import type {
   PrepareTransactionParams,
@@ -27,7 +28,6 @@ import type {
   TransactionService,
 } from 'wallet/src/features/transactions/executeTransaction/services/TransactionService/transactionService'
 import type { TransactionSigner } from 'wallet/src/features/transactions/executeTransaction/services/TransactionSignerService/transactionSignerService'
-import type { TransactionConfigService } from 'wallet/src/features/transactions/executeTransaction/services/transactionConfigService'
 import type { CalculatedNonce } from 'wallet/src/features/transactions/executeTransaction/tryGetNonce'
 import { SignedTransactionRequest } from 'wallet/src/features/transactions/executeTransaction/types'
 import { createGetUpdatedTransactionDetails } from 'wallet/src/features/transactions/executeTransaction/utils/createGetUpdatedTransactionDetails'

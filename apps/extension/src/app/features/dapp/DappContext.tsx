@@ -50,7 +50,7 @@ export function DappContextProvider({ children }: { children: ReactNode }): JSX.
     }
 
     // need to update dapp info on mount
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    // oxlint-disable-next-line typescript/no-floating-promises
     updateDappInfo()
 
     return backgroundToSidePanelMessageChannel.addMessageListener(

@@ -10,10 +10,7 @@ import {
   safeParseTimestampMs,
   toUtcTimestampSeconds,
 } from '~/components/Charts/ToucanChart/clearingPrice/utils/timeConversions'
-import {
-  calculateNiceYRange,
-  calculateScaleFactor,
-} from '~/components/Charts/ToucanChart/clearingPrice/utils/yAxisRange'
+import { calculateScaleFactor } from '~/components/Charts/ToucanChart/clearingPrice/utils/yAxisRange'
 import { fromQ96ToDecimalWithTokenDecimals } from '~/components/Toucan/Auction/BidDistributionChart/utils/q96'
 import type { AuctionDetails } from '~/components/Toucan/Auction/store/types'
 
@@ -257,7 +254,14 @@ export function normalizeClearingSeries({
 
   // Calculate scale factor for small values
   const scaleFactor = calculateScaleFactor(maxValue)
-  const { yMin, yMax, scaledYMin, scaledYMax } = calculateNiceYRange({ minValue, maxValue, scaleFactor })
+  // Use tight range with minimal buffer — y-axis labels are rendered as a custom overlay
+  const range = maxValue - minValue
+  // When price is flat (range ≈ 0), add symmetric buffer so the line is centered
+  const buffer = range > 0 ? range * 0.05 : minValue * 0.2
+  const yMin = Math.max(0, minValue - buffer)
+  const yMax = maxValue + buffer
+  const scaledYMin = yMin * scaleFactor
+  const scaledYMax = yMax * scaleFactor
 
   // Scale the data points for lightweight-charts (use time-uniform data for rendering)
   const scaledData = timeUniformData.map((p) => ({

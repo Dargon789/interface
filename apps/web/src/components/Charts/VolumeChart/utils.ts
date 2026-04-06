@@ -20,7 +20,7 @@ export interface StackedHistogramData extends CustomData {
 export type CustomHistogramData = SingleHistogramData | StackedHistogramData
 
 export function isStackedHistogramData(data: CustomHistogramData): data is StackedHistogramData {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   return (data as StackedHistogramData).values !== undefined
 }
 
@@ -227,7 +227,7 @@ export function calculateColumnPositionsInPlace({
     previous = items[i]
   }
   const minColumnWidth = (items as ColumnPositionItem[]).reduce(
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     (smallest: number, item: ColumnPositionItem, index: number) => {
       if (!item.column || index < startIndex || index > endIndex) {
         return smallest

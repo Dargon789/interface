@@ -29,7 +29,7 @@ const hoverStyle: FlexProps['hoverStyle'] = { backgroundColor: '$surface2' }
 
 const displayNameTextProps: TextProps = { color: '$accent1', variant: 'body1' }
 
-export const TransactionSummaryLayout = memo(function _TransactionSummaryLayout({
+export const TransactionSummaryLayout = memo(function TransactionSummaryLayoutInner({
   caption,
   isExternalProfile,
   transaction,
@@ -63,7 +63,7 @@ export const TransactionSummaryLayout = memo(function _TransactionSummaryLayout(
  * IMPORTANT: If you add any new hooks to this component, make sure to profile the app using `react-devtools` to verify
  *            that the component is not re-rendering unnecessarily.
  */
-const TransactionSummaryLayoutContent = memo(function _TransactionSummaryLayoutContent({
+const TransactionSummaryLayoutContent = memo(function TransactionSummaryLayoutContentInner({
   authTrigger,
   transaction,
   title,
@@ -104,12 +104,13 @@ const TransactionSummaryLayoutContent = memo(function _TransactionSummaryLayoutC
   const formattedSortTime = useFormattedTimeForActivity(sortTime)
 
   const statusIconFill = colors.surface1.get()
+  const showWarningIcon = status === TransactionStatus.Failed || status === TransactionStatus.AwaitingAction
 
   const rightBlock = useMemo(
     () =>
       isCancel ? (
         <SlashCircle color="$statusCritical" fill={statusIconFill} fillOpacity={1} size={TXN_STATUS_ICON_SIZE} />
-      ) : status === TransactionStatus.Failed ? (
+      ) : showWarningIcon ? (
         <Flex grow alignItems="flex-end" justifyContent="space-between">
           <AlertTriangleFilled color="$statusWarning" fill={colors.statusWarning.val} size={TXN_STATUS_ICON_SIZE} />
         </Flex>
@@ -118,7 +119,7 @@ const TransactionSummaryLayoutContent = memo(function _TransactionSummaryLayoutC
           {formattedSortTime}
         </Text>
       ),
-    [isCancel, status, statusIconFill, formattedSortTime, colors],
+    [isCancel, showWarningIcon, statusIconFill, formattedSortTime, colors],
   )
 
   return (

@@ -1,7 +1,6 @@
 import '@tamagui/core/reset.css'
 import 'src/app/Global.css'
 import 'symbol-observable' // Needed by `reduxed-chrome-storage` as polyfill, order matters
-
 import { useEffect } from 'react'
 import { createHashRouter, RouteObject, RouterProvider } from 'react-router'
 import { PersistGate } from 'redux-persist/integration/react'
@@ -32,8 +31,8 @@ import { OnboardingWrapper } from 'src/app/features/onboarding/OnboardingWrapper
 import { PasswordImport } from 'src/app/features/onboarding/PasswordImport'
 import { ResetComplete } from 'src/app/features/onboarding/reset/ResetComplete'
 import { OTPInput } from 'src/app/features/onboarding/scan/OTPInput'
-import { ScanToOnboard } from 'src/app/features/onboarding/scan/ScanToOnboard'
 import { ScantasticContextProvider } from 'src/app/features/onboarding/scan/ScantasticContextProvider'
+import { ScanToOnboard } from 'src/app/features/onboarding/scan/ScanToOnboard'
 import { OnboardingRoutes, TopLevelRoutes } from 'src/app/navigation/constants'
 import { OnboardingNavigationProvider } from 'src/app/navigation/providers'
 import { setRouter, setRouterState } from 'src/app/navigation/state'

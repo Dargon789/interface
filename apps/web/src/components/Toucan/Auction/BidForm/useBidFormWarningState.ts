@@ -41,18 +41,18 @@ export function useBidFormWarningState({
     const normalizedCurrency = currency?.toLowerCase()
     const isNativeBidToken = Boolean(
       chainId &&
-        normalizedCurrency &&
-        (normalizedCurrency === zeroAddress || isNativeCurrencyAddress(chainId, normalizedCurrency)),
+      normalizedCurrency &&
+      (normalizedCurrency === zeroAddress || isNativeCurrencyAddress(chainId, normalizedCurrency)),
     )
     const usdcAddress = chainId && isSupportedChain ? getChainInfo(chainId).tokens.USDC?.address : undefined
     const isUsdcBidToken = Boolean(
       chainId &&
-        normalizedCurrency &&
-        usdcAddress &&
-        areAddressesEqual({
-          addressInput1: { address: normalizedCurrency, chainId },
-          addressInput2: { address: usdcAddress, chainId },
-        }),
+      normalizedCurrency &&
+      usdcAddress &&
+      areAddressesEqual({
+        addressInput1: { address: normalizedCurrency, chainId },
+        addressInput2: { address: usdcAddress, chainId },
+      }),
     )
     const isValidationErrorWarning = isToucanAuctionKYCEnabled
       ? Boolean(validationError)

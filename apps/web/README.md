@@ -38,7 +38,8 @@ Using a different port may cause CORS errors for certain Uniswap Backend service
 | `bun web preview` | Preview production build locally |
 | `bun web typecheck` | Run type checking |
 | `bun web test` | Run unit tests |
-| `bun web e2e` | Run E2E Playwright tests |
+| `bun web e2e` | Run E2E Playwright tests with prod build |
+| `bun web e2e:dev` | Run E2E Playwright tests with dev build |
 
 ## Translations
 
@@ -65,3 +66,5 @@ Which will download the translations to `./apps/web/src/i18n/locales/translation
 ## Further Documentation
 
 See [CLAUDE.md](./CLAUDE.md) for detailed development guidance, architecture patterns, and workflows.
+
+See [the e2e skill](../../.claude/skills/web-e2e/SKILL.md) for information about creating and running e2e tests.

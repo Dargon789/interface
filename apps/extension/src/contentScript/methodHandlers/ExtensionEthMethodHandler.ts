@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { getPermissions } from 'src/app/features/dappRequests/permissions'
 import { SendTransactionRequest } from 'src/app/features/dappRequests/types/DappRequestTypes'
@@ -306,7 +306,7 @@ export class ExtensionEthMethodHandler extends BaseMethodHandler<WindowEthereumR
     )
   }
 
-  // eslint-disable-next-line complexity
+  // oxlint-disable-next-line complexity
   async handleRequest(request: WindowEthereumRequest, source: MessageEventSource | null): Promise<void> {
     switch (request.method) {
       case EthMethod.EthChainId: {
@@ -681,7 +681,7 @@ export class ExtensionEthMethodHandler extends BaseMethodHandler<WindowEthereumR
   }
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: Transaction object from dapp can have various shapes requiring flexible typing
+// oxlint-disable-next-line typescript/no-explicit-any -- Transaction object from dapp can have various shapes requiring flexible typing
 function adaptTransactionForEthers(transaction: any): any {
   if (typeof transaction.chainId === 'string') {
     transaction.chainId = parseInt(transaction.chainId, 16)

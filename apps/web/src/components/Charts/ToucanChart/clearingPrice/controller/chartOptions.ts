@@ -1,11 +1,7 @@
 import { type ChartOptions, CrosshairMode, type DeepPartial, LineStyle, LineType } from 'lightweight-charts'
 import { opacify } from 'ui/src/theme'
 import type { ClearingPriceChartControllerCreateParams } from '~/components/Charts/ToucanChart/clearingPrice/types'
-import {
-  CHART_DIMENSIONS,
-  CHART_FONT_FAMILY,
-  LABEL_CONFIG,
-} from '~/components/Toucan/Auction/BidDistributionChart/constants'
+import { CHART_FONT_FAMILY, LABEL_CONFIG } from '~/components/Toucan/Auction/BidDistributionChart/constants'
 
 export function createClearingPriceChartOptions({
   width,
@@ -26,14 +22,11 @@ export function createClearingPriceChartOptions({
       fontSize: LABEL_CONFIG.FONT_SIZE,
     },
     leftPriceScale: {
-      visible: true,
+      visible: false,
       borderVisible: false,
-      minimumWidth: CHART_DIMENSIONS.Y_AXIS_MIN_WIDTH,
       autoScale: true,
-      entireTextOnly: true,
       scaleMargins: {
-        top: 0.15,
-        // No bottom margin - the autoscaleInfoProvider on the series constrains yMin to scaledYMin
+        top: 0,
         bottom: 0,
       },
     },

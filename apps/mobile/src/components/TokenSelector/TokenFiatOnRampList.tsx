@@ -78,7 +78,7 @@ function TokenOptionItemWrapper({
   )
 }
 
-function _TokenFiatOnRampList({
+function TokenFiatOnRampListInner({
   onSelectCurrency,
   error,
   onRetry,
@@ -201,4 +201,4 @@ function key(item: FiatOnRampCurrency): CurrencyId {
   return item.currencyInfo?.currencyId ?? ''
 }
 
-export const TokenFiatOnRampList = memo(_TokenFiatOnRampList)
+export const TokenFiatOnRampList = memo(TokenFiatOnRampListInner)

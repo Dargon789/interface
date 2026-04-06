@@ -358,6 +358,7 @@ module.exports = (env) => {
           {
             from: 'src/manifest.json',
             force: true,
+            // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
             transform(content) {
               const transformedManifest = {
                 ...manifest,

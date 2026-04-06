@@ -10,9 +10,9 @@ vi.mock('uniswap/src/features/chains/hooks/useOrderedChainIds', () => ({
 
 describe(useOrderedMultichainEntries, () => {
   const ENTRIES: MultichainTokenEntry[] = [
-    { chainId: UniverseChainId.Base, address: '0xBase' },
-    { chainId: UniverseChainId.Mainnet, address: '0xMainnet' },
-    { chainId: UniverseChainId.ArbitrumOne, address: '0xArbitrum' },
+    { chainId: UniverseChainId.Base, address: '0xBase', isNative: false },
+    { chainId: UniverseChainId.Mainnet, address: '0xMainnet', isNative: false },
+    { chainId: UniverseChainId.ArbitrumOne, address: '0xArbitrum', isNative: false },
   ]
 
   beforeEach(() => {

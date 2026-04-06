@@ -1,8 +1,9 @@
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 function onlyUnique<T>(value: T, index: number, self: T[]): boolean {
   return self.indexOf(value) === index
 }
 
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 export function unique<T>(array: T[], isUnique: (value: T, index: number, self: T[]) => boolean = onlyUnique): T[] {
   return array.filter(isUnique)
 }
@@ -17,7 +18,7 @@ export function next<T>(array: T[], current: T): T | undefined {
 
 // get items in `array` that are not in `without`
 // e.g. difference([B, C, D], [A, B, C]) would return ([D])
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 export function differenceWith<T>(array: T[], without: T[], comparator: (item1: T, item2: T) => boolean): T[] {
   return array.filter((item: T) => {
     const inWithout = Boolean(without.find((otherItem: T) => comparator(item, otherItem)))

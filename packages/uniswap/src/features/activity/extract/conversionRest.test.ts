@@ -8,9 +8,8 @@ import {
   TokenType,
 } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { TradingApi } from '@universe/api'
-import { getNativeAddress, getWrappedNativeAddress } from 'uniswap/src/constants/addresses'
+import { getNativeAddress, getWrappedNativeAddressWithThrow } from 'uniswap/src/constants/addresses'
 import { DAI } from 'uniswap/src/constants/tokens'
-
 import extractRestOnChainTransactionDetails from 'uniswap/src/features/activity/extract/extractOnChainTransactionDetails'
 import { parseRestApproveTransaction } from 'uniswap/src/features/activity/parse/parseApproveTransaction'
 import { parseRestLiquidityTransaction } from 'uniswap/src/features/activity/parse/parseLiquidityTransaction'
@@ -41,7 +40,7 @@ const FROM_ADDRESS = SAMPLE_SEED_ADDRESS_1
 const TO_ADDRESS = SAMPLE_SEED_ADDRESS_2
 const TEST_HASH = '0x00'
 const ERC20_ASSET_ADDRESS = DAI.address
-const WRAPPED_NATIVE_ADDRESS = getWrappedNativeAddress(UniverseChainId.Mainnet)
+const WRAPPED_NATIVE_ADDRESS = getWrappedNativeAddressWithThrow(UniverseChainId.Mainnet)
 const NATIVE_ADDRESS = getNativeAddress(UniverseChainId.Mainnet)
 
 const TRANSACTION_BASE: OnChainTransaction = {

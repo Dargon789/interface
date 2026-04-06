@@ -1,5 +1,5 @@
 import { GraphQLApi } from '@universe/api'
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* oxlint-disable typescript/no-unsafe-return */
 import { GQL_CHAINS } from 'uniswap/src/test/fixtures'
 import { faker, MAX_FIXTURE_TIMESTAMP } from 'uniswap/src/test/shared'
 import { randomChoice, randomEnumValue } from 'uniswap/src/test/utils'

@@ -1,10 +1,10 @@
 import { UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query'
+import { encryptPasswordWithBiometricData } from 'src/app/features/biometricUnlock/biometricAuthUtils'
+import { biometricUnlockCredentialQuery } from 'src/app/features/biometricUnlock/biometricUnlockCredentialQuery'
 import {
   BiometricUnlockStorage,
   BiometricUnlockStorageData,
 } from 'src/app/features/biometricUnlock/BiometricUnlockStorage'
-import { encryptPasswordWithBiometricData } from 'src/app/features/biometricUnlock/biometricAuthUtils'
-import { biometricUnlockCredentialQuery } from 'src/app/features/biometricUnlock/biometricUnlockCredentialQuery'
 import { startNavigatorCredentialRequest } from 'src/app/features/biometricUnlock/useNavigatorCredentialAbortSignal'
 import { assertPublicKeyCredential } from 'src/app/features/biometricUnlock/utils/assertPublicKeyCredential'
 import { isUserVerifyingPlatformAuthenticatorAvailable } from 'src/app/utils/device/builtInBiometricCapabilitiesQuery'

@@ -13,7 +13,7 @@ interface TimeCellProps {
   textAlign?: TextProps['textAlign']
 }
 
-function _TimeCell({ timestamp, showFullDateOnHover = false, textAlign = 'left' }: TimeCellProps) {
+function TimeCellInner({ timestamp, showFullDateOnHover = false, textAlign = 'left' }: TimeCellProps) {
   const formattedTime = useFormattedTimeForActivity(timestamp)
   const localizedDayjs = useLocalizedDayjs()
 
@@ -51,4 +51,4 @@ function _TimeCell({ timestamp, showFullDateOnHover = false, textAlign = 'left' 
   )
 }
 
-export const TimeCell = memo(_TimeCell)
+export const TimeCell = memo(TimeCellInner)

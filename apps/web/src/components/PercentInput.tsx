@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react'
-// biome-ignore lint/style/noRestrictedImports: styled-components needed for input component styling
+// oxlint-disable-next-line no-restricted-imports -- styled-components needed for input component styling
 import styled from 'styled-components'
 import { useCurrentLocale } from 'uniswap/src/features/language/hooks'
 import { InputProps, localeUsesComma, StyledInput } from '~/components/NumericalInput'

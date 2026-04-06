@@ -1,4 +1,4 @@
-import providers from '@ethersproject/providers'
+import { type TransactionRequest } from '@ethersproject/providers'
 import { NFTPermitData, PermitBatchData } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
 import { ONE, Protocol } from '@uniswap/router-sdk'
 import { Currency, CurrencyAmount, Fraction, Percent, TradeType } from '@uniswap/sdk-core'
@@ -208,7 +208,7 @@ export function getProtocolVersionFromTrade(trade: Trade): Protocol | undefined 
 }
 
 export function validateTransactionRequest(
-  request?: providers.TransactionRequest | null,
+  request?: TransactionRequest | null,
 ): ValidatedTransactionRequest | undefined {
   if (request?.to && request.chainId) {
     return { ...request, to: request.to, chainId: request.chainId }
@@ -223,7 +223,7 @@ export function validateTransactionRequestTypeGuard(
 }
 
 export function validateTransactionRequests(
-  requests?: providers.TransactionRequest[] | null,
+  requests?: TransactionRequest[] | null,
 ): PopulatedTransactionRequestArray | undefined {
   if (!requests?.length) {
     return undefined

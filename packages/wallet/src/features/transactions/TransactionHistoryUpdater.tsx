@@ -133,7 +133,7 @@ function AddressTransactionHistoryUpdater({
 
           // Dont flag notification status for txns submitted from app, this is handled in transactionWatcherSaga.
           const confirmedLocally = localTransactions?.some(
-            // eslint-disable-next-line max-nested-callbacks
+            // oxlint-disable-next-line max-nested-callbacks
             (localTx) => activity.details.__typename === 'TransactionDetails' && localTx.hash === activity.details.hash,
           )
           if (!confirmedLocally) {
@@ -145,7 +145,7 @@ function AddressTransactionHistoryUpdater({
         }
       })
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (newTransactionsFound && address === activeAccountAddress) {
         // Fetch full recent txn history and dispatch receive notification if needed.
         await fetchAndDispatchReceiveNotification(address, lastTxNotificationUpdateTimestamp, hideSpamTokens)
@@ -175,6 +175,7 @@ function AddressTransactionHistoryUpdater({
  * want to submit every polling interval - only fetch this data if new txn is detected. This ideally gets
  * replaced with a subscription to new transactions with more full txn data.
  */
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 export function useFetchAndDispatchReceiveNotification(): (
   address: string,
   lastTxNotificationUpdateTimestamp: number | undefined,
@@ -184,11 +185,11 @@ export function useFetchAndDispatchReceiveNotification(): (
   const dispatch = useDispatch()
   const { gqlChains } = useEnabledChains()
 
+  // oxlint-disable-next-line max-params
   return async (
     address: string,
     lastTxNotificationUpdateTimestamp: number | undefined,
     hideSpamTokens = false,
-    // eslint-disable-next-line max-params
   ): Promise<void> => {
     // Fetch full transaction history for user address.
     const { data: fullTransactionData } = await fetchFullTransactionData({

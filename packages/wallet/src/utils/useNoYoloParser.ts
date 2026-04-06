@@ -37,7 +37,7 @@ export function useNoYoloParser(
     return new Parser({ abiFetchers: [proxyAbiFetcher, explorerAbiFetcher] })
   }, [chainId])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +value
+  // oxlint-disable-next-line react/exhaustive-deps -- +value
   useEffect(() => {
     const parseResult = async (): Promise<TransactionDescription | undefined> => {
       // no-yolo-parser library expects these fields to be defined

@@ -11,7 +11,6 @@ import { NetworkLogo } from 'uniswap/src/components/CurrencyLogo/NetworkLogo'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { GetHelpHeader } from 'uniswap/src/components/dialog/GetHelpHeader'
 import { Modal } from 'uniswap/src/components/modals/Modal'
-import { DEFAULT_TICK_SPACING } from 'uniswap/src/constants/pools'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { useGetPasskeyAuthStatus } from 'uniswap/src/features/passkey/hooks/useGetPasskeyAuthStatus'
 import { ModalNameType } from 'uniswap/src/features/telemetry/constants'
@@ -27,6 +26,7 @@ import { ErrorCallout } from '~/components/ErrorCallout'
 import { BaseQuoteFiatAmount } from '~/components/Liquidity/BaseQuoteFiatAmount'
 import { PoolOutOfSyncError } from '~/components/Liquidity/Create/PoolOutOfSyncError'
 import { LiquidityPositionInfoBadges } from '~/components/Liquidity/LiquidityPositionInfoBadges'
+import { LowLPSlippageWarning } from '~/components/Liquidity/LowLPSlippageWarning'
 import { getBaseAndQuoteCurrencies } from '~/components/Liquidity/utils/currency'
 import { getTicksAtLimit } from '~/components/Liquidity/utils/priceRangeInfo'
 import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
@@ -140,8 +140,13 @@ export function ReviewModal({
   const { baseCurrency, quoteCurrency } = getBaseAndQuoteCurrencies(currencies.sdk, priceInverted)
 
   const ticksAtLimit = useMemo(() => {
+    // V2 pools return 0 tick spacing because every V2 position is full range
+    if (!fee?.tickSpacing) {
+      return [false, false]
+    }
+
     return getTicksAtLimit({
-      tickSpacing: fee?.tickSpacing ?? DEFAULT_TICK_SPACING,
+      tickSpacing: fee.tickSpacing,
       lowerTick: minTick,
       upperTick: maxTick,
       fullRange,
@@ -211,15 +216,16 @@ export function ReviewModal({
     <Modal name={modalName} padding="$none" onClose={onClose} isDismissible isModalOpen={isOpen}>
       <Flex px="$spacing8" pt="$spacing12" pb="$spacing8" gap="$spacing24">
         <Flex px="$spacing12">
-          <GetHelpHeader
-            title={
-              <Text variant="subheading2" color="$neutral2">
-                {headerTitle}
-              </Text>
-            }
-            closeDataTestId={TestID.LiquidityModalHeaderClose}
-            closeModal={() => onClose()}
-          />
+          <Flex row justifyContent="space-between" alignItems="center" width="100%">
+            <Text variant="subheading2" color="$neutral2">
+              {headerTitle}
+            </Text>
+            <GetHelpHeader
+              width="auto"
+              closeDataTestId={TestID.LiquidityModalHeaderClose}
+              closeModal={() => onClose()}
+            />
+          </Flex>
           <Flex py="$spacing12" gap="$spacing12" mt="$spacing16">
             <Flex row alignItems="center" justifyContent="space-between">
               <Flex>
@@ -307,6 +313,9 @@ export function ReviewModal({
             </Flex>
           )}
           <Flex gap="$spacing12">
+            <LowLPSlippageWarning
+              isNativePool={Boolean(currencies.sdk.TOKEN0?.isNative || currencies.sdk.TOKEN1?.isNative)}
+            />
             <ErrorCallout errorMessage={transactionError} onPress={refetch} />
             <PoolOutOfSyncError />
           </Flex>
@@ -350,7 +359,7 @@ export function ReviewModal({
                 onPress={onConfirm}
                 isDisabled={isDisabled}
                 fill={false}
-                icon={needsPasskeySignin ? <Passkey size="$icon.24" /> : undefined}
+                icon={needsPasskeySignin ? <Passkey size="$icon.24" color="$white" /> : undefined}
               >
                 {isSignedInWithPasskey && isSessionAuthenticated ? t('position.create.confirm') : confirmButtonText}
               </Button>

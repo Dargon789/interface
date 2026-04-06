@@ -8,11 +8,14 @@ import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useModalState } from '~/hooks/useModalState'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 
 export function BridgedAssetWithdrawButton(): JSX.Element | null {
   const { t } = useTranslation()
-  const { currencyChainId, address } = useTDPContext()
+  const { currencyChainId, address } = useTDPStore((s) => ({
+    currencyChainId: s.currencyChainId,
+    address: s.address,
+  }))
   const currencyInfo = useCurrencyInfo(buildCurrencyId(currencyChainId, address))
   const { openModal } = useModalState(ModalName.Wormhole)
   const [, setWormholeModalCurrencyInfo] = useAtom(WormholeModalAtom)

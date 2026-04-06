@@ -1,4 +1,4 @@
-// biome-ignore-all lint/suspicious/noBitwiseOperators: Hash function requires bitwise ops
+/* oxlint-disable no-bitwise -- Hash function requires bitwise ops */
 
 /**
  * cyrb53 - fast, well-distributed 53-bit hash

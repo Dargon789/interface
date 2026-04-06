@@ -1,4 +1,4 @@
-/* eslint-disable no-relative-import-paths/no-relative-import-paths -- Vitest confuses this 'playwright' folder with the library */
+/* oxlint-disable universe-custom/no-relative-import-paths -- Vitest confuses this 'playwright' folder with the library */
 import { FeatureFlags } from '@universe/gating'
 import { describe, expect, it } from 'vitest'
 import { createTestUrlBuilder } from './urls'

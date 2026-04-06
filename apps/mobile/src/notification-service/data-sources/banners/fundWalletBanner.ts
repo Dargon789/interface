@@ -33,7 +33,7 @@ export async function checkFundWalletBanner(getState: () => MobileState): Promis
 
   // Check if wallet has balance or activity - if it does, don't show the fund wallet card
   const hasBalanceOrActivity = selectHasBalanceOrActivityForAddress(state, activeAddress)
-  if (hasBalanceOrActivity) {
+  if (hasBalanceOrActivity !== false) {
     return null
   }
 
@@ -58,7 +58,7 @@ function createFundWalletBanner(): InAppNotification {
         backgroundOnClick: new OnClick({
           // No ACK here - required notifications should reappear until the user funds their wallet
           // The notification will stop showing once hasBalanceOrActivity becomes true
-          onClick: [OnClickAction.EXTERNAL_LINK, OnClickAction.DISMISS],
+          onClick: [OnClickAction.EXTERNAL_LINK],
           onClickLink: fundWalletLink,
         }),
       }),

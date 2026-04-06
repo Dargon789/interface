@@ -1,4 +1,3 @@
-/* eslint-disable check-file/no-index */
 /**
  * Session Transport
  *

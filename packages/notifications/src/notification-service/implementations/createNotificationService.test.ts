@@ -717,6 +717,152 @@ describe('createNotificationService', () => {
     })
   })
 
+  describe('notification removal when data source stops returning', () => {
+    it('removes notification when data source stops returning it', async () => {
+      const { dataSource, triggerNotifications } = createMockDataSource()
+      const { tracker } = createMockTracker()
+      const processor = createMockProcessor()
+      const { renderer, getRenderedNotifications, getCleanupCallCount } = createMockRenderer()
+
+      const system = createNotificationService({
+        dataSources: [dataSource],
+        tracker,
+        processor,
+        renderer,
+      })
+
+      await system.initialize()
+
+      const notification = createMockNotification({ name: 'notif-1', timestamp: 1000, id: 'id-1' })
+
+      // Source returns notification
+      triggerNotifications([notification], 'source-a')
+      await sleep(10)
+
+      expect(getRenderedNotifications()).toHaveLength(1)
+      expect(getCleanupCallCount()).toBe(0)
+
+      // Source stops returning it
+      triggerNotifications([], 'source-a')
+      await sleep(10)
+
+      expect(getCleanupCallCount()).toBe(1)
+    })
+
+    it('does not remove notification from other data source', async () => {
+      const { dataSource: dataSource1, triggerNotifications: trigger1 } = createMockDataSource()
+      const { dataSource: dataSource2, triggerNotifications: trigger2 } = createMockDataSource()
+      const { tracker } = createMockTracker()
+      const processor = createMockProcessor()
+      const { renderer, getRenderedNotifications, getCleanupCallCount } = createMockRenderer()
+
+      const system = createNotificationService({
+        dataSources: [dataSource1, dataSource2],
+        tracker,
+        processor,
+        renderer,
+      })
+
+      await system.initialize()
+
+      const notifA = createMockNotification({ name: 'notif-a', timestamp: 1000, id: 'id-a' })
+      const notifB = createMockNotification({ name: 'notif-b', timestamp: 2000, id: 'id-b' })
+
+      // Each source returns its own notification
+      trigger1([notifA], 'source-a')
+      await sleep(10)
+      trigger2([notifB], 'source-b')
+      await sleep(10)
+
+      expect(getRenderedNotifications()).toHaveLength(2)
+
+      // Source A stops returning its notification
+      trigger1([], 'source-a')
+      await sleep(10)
+
+      // Only source A's notification should be cleaned up
+      expect(getCleanupCallCount()).toBe(1)
+      // Source B's notification should still be active (renderer.render was called for it and not cleaned up)
+    })
+
+    it('does not remove notification still returned by source but filtered by processor', async () => {
+      const { dataSource, triggerNotifications } = createMockDataSource()
+      const { tracker } = createMockTracker()
+      let shouldFilter = true
+      const processor = createMockProcessor((notifications) =>
+        shouldFilter ? notifications.filter((n) => n.id !== 'id-1') : notifications,
+      )
+      const { renderer, getRenderedNotifications, getCleanupCallCount } = createMockRenderer()
+
+      const system = createNotificationService({
+        dataSources: [dataSource],
+        tracker,
+        processor,
+        renderer,
+      })
+
+      await system.initialize()
+
+      const notification = createMockNotification({ name: 'notif-1', timestamp: 1000, id: 'id-1' })
+
+      // Source returns notification but processor filters it out
+      triggerNotifications([notification], 'source-a')
+      await sleep(10)
+
+      expect(getRenderedNotifications()).toHaveLength(0)
+      expect(getCleanupCallCount()).toBe(0)
+
+      // Processor stops filtering — notification renders
+      shouldFilter = false
+      triggerNotifications([notification], 'source-a')
+      await sleep(10)
+
+      expect(getRenderedNotifications()).toHaveLength(1)
+      expect(getCleanupCallCount()).toBe(0)
+
+      // Source stops returning → cleanup called
+      triggerNotifications([], 'source-a')
+      await sleep(10)
+
+      expect(getCleanupCallCount()).toBe(1)
+    })
+
+    it('replaces notification when data source returns different one', async () => {
+      const { dataSource, triggerNotifications } = createMockDataSource()
+      const { tracker } = createMockTracker()
+      const processor = createMockProcessor()
+      const { renderer, getRenderedNotifications, getCleanupCallCount } = createMockRenderer()
+
+      const system = createNotificationService({
+        dataSources: [dataSource],
+        tracker,
+        processor,
+        renderer,
+      })
+
+      await system.initialize()
+
+      const notif1 = createMockNotification({ name: 'notif-1', timestamp: 1000, id: 'id-1' })
+      const notif2 = createMockNotification({ name: 'notif-2', timestamp: 2000, id: 'id-2' })
+
+      // Source returns notif-1
+      triggerNotifications([notif1], 'source-a')
+      await sleep(10)
+
+      expect(getRenderedNotifications()).toHaveLength(1)
+      expect(getRenderedNotifications()[0].id).toBe('id-1')
+
+      // Source now returns notif-2 instead
+      triggerNotifications([notif2], 'source-a')
+      await sleep(10)
+
+      // notif-1 cleanup should have been called, notif-2 should be rendered
+      expect(getCleanupCallCount()).toBe(1)
+      expect(getRenderedNotifications()).toHaveLength(2)
+      expect(getRenderedNotifications()[1].id).toBe('id-2')
+    })
+  })
+
   describe('downstream chain tracking', () => {
     it('tracks all downstream notifications when a notification is acknowledged', async () => {
       const { dataSource, triggerNotifications } = createMockDataSource()

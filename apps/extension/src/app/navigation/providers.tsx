@@ -78,9 +78,6 @@ function SharedExtensionNavigationProvider({
   const navigateToReceive = useNavigateToReceive()
   const navigateToSend = useNavigateToSend()
   const navigateToTokenDetails = useNavigateToTokenDetails()
-  const navigateToNftCollection = useCallback(() => {
-    // no-op until we have proper NFT collection
-  }, [])
   const navigateToFiatOnRamp = useNavigateToFiatOnRamp()
   const navigateToExternalProfile = useCallback(({ address }: NavigateToExternalProfileArgs) => {
     focusOrCreateUniswapInterfaceTab({ url: getPortfolioUrl(address) })
@@ -96,7 +93,6 @@ function SharedExtensionNavigationProvider({
       navigateToBuyOrReceiveWithEmptyWallet={navigateToBuyOrReceiveWithEmptyWallet}
       navigateToExternalProfile={navigateToExternalProfile}
       navigateToFiatOnRamp={navigateToFiatOnRamp}
-      navigateToNftCollection={navigateToNftCollection}
       navigateToNftDetails={navigateToNftDetails}
       navigateToPoolDetails={navigateToPoolDetails}
       navigateToReceive={navigateToReceive}
@@ -209,7 +205,7 @@ function useNavigateToPoolDetails(): (args: { poolId: Address; chainId: Universe
     await focusOrCreateUniswapInterfaceTab({
       url: getPoolDetailsURL(poolId, chainId),
       // We want to reuse the active tab only if it's already in any other PDP.
-      // eslint-disable-next-line security/detect-non-literal-regexp
+      // oxlint-disable-next-line security/detect-non-literal-regexp
       reuseActiveTabIfItMatches: new RegExp(`^${escapeRegExp(uniswapUrls.webInterfacePoolsUrl)}`),
     })
   }, [])

@@ -6,8 +6,9 @@ import {
   type UseQueryWithImmediateGarbageCollectionApiHelperHookArgs,
   useQueryWithImmediateGarbageCollection,
 } from '@universe/api'
-import { useStatsigClientStatus } from '@universe/gating'
+import { FeatureFlags, getFeatureFlag, useStatsigClientStatus } from '@universe/gating'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
+import { fetchGasFeeV2 } from 'uniswap/src/data/apiClients/gasService/fetchGasFeeV2'
 import { UniswapApiClient } from 'uniswap/src/data/apiClients/uniswapApi/UniswapApiClient'
 import { getActiveGasStrategy } from 'uniswap/src/features/gas/utils'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
@@ -62,5 +63,12 @@ export async function fetchGasFeeQuery(params: {
   } = params
   const gasStrategy =
     overrideGasStrategy || getActiveGasStrategy({ chainId: tx.chainId, type: 'general', isStatsigReady })
+
+  const shouldUseGasServiceV2 = getFeatureFlag(FeatureFlags.GasServiceV2)
+
+  if (shouldUseGasServiceV2) {
+    return fetchGasFeeV2({ tx, gasStrategy, smartContractDelegationAddress, fallbackGasLimit })
+  }
+
   return UniswapApiClient.fetchGasFee({ tx, fallbackGasLimit, gasStrategy, smartContractDelegationAddress })
 }

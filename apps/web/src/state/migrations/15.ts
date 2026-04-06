@@ -29,7 +29,7 @@ function webResultToUniswapResult(webItem: TokenSearchResultWeb): PreV55SearchRe
       logoUrl: webItem.logoUrl,
       safetyInfo: webItem.safetyInfo,
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
   } else if (webItem.type === PreV55SearchResultType.NFTCollection) {
     return {
       type: PreV55SearchResultType.NFTCollection,

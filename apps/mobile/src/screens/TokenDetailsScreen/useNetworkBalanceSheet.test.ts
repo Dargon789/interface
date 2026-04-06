@@ -8,7 +8,7 @@ const mockNavigateToSwapFlow = jest.fn()
 const mockNavigateToSend = jest.fn()
 
 jest.mock('wallet/src/contexts/WalletNavigationContext', () => ({
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  // oxlint-disable-next-line typescript/explicit-function-return-type
   useWalletNavigation: () => ({
     navigateToSwapFlow: mockNavigateToSwapFlow,
     navigateToSend: mockNavigateToSend,
@@ -16,7 +16,7 @@ jest.mock('wallet/src/contexts/WalletNavigationContext', () => ({
 }))
 
 jest.mock('wallet/src/features/wallet/hooks', () => ({
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  // oxlint-disable-next-line typescript/explicit-function-return-type
   useActiveAccountAddressWithThrow: () => '0xTestAddress',
 }))
 
@@ -76,12 +76,12 @@ let mockCrossChainResult = {
 }
 
 jest.mock('uniswap/src/data/balances/hooks/useCrossChainBalances', () => ({
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  // oxlint-disable-next-line typescript/explicit-function-return-type
   useCrossChainBalances: () => mockCrossChainResult,
 }))
 
 jest.mock('uniswap/src/data/graphql/uniswap-data-api/fragments', () => ({
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  // oxlint-disable-next-line typescript/explicit-function-return-type
   useTokenBasicProjectPartsFragment: () => ({
     data: { project: { tokens: [] } },
   }),

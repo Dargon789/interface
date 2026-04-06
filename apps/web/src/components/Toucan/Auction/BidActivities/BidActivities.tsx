@@ -11,7 +11,8 @@ import { useLocalizationContext } from 'uniswap/src/features/language/Localizati
 import { shortenAddress } from 'utilities/src/addresses'
 import { Table } from '~/components/Table'
 import { Cell } from '~/components/Table/Cell'
-import { HeaderCell, TableText } from '~/components/Table/styled'
+import { TableText } from '~/components/Table/shared/TableText'
+import { HeaderCell } from '~/components/Table/styled'
 import { q96ToRawAmount } from '~/components/Toucan/Auction/BidDistributionChart/utils/q96'
 import { useAuctionTokenColor } from '~/components/Toucan/Auction/hooks/useAuctionTokenColor'
 import { useBidTokenInfo } from '~/components/Toucan/Auction/hooks/useBidTokenInfo'
@@ -61,7 +62,7 @@ function AnimatedBidRow({ children }: { children: React.ReactNode }) {
   )
 }
 
-export const BidActivities = () => {
+export const BidActivities = ({ hideHeader = false }: { hideHeader?: boolean } = {}) => {
   const { t } = useTranslation()
   const { convertFiatAmount } = useLocalizationContext()
   const { symbol: currencySymbol } = useAppFiatCurrencyInfo()
@@ -287,7 +288,7 @@ export const BidActivities = () => {
 
   return (
     <Flex width="100%" minWidth={0} flexShrink={1} gap="$spacing24">
-      <Text variant={media.lg ? 'subheading1' : 'heading3'}>{t('toucan.auction.latestActivity')}</Text>
+      {!hideHeader && <Text variant={media.lg ? 'subheading1' : 'heading3'}>{t('toucan.auction.latestActivity')}</Text>}
       {showPlaceholder ? (
         <Flex
           height={160}

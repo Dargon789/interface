@@ -42,7 +42,7 @@ export function NftViewWithContextMenu(props: NftViewWithContextMenuProps): JSX.
   const nftViewWithTriggers = useMemo(() => {
     const nftView = <NftView {...props} openContextMenu={openContextMenuWithHaptics} />
     return isWebPlatform ? (
-      // biome-ignore  lint/correctness/noRestrictedElements: needed here
+      // oxlint-disable-next-line react/forbid-elements -- needed here
       <div onContextMenu={onOpenContextMenu}>{nftView}</div>
     ) : (
       nftView

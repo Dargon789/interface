@@ -73,7 +73,7 @@ export function usePoolAddressCache() {
     [cache],
   )
   const set = useCallback(
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     (details: PositionDetails, chainId: UniverseChainId, address: string) =>
       updateCache((c) => ({ ...c, [poolAddressKey(details, chainId)]: address })),
     [updateCache],

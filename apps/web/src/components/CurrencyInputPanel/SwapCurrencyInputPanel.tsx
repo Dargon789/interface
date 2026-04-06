@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { AnimatePresence, Button, Flex, Text, useSporeColors } from 'ui/src'
 import { Lock } from 'ui/src/components/icons/Lock'
 import { useIsSupportedChainId } from 'uniswap/src/features/chains/hooks/useSupportedChainId'
+import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
@@ -219,6 +220,8 @@ interface SwapCurrencyInputPanelProps {
     disabledTooltipBody?: ReactNode
   }
   initialCurrencyLoading?: boolean
+  chainIds?: UniverseChainId[]
+  switchNetworkAction?: SwitchNetworkAction
 }
 
 const SwapCurrencyInputPanel = forwardRef<HTMLInputElement, SwapCurrencyInputPanelProps>(
@@ -245,6 +248,8 @@ const SwapCurrencyInputPanel = forwardRef<HTMLInputElement, SwapCurrencyInputPan
       currencyField,
       numericalInputSettings,
       label,
+      chainIds,
+      switchNetworkAction,
       ...rest
     },
     ref,
@@ -258,7 +263,7 @@ const SwapCurrencyInputPanel = forwardRef<HTMLInputElement, SwapCurrencyInputPan
     const { formatCurrencyAmount } = useLocalizationContext()
     const { t } = useTranslation()
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: +setModalOpen
+    // oxlint-disable-next-line react/exhaustive-deps -- +setModalOpen
     const handleDismissSearch = useCallback(() => {
       setModalOpen(false)
     }, [setModalOpen])
@@ -273,7 +278,7 @@ const SwapCurrencyInputPanel = forwardRef<HTMLInputElement, SwapCurrencyInputPan
     }, [tooltipVisible, numericalInputSettings])
 
     // reset tooltip state when currency changes
-    // biome-ignore lint/correctness/useExhaustiveDependencies: currency dependency is sufficient for this effect
+    // oxlint-disable-next-line react/exhaustive-deps -- currency dependency is sufficient for this effect
     useEffect(() => setTooltipVisible(false), [currency])
 
     const showCurrencyLoadingSpinner =
@@ -439,7 +444,8 @@ const SwapCurrencyInputPanel = forwardRef<HTMLInputElement, SwapCurrencyInputPan
             onCurrencySelect={onCurrencySelect}
             selectedCurrency={currency}
             otherSelectedCurrency={otherCurrency}
-            switchNetworkAction={SwitchNetworkAction.Swap}
+            chainIds={chainIds}
+            switchNetworkAction={switchNetworkAction ?? SwitchNetworkAction.Swap}
           />
         )}
       </InputPanel>

@@ -51,10 +51,11 @@ export function useAdaptiveFooter(contentContainerStyle?: StyleProp<ViewStyle>):
 
       footerHeight.value = Math.max(0, calculatedFooterHeight)
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     [contentContainerStyle, maxContentHeight, HEIGHT_TO_SUBTRACT],
   )
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to recalculate this when activeAccount changes
+  // oxlint-disable-next-line react/exhaustive-deps -- we want to recalculate this when activeAccount changes
   useEffect(() => {
     // Reset footer height to the initial value when the active account changes
     // (the fullHeight value is used for the same reason as the initial value)

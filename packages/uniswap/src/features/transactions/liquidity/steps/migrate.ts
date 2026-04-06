@@ -1,5 +1,5 @@
 import { MigrateV3ToV4LPPositionRequest } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
-import { LiquidityServiceClient } from 'uniswap/src/data/apiClients/liquidityService/LiquidityServiceClient'
+import { V1LiquidityServiceClient } from 'uniswap/src/data/apiClients/liquidityService/LiquidityServiceClient'
 import { InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { parseErrorMessageTitle } from 'uniswap/src/features/transactions/liquidity/utils'
@@ -16,9 +16,7 @@ export interface MigratePositionTransactionStep extends OnChainTransactionFields
 export interface MigratePositionTransactionStepAsync {
   // Migrations that require permit
   type: TransactionStepType.MigratePositionTransactionAsync
-  getTxRequest(
-    signature: string,
-  ): Promise<{ txRequest: ValidatedTransactionRequest | undefined; sqrtRatioX96?: string }>
+  getTxRequest(signature: string): Promise<{ txRequest: ValidatedTransactionRequest | undefined }>
 }
 
 export function createMigratePositionStep(txRequest: ValidatedTransactionRequest): MigratePositionTransactionStep {
@@ -34,9 +32,7 @@ export function createMigratePositionAsyncStep(
 ): MigratePositionTransactionStepAsync {
   return {
     type: TransactionStepType.MigratePositionTransactionAsync,
-    getTxRequest: async (
-      signature: string,
-    ): Promise<{ txRequest: ValidatedTransactionRequest | undefined; sqrtRatioX96?: string }> => {
+    getTxRequest: async (signature: string): Promise<{ txRequest: ValidatedTransactionRequest | undefined }> => {
       if (!migratePositionRequestArgs || !signatureDeadline) {
         return { txRequest: undefined }
       }
@@ -48,7 +44,7 @@ export function createMigratePositionAsyncStep(
           signatureDeadline: Number(signatureDeadline),
           simulateTransaction: true,
         })
-        const migrate = (await LiquidityServiceClient.migrateV3ToV4LpPosition(updatedRequest)).migrate
+        const migrate = (await V1LiquidityServiceClient.migrateV3ToV4LpPosition(updatedRequest)).migrate
         return { txRequest: validateTransactionRequest(migrate) }
       } catch (e) {
         const message = parseErrorMessageTitle(e, { includeRequestId: true })

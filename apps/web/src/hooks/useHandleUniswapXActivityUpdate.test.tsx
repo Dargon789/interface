@@ -279,6 +279,7 @@ describe('useHandleUniswapXActivityUpdate', () => {
           totalNonErrorSteps: 2,
           stepType: 'SwapTransaction',
         },
+        transactedUSDValue: undefined,
       })
     })
 
@@ -334,6 +335,7 @@ describe('useHandleUniswapXActivityUpdate', () => {
           totalNonErrorSteps: 2,
           stepType: 'SwapTransaction',
         },
+        transactedUSDValue: undefined,
       })
     })
 
@@ -370,6 +372,7 @@ describe('useHandleUniswapXActivityUpdate', () => {
           totalNonErrorSteps: 2,
           stepType: 'SwapTransaction',
         },
+        transactedUSDValue: undefined,
       })
     })
 

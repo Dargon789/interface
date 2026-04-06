@@ -5,7 +5,7 @@
  * - Web: Exports simplified implementations (animationModifiers.web.ts)
  */
 
-// biome-ignore lint/suspicious/noExplicitAny: complex Reanimated config types vary by platform
+// oxlint-disable-next-line typescript/no-explicit-any -- complex Reanimated config types vary by platform
 export type AnimationConfig = any
 
 /**
@@ -39,7 +39,7 @@ export function withSequence<T>(..._animations: T[]): T {
 /**
  * Repeats an animation.
  */
-// eslint-disable-next-line max-params -- matches react-native-reanimated API
+// oxlint-disable-next-line max-params -- matches react-native-reanimated API
 export function withRepeat<T>(_animation: T, _numberOfReps?: number, _reverse?: boolean): T {
   throw new Error('withRepeat: Implemented in .native.ts and .web.ts')
 }

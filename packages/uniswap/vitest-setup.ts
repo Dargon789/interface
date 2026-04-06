@@ -27,7 +27,7 @@ vi.mock('@testing-library/react-native', async () => {
 
   // Create fireEvent as a function that also has methods (React Native style)
   // React Native Testing Library supports: fireEvent(element, eventName, data)
-  // biome-ignore lint/suspicious/noExplicitAny: matching React Native Testing Library's fireEvent signature
+  // oxlint-disable-next-line typescript/no-explicit-any, max-params -- matching React Native Testing Library's fireEvent signature
   const fireEventBase = (element: Element, eventName: string, data?: any): boolean => {
     // Handle common React Native event names
     const eventMap: Record<string, string> = {
@@ -39,7 +39,7 @@ vi.mock('@testing-library/react-native', async () => {
       mouseDown: 'mousedown',
     }
     const webEventName = eventMap[eventName] || eventName
-    // biome-ignore lint/suspicious/noExplicitAny: matching React Native Testing Library's fireEvent signature
+    // oxlint-disable-next-line typescript/no-explicit-any -- matching React Native Testing Library's fireEvent signature
     const fireEventFn = (rtl.fireEvent as any)[webEventName] || rtl.fireEvent
     return fireEventFn(element, data)
   }
@@ -55,7 +55,7 @@ vi.mock('@testing-library/react-native', async () => {
   // Wrap render to add toJSON method for React Native Testing Library compatibility
   // React Native Testing Library's toJSON() returns ReactTestRendererJSON from react-test-renderer
   // Web's asFragment() returns DocumentFragment - both work with vitest snapshot serializers
-  // biome-ignore lint/suspicious/noExplicitAny: wrapping RTL render requires flexible types
+  // oxlint-disable-next-line typescript/no-explicit-any -- wrapping RTL render requires flexible types
   const render = (...args: any[]) => {
     const result = rtl.render(...args)
     return {
@@ -87,11 +87,14 @@ vi.mock('expo-secure-store', () => ({
 }))
 
 // Import shared mocks using relative paths
+// oxlint-disable-next-line universe-custom/no-relative-import-paths -- biome-parity: oxlint is stricter here
 import '../../config/vitest-presets/vitest/setup.js'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths -- biome-parity: oxlint is stricter here
 import '../utilities/vitest-package-mocks'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths -- biome-parity: oxlint is stricter here
 import './vitest-package-mocks'
-
 // Import from ui vitest-setup for React Native component mocks
+// oxlint-disable-next-line universe-custom/no-relative-import-paths -- biome-parity: oxlint is stricter here
 import '../ui/vitest-setup'
 
 // Mock i18n to avoid require() path resolution issues

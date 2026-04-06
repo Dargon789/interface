@@ -1,4 +1,4 @@
-/* eslint-disable import/no-unused-modules */
+/* oxlint-disable import/no-unused-modules */
 
 import { Account } from 'uniswap/src/features/accounts/store/types/Account'
 import { AccountsGetters } from 'uniswap/src/features/accounts/store/types/AccountsState'
@@ -76,7 +76,7 @@ export function createAccountsStoreGetters(getState: () => WebAccountsData) {
 
     const account: Account<Platform> = getState().accounts[address]
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (!account) {
       return undefined
     }

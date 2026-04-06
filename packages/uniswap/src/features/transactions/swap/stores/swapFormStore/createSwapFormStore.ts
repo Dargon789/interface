@@ -36,8 +36,6 @@ export const INITIAL_SWAP_FORM_STATE: SwapFormState = {
   isSubmitting: false,
   isConfirmed: false,
   showPendingUI: false,
-  instantReceiptFetchTime: undefined,
-  instantOutputAmountRaw: undefined,
 }
 
 export type SwapFormStore = UseBoundStore<StoreApi<SwapFormStoreState>>
@@ -79,7 +77,6 @@ export const createSwapFormStore = ({
           filteredChainIds: undefined,
           input: undefined,
           output: undefined,
-          instantReceiptFetchTime: undefined,
           selectingCurrencyField: undefined,
           isSelectingCurrencyFieldPrefilled: undefined,
           txId: undefined,
@@ -92,7 +89,6 @@ export const createSwapFormStore = ({
           isSubmitting: false,
           showPendingUI: false,
           isConfirmed: false,
-          instantOutputAmountRaw: undefined,
           hideFooter,
           hideSettings,
           prefilledCurrencies: undefined,

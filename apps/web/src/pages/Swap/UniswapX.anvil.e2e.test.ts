@@ -1,3 +1,4 @@
+import { listTransactions } from '@uniswap/client-data-api/dist/data/v1/api-DataApiService_connectquery'
 import { WETH9 } from '@uniswap/sdk-core'
 import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { DAI, USDC_MAINNET } from 'uniswap/src/constants/tokens'
@@ -55,7 +56,7 @@ test.describe(
         })
       })
 
-      await expect(page.getByText('Approved')).toBeVisible()
+      await expect(page.getByTestId(TestID.ActivityPopup).getByText('Approved')).toBeVisible()
       await expect(page.getByRole('button', { name: 'Swapping 1.00 WETH for 3,665.13 DAI' })).toBeVisible()
     })
 
@@ -64,12 +65,11 @@ test.describe(
         await route.fulfill({ path: Mocks.UniswapX.expiredOrders })
       })
 
-      await expect(page.getByText('Swap expired')).toBeVisible()
+      await expect(page.getByTestId(TestID.ActivityPopup).getByText('Swap expired')).toBeVisible()
     })
 
     test('cancels a pending uniswapx order', async ({ page }) => {
       await page.getByTestId(TestID.Web3StatusConnected).click()
-      await page.getByText('Activity').click()
       await page.getByText('Swapping').click()
       await page.getByText('Cancel').click()
       await page.getByRole('button', { name: 'Proceed' }).click()
@@ -77,17 +77,16 @@ test.describe(
       await expect(page.getByText('Cancellation successful')).toBeVisible()
     })
 
-    test('deduplicates remote vs local uniswapx orders', async ({ page, graphql }) => {
+    test('deduplicates remote vs local uniswapx orders', async ({ page, dataApi }) => {
       await page.route(UNISWAP_X_ORDERS_ENDPOINT, async (route) => {
         await route.fulfill({ path: Mocks.UniswapX.filledOrders })
       })
 
+      await dataApi.intercept(listTransactions, Mocks.DataApiService.list_transactions_uniswapx)
       await page.getByTestId(TestID.Web3StatusConnected).click()
-      await page.getByText('Activity').click()
-      await graphql.intercept('ActivityWeb', Mocks.UniswapX.activity)
-      const activity = await page.getByTestId(TestID.ActivityContent)
-      await expect(activity.getByText('Swapping')).not.toBeVisible()
-      await expect(activity.getByText('Swapped')).toBeVisible()
+      const drawer = page.getByTestId(TestID.AccountDrawer)
+      await expect(drawer.getByText('Swapping')).not.toBeVisible()
+      await expect(drawer.getByText('Swapped')).toBeVisible()
     })
   },
 )

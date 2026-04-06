@@ -68,6 +68,7 @@ export function SettingsManageConnectionsScreen(): JSX.Element {
       })
       await removeDappConnection(dappUrl, targetAccount)
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     [dispatch, targetAccount],
   )
 

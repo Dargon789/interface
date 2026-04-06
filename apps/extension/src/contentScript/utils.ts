@@ -25,7 +25,7 @@ export async function logContentScriptError({
   }
 
   if (__DEV__) {
-    // eslint-disable-next-line no-restricted-syntax
+    // oxlint-disable-next-line no-restricted-syntax
     logger.error(new Error(errorMessage), {
       tags: {
         file: fileName,

@@ -33,6 +33,7 @@ const ANIMATION_TIME = 200
 export function ContextMenu({
   children,
   menuItems,
+  contentOverride,
   isPlacementAbove = false,
   isPlacementRight = false,
   offsetX = 0,
@@ -92,7 +93,7 @@ export function ContextMenu({
 
   const recalculateMenuPosition = useCallback((): void => {
     if (isOpen && triggerRef.current && measuredMenuDimensions) {
-      // eslint-disable-next-line max-params
+      // oxlint-disable-next-line max-params
       triggerRef.current.measure((_fx, _fy, triggerWidth, triggerHeight, triggerX, triggerY) => {
         const getLeft = (): number => {
           const left: number = isPlacementRight
@@ -232,24 +233,28 @@ export function ContextMenu({
 
   // Render the menu content component
   const MenuContent = useCallback(
-    () => (
-      <Flex
-        backgroundColor="$surface1"
-        p="$spacing8"
-        borderRadius="$rounded20"
-        borderColor="$surface3"
-        borderWidth="$spacing1"
-        gap="$spacing4"
-        alignItems="flex-start"
-        minWidth={MIN_CONTEXT_MENU_WIDTH}
-        maxWidth={maxMenuWidth}
-        shadowRadius="$spacing4"
-        shadowColor="$shadowColor"
-      >
-        {menuSheetItems}
-      </Flex>
-    ),
-    [maxMenuWidth, menuSheetItems],
+    // oxlint-disable-next-line universe-custom/no-nested-component-definitions -- memoized render callback
+    () =>
+      contentOverride ? (
+        <>{contentOverride}</>
+      ) : (
+        <Flex
+          backgroundColor="$surface1"
+          p="$spacing8"
+          borderRadius="$rounded20"
+          borderColor="$surface3"
+          borderWidth="$spacing1"
+          gap="$spacing4"
+          alignItems="flex-start"
+          minWidth={MIN_CONTEXT_MENU_WIDTH}
+          maxWidth={maxMenuWidth}
+          shadowRadius="$spacing4"
+          shadowColor="$shadowColor"
+        >
+          {menuSheetItems}
+        </Flex>
+      ),
+    [contentOverride, maxMenuWidth, menuSheetItems],
   )
 
   // the idea is that we cover the whole screen with a transparent area that closes the menu when pressed

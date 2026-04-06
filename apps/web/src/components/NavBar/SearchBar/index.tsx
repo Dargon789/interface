@@ -77,7 +77,7 @@ export const SearchBar = () => {
           <Flex
             row
             backgroundColor="$surface2"
-            borderWidth={1}
+            borderWidth="$spacing1"
             borderColor="$surface3"
             py="$spacing8"
             px="$spacing16"

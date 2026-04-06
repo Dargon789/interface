@@ -65,6 +65,7 @@ import {
   resetTokensOrderBy,
   resetTokensOrderByAndMetadataDisplayType,
   restructureTransactionsAndNotifications,
+  setWalletDeviceLanguage,
   transformNotificationCountToStatus,
   updateLanguageSettings,
 } from 'src/app/mobileMigrations'
@@ -200,6 +201,7 @@ export const migrations = {
   94: addDismissedBridgedAndCompatibleWarnings,
   95: addActivityVisibility,
   96: migrateDismissedTokenWarnings,
+  97: setWalletDeviceLanguage,
 }
 
-export const MOBILE_STATE_VERSION = 96
+export const MOBILE_STATE_VERSION = 97

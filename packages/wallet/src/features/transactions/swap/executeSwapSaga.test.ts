@@ -10,7 +10,6 @@ import { TransactionType } from 'uniswap/src/features/transactions/types/transac
 import { WrapType } from 'uniswap/src/features/transactions/types/wrap'
 import { mockPermit } from 'uniswap/src/test/fixtures/permit'
 import { createTransactionServices } from 'wallet/src/features/transactions/factories/createTransactionServices'
-
 import {
   getShouldWaitBetweenTransactions,
   getSwapTransactionCount,

@@ -1,6 +1,7 @@
 ignores: [
     # Dependencies that depcheck incorrectly marks as unused
     "typescript",
+    "eslint",
     "@typescript/native-preview",
     "depcheck",
 

@@ -1,5 +1,6 @@
 import { ApolloError } from '@apollo/client'
 import { type Currency } from '@uniswap/sdk-core'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
 import { Flex } from 'ui/src'
 import { AddressStringFormat, normalizeAddress } from 'uniswap/src/utils/addresses'
@@ -15,6 +16,7 @@ const HIDDEN_COLUMNS = [PoolSortFields.VolOverTvl, PoolSortFields.RewardApr]
 
 function TokenDetailsPoolsTableContent({ referenceCurrency }: { referenceCurrency: Currency }): JSX.Element {
   const { chainId, wrapped: referenceToken, isNative } = referenceCurrency
+  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { sortMethod, sortAscending } = usePoolTableStore((s) => ({
     sortMethod: s.sortMethod,
     sortAscending: s.sortAscending,
@@ -28,6 +30,7 @@ function TokenDetailsPoolsTableContent({ referenceCurrency }: { referenceCurrenc
     sortState,
     chainId: referenceCurrency.chainId,
     isNative,
+    multichain: isMultichainTokenUx,
   })
   const combinedError =
     errorV2 && errorV3

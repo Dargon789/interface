@@ -401,9 +401,9 @@ export function EditUnitagProfileContent({
                     placeholder={t('unitags.profile.bio.placeholder')}
                     value={bioInput}
                     verticalAlign="top"
-                    onChangeText={setBioInput}
                     {...inputProps}
                     mt="$spacing4"
+                    onChangeText={setBioInput}
                   />
                 ) : null}
                 {!loading ? (

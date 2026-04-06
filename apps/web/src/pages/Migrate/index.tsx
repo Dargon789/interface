@@ -187,7 +187,7 @@ function MigrateInner({
     currency1Amount.currency,
   ])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +setIsReviewModalOpen
+  // oxlint-disable-next-line react/exhaustive-deps -- +setIsReviewModalOpen
   const priceRangeProps = useMemo(() => {
     return {
       positionInfo,

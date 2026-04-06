@@ -1,6 +1,6 @@
 import { RefObject, useCallback, useRef } from 'react'
 import { Checkbox, Flex, styled, Text, useMedia } from 'ui/src'
-import { SortVertical } from 'ui/src/components/icons/SortVertical'
+import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
 import { Portal } from '~/components/Popups/Portal'
 import { useOnClickOutside } from '~/hooks/useOnClickOutside'
 
@@ -85,7 +85,7 @@ export function Filter<T extends string>({
 
   return (
     <>
-      <SortVertical color="$neutral3" size="$icon.16" />
+      <ChevronsOut color="$neutral3" size="$icon.16" />
       {isOpen && anchorRef.current && (
         <Portal>
           <FilterDropdown

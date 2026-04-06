@@ -18,6 +18,7 @@ import useSelectChain from '~/hooks/useSelectChain'
 import { handleOnChainStep } from '~/state/sagas/transactions/utils'
 import { didUserReject } from '~/utils/swapErrorToUserReadableMessage'
 
+// oxlint-disable-next-line typescript/no-empty-interface -- biome-parity: oxlint is stricter here
 interface HandleWrapStepParams extends Omit<HandleOnChainStepParams<WrapTransactionStep>, 'info'> {}
 function* handleWrapStep(params: HandleWrapStepParams) {
   const info = getWrapTransactionInfo(params.step.amount)

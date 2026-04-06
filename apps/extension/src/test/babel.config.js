@@ -15,6 +15,7 @@ function importMetaTransformPlugin() {
 
 module.exports = function (api) {
   api.cache.using(() => process.env.NODE_ENV)
+  // oxlint-disable-next-line no-var -- biome-parity: oxlint is stricter here
   var plugins = [
     'react-native-web',
     [

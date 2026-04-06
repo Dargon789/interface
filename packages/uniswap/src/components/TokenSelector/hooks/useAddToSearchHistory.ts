@@ -24,6 +24,9 @@ export function useAddToSearchHistory(): {
       case OnchainItemListOptionType.Token:
         dispatch(addToSearchHistory({ searchResult: currencyInfoToTokenSearchHistoryResult(item.currencyInfo) }))
         break
+      case OnchainItemListOptionType.MultichainToken:
+        dispatch(addToSearchHistory({ searchResult: currencyInfoToTokenSearchHistoryResult(item.primaryCurrencyInfo) }))
+        break
       case OnchainItemListOptionType.WalletByAddress:
       case OnchainItemListOptionType.Unitag:
       case OnchainItemListOptionType.ENSAddress:
@@ -32,16 +35,6 @@ export function useAddToSearchHistory(): {
             // ensName, unitag, primaryENSName, etc are dynamic and should be re-fetched at calltime
             // so we add to search history as a simple `WalletByAddress` type and do the refetching inside WalletByAddressOptionItem
             searchResult: { address: item.address, type: SearchHistoryResultType.WalletByAddress },
-          }),
-        )
-        break
-      case OnchainItemListOptionType.NFTCollection:
-        dispatch(
-          addToSearchHistory({
-            searchResult: {
-              ...item,
-              type: SearchHistoryResultType.NFTCollection,
-            },
           }),
         )
         break

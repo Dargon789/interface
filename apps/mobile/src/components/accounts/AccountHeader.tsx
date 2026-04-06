@@ -38,6 +38,7 @@ const RotatingSettingsIcon = ({ onPressSettings }: { onPressSettings(): void }):
     if (isScreenFocused) {
       pressProgress.value = withDelay(50, withTiming(0))
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [isScreenFocused])
 
   const tap = Gesture.Tap()

@@ -9,7 +9,7 @@ import TokenWarningModal from 'uniswap/src/features/tokens/warnings/TokenWarning
 import { useEvent } from 'utilities/src/react/hooks'
 import { useWalletNavigation } from 'wallet/src/contexts/WalletNavigationContext'
 
-export const TokenDetailsModals = memo(function _TokenDetailsModals(): JSX.Element {
+export const TokenDetailsModals = memo(function TokenDetailsModalsInner(): JSX.Element {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const { navigateToSwapFlow } = useWalletNavigation()

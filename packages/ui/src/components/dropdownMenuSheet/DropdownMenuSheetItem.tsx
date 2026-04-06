@@ -23,6 +23,7 @@ export type DropdownMenuSheetItemProps = {
   height?: number
   role?: Role
   subheader?: string
+  rightElement?: React.ReactNode
   onPress: () => void
   handleCloseMenu?: () => void
 }
@@ -40,6 +41,7 @@ export const DropdownMenuSheetItem = ({
   height,
   role = 'button',
   subheader,
+  rightElement,
   onPress,
   handleCloseMenu,
 }: DropdownMenuSheetItemProps): JSX.Element => {
@@ -127,6 +129,7 @@ export const DropdownMenuSheetItem = ({
             color="$neutral2"
           />
         )}
+        {rightElement}
       </Flex>
 
       {isSelected !== undefined && (

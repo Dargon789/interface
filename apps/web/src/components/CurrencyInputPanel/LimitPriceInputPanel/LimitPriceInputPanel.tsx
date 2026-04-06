@@ -4,10 +4,11 @@ import JSBI from 'jsbi'
 import { useCallback, useMemo, useState } from 'react'
 import { TouchableArea } from 'ui/src'
 import { ArrowDownArrowUp } from 'ui/src/components/icons/ArrowDownArrowUp'
+import { LIMIT_SUPPORTED_CHAINS } from 'uniswap/src/features/chains/chainInfo'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
-// biome-ignore lint/style/noRestrictedImports: We need to import this directly so we can format with `en-US` locale
+// oxlint-disable-next-line no-restricted-imports -- We need to import this directly so we can format with `en-US` locale
 import { formatCurrencyAmount as formatCurrencyAmountRaw } from 'utilities/src/format/localeBased'
 import { NumberType } from 'utilities/src/format/types'
 import { isSafeNumber } from 'utilities/src/primitives/integer'
@@ -269,6 +270,7 @@ export function LimitPriceInputPanel({ onCurrencySelect }: LimitPriceInputPanelP
       <CurrencySearchModal
         isOpen={Boolean(currencySelectModalField)}
         switchNetworkAction={SwitchNetworkAction.Limit}
+        chainIds={LIMIT_SUPPORTED_CHAINS}
         onDismiss={() => setCurrencySelectModalField(undefined)}
         onCurrencySelect={(currency) => {
           if (!currencySelectModalField) {

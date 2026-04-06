@@ -1,9 +1,9 @@
 // Ordering is intentional and must be preserved: sideEffects followed by functionality.
 import '~/sideEffects'
-
 import { getDeviceId } from '@amplitude/analytics-browser'
 import { ApolloProvider } from '@apollo/client'
 import { datadogRum } from '@datadog/browser-rum'
+import { PrivyProvider } from '@privy-io/react-auth'
 import { ApiInit, getEntryGatewayUrl, provideSessionService } from '@universe/api'
 import type { StatsigUser } from '@universe/gating'
 import {
@@ -27,12 +27,12 @@ import {
   createTurnstileSolver,
 } from '@universe/sessions'
 import { NuqsAdapter } from 'nuqs/adapters/react-router/v7'
-import type { PropsWithChildren } from 'react'
+import type { PropsWithChildren, ReactNode } from 'react'
 import { StrictMode, useEffect, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Helmet, HelmetProvider } from 'react-helmet-async/lib/index'
 import { I18nextProvider } from 'react-i18next'
-// eslint-disable-next-line no-restricted-imports -- configures Reanimated logger to suppress dev warnings while shared packages still use Reanimated
+// oxlint-disable-next-line no-restricted-imports -- configures Reanimated logger to suppress dev warnings while shared packages still use Reanimated
 import { configureReanimatedLogger } from 'react-native-reanimated'
 import { Provider } from 'react-redux'
 import { BrowserRouter, HashRouter, useLocation } from 'react-router'
@@ -47,15 +47,15 @@ import { initializeDatadog } from 'uniswap/src/utils/datadog'
 import { localDevDatadogEnabled } from 'utilities/src/environment/constants'
 import { isDevEnv, isTestEnv } from 'utilities/src/environment/env'
 import { getLogger } from 'utilities/src/logger/logger'
-// biome-ignore lint/style/noRestrictedImports: custom useAccount hook requires statsig
+// oxlint-disable-next-line no-restricted-imports -- custom useAccount hook requires statsig
 import { useAccount } from 'wagmi'
 import { AssetActivityProvider } from '~/appGraphql/data/apollo/AssetActivityProvider'
 import { apolloClient } from '~/appGraphql/data/apollo/client'
 import { TokenBalancesProvider } from '~/appGraphql/data/apollo/TokenBalancesProvider'
 import { QueryClientPersistProvider } from '~/components/PersistQueryClient'
 import { createWeb3Provider, WalletCapabilitiesEffects } from '~/components/Web3Provider/createWeb3Provider'
-import { WebUniswapProvider } from '~/components/Web3Provider/WebUniswapContext'
 import { wagmiConfig } from '~/components/Web3Provider/wagmiConfig'
+import { WebUniswapProvider } from '~/components/Web3Provider/WebUniswapContext'
 import { AccountsStoreDevTool } from '~/features/accounts/store/devtools'
 import { WebAccountsStoreProvider } from '~/features/accounts/store/provider'
 import { ConnectWalletMutationProvider } from '~/features/wallet/connection/hooks/useConnectWalletMutation'
@@ -129,6 +129,7 @@ const provideSessionInitService = () => {
             },
           }),
         onSolveCompleted: onHashcashSolveCompleted,
+        getLogger,
       }),
     )
   } else {
@@ -200,6 +201,9 @@ function StatsigProvider({ children }: PropsWithChildren) {
     () => ({
       userID: getDeviceId(),
       customIDs: { address: account.address ?? '' },
+      custom: {
+        appVersion: process.env.REACT_APP_VERSION_TAG ?? 'unknown',
+      },
     }),
     [account.address],
   )
@@ -215,7 +219,7 @@ function StatsigProvider({ children }: PropsWithChildren) {
   }, [account])
 
   const onStatsigInit = () => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (!isDevEnv() || localDevDatadogEnabled) {
       initializeDatadog('web').catch(() => undefined)
     }
@@ -225,6 +229,19 @@ function StatsigProvider({ children }: PropsWithChildren) {
     <StatsigProviderWrapper user={statsigUser} onInit={onStatsigInit}>
       {children}
     </StatsigProviderWrapper>
+  )
+}
+
+const PRIVY_APP_ID = process.env.PRIVY_APP_ID
+
+function MaybePrivyProvider({ children }: { children: ReactNode }) {
+  if (!PRIVY_APP_ID) {
+    return <>{children}</>
+  }
+  return (
+    <PrivyProvider appId={PRIVY_APP_ID} config={{ loginMethods: ['email', 'google', 'apple'] }}>
+      {children}
+    </PrivyProvider>
   )
 }
 
@@ -241,43 +258,45 @@ const RootApp = (): JSX.Element => {
             <QueryClientPersistProvider>
               <NuqsAdapter>
                 <Router>
-                  <I18nextProvider i18n={i18n}>
-                    <LanguageProvider>
-                      <Web3Provider>
-                        <StatsigProvider>
-                          <WalletCapabilitiesEffects />
-                          <ExternalWalletProvider>
-                            <ConnectWalletMutationProvider>
-                              <WebAccountsStoreProvider>
-                                <WebUniswapProvider>
-                                  <TokenPriceProvider>
-                                    <GraphqlProviders>
-                                      <LivePricesProvider>
-                                        <LocalizationContextProvider>
-                                          <BlockNumberProvider>
-                                            <Updaters />
-                                            <ThemeProvider>
-                                              <TamaguiProvider>
-                                                <PortalProvider>
-                                                  <WebNotificationServiceManager />
-                                                  <ThemedGlobalStyle />
-                                                  <App />
-                                                </PortalProvider>
-                                              </TamaguiProvider>
-                                            </ThemeProvider>
-                                          </BlockNumberProvider>
-                                        </LocalizationContextProvider>
-                                      </LivePricesProvider>
-                                    </GraphqlProviders>
-                                  </TokenPriceProvider>
-                                </WebUniswapProvider>
-                              </WebAccountsStoreProvider>
-                            </ConnectWalletMutationProvider>
-                          </ExternalWalletProvider>
-                        </StatsigProvider>
-                      </Web3Provider>
-                    </LanguageProvider>
-                  </I18nextProvider>
+                  <MaybePrivyProvider>
+                    <I18nextProvider i18n={i18n}>
+                      <LanguageProvider>
+                        <Web3Provider>
+                          <StatsigProvider>
+                            <WalletCapabilitiesEffects />
+                            <ExternalWalletProvider>
+                              <ConnectWalletMutationProvider>
+                                <WebAccountsStoreProvider>
+                                  <WebUniswapProvider>
+                                    <TokenPriceProvider>
+                                      <GraphqlProviders>
+                                        <LivePricesProvider>
+                                          <LocalizationContextProvider>
+                                            <BlockNumberProvider>
+                                              <Updaters />
+                                              <ThemeProvider>
+                                                <TamaguiProvider>
+                                                  <PortalProvider>
+                                                    <WebNotificationServiceManager />
+                                                    <ThemedGlobalStyle />
+                                                    <App />
+                                                  </PortalProvider>
+                                                </TamaguiProvider>
+                                              </ThemeProvider>
+                                            </BlockNumberProvider>
+                                          </LocalizationContextProvider>
+                                        </LivePricesProvider>
+                                      </GraphqlProviders>
+                                    </TokenPriceProvider>
+                                  </WebUniswapProvider>
+                                </WebAccountsStoreProvider>
+                              </ConnectWalletMutationProvider>
+                            </ExternalWalletProvider>
+                          </StatsigProvider>
+                        </Web3Provider>
+                      </LanguageProvider>
+                    </I18nextProvider>
+                  </MaybePrivyProvider>
                 </Router>
               </NuqsAdapter>
             </QueryClientPersistProvider>

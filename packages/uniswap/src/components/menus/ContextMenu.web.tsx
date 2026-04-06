@@ -10,6 +10,7 @@ import { useEvent, useOnClickOutside } from 'utilities/src/react/hooks'
 
 export function ContextMenu({
   menuItems,
+  contentOverride,
   isPlacementAbove = false,
   isPlacementRight = false,
   offsetX = 0,
@@ -132,7 +133,7 @@ export function ContextMenu({
         keeping normal click behavior intact.
       */}
       <Popover.Trigger onMouseDown={isLeftClick ? onContextMenu : undefined}>
-        {/* biome-ignore  lint/correctness/noRestrictedElements: needed here */}
+        {/* oxlint-disable-next-line react/forbid-elements -- needed here */}
         <div
           ref={triggerContainerRef}
           onContextMenu={isLeftClick ? onPreventContextMenu : onContextMenu}
@@ -142,7 +143,7 @@ export function ContextMenu({
         </div>
       </Popover.Trigger>
 
-      <RemoveScroll enabled={isOpen && !isSheet && isWebApp} />
+      <RemoveScroll blockScrollEvents enabled={isOpen && !isSheet && isWebApp} shards={[containerRef]} />
 
       <AdaptiveWebPopoverContent
         ref={containerRef}
@@ -155,29 +156,31 @@ export function ContextMenu({
         isSheet={isSheet}
         webBottomSheetProps={{ onClose: handleCloseMenu }}
       >
-        <MenuContent
-          containerStyles={
-            isSheet
-              ? {
-                  p: '$none',
-                  pb: '$spacing16',
-                  backgroundColor: 'transparent',
-                  borderWidth: '$none',
-                  gap: '$spacing8',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  width: '100%',
-                  minWidth: undefined,
-                  maxWidth: undefined,
-                }
-              : undefined
-          }
-          items={menuItems}
-          handleCloseMenu={handleCloseMenu}
-          elementName={elementName}
-          sectionName={sectionName}
-          trackItemClicks={trackItemClicks}
-        />
+        {contentOverride ?? (
+          <MenuContent
+            containerStyles={
+              isSheet
+                ? {
+                    p: '$none',
+                    pb: '$spacing16',
+                    backgroundColor: 'transparent',
+                    borderWidth: '$none',
+                    gap: '$spacing8',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: '100%',
+                    minWidth: undefined,
+                    maxWidth: undefined,
+                  }
+                : undefined
+            }
+            items={menuItems}
+            handleCloseMenu={handleCloseMenu}
+            elementName={elementName}
+            sectionName={sectionName}
+            trackItemClicks={trackItemClicks}
+          />
+        )}
       </AdaptiveWebPopoverContent>
     </Popover>
   )

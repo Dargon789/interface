@@ -4,7 +4,6 @@ import {
   OnChainTransactionStatus,
 } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { TradingApi } from '@universe/api'
-
 import { parseRestApproveTransaction } from 'uniswap/src/features/activity/parse/parseApproveTransaction'
 import { parseRestAuctionTransaction } from 'uniswap/src/features/activity/parse/parseAuctionTransaction'
 import { parseRestBridgeTransaction } from 'uniswap/src/features/activity/parse/parseBridgingTransaction'
@@ -50,7 +49,7 @@ function mapRestStatusToLocal(status: OnChainTransactionStatus, isCancel: boolea
  * Extract transaction details from an onChain transaction in the REST format
  * Returns an array to support batched transactions (e.g., EXECUTE label with swap + approve)
  */
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export default function extractRestOnChainTransactionDetails(transaction: OnChainTransaction): TransactionDetails[] {
   const { chainId, transactionHash, timestampMillis, from, label, status, fee } = transaction
 

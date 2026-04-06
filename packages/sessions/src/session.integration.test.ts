@@ -39,6 +39,7 @@ const BACKEND_URL = 'https://entry-gateway.backend-staging.api.uniswap.org'
 // Web Platform Tests (Turnstile + Hashcash)
 // =============================================================================
 // Web uses Turnstile (browser CAPTCHA) first, then falls back to Hashcash
+// These tests hit a staging backend that occasionally returns transient 502s.
 describe('Real Backend Integration - Web (Turnstile + Hashcash)', () => {
   let sessionService: SessionService
   let sessionStorage: InMemorySessionStorage
@@ -76,7 +77,7 @@ describe('Real Backend Integration - Web (Turnstile + Hashcash)', () => {
     await sessionStorage.clear()
   })
 
-  it('initializes session with cookie, empty response sessionId', async () => {
+  it('initializes session with cookie, empty response sessionId', { timeout: 30000, retry: 5 }, async () => {
     const manualInitService = createSessionInitializationService({
       getSessionService: () => sessionService,
       challengeSolverService,
@@ -96,9 +97,9 @@ describe('Real Backend Integration - Web (Turnstile + Hashcash)', () => {
     // Session is NOT stored locally yet because challenge is needed
     const sessionState = await sessionService.getSessionState()
     expect(sessionState).toBeNull()
-  }, 30000)
+  })
 
-  it('receives Turnstile challenge first', async () => {
+  it('receives Turnstile challenge first', { timeout: 30000, retry: 5 }, async () => {
     const manualInitService = createSessionInitializationService({
       getSessionService: () => sessionService,
       challengeSolverService,
@@ -113,9 +114,9 @@ describe('Real Backend Integration - Web (Turnstile + Hashcash)', () => {
     // Web gets Turnstile first (browser-based CAPTCHA)
     expect(challenge.challengeType).toBe(ChallengeType.TURNSTILE)
     expect(challenge.challengeId).toBeTruthy()
-  }, 30000)
+  })
 
-  it('falls back to Hashcash after Turnstile fails', async () => {
+  it('falls back to Hashcash after Turnstile fails', { timeout: 30000, retry: 5 }, async () => {
     const manualInitService = createSessionInitializationService({
       getSessionService: () => sessionService,
       challengeSolverService,
@@ -151,56 +152,72 @@ describe('Real Backend Integration - Web (Turnstile + Hashcash)', () => {
     const hashcashChallenge = await sessionService.requestChallenge()
     expect(hashcashChallenge.challengeType).toBe(ChallengeType.HASHCASH)
     expect(hashcashChallenge.challengeId).toBeTruthy()
-  }, 30000)
-
-  it('successfully upgrades session with Hashcash after Turnstile fails', { timeout: 60000, retry: 2 }, async () => {
-    const manualInitService = createSessionInitializationService({
-      getSessionService: () => sessionService,
-      challengeSolverService,
-      performanceTracker: createMockPerformanceTracker(),
-      getIsSessionUpgradeAutoEnabled: () => false,
-    })
-
-    await manualInitService.initialize()
-
-    // Turnstile attempt (fails)
-    const turnstileChallenge = await sessionService.requestChallenge()
-    const turnstileSolver = challengeSolverService.getSolver(ChallengeType.TURNSTILE)
-    const turnstileSolution = await turnstileSolver?.solve({
-      challengeId: turnstileChallenge.challengeId,
-      challengeType: turnstileChallenge.challengeType,
-      extra: turnstileChallenge.extra,
-    })
-
-    const turnstileResult = await sessionService.verifySession({
-      solution: turnstileSolution || '',
-      challengeId: turnstileChallenge.challengeId,
-      challengeType: turnstileChallenge.challengeType,
-    })
-    expect(turnstileResult.retry).toBe(true)
-
-    // Hashcash attempt
-    const hashcashChallenge = await sessionService.requestChallenge()
-    expect(hashcashChallenge.challengeType).toBe(ChallengeType.HASHCASH)
-
-    const hashcashSolver = challengeSolverService.getSolver(ChallengeType.HASHCASH)
-    const hashcashSolution = await hashcashSolver?.solve({
-      challengeId: hashcashChallenge.challengeId,
-      challengeType: hashcashChallenge.challengeType,
-      extra: hashcashChallenge.extra,
-    })
-
-    const hashcashResult = await sessionService.verifySession({
-      solution: hashcashSolution || '',
-      challengeId: hashcashChallenge.challengeId,
-      challengeType: hashcashChallenge.challengeType,
-    })
-
-    // Success!
-    expect(hashcashResult.retry).toBe(false)
   })
 
-  it('completes auto-upgrade flow (Turnstile fail → Hashcash success)', { timeout: 60000, retry: 2 }, async () => {
+  it('successfully upgrades session with Hashcash after Turnstile fails', { timeout: 60000, retry: 5 }, async () => {
+    let lastError: unknown
+
+    // Some staging responses intermittently return HTTP 502 and leave session state invalid.
+    // Retry the full flow from a clean state so we don't carry over a broken session cookie.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const manualInitService = createSessionInitializationService({
+          getSessionService: () => sessionService,
+          challengeSolverService,
+          performanceTracker: createMockPerformanceTracker(),
+          getIsSessionUpgradeAutoEnabled: () => false,
+        })
+
+        await manualInitService.initialize()
+
+        // Turnstile attempt (fails)
+        const turnstileChallenge = await sessionService.requestChallenge()
+        const turnstileSolver = challengeSolverService.getSolver(ChallengeType.TURNSTILE)
+        const turnstileSolution = await turnstileSolver?.solve({
+          challengeId: turnstileChallenge.challengeId,
+          challengeType: turnstileChallenge.challengeType,
+          extra: turnstileChallenge.extra,
+        })
+
+        const turnstileResult = await sessionService.verifySession({
+          solution: turnstileSolution || '',
+          challengeId: turnstileChallenge.challengeId,
+          challengeType: turnstileChallenge.challengeType,
+        })
+        expect(turnstileResult.retry).toBe(true)
+
+        // Hashcash attempt
+        const hashcashChallenge = await sessionService.requestChallenge()
+        expect(hashcashChallenge.challengeType).toBe(ChallengeType.HASHCASH)
+
+        const hashcashSolver = challengeSolverService.getSolver(ChallengeType.HASHCASH)
+        const hashcashSolution = await hashcashSolver?.solve({
+          challengeId: hashcashChallenge.challengeId,
+          challengeType: hashcashChallenge.challengeType,
+          extra: hashcashChallenge.extra,
+        })
+
+        const hashcashResult = await sessionService.verifySession({
+          solution: hashcashSolution || '',
+          challengeId: hashcashChallenge.challengeId,
+          challengeType: hashcashChallenge.challengeType,
+        })
+
+        // Success!
+        expect(hashcashResult.retry).toBe(false)
+        return
+      } catch (error) {
+        lastError = error
+        await sessionService.removeSession()
+        cookieJar.clear()
+        await sessionStorage.clear()
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error('Failed to complete Hashcash upgrade flow')
+  })
+
+  it('completes auto-upgrade flow (Turnstile fail → Hashcash success)', { timeout: 60000, retry: 5 }, async () => {
     const autoInitService = createSessionInitializationService({
       getSessionService: () => sessionService,
       challengeSolverService,
@@ -219,38 +236,57 @@ describe('Real Backend Integration - Web (Turnstile + Hashcash)', () => {
 
   it(
     'calls initSession on reinit - backend handles session reuse via cookie',
-    { timeout: 60000, retry: 2 },
+    { timeout: 60000, retry: 5 },
     async () => {
-      const autoInitService = createSessionInitializationService({
-        getSessionService: () => sessionService,
-        challengeSolverService,
-        performanceTracker: createMockPerformanceTracker(),
-        getIsSessionUpgradeAutoEnabled: () => true,
-      })
+      let lastError: unknown
 
-      await autoInitService.initialize()
+      // Re-run the full reinit flow from a clean cookie/session state when staging is unstable.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          await sessionService.removeSession()
+          cookieJar.clear()
+          await sessionStorage.clear()
 
-      // Cookie should be set from first init
-      expect(cookieJar.has('x-session-id')).toBe(true)
-      const originalSessionId = cookieJar.get('x-session-id')
+          const autoInitService = createSessionInitializationService({
+            getSessionService: () => sessionService,
+            challengeSolverService,
+            performanceTracker: createMockPerformanceTracker(),
+            getIsSessionUpgradeAutoEnabled: () => true,
+          })
 
-      // Simulate page refresh - call initialize again
-      // Backend receives cookie and decides to reuse session
-      const reinitService = createSessionInitializationService({
-        getSessionService: () => sessionService,
-        challengeSolverService,
-        performanceTracker: createMockPerformanceTracker(),
-        getIsSessionUpgradeAutoEnabled: () => true,
-      })
+          await autoInitService.initialize()
 
-      await reinitService.initialize()
+          // Cookie should be set from first init
+          expect(cookieJar.has('x-session-id')).toBe(true)
+          const originalSessionId = cookieJar.get('x-session-id')
 
-      // Backend should reuse session - cookie remains the same
-      expect(cookieJar.get('x-session-id')).toBe(originalSessionId)
+          // Simulate page refresh - call initialize again
+          // Backend receives cookie and decides to reuse session
+          const reinitService = createSessionInitializationService({
+            getSessionService: () => sessionService,
+            challengeSolverService,
+            performanceTracker: createMockPerformanceTracker(),
+            getIsSessionUpgradeAutoEnabled: () => true,
+          })
+
+          await reinitService.initialize()
+
+          // Backend should reuse session - cookie remains the same
+          expect(cookieJar.get('x-session-id')).toBe(originalSessionId)
+          return
+        } catch (error) {
+          lastError = error
+          await sessionService.removeSession()
+          cookieJar.clear()
+          await sessionStorage.clear()
+        }
+      }
+
+      throw lastError instanceof Error ? lastError : new Error('Failed to verify cookie-based session reuse flow')
     },
   )
 
-  it('fires analytics callbacks during auto-upgrade flow', { timeout: 60000, retry: 2 }, async () => {
+  it('fires analytics callbacks during auto-upgrade flow', { timeout: 60000, retry: 5 }, async () => {
     const analytics = {
       onInitStarted: vi.fn(),
       onInitCompleted: vi.fn(),
@@ -351,7 +387,7 @@ describe.each(NON_WEB_PLATFORMS)(
       await uniswapIdentifierService.removeUniswapIdentifier()
     })
 
-    it('initializes session with session ID and device ID stored locally', async () => {
+    it('initializes session with session ID and device ID stored locally', { timeout: 30000, retry: 5 }, async () => {
       const manualInitService = createSessionInitializationService({
         getSessionService: () => sessionService,
         challengeSolverService,
@@ -372,9 +408,9 @@ describe.each(NON_WEB_PLATFORMS)(
       // Device ID should also be returned and stored
       const storedDeviceId = await deviceIdService.getDeviceId()
       expect(storedDeviceId).toBeTruthy()
-    }, 30000)
+    })
 
-    it('receives Hashcash challenge directly (no Turnstile)', async () => {
+    it('receives Hashcash challenge directly (no Turnstile)', { timeout: 30000, retry: 5 }, async () => {
       const manualInitService = createSessionInitializationService({
         getSessionService: () => sessionService,
         challengeSolverService,
@@ -389,9 +425,9 @@ describe.each(NON_WEB_PLATFORMS)(
       // Non-web gets Hashcash directly (Turnstile is browser-only)
       expect(challenge.challengeType).toBe(ChallengeType.HASHCASH)
       expect(challenge.challengeId).toBeTruthy()
-    }, 30000)
+    })
 
-    it('successfully upgrades session with Hashcash', { timeout: 60000, retry: 2 }, async () => {
+    it('successfully upgrades session with Hashcash', { timeout: 60000, retry: 5 }, async () => {
       const manualInitService = createSessionInitializationService({
         getSessionService: () => sessionService,
         challengeSolverService,
@@ -422,7 +458,7 @@ describe.each(NON_WEB_PLATFORMS)(
       expect(hashcashResult.retry).toBe(false)
     })
 
-    it('completes auto-upgrade flow', { timeout: 60000, retry: 2 }, async () => {
+    it('completes auto-upgrade flow', { timeout: 60000, retry: 5 }, async () => {
       const autoInitService = createSessionInitializationService({
         getSessionService: () => sessionService,
         challengeSolverService,
@@ -440,7 +476,7 @@ describe.each(NON_WEB_PLATFORMS)(
 
     it(
       'calls initSession on reinit - backend handles session reuse via X-Session-ID header',
-      { timeout: 60000, retry: 2 },
+      { timeout: 60000, retry: 5 },
       async () => {
         // First: Complete auto-upgrade flow
         const autoInitService = createSessionInitializationService({

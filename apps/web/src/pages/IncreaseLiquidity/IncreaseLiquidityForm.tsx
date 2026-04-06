@@ -107,11 +107,11 @@ export function IncreaseLiquidityForm() {
 
   const requestLoading = Boolean(
     !dataFetchingError &&
-      !error &&
-      currencyAmounts?.TOKEN0 &&
-      currencyAmounts.TOKEN1 &&
-      !txInfo?.txRequest &&
-      !fotErrorToken,
+    !error &&
+    currencyAmounts?.TOKEN0 &&
+    currencyAmounts.TOKEN1 &&
+    !txInfo?.txRequest &&
+    !fotErrorToken,
   )
 
   return (

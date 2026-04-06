@@ -1,11 +1,6 @@
 import { useSporeColors } from 'ui/src'
 import { opacify } from 'ui/src/theme'
-
-// Gradient colors for in-range bids (from Figma)
-export const GRADIENT_START_COLOR = '#21c95e'
-export const GRADIENT_END_COLOR = '#b1f13c'
-export const GRADIENT_BORDER_COLOR = '#cfffaf'
-export const GRADIENT_BADGE_BORDER_COLOR = opacify(12, GRADIENT_START_COLOR)
+import { type BidDisplayState } from '~/components/Toucan/Auction/utils/bidDetails'
 
 export function useBidStatusColors() {
   const colors = useSporeColors()
@@ -16,5 +11,27 @@ export function useBidStatusColors() {
     inRangeColorLessOpacity: opacify(70, colors.statusSuccess.val),
     outOfRangeColor: colors.statusCritical.val,
     isClaimedColor: colors.surface3.val,
+    neutralColor: colors.neutral2.val,
+  }
+}
+
+/**
+ * Maps a BidDisplayState to its resolved status color.
+ * Single source of truth for status → color mapping across all bid UI.
+ */
+export function getDisplayStateColor(
+  displayState: BidDisplayState,
+  colors: { inRangeColor: string; outOfRangeColor: string; neutralColor: string },
+): string {
+  switch (displayState) {
+    case 'inRange':
+    case 'complete':
+    case 'withdrawn':
+    case 'refundedInRange':
+      return colors.inRangeColor
+    case 'outOfRange':
+      return colors.outOfRangeColor
+    default:
+      return colors.neutralColor
   }
 }

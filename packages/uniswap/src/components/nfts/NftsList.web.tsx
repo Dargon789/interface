@@ -218,7 +218,7 @@ export function NftsList({
 
   // Skeleton content without container (used for initial load inside main AssetsContainer)
   const skeletonContent = useMemo<JSX.Element>((): JSX.Element => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- customLoadingState is typed as JSX.Element | undefined
+    // oxlint-disable-next-line typescript/no-unsafe-return -- customLoadingState is typed as JSX.Element | undefined
     return (
       customLoadingState ?? (
         <>

@@ -9,6 +9,7 @@ import { Flex, Text } from 'ui/src'
 import { useDeviceDimensions } from 'ui/src/hooks/useDeviceDimensions'
 import { getCloudProviderName } from 'uniswap/src/utils/cloud-backup/getCloudProviderName'
 
+// oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
 function Page({ text, params }: { text: ReactNode; params: OnboardingStackBaseParams }): JSX.Element {
   const { t } = useTranslation()
   const { fullWidth } = useDeviceDimensions()

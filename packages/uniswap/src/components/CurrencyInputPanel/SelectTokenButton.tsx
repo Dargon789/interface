@@ -17,7 +17,7 @@ interface SelectTokenButtonProps {
   tokenColor?: string
 }
 
-export const SelectTokenButton = memo(function _SelectTokenButton({
+export const SelectTokenButton = memo(function SelectTokenButtonInner({
   selectedCurrencyInfo,
   onPress,
   testID,

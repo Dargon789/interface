@@ -7,7 +7,11 @@ import { CheckmarkCircle } from 'ui/src/components/icons/CheckmarkCircle'
 import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import { iconSizes } from 'ui/src/theme'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
+import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
+import WarningIcon from 'uniswap/src/components/warnings/WarningIcon'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
+import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
+import { getTokenWarningSeverity } from 'uniswap/src/features/tokens/warnings/safetyUtils'
 import { getTokenDetailsURL } from '~/appGraphql/data/util'
 import { BreadcrumbNavContainer, BreadcrumbNavLink, CurrentPageBreadcrumb } from '~/components/BreadcrumbNav'
 import { useAuctionStore } from '~/components/Toucan/Auction/store/useAuctionStore'
@@ -40,6 +44,7 @@ const AuctionTokenInfo = ({
   chainId,
   verified,
   tokenDetailsUrl,
+  token,
 }: {
   name: string
   symbol: string
@@ -47,8 +52,10 @@ const AuctionTokenInfo = ({
   chainId: number
   verified: boolean
   tokenDetailsUrl?: string
+  token?: CurrencyInfo
 }) => {
   const media = useMedia()
+  const severity = token ? getTokenWarningSeverity(token) : WarningSeverity.None
 
   const content = (
     <Flex row alignItems="center" gap="$gap16">
@@ -64,6 +71,7 @@ const AuctionTokenInfo = ({
           <Text variant="heading3" $lg={{ variant: 'subheading1' }} minWidth={40} {...EllipsisTamaguiStyle}>
             {name}
           </Text>
+          {severity > WarningSeverity.Low && <WarningIcon size="$icon.16" severity={severity} />}
           {verified && <CheckmarkCircle size="$icon.16" color="$accent1" />}
         </Flex>
         <Text variant="heading3" $lg={{ variant: 'subheading1' }} textTransform="uppercase" color="$neutral2">
@@ -130,6 +138,7 @@ export const AuctionHeader = () => {
         chainId={auctionDetails.chainId}
         verified={verified}
         tokenDetailsUrl={tokenDetailsUrl}
+        token={auctionDetails.token}
       />
     </Flex>
   )

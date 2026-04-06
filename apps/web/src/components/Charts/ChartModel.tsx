@@ -305,7 +305,7 @@ export abstract class ChartModel<TDataType extends SeriesDataItemType> {
   }
 }
 
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 function isBetween(num: number, lower: number, upper: number): boolean {
   return num > lower && num < upper
 }

@@ -163,12 +163,12 @@ export function serializeSwapAddressesToURLParameters({
 export function queryParametersToCurrencyState(parsedQs: ParsedQs): SerializedCurrencyState {
   const chainId = getParsedChainId(parsedQs)
   const outputChainId = getParsedChainId(parsedQs, CurrencyField.OUTPUT)
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const parsedInputCurrencyAddress = parseCurrencyFromURLParameter(
     parsedQs.inputCurrency || parsedQs.inputcurrency,
     chainIdToPlatform(chainId ?? UniverseChainId.Mainnet),
   )
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const parsedOutputCurrencyAddress = parseCurrencyFromURLParameter(
     parsedQs.outputCurrency || parsedQs.outputcurrency,
     chainIdToPlatform(outputChainId ?? UniverseChainId.Mainnet),
@@ -232,7 +232,7 @@ export function useInitialCurrencyState(): {
     }
   }, [parsedCurrencyState.inputCurrencyAddress, parsedCurrencyState.outputCurrencyAddress, setIsUserSelectedToken])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: We do not want to rerender on a change to persistedFilteredChainIds
+  // oxlint-disable-next-line react/exhaustive-deps -- We do not want to rerender on a change to persistedFilteredChainIds
   const { initialInputCurrencyAddress, initialChainId } = useMemo(() => {
     // Default to native if no query params or chain is not compatible with testnet or mainnet mode
     if (!hasCurrencyQueryParams || !isSupportedChainCompatible) {
@@ -254,6 +254,7 @@ export function useInitialCurrencyState(): {
       initialInputCurrencyAddress: parsedCurrencyState.outputCurrencyAddress ? undefined : 'ETH',
       initialChainId: parsedCurrencyState.chainId ? supportedChainId : undefined,
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [
     hasCurrencyQueryParams,
     isSupportedChainCompatible,

@@ -116,5 +116,32 @@ describe(SplitLogo, () => {
 
       expect(icon).toBeFalsy()
     })
+
+    it('does not render icon for Mainnet when showMainnetNetworkLogo is false', () => {
+      const { queryByTestId } = render(
+        <SplitLogo
+          chainId={UniverseChainId.Mainnet}
+          inputCurrencyInfo={daiCurrencyInfo()}
+          outputCurrencyInfo={ethCurrencyInfo()}
+          size={10}
+        />,
+      )
+
+      expect(queryByTestId('network-logo')).toBeFalsy()
+    })
+
+    it('renders icon for Mainnet when showMainnetNetworkLogo is true', () => {
+      const { getByTestId } = render(
+        <SplitLogo
+          showMainnetNetworkLogo
+          chainId={UniverseChainId.Mainnet}
+          inputCurrencyInfo={daiCurrencyInfo()}
+          outputCurrencyInfo={ethCurrencyInfo()}
+          size={10}
+        />,
+      )
+
+      expect(getByTestId('network-logo')).toBeTruthy()
+    })
   })
 })

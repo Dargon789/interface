@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import 'utilities/src/logger/mocks'
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 
 vi.mock('@universe/config', () => ({
   getConfig: vi.fn(() => ({
@@ -297,7 +297,7 @@ describe('UnitagsApiClient', () => {
       const maliciousResponse = {
         available: true,
         requiresEnsMatch: false,
-        // eslint-disable-next-line no-script-url
+        // oxlint-disable-next-line no-script-url
         metadata: { avatar: 'javascript:alert(1)', description: 'test' },
       }
       const sanitizedResult = config!.transformResponse!(maliciousResponse) as typeof response

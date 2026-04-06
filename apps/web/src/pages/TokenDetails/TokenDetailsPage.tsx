@@ -11,21 +11,35 @@ import { ExploreTab } from '~/pages/Explore/constants'
 import { useDynamicMetatags } from '~/pages/metatags'
 import { TokenDetailsPageSkeleton } from '~/pages/TokenDetails/components/skeleton/Skeleton'
 import { TokenDetailsContent } from '~/pages/TokenDetails/components/TokenDetails'
-import { TDPProvider } from '~/pages/TokenDetails/context/TDPContext'
-import { useCreateTDPContext } from '~/pages/TokenDetails/context/useCreateTDPContext'
+import { TDPStoreContextProvider } from '~/pages/TokenDetails/context/TDPStoreContextProvider'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 import { getTokenPageDescription, getTokenPageTitle, getTokenStructuredData } from '~/pages/TokenDetails/pageMetadata'
 import { formatTokenMetatagTitleName } from '~/shared-cloud/metatags'
 import { getNativeTokenDBAddress } from '~/utils/nativeTokens'
 
 export default function TokenDetailsPage() {
+  return (
+    <TDPStoreContextProvider>
+      <TDPPageContent />
+    </TDPStoreContextProvider>
+  )
+}
+
+/** Reads from TDP store and handles Helmet, redirect, skeleton vs content. Must be inside TDPStoreContextProvider. */
+function TDPPageContent() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { convertFiatAmountFormatted } = useLocalizationContext()
   const { height: scrollY } = useScroll()
   const isCompact = useScrollCompact({ scrollY, thresholdCompact: 100, thresholdExpanded: 60 })
 
-  const contextValue = useCreateTDPContext()
-  const { address, currency, currencyChain, currencyChainId, tokenQuery } = contextValue
+  const { address, currency, currencyChain, currencyChainId, tokenQuery } = useTDPStore((s) => ({
+    address: s.address,
+    currency: s.currency,
+    currencyChain: s.currencyChain,
+    currencyChainId: s.currencyChainId,
+    tokenQuery: s.tokenQuery,
+  }))
 
   const tokenQueryData = tokenQuery.data?.token
 
@@ -68,17 +82,11 @@ export default function TokenDetailsPage() {
         ))}
         {structuredData && <script type="application/ld+json">{JSON.stringify(structuredData)}</script>}
       </Helmet>
-      {(() => {
-        if (tokenQuery.loading || !currency) {
-          return <TokenDetailsPageSkeleton isCompact={isCompact} />
-        }
-
-        return (
-          <TDPProvider contextValue={contextValue}>
-            <TokenDetailsContent isCompact={isCompact} />
-          </TDPProvider>
-        )
-      })()}
+      {tokenQuery.loading || !currency ? (
+        <TokenDetailsPageSkeleton isCompact={isCompact} />
+      ) : (
+        <TokenDetailsContent isCompact={isCompact} />
+      )}
     </>
   )
 }

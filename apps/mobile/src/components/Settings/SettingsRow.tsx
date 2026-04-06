@@ -68,6 +68,7 @@ export interface SettingsSectionItem {
   onToggle?: () => void
   isToggleEnabled?: boolean
   checkIfCanProceed?: () => boolean
+  cantProceedFallback?: () => void
   count?: number
 }
 
@@ -75,6 +76,7 @@ interface SettingsRowProps {
   page: SettingsSectionItem
   navigation: SettingsStackNavigationProp & OnboardingStackNavigationProp
   checkIfCanProceed?: SettingsSectionItem['checkIfCanProceed']
+  cantProceedFallback?: SettingsSectionItem['cantProceedFallback']
   testID?: string
 }
 
@@ -99,11 +101,13 @@ export const SettingsRow = memo(
     },
     navigation,
     checkIfCanProceed,
+    cantProceedFallback,
   }: SettingsRowProps): JSX.Element => {
     const colors = useSporeColors()
 
     const handleRow = useCallback(async (): Promise<void> => {
       if (checkIfCanProceed && !checkIfCanProceed()) {
+        cantProceedFallback?.()
         return
       }
 
@@ -113,14 +117,24 @@ export const SettingsRow = memo(
         // Type assignment to `any` is a workaround until we figure out how to
         // properly type screen param. `navigate` function also brings some issues,
         // where it accepts other screen's params, and not throws an error on required ones.
-        // biome-ignore lint/suspicious/noExplicitAny: Navigation types don't properly handle dynamic screen names
+        // oxlint-disable-next-line typescript/no-explicit-any -- Navigation types don't properly handle dynamic screen names
         navigation.navigate(screen as any, screenProps)
       } else if (navigationModal) {
         navigate(navigationModal, navigationProps)
       } else if (externalLink) {
         await openUri({ uri: externalLink })
       }
-    }, [checkIfCanProceed, onToggle, screen, navigation, screenProps, navigationProps, navigationModal, externalLink])
+    }, [
+      checkIfCanProceed,
+      cantProceedFallback,
+      onToggle,
+      screen,
+      navigation,
+      screenProps,
+      navigationProps,
+      navigationModal,
+      externalLink,
+    ])
 
     return (
       <TouchableArea disabled={Boolean(action)} testID={testID} onPress={handleRow}>

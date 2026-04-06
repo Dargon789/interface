@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* oxlint-disable typescript/no-unnecessary-condition */
 import { createSlice } from '@reduxjs/toolkit'
 import { FORTransaction } from 'uniswap/src/features/fiatOnRamp/types'
 import { FiatOnRampTransactionStatus, FiatOnRampTransactionType } from '~/state/fiatOnRampTransactions/types'

@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 /**
  * Util to format numbers inside reanimated worklets.
  *

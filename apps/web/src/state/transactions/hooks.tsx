@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* oxlint-disable typescript/no-unnecessary-condition */
 import { BigNumber } from '@ethersproject/bignumber'
 import type { TransactionResponse } from '@ethersproject/providers'
 import type { Token } from '@uniswap/sdk-core'
@@ -42,6 +42,7 @@ import { isConfirmedTx, isPendingTx } from '~/state/transactions/utils'
 const MAX_PENDING_TRANSACTION_AGE_MS = 5 * ONE_MINUTE_MS
 
 // helper that can take a ethers library transaction response and add it to the list of transactions
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 export function useTransactionAdder(): (
   response: TransactionResponse,
   info: TransactionInfo,
@@ -51,7 +52,7 @@ export function useTransactionAdder(): (
   const dispatch = useAppDispatch()
 
   return useCallback(
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     (response: TransactionResponse, info: TransactionInfo, deadline?: number) => {
       if (account.status !== 'connected' || !account.chainId || !account.address) {
         return
@@ -328,7 +329,7 @@ function usePendingApprovalAmount(token?: Token, spender?: string): BigNumber | 
       return undefined
     }
 
-    // eslint-disable-next-line guard-for-in
+    // oxlint-disable-next-line guard-for-in
     for (const txHash in allTransactions) {
       const tx = allTransactions[txHash]
       if (!tx || isConfirmedTx(tx) || tx.typeInfo.type !== TransactionType.Approve) {
@@ -359,7 +360,7 @@ export function useHasPendingPermit2Approval(token?: Token, spender?: string): b
       return false
     }
 
-    // eslint-disable-next-line guard-for-in
+    // oxlint-disable-next-line guard-for-in
     for (const txHash in allTransactions) {
       const tx = allTransactions[txHash]
       if (!tx || isConfirmedTx(tx) || tx.typeInfo.type !== TransactionType.Permit2Approve) {

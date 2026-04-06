@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* oxlint-disable typescript/explicit-function-return-type */
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { providers } from 'ethers/lib/ethers'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'

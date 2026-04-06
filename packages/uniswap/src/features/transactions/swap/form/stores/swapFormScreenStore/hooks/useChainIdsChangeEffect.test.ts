@@ -163,6 +163,7 @@ describe('useChainIdsChangeEffect', () => {
     )
   })
 
+  // oxlint-disable-next-line jest/expect-expect -- suppressed
   it('should handle when callback is not provided', () => {
     // Should not throw errors
     let inputChainId = UniverseChainId.Mainnet

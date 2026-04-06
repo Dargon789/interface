@@ -101,3 +101,15 @@ export type PortfolioMultichainBalance = {
   isHidden: Maybe<boolean>
   tokens: PortfolioChainBalance[]
 }
+
+/**
+ * Multichain search result: one logical token found across multiple chains.
+ */
+export type MultichainSearchResult = {
+  id: string
+  name: string
+  symbol: string
+  logoUrl: Maybe<string>
+  safetyInfo?: Maybe<SafetyInfo>
+  tokens: CurrencyInfo[]
+}

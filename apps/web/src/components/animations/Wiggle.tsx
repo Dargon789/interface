@@ -47,7 +47,7 @@ export const Wiggle = forwardRef<
           animationIterationCount: 1,
           animationDirection: 'normal',
           transition: 'fill 0.3s ease-in-out',
-          fill: shouldAnimate ? iconColor || colors.neutral1.val : colors.neutral1.val,
+          fill: (shouldAnimate ? iconColor || colors.neutral1.get() : colors.neutral1.get()) as string,
         }}
       >
         {children}

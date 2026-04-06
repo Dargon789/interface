@@ -9,15 +9,5 @@ import type { Hashcash } from './specs/Hashcash.nitro'
  */
 export const HashcashNative = NitroModules.createHybridObject<Hashcash>('Hashcash')
 
-export {
-  benchmarkJS,
-  benchmarkNative,
-  runBenchmark,
-  runFullBenchmark,
-} from './benchmark'
-export type {
-  FindProofParams,
-  Hashcash,
-  HashcashChallenge,
-  HashcashProofResult,
-} from './specs/Hashcash.nitro'
+export { benchmarkJS, benchmarkNative, runBenchmark, runFullBenchmark } from './benchmark'
+export type { FindProofParams, Hashcash, HashcashChallenge, HashcashProofResult } from './specs/Hashcash.nitro'

@@ -1,9 +1,6 @@
 import type { PropsWithChildren } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { FLASHBLOCKS_UI_SKIP_ROUTES } from 'uniswap/src/features/transactions/swap/components/UnichainInstantBalanceModal/constants'
-import { useClearFlashblocksSwapNotifications } from 'uniswap/src/features/transactions/swap/components/UnichainInstantBalanceModal/hooks/useClearFlashblocksSwapNotifications'
 import { useFeeOnTransferAmounts } from 'uniswap/src/features/transactions/swap/hooks/useFeeOnTransferAmount'
-import { useIsUnichainFlashblocksEnabled } from 'uniswap/src/features/transactions/swap/hooks/useIsUnichainFlashblocksEnabled'
 import { useParsedSwapWarnings } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/useSwapWarnings'
 import { useAcceptedTrade } from 'uniswap/src/features/transactions/swap/review/hooks/useAcceptedTrade'
 import type { SwapReviewTransactionState } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewTransactionStore/createSwapReviewTransactionStore'
@@ -30,15 +27,6 @@ export const SwapReviewTransactionStoreContextProvider = ({
     derivedSwapInfo: dangerouslyGetLatestDerivedSwapInfo,
     isSubmitting,
   })
-
-  const isFlashblocksEnabled = useIsUnichainFlashblocksEnabled(acceptedDerivedSwapInfo?.chainId)
-  useClearFlashblocksSwapNotifications(
-    isFlashblocksEnabled &&
-      !(
-        acceptedDerivedSwapInfo?.trade.trade?.routing &&
-        FLASHBLOCKS_UI_SKIP_ROUTES.includes(acceptedDerivedSwapInfo.trade.trade.routing)
-      ),
-  )
 
   const uniswapXGasBreakdown = isUniswapX(swapTxContext) ? swapTxContext.gasFeeBreakdown : undefined
 

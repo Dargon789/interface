@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { BigNumber } from '@ethersproject/bignumber'
 import { MixedRouteSDK } from '@uniswap/router-sdk'
 import { Currency, CurrencyAmount, Percent, Token, TradeType } from '@uniswap/sdk-core'
@@ -209,6 +209,7 @@ function toUnsignedPriorityOrderInfo(orderInfoJSON: UnsignedPriorityOrderInfoJSO
 // Prepares the currencies used for the actual Swap (either UniswapX or Universal Router)
 function getTradeCurrencies({
   args,
+  // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
   isUniswapXTrade,
   routes,
 }: {
@@ -460,7 +461,7 @@ export async function transformQuoteToTrade({
         state: QuoteState.SUCCESS,
         trade: uniswapXTrade,
       }
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
     } else if (data.routing === URAQuoteType.PRIORITY) {
       const orderInfo = toUnsignedPriorityOrderInfo(data.quote.orderInfo)
       const priorityOrderTrade = new PriorityOrderTrade({

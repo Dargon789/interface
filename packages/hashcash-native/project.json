@@ -8,7 +8,7 @@
     "typecheck": {},
     "typecheck:tsgo": {},
     "build": {
-      "command": "tsc",
+      "command": "tsc -b",
       "options": {
         "cwd": "{projectRoot}"
       }
@@ -19,12 +19,12 @@
         "cwd": "{projectRoot}"
       }
     },
-    "lint:biome": {},
-    "lint:biome:fix": {},
     "lint:eslint": {},
     "lint:eslint:fix": {},
     "lint": {},
     "lint:fix": {},
+    "check": {},
+    "check:fix": {},
     "check:deps:usage": {},
     "lint-ci": {
       "command": "eslint \"**/*.{js,ts,tsx}\" -f @jamesacarr/github-actions",
@@ -49,6 +49,11 @@
       "options": {
         "cwd": "{projectRoot}"
       }
-    }
+    },
+    "oxfmt": {},
+    "oxfmt:fix": {},
+    "oxlint": {},
+    "oxlint:fix": {},
+    "oxlint:type-aware": {}
   }
 }

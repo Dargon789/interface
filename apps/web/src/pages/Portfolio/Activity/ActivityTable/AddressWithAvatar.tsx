@@ -13,7 +13,7 @@ interface AddressWithAvatarProps {
   showAvatar?: boolean
 }
 
-function _AddressWithAvatar({ address, showAvatar = true }: AddressWithAvatarProps) {
+function AddressWithAvatarInner({ address, showAvatar = true }: AddressWithAvatarProps) {
   // Try to get Unitag from store first (batch fetched)
   const { unitagsMap } = useActivityAddressLookupValue()
   const contextUnitag = unitagsMap.get(address)
@@ -47,4 +47,4 @@ function _AddressWithAvatar({ address, showAvatar = true }: AddressWithAvatarPro
   )
 }
 
-export const AddressWithAvatar = memo(_AddressWithAvatar)
+export const AddressWithAvatar = memo(AddressWithAvatarInner)

@@ -350,17 +350,13 @@ export function useIsSupportedFiatOnRampCurrency(
     countryCode: ipCountryData?.countryCode ?? fallbackCountryCode,
     skip,
   })
-  const {
-    list: supportedTokensList,
-    loading: supportedTokensLoading,
-    error: supportedTokensError,
-  } = useFiatOnRampSupportedTokens({
+  const { list: supportedTokensList, loading: supportedTokensLoading } = useFiatOnRampSupportedTokens({
     sourceCurrencyCode: meldSupportedFiatCurrency.code,
     countryCode: ipCountryData?.countryCode ?? fallbackCountryCode,
     skip,
   })
 
-  const isLoading = isCountryLoading || supportedTokensLoading || supportedTokensError
+  const isLoading = isCountryLoading || supportedTokensLoading
 
   if (isLoading) {
     return { currency: undefined, isLoading }

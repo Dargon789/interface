@@ -1,4 +1,3 @@
-/* eslint-disable check-file/no-index */
 export type { CreatePerformanceTrackerContext } from '@universe/sessions/src/performance/createPerformanceTracker'
 export {
   createPerformanceTracker,

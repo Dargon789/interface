@@ -1,7 +1,8 @@
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { useUpdateAtom } from 'jotai/utils'
 import { MutableRefObject, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AdaptiveWebPopoverContent, Button, Flex, Text, useShadowPropsShort } from 'ui/src'
+import { AdaptiveWebPopoverContent, Button, Flex, Text, TouchableArea, useShadowPropsShort } from 'ui/src'
 import { Unitag } from 'ui/src/components/icons/Unitag'
 import { X } from 'ui/src/components/icons/X'
 import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
@@ -9,8 +10,10 @@ import { DisplayNameType } from 'uniswap/src/features/accounts/types'
 import { useOnchainDisplayName } from 'uniswap/src/features/accounts/useOnchainDisplayName'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { shortenAddress } from 'utilities/src/addresses'
-import { useOnClickOutside } from 'utilities/src/react/hooks'
+import { useEvent, useOnClickOutside } from 'utilities/src/react/hooks'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import StatusIcon from '~/components/StatusIcon'
+import { passkeySignInPendingAtom, showEmbeddedLoginViewAtom } from '~/components/WalletModal/EmbeddedWalletModal'
 import { useRecentConnectorId } from '~/components/Web3Provider/constants'
 import { useIsMobile } from '~/hooks/screenSize/useIsMobile'
 import { useAccount } from '~/hooks/useAccount'
@@ -86,7 +89,7 @@ function RecentlyConnectedModalUI({
             },
           },
         ]}
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3"
         borderRadius="$rounded20"
         $md={{
@@ -109,18 +112,9 @@ function RecentlyConnectedModalUI({
                   <Unitag size={22} />
                 </Flex>
               )}
-              <X
-                onPress={onClose}
-                size={20}
-                color="$neutral3"
-                ml="auto"
-                cursor="pointer"
-                hoverStyle={{ opacity: 0.8 }}
-                alignSelf="flex-start"
-                display="flex"
-                flexShrink={0}
-                $md={{ display: 'none' }}
-              />
+              <TouchableArea onPress={onClose} ml="auto" flexShrink={0} $md={{ display: 'none' }}>
+                <X size={20} color="$neutral3" />
+              </TouchableArea>
             </Flex>
             {showShortAddress && (
               <Text variant="body3" color="$neutral2">
@@ -136,25 +130,29 @@ function RecentlyConnectedModalUI({
             </Text>
           </Button>
         </Flex>
-        <Flex
+        <TouchableArea
           px="$spacing12"
           py="$spacing8"
           alignItems="center"
           justifyContent="center"
-          borderWidth={1}
+          borderWidth="$spacing1"
           borderColor="$surface3"
           borderRadius="$rounded12"
           display="none"
-          cursor="pointer"
-          hoverStyle={{ opacity: 0.8 }}
           $md={{ display: 'flex' }}
+          onPress={onClose}
         >
-          <X onPress={onClose} size={20} color="$neutral3" />
-        </Flex>
+          <X size={20} color="$neutral3" />
+        </TouchableArea>
       </Flex>
     </AdaptiveWebPopoverContent>
   )
 }
+
+// Evaluated at module load — before history.replaceState cleans up the OAuth params.
+// Must remain at module scope so it captures the original URL search params.
+const isOAuthReturn =
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('privy_oauth_code')
 
 function shouldShowModal({
   walletAddress,
@@ -174,7 +172,8 @@ function shouldShowModal({
     !(account.isConnected || account.isConnecting) &&
     isEmbeddedWalletEnabled &&
     !isOpenRef.current &&
-    recentConnectorId === CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID
+    recentConnectorId === CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID &&
+    !isOAuthReturn
   )
 }
 
@@ -184,11 +183,29 @@ export function RecentlyConnectedModal() {
   const walletAddress = walletAddressFromState ?? undefined
   const { isOpen, closeModal, openModal } = useModalState(ModalName.RecentlyConnectedModal)
   const isOpenRef = useRef(isOpen)
-  const { signInWithPasskey } = useSignInWithPasskey({ onSuccess: closeModal })
   const isEmbeddedWalletEnabled = useFeatureFlag(FeatureFlags.EmbeddedWallet)
   const recentConnectorId = useRecentConnectorId()
-
+  const accountDrawer = useAccountDrawer()
+  const setShowLoginView = useUpdateAtom(showEmbeddedLoginViewAtom)
+  const setPasskeySignInPending = useUpdateAtom(passkeySignInPendingAtom)
+  const { signInWithPasskeyAsync } = useSignInWithPasskey({
+    onSuccess: () => {
+      setPasskeySignInPending(false)
+      closeModal()
+    },
+    onError: () => {
+      setPasskeySignInPending(false)
+    },
+  })
   const walletDisplay = useWalletDisplay(walletAddress)
+
+  const handleSignIn = useEvent(() => {
+    closeModal()
+    setShowLoginView(true)
+    setPasskeySignInPending(true)
+    accountDrawer.open()
+    signInWithPasskeyAsync()
+  })
 
   useEffect(() => {
     if (
@@ -205,7 +222,7 @@ export function RecentlyConnectedModal() {
     }
   }, [walletAddress, account, isEmbeddedWalletEnabled, openModal, recentConnectorId])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: account.isConnecting dependency is sufficient for this effect
+  // oxlint-disable-next-line react/exhaustive-deps -- account.isConnecting dependency is sufficient for this effect
   useEffect(() => {
     if (account.isConnected && isOpen) {
       closeModal()
@@ -217,7 +234,7 @@ export function RecentlyConnectedModal() {
       isOpen={isOpen}
       walletAddress={walletAddress}
       {...walletDisplay}
-      onSignIn={() => signInWithPasskey()}
+      onSignIn={handleSignIn}
       onClose={closeModal}
     />
   )

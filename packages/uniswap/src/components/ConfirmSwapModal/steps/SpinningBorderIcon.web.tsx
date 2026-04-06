@@ -37,7 +37,7 @@ export function SpinningBorderIcon({
 
   return (
     <Flex height={layoutSize} width={layoutSize} alignItems="center" justifyContent="center">
-      {/* biome-ignore lint/correctness/noRestrictedElements: CSS animation requires raw element for className */}
+      {/* oxlint-disable-next-line react/forbid-elements -- CSS animation requires raw element for className */}
       <div
         style={{
           position: 'absolute',

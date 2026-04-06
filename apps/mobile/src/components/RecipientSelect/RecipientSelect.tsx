@@ -32,7 +32,7 @@ function QRScannerIconButton({ onPress }: { onPress: () => void }): JSX.Element 
   )
 }
 
-function _RecipientSelect({
+function RecipientSelectInner({
   onSelectRecipient,
   onHideRecipientSelector,
   recipient,
@@ -154,4 +154,4 @@ function _RecipientSelect({
   )
 }
 
-export const RecipientSelect = memo(_RecipientSelect)
+export const RecipientSelect = memo(RecipientSelectInner)

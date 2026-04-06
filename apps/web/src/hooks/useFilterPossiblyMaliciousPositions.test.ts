@@ -1,5 +1,4 @@
 import '~/test-utils/tokens/mocks'
-
 import { BigNumber } from '@ethersproject/bignumber'
 import { useFilterPossiblyMaliciousPositions } from '~/hooks/useFilterPossiblyMaliciousPositions'
 import { useTokenContractsConstant } from '~/hooks/useTokenContractsConstant'

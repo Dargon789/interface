@@ -1,23 +1,26 @@
-import { infiniteQueryOptions } from '@tanstack/react-query'
-import type { ListTopPoolsResponse, ListTopTokensResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import { type InfiniteData, infiniteQueryOptions } from '@tanstack/react-query'
+import type { ListTokensResponse, ListTopPoolsResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import { getListTokensQueryOptions, type ListTokensInput } from 'uniswap/src/data/apiClients/dataApiService/listTokens'
 import {
   getListTopPoolsQueryOptions,
   type ListTopPoolsInput,
 } from 'uniswap/src/data/apiClients/dataApiService/listTopPools'
-import {
-  getListTopTokensQueryOptions,
-  type ListTopTokensInput,
-} from 'uniswap/src/data/apiClients/dataApiService/listTopTokens'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 
-type ListTopTokensQueryKey = readonly [ReactQueryCacheKey.DataApiService, 'listTopTokens', ListTopTokensInput['params']]
+type ListTokensQueryKey = readonly [ReactQueryCacheKey.DataApiService, 'listTokens', ListTokensInput['params']]
 type ListTopPoolsQueryKey = readonly [ReactQueryCacheKey.DataApiService, 'listTopPools', ListTopPoolsInput['params']]
 
 export const dataApiQueries: {
-  listTopTokens: (
-    input: ListTopTokensInput,
+  listTokens: (
+    input: ListTokensInput,
   ) => ReturnType<
-    typeof infiniteQueryOptions<ListTopTokensResponse, Error, ListTopTokensResponse, ListTopTokensQueryKey, string>
+    typeof infiniteQueryOptions<
+      ListTokensResponse,
+      Error,
+      InfiniteData<ListTokensResponse, string>,
+      ListTokensQueryKey,
+      string
+    >
   >
   listTopPools: (
     input: ListTopPoolsInput,
@@ -25,6 +28,6 @@ export const dataApiQueries: {
     typeof infiniteQueryOptions<ListTopPoolsResponse, Error, ListTopPoolsResponse, ListTopPoolsQueryKey, string>
   >
 } = {
-  listTopTokens: (input) => getListTopTokensQueryOptions(input),
+  listTokens: (input) => getListTokensQueryOptions(input),
   listTopPools: (input) => getListTopPoolsQueryOptions(input),
 }

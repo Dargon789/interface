@@ -14,7 +14,7 @@ interface TransactionTypeCellProps {
   transaction: TransactionDetails
 }
 
-function _TransactionTypeCell({ transaction }: TransactionTypeCellProps) {
+function TransactionTypeCellInner({ transaction }: TransactionTypeCellProps) {
   const { t } = useTranslation()
   const isTemporaryStatus = TEMPORARY_TRANSACTION_STATUSES.includes(transaction.status)
 
@@ -49,4 +49,4 @@ function _TransactionTypeCell({ transaction }: TransactionTypeCellProps) {
   )
 }
 
-export const TransactionTypeCell = memo(_TransactionTypeCell)
+export const TransactionTypeCell = memo(TransactionTypeCellInner)

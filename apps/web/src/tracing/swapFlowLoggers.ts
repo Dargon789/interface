@@ -32,6 +32,7 @@ export function logSwapFinalized({
   type,
   swapStartTimestamp,
   planAnalytics,
+  transactedUSDValue,
 }: {
   id: string
   hash: string | undefined
@@ -43,6 +44,7 @@ export function logSwapFinalized({
   type: OnChainSwapTransactionType
   swapStartTimestamp?: number
   planAnalytics?: PlanSwapTransactionInfoFields
+  transactedUSDValue?: number
 }) {
   const hasSetSwapSuccess = timestampTracker.hasTimestamp(SwapEventType.FirstSwapSuccess)
   const elapsedTime = timestampTracker.setElapsedTime(SwapEventType.FirstSwapSuccess)
@@ -66,6 +68,7 @@ export function logSwapFinalized({
     chain_id_out: chainOutId,
     transactionOriginType: TransactionOriginType.Internal,
     swap_start_timestamp: swapStartTimestamp,
+    transactedUSDValue,
     ...planAnalyticsToSnakeCase(planAnalytics),
     ...analyticsContext,
   })
@@ -98,6 +101,7 @@ export function logUniswapXSwapFinalized({
   status,
   swapStartTimestamp,
   planAnalytics,
+  transactedUSDValue,
 }: {
   id: string
   hash?: string
@@ -108,6 +112,7 @@ export function logUniswapXSwapFinalized({
   status: TransactionStatus
   swapStartTimestamp?: number
   planAnalytics?: PlanSwapTransactionInfoFields
+  transactedUSDValue?: number
 }) {
   const hasSetSwapSuccess = timestampTracker.hasTimestamp(SwapEventType.FirstSwapSuccess)
   const elapsedTime = timestampTracker.setElapsedTime(SwapEventType.FirstSwapSuccess)
@@ -129,6 +134,7 @@ export function logUniswapXSwapFinalized({
     hash,
     chain_id: chainId,
     swap_start_timestamp: swapStartTimestamp,
+    transactedUSDValue,
     ...planAnalyticsToSnakeCase(planAnalytics),
     ...analyticsContext,
   })

@@ -1,6 +1,6 @@
-import { type BrowserContext, chromium } from '@playwright/test'
 import os from 'os'
 import path from 'path'
+import { type BrowserContext, chromium } from '@playwright/test'
 
 interface CreateExtensionContextOptions {
   /** Prefix for the user data directory (for test isolation) */

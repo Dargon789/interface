@@ -146,7 +146,7 @@ export function BridgedAssetModal({
     return getContrastPassingTextColor(validTokenColor ?? colors.accent1.val)
   }, [colors.accent1.val, validTokenColor])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +isOpen
+  // oxlint-disable-next-line react/exhaustive-deps -- +isOpen
   useEffect(() => {
     setShowingSecondCurrency(false)
   }, [isOpen])

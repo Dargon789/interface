@@ -4,10 +4,10 @@ import { type DataApiService } from '@uniswap/client-data-api/dist/data/v1/api_c
 import type {
   GetPortfolioRequest,
   GetPortfolioResponse,
+  ListTokensRequest,
+  ListTokensResponse,
   ListTopPoolsRequest,
   ListTopPoolsResponse,
-  ListTopTokensRequest,
-  ListTopTokensResponse,
 } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 
 export interface DataApiServiceClientContext {
@@ -16,14 +16,14 @@ export interface DataApiServiceClientContext {
 
 export interface DataApiServiceClient {
   getPortfolio: (params: PartialMessage<GetPortfolioRequest>) => Promise<GetPortfolioResponse>
-  listTopTokens: (params: PartialMessage<ListTopTokensRequest>) => Promise<ListTopTokensResponse>
+  listTokens: (params: PartialMessage<ListTokensRequest>) => Promise<ListTokensResponse>
   listTopPools: (params: PartialMessage<ListTopPoolsRequest>) => Promise<ListTopPoolsResponse>
 }
 
 export function createDataApiServiceClient({ rpcClient }: DataApiServiceClientContext): DataApiServiceClient {
   return {
     getPortfolio: (params): Promise<GetPortfolioResponse> => rpcClient.getPortfolio(params),
-    listTopTokens: (params): Promise<ListTopTokensResponse> => rpcClient.listTopTokens(params),
+    listTokens: (params): Promise<ListTokensResponse> => rpcClient.listTokens(params),
     listTopPools: (params): Promise<ListTopPoolsResponse> => rpcClient.listTopPools(params),
   }
 }

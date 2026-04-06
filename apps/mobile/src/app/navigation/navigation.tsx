@@ -36,11 +36,11 @@ import { HorizontalEdgeGestureTarget } from 'src/components/layout/screens/EdgeG
 import { AdvancedSettingsModal } from 'src/components/modals/ReactNavigationModals/AdvancedSettingsModal'
 import { BridgedAssetModalScreen } from 'src/components/modals/ReactNavigationModals/BridgedAssetModal'
 import { HiddenTokenInfoModalScreen } from 'src/components/modals/ReactNavigationModals/HiddenTokenInfoModalScreen'
-import { LanguageSettingsScreen } from 'src/components/modals/ReactNavigationModals/LanguageSettingsScreen'
 import { PasskeyHelpModalScreen } from 'src/components/modals/ReactNavigationModals/PasskeyHelpModalScreen'
 import { PasskeyManagementModalScreen } from 'src/components/modals/ReactNavigationModals/PasskeyManagementModalScreen'
 import { PermissionsSettingsScreen } from 'src/components/modals/ReactNavigationModals/PermissionsSettingsScreen'
 import { PortfolioBalanceSettingsScreen } from 'src/components/modals/ReactNavigationModals/PortfolioBalanceSettingsScreen'
+import { ReportPortfolioDataModalScreen } from 'src/components/modals/ReactNavigationModals/ReportPortfolioDataModalScreen'
 import { ReportTokenDataModalScreen } from 'src/components/modals/ReactNavigationModals/ReportTokenDataModalScreen'
 import { ReportTokenIssueModalScreen } from 'src/components/modals/ReactNavigationModals/ReportTokenIssueModalScreen'
 import { SmartWalletEnabledModalScreen } from 'src/components/modals/ReactNavigationModals/SmartWalletEnabledModalScreen'
@@ -87,8 +87,6 @@ import { RestoreMethodScreen } from 'src/screens/Import/RestoreMethodScreen'
 import { SeedPhraseInputScreen } from 'src/screens/Import/SeedPhraseInputScreen/SeedPhraseInputScreen'
 import { SelectWalletScreen } from 'src/screens/Import/SelectWalletScreen'
 import { WatchWalletScreen } from 'src/screens/Import/WatchWalletScreen'
-import { NFTCollectionScreen } from 'src/screens/NFTCollectionScreen'
-import { NFTItemScreen } from 'src/screens/NFTItemScreen'
 import { BackupScreen } from 'src/screens/Onboarding/BackupScreen'
 import { CloudBackupPasswordConfirmScreen } from 'src/screens/Onboarding/CloudBackupPasswordConfirmScreen'
 import { CloudBackupPasswordCreateScreen } from 'src/screens/Onboarding/CloudBackupPasswordCreateScreen'
@@ -104,6 +102,7 @@ import { SettingsCloudBackupPasswordCreateScreen } from 'src/screens/SettingsClo
 import { SettingsCloudBackupProcessingScreen } from 'src/screens/SettingsCloudBackupProcessingScreen'
 import { SettingsCloudBackupStatus } from 'src/screens/SettingsCloudBackupStatus'
 import { SettingsFiatCurrencyModal } from 'src/screens/SettingsFiatCurrencyModal'
+import { SettingsLanguageModal } from 'src/screens/SettingsLanguageModal'
 import { SettingsNotificationsScreen } from 'src/screens/SettingsNotificationsScreen'
 import { SettingsPrivacyScreen } from 'src/screens/SettingsPrivacyScreen'
 import { SettingsScreen } from 'src/screens/SettingsScreen'
@@ -391,8 +390,6 @@ export function AppStackNavigator(): JSX.Element {
       <AppStack.Screen component={UnitagStackNavigator} name={MobileScreens.UnitagStack} />
       <AppStack.Screen component={ExternalProfileScreen} name={MobileScreens.ExternalProfile} />
       <AppStack.Screen component={TokenDetailsScreen} name={MobileScreens.TokenDetails} />
-      <AppStack.Screen component={NFTItemScreen} name={MobileScreens.NFTItem} />
-      <AppStack.Screen component={NFTCollectionScreen} name={MobileScreens.NFTCollection} />
       <AppStack.Screen component={WebViewScreen} name={MobileScreens.WebView} />
       <AppStack.Screen component={SettingsStackGroup} name={MobileScreens.SettingsStack} />
       <AppStack.Screen component={ViewPrivateKeysScreen} name={MobileScreens.ViewPrivateKeys} />
@@ -424,12 +421,14 @@ export function AppStackNavigator(): JSX.Element {
         <AppStack.Screen component={BuyNativeTokenModal} name={ModalName.BuyNativeToken} />
         <AppStack.Screen component={HiddenTokenInfoModalScreen} name={ModalName.HiddenTokenInfoModal} />
         <AppStack.Screen component={ReportTokenIssueModalScreen} name={ModalName.ReportTokenIssue} />
+        <AppStack.Screen component={ReportPortfolioDataModalScreen} name={ModalName.ReportPortfolioData} />
         <AppStack.Screen component={ReportTokenDataModalScreen} name={ModalName.ReportTokenData} />
         <AppStack.Screen component={ScreenshotWarningModal} name={ModalName.ScreenshotWarning} />
         <AppStack.Screen component={PasskeyManagementModalScreen} name={ModalName.PasskeyManagement} />
         <AppStack.Screen component={PasskeyHelpModalScreen} name={ModalName.PasskeysHelp} />
         <AppStack.Screen component={SettingsBiometricModal} name={ModalName.BiometricsModal} />
         <AppStack.Screen component={SettingsFiatCurrencyModal} name={ModalName.FiatCurrencySelector} />
+        <AppStack.Screen component={SettingsLanguageModal} name={ModalName.LanguageSelector} />
         <AppStack.Screen component={ManageWalletsModal} name={ModalName.ManageWalletsModal} />
         <AppStack.Screen component={EditLabelSettingsModal} name={ModalName.EditLabelSettingsModal} />
         <AppStack.Screen component={EditProfileSettingsModal} name={ModalName.EditProfileSettingsModal} />
@@ -440,7 +439,6 @@ export function AppStackNavigator(): JSX.Element {
         <AppStack.Screen component={SettingsAppearanceModal} name={ModalName.SettingsAppearance} />
         <AppStack.Screen component={PermissionsSettingsScreen} name={ModalName.PermissionsModal} />
         <AppStack.Screen component={PortfolioBalanceSettingsScreen} name={ModalName.PortfolioBalanceModal} />
-        <AppStack.Screen component={LanguageSettingsScreen} name={ModalName.LanguageSelector} />
         <AppStack.Screen component={SmartWalletNudgeScreen} name={ModalName.SmartWalletNudge} />
         <AppStack.Screen component={BridgedAssetModalScreen} name={ModalName.BridgedAsset} />
         <AppStack.Screen component={WormholeModalScreen} name={ModalName.Wormhole} />

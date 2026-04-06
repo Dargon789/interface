@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* oxlint-disable typescript/explicit-function-return-type */
 import { TradeType } from '@uniswap/sdk-core'
 import { useMergeLocalAndRemoteTransactions } from 'uniswap/src/features/activity/hooks/useMergeLocalAndRemoteTransactions'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'

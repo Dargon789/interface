@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { ElementName, SectionName, UniswapEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
@@ -12,7 +12,9 @@ interface UseContextMenuTrackingParams {
 
 /**
  * Hook for tracking context menu open and close events.
- * Returns a tracked close handler that wraps the original closeMenu function.
+ * Tracks opens and closes reactively via isOpen transitions so that ALL close
+ * paths (click-outside, sheet dismiss, contentOverride-internal, mouse-leave, etc.)
+ * are captured without each path needing to call a tracked handler.
  */
 export function useContextMenuTracking({
   isOpen,
@@ -21,31 +23,33 @@ export function useContextMenuTracking({
   sectionName,
 }: UseContextMenuTrackingParams): () => void {
   const trace = useTrace()
+  const wasOpen = useRef(false)
 
-  // Track menu open
-  // biome-ignore lint/correctness/useExhaustiveDependencies: trace is static context, shouldn't trigger re-fire
+  // oxlint-disable-next-line react/exhaustive-deps -- trace is static context, shouldn't trigger re-fire
   useEffect(() => {
-    if (isOpen && elementName && sectionName) {
+    if (isOpen && !wasOpen.current && elementName && sectionName) {
       sendAnalyticsEvent(UniswapEventName.ContextMenuOpened, {
         element: elementName,
         section: sectionName,
         ...trace,
       })
     }
-  }, [isOpen, elementName, sectionName])
 
-  // Track menu close and return wrapped close handler
-  // biome-ignore lint/correctness/useExhaustiveDependencies: trace is static context, shouldn't trigger re-fire
-  const trackedCloseMenu = useCallback(() => {
-    if (isOpen && elementName && sectionName) {
+    if (!isOpen && wasOpen.current && elementName && sectionName) {
       sendAnalyticsEvent(UniswapEventName.ContextMenuClosed, {
         element: elementName,
         section: sectionName,
         ...trace,
       })
     }
+
+    wasOpen.current = isOpen
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
+  }, [isOpen, elementName, sectionName])
+
+  const trackedCloseMenu = useCallback(() => {
     closeMenu()
-  }, [isOpen, closeMenu, elementName, sectionName])
+  }, [closeMenu])
 
   return trackedCloseMenu
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AnimatedCopyLabel } from 'ui/src'
+import { AnimatedCopyLabel, Text } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
 import { MultichainOptionRow } from 'uniswap/src/components/MultichainTokenDetails/MultichainOptionRow'
 import { MultichainScrollableList } from 'uniswap/src/components/MultichainTokenDetails/MultichainScrollableList'
@@ -55,6 +55,19 @@ export function MultichainAddressList({
 
   const renderAddressRow = useCallback(
     (entry: MultichainTokenEntry) => {
+      if (entry.isNative) {
+        return (
+          <MultichainOptionRow
+            chainId={entry.chainId}
+            rightContent={
+              <Text color="$neutral3" variant="body2">
+                {t('common.unavailable')}
+              </Text>
+            }
+          />
+        )
+      }
+
       const isCopied = showInlineFeedback && copiedChainId === entry.chainId
       const shortened = shortenAddress({ address: entry.address })
 

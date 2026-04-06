@@ -21,6 +21,7 @@ export function SpinningBorderIcon({
     rotation.value = 0
     rotation.value = withRepeat(withTiming(360, { duration: 750, easing: Easing.linear }), -1)
     return (): void => cancelAnimation(rotation)
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   const animatedStyle = useAnimatedStyle(

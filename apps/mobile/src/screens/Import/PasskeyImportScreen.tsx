@@ -30,7 +30,7 @@ export function PasskeyImportScreen({ navigation, route: { params } }: Props): J
     })
   })
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: We want to import the mnemonic only once
+  // oxlint-disable-next-line react/exhaustive-deps -- We want to import the mnemonic only once
   useEffect(() => {
     const importAndGenerateAccount = async (): Promise<void> => {
       const mnemonic = await fetchSeedPhrase(params.passkeyCredential)
@@ -54,6 +54,7 @@ export function PasskeyImportScreen({ navigation, route: { params } }: Props): J
       navigation.goBack()
       navigate(ModalName.PasskeysHelp)
     })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   return (

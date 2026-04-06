@@ -12,7 +12,7 @@ function buildExploreUrl(tabName: ExploreTab | undefined, chainId: UniverseChain
   return `/explore/${tabName ?? ExploreTab.Tokens}${chainId ? `/${chainUrlParam}` : ''}`
 }
 
-export function TableNetworkFilter() {
+export function TableNetworkFilter({ networks }: { networks?: UniverseChainId[] } = {}) {
   const navigate = useNavigate()
   const media = useMedia()
   const { tab: tabName, chainName } = useExploreParams()
@@ -28,6 +28,7 @@ export function TableNetworkFilter() {
       position={media.lg ? 'left' : 'right'}
       onPress={onNetworkPress}
       currentChainId={currentChainId}
+      networks={networks}
     />
   )
 }

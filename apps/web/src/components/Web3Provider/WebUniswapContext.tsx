@@ -21,8 +21,8 @@ import { currencyIdToAddress, currencyIdToChain } from 'uniswap/src/utils/curren
 import { getFiatOnRampURL, getPoolDetailsURL, getTokenDetailsURL } from 'uniswap/src/utils/linking'
 import { useEvent, usePrevious } from 'utilities/src/react/hooks'
 import { noop } from 'utilities/src/react/noop'
-import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { MenuStateVariant, useMenuState } from '~/components/AccountDrawer/menuState'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { SwitchNetworkAction } from '~/components/Popups/types'
 import { ReceiveModalState } from '~/components/ReceiveCryptoModal/types'
 import { useOpenReceiveCryptoModal } from '~/components/ReceiveCryptoModal/useOpenReceiveCryptoModal'
@@ -186,16 +186,6 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
     [navigate, closeSearchModal],
   )
 
-  const navigateToNftCollection = useCallback((args: { collectionAddress: Address; chainId: UniverseChainId }) => {
-    window.open(
-      `https://opensea.io/assets/${getChainInfo(
-        args.chainId,
-      ).backendChain.chain.toLowerCase()}/${args.collectionAddress}`,
-      '_blank',
-      'noopener,noreferrer',
-    )
-  }, [])
-
   const { openModal } = useModalState(ModalName.DelegationMismatch)
 
   const handleOpenUniswapXUnsupportedModal = useEvent(() => {
@@ -265,7 +255,6 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
       navigateToBuyOrReceiveWithEmptyWallet={navigateToBuyOrReceiveWithEmptyWallet}
       navigateToTokenDetails={navigateToTokenDetails}
       navigateToExternalProfile={navigateToExternalProfile}
-      navigateToNftCollection={navigateToNftCollection}
       navigateToNftDetails={navigateToNftDetails}
       navigateToPoolDetails={navigateToPoolDetails}
       handleShareToken={handleShareToken}

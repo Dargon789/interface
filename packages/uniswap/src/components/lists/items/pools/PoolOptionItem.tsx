@@ -28,7 +28,7 @@ interface PoolOptionItemProps {
   rightElement?: JSX.Element
 }
 
-function _PoolOptionItem({
+function PoolOptionItemInner({
   token0CurrencyInfo,
   token1CurrencyInfo,
   poolId,
@@ -97,4 +97,4 @@ function _PoolOptionItem({
   )
 }
 
-export const PoolOptionItem = memo(_PoolOptionItem)
+export const PoolOptionItem = memo(PoolOptionItemInner)

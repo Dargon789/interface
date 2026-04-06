@@ -134,7 +134,7 @@ export function CancelOrdersDialog(props: CancelOrdersDialogProps) {
             {cancelSubmitted ? (
               <ExternalLink
                 href={
-                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                  // oxlint-disable-next-line typescript/no-unnecessary-condition
                   firstOrder
                     ? getExplorerLink({
                         chainId: firstOrder.chainId,
@@ -173,7 +173,7 @@ export function CancelOrdersDialog(props: CancelOrdersDialogProps) {
         displayHelpCTA
         iconBackgroundColor="$surface3"
       >
-        {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+        {/* oxlint-disable-next-line typescript/no-unnecessary-condition */}
         <GasEstimateDisplay chainId={orders[0].chainId} gasEstimateValue={cancellationGasFeeInfo?.gasFeeDisplayValue} />
       </Dialog>
     )

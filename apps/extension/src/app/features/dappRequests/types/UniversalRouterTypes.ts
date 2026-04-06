@@ -11,7 +11,7 @@ const CommandNameSchema = z.enum(
 // TODO: remove this fallback once params are fully typed or we are able to import them from the universal router sdk
 const FallbackParamSchema = z.object({
   name: z.string(),
-  // eslint-disable-next-line no-restricted-syntax
+  // oxlint-disable-next-line no-restricted-syntax
   value: z.any(),
 })
 

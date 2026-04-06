@@ -4,7 +4,6 @@ import { TradeableAsset } from 'uniswap/src/entities/assets'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { getTokenProtectionWarning, getTokenWarningSeverity } from 'uniswap/src/features/tokens/warnings/safetyUtils'
 import { useDismissedTokenWarnings } from 'uniswap/src/features/tokens/warnings/slice/hooks'
-
 import { DerivedSwapInfo } from 'uniswap/src/features/transactions/swap/types/derivedSwapInfo'
 import { areCurrencyIdsEqual, currencyId } from 'uniswap/src/utils/currencyId'
 import { isWebApp } from 'utilities/src/platform'

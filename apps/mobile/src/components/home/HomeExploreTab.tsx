@@ -27,7 +27,7 @@ import { TokenMetadataDisplayType } from 'wallet/src/features/wallet/types'
 const ESTIMATED_ITEM_SIZE = 68
 
 export const HomeExploreTab = memo(
-  forwardRef<FlatList<unknown>, TabProps>(function _HomeExploreTab(
+  forwardRef<FlatList<unknown>, TabProps>(function HomeExploreTabInner(
     { containerProps, scrollHandler, headerHeight, refreshing, onRefresh },
     ref,
   ) {
@@ -64,7 +64,7 @@ export const HomeExploreTab = memo(
       [data],
     )
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: fiat currency causes price layout width to change but does not change token data
+    // oxlint-disable-next-line react/exhaustive-deps -- fiat currency causes price layout width to change but does not change token data
     useEffect(() => {
       setMaxTokenPriceWrapperWidth(0)
     }, [appFiatCurrency])
@@ -131,7 +131,7 @@ export const HomeExploreTab = memo(
           mt={-spacing.spacing12}
         >
           <AnimatedFlatList
-            // biome-ignore lint/suspicious/noExplicitAny: FlatList ref type is complex with animated wrapper
+            // oxlint-disable-next-line typescript/no-explicit-any -- FlatList ref type is complex with animated wrapper
             ref={ref as ForwardedRef<Animated.FlatList<any>>}
             ListFooterComponent={FooterElement}
             data={tokenDataList}

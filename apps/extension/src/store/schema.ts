@@ -264,7 +264,7 @@ const v24SchemaIntermediate = {
   },
   userSettings: {
     ...v23Schema.userSettings,
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     hapticsEnabled: v23Schema.appearanceSettings.hapticsEnabled ?? false,
   },
 }

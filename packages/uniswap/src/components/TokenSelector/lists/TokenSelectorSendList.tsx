@@ -108,7 +108,7 @@ function EmptyList({ onEmptyActionPress }: { onEmptyActionPress?: () => void }):
   )
 }
 
-function _TokenSelectorSendList({
+function TokenSelectorSendListInner({
   addresses,
   chainFilter,
   onSelectCurrency,
@@ -146,4 +146,4 @@ function _TokenSelectorSendList({
   )
 }
 
-export const TokenSelectorSendList = memo(_TokenSelectorSendList)
+export const TokenSelectorSendList = memo(TokenSelectorSendListInner)

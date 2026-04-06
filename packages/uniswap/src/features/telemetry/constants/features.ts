@@ -68,7 +68,6 @@ export enum LiquidityEventName {
   RemoveLiquiditySubmitted = 'Remove Liquidity Submitted',
   SelectLiquidityPoolFeeTier = 'Select Liquidity Pool Fee Tier',
   TransactionModifiedInWallet = 'Transaction Modified in Wallet',
-  PriceDiscrepancyChecked = 'Price Discrepancy Checked',
 }
 
 export enum AuctionEventName {

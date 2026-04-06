@@ -6,15 +6,16 @@
  *
  * For unit tests of individual migrations, see mobileMigrations.test.ts.
  */
-// biome-ignore-all lint/suspicious/noExplicitAny: Migration test functions need flexible any types
-/* eslint-disable max-lines */
-/* eslint-disable max-params */
+/* oxlint-disable typescript/no-explicit-any -- Migration test functions need flexible any types */
+/* oxlint-disable max-lines */
+/* oxlint-disable max-params */
 import { BigNumber } from '@ethersproject/bignumber'
 import mockdate from 'mockdate'
 import { OLD_DEMO_ACCOUNT_ADDRESS } from 'src/app/mobileMigrations'
 import { ScannerModalState } from 'uniswap/src/components/ReceiveQRCode/constants'
 import { AccountType } from 'uniswap/src/features/accounts/types'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { Language } from 'uniswap/src/features/language/constants'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TransactionStatus, TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { DappRequestType } from 'uniswap/src/types/walletConnect'
@@ -410,7 +411,7 @@ export function testChangeNativeTypeToSignerMnemonic(migration: (state: any) => 
 
   const v15 = migration(v14Stub)
   const accounts = Object.values(v15.wallet.accounts)
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   expect((accounts[0] as Account)?.type).toEqual(AccountType.SignerMnemonic)
 }
 
@@ -1377,4 +1378,45 @@ export function testMigrateAndRemoveCloudBackupSlice(migration: (state: any) => 
   const v92WithDifferentActiveAccountAddress = migration(v91WithDifferentActiveAccountAddress)
   expect(v92WithDifferentActiveAccountAddress.cloudBackup).toBeUndefined()
   expect(v92WithDifferentActiveAccountAddress.wallet.androidCloudBackupEmail).toBe(androidCloudBackupEmail)
+}
+
+export function testSetWalletDeviceLanguage(
+  migration: (state: any) => any,
+  prevSchema: any,
+  getWalletDeviceLanguageMock: jest.MockedFunction<() => Language>,
+): void {
+  const deviceLanguage = Language.Japanese
+  getWalletDeviceLanguageMock.mockReturnValue(deviceLanguage)
+
+  const stateReduxLanguageDiffersFromDevice = {
+    ...prevSchema,
+    userSettings: {
+      ...prevSchema.userSettings,
+      currentLanguage: Language.English,
+    },
+  }
+  const resultWhenDifferent = migration(stateReduxLanguageDiffersFromDevice)
+  expect(resultWhenDifferent.userSettings?.currentLanguage).toBe(deviceLanguage)
+  expect(getWalletDeviceLanguageMock).toHaveBeenCalled()
+  getWalletDeviceLanguageMock.mockClear()
+
+  const stateReduxLanguageMatchesDevice = {
+    ...prevSchema,
+    userSettings: {
+      ...prevSchema.userSettings,
+      currentLanguage: deviceLanguage,
+    },
+  }
+  const resultWhenSame = migration(stateReduxLanguageMatchesDevice)
+  expect(resultWhenSame.userSettings?.currentLanguage).toBe(deviceLanguage)
+  expect(getWalletDeviceLanguageMock).toHaveBeenCalled()
+
+  if (prevSchema.userSettings) {
+    for (const key of Object.keys(prevSchema.userSettings)) {
+      if (key !== 'currentLanguage') {
+        expect(resultWhenDifferent.userSettings[key]).toEqual(prevSchema.userSettings[key])
+        expect(resultWhenSame.userSettings[key]).toEqual(prevSchema.userSettings[key])
+      }
+    }
+  }
 }

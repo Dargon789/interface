@@ -43,7 +43,6 @@ export type CurrencyInputPanelProps = {
   onBlur?: TextInputProps['onBlur']
   resetSelection?: (args: { start: number; end?: number; currencyField?: CurrencyField }) => void
   tokenColor?: string
-  priceDifferencePercentage?: number
   customPanelStyle?: FlexProps
   /** Hide all preset buttons (both standard percentage presets and max button) */
   hidePresets?: boolean
@@ -58,4 +57,5 @@ export type CurrencyInputPanelProps = {
   inputSuffix?: string
   /** Allow content to overflow the panel container (e.g., for tooltips in panelAccessory) */
   allowOverflow?: boolean
+  balanceVariant?: TextProps['variant']
 }

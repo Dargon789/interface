@@ -176,7 +176,7 @@ export function BidDistributionChart({
   )
 
   // Handle bid distribution specific states
-  if (hasBidDistributionData && !hasBidData) {
+  if (hasBidDistributionData && !hasBidData && !excludedBidVolume) {
     return renderPlaceholder(t('toucan.auction.noBids'))
   }
 

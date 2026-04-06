@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { auctionQueries } from 'uniswap/src/data/rest/auctions/auctionQueries'
 import { EVMUniverseChainId } from 'uniswap/src/features/chains/types'
 import { logger } from 'utilities/src/logger/logger'
-import { MAX_RENDERABLE_BARS } from '~/components/Toucan/Auction/BidDistributionChart/constants'
+import { CHART_CONSTRAINTS, MAX_RENDERABLE_BARS } from '~/components/Toucan/Auction/BidDistributionChart/constants'
 import { AuctionProgressState, BidDistributionData } from '~/components/Toucan/Auction/store/types'
 import { useAuctionStore, useAuctionStoreActions } from '~/components/Toucan/Auction/store/useAuctionStore'
 import { getPollingIntervalMs } from '~/utils/averageBlockTimeMs'
@@ -31,14 +31,23 @@ function areBidMapsEqual(a: BidDistributionData | undefined, b: BidDistributionD
   return true
 }
 
+/**
+ * Caps concentration data to MAX_RENDERABLE_BARS ticks.
+ *
+ * The cap window is centered around the clearing price (with a few ticks below
+ * and the rest above) so bids near the clearing price are always preserved.
+ * Falls back to a floor-based window when clearing price is unavailable.
+ */
 function capConcentrationData({
   concentration,
   floorPriceQ96,
   tickSizeQ96,
+  clearingPriceQ96,
 }: {
   concentration: Record<string, { volume: string }> | undefined
   floorPriceQ96: string | undefined
   tickSizeQ96: string | undefined
+  clearingPriceQ96: string | undefined
 }): { cappedConcentration: Record<string, { volume: string }>; capped: boolean; excludedVolume: bigint } {
   if (!concentration || !floorPriceQ96 || !tickSizeQ96) {
     return { cappedConcentration: concentration ?? {}, capped: false, excludedVolume: 0n }
@@ -51,14 +60,32 @@ function capConcentrationData({
       return { cappedConcentration: concentration, capped: false, excludedVolume: 0n }
     }
 
-    const maxPriceQ96 = floor + tickSize * BigInt(MAX_RENDERABLE_BARS - 1)
+    let minPriceQ96: bigint
+    let maxPriceQ96: bigint
+
+    if (clearingPriceQ96) {
+      // Align with computeTickWindow's asymmetric logic: keep only a few ticks below
+      // clearing price and fill the rest of the budget above. This avoids holding
+      // thousands of below-clearing bids in memory that will never render.
+      const belowTicks = BigInt(CHART_CONSTRAINTS.PREFERRED_TICKS_BELOW_CLEARING_PRICE)
+      const clearing = BigInt(clearingPriceQ96)
+      minPriceQ96 = clearing - belowTicks * tickSize
+      if (minPriceQ96 < floor) {
+        minPriceQ96 = floor
+      }
+      maxPriceQ96 = minPriceQ96 + tickSize * BigInt(MAX_RENDERABLE_BARS - 1)
+    } else {
+      // Fallback: cap from floor when clearing price is unknown
+      minPriceQ96 = floor
+      maxPriceQ96 = floor + tickSize * BigInt(MAX_RENDERABLE_BARS - 1)
+    }
 
     const filteredEntries: Array<[string, { volume: string }]> = []
     let excludedVolume = 0n
     for (const [priceQ96, value] of Object.entries(concentration)) {
       try {
         const price = BigInt(priceQ96)
-        if (price <= maxPriceQ96) {
+        if (price >= minPriceQ96 && price <= maxPriceQ96) {
           filteredEntries.push([priceQ96, value])
         } else {
           excludedVolume += BigInt(value.volume)
@@ -94,9 +121,10 @@ interface UseLoadBidDistributionDataParams {
  */
 export function useLoadBidDistributionData({ chainId, auctionAddress }: UseLoadBidDistributionDataParams): void {
   const { setBidDistributionData } = useAuctionStoreActions()
-  const { floorPrice, tickSize, isAuctionActive } = useAuctionStore((state) => ({
+  const { floorPrice, tickSize, clearingPrice, isAuctionActive } = useAuctionStore((state) => ({
     floorPrice: state.auctionDetails?.floorPrice,
     tickSize: state.auctionDetails?.tickSize,
+    clearingPrice: state.auctionDetails?.clearingPrice,
     isAuctionActive: state.progress.state === AuctionProgressState.IN_PROGRESS,
   }))
 
@@ -149,6 +177,7 @@ export function useLoadBidDistributionData({ chainId, auctionAddress }: UseLoadB
       concentration,
       floorPriceQ96: floorPrice,
       tickSizeQ96: tickSize,
+      clearingPriceQ96: clearingPrice,
     })
 
     // Sort prices numerically (ascending) before creating the map
@@ -178,5 +207,5 @@ export function useLoadBidDistributionData({ chainId, auctionAddress }: UseLoadB
       prevBidMapRef.current = bidMap
       setBidDistributionData(bidMap, excludedVolume > 0n ? excludedVolume.toString() : null)
     }
-  }, [data, setBidDistributionData, floorPrice, tickSize])
+  }, [data, setBidDistributionData, floorPrice, tickSize, clearingPrice])
 }

@@ -1,13 +1,16 @@
 const { RuleTester } = require('eslint')
 const rule = require('./prevent-this-method-destructure')
+const tsParser = require('@typescript-eslint/parser')
 
 const ruleTester = new RuleTester({
-  parser: require.resolve('@typescript-eslint/parser'),
-  parserOptions: {
-    project: require.resolve('./tsconfig.test.json'),
-    tsconfigRootDir: __dirname,
+  languageOptions: {
+    parser: tsParser,
     ecmaVersion: 2020,
     sourceType: 'module',
+    parserOptions: {
+      project: require.resolve('./tsconfig.test.json'),
+      tsconfigRootDir: __dirname,
+    },
   },
 })
 

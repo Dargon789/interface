@@ -1,5 +1,4 @@
 import '~/test-utils/tokens/mocks'
-
 import { Percent } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
 import { DEFAULT_TICK_SPACING } from 'uniswap/src/constants/pools'

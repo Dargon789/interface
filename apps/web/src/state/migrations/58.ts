@@ -38,7 +38,7 @@ const REMOVED_LANGUAGES: Language[] = [
 function getBrowserLanguageOrEnglish(): Language {
   try {
     const locale = navigatorLocale()
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (locale && mapLocaleToLanguage[locale]) {
       return mapLocaleToLanguage[locale]
     }

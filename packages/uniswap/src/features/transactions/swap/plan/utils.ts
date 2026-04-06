@@ -156,7 +156,7 @@ function toPercentageRanges(values: number[]): Array<{ min: number; max: number 
       return returnEmptyPercentageRanges(values.length)
     }
 
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     return values.reduce<Array<{ min: number; max: number }>>((acc, value, index) => {
       const previousMax = index > 0 ? (acc[index - 1]?.max ?? 0) : 0
       const max = previousMax + (value / total) * 100

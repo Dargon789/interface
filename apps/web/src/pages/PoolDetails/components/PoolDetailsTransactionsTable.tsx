@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* oxlint-disable typescript/no-unnecessary-condition */
 
 import { createColumnHelper } from '@tanstack/react-table'
 import { GraphQLApi } from '@universe/api'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, styled, Text, useMedia, View } from 'ui/src'
@@ -24,7 +25,9 @@ import {
 import { Table } from '~/components/Table'
 import { Cell } from '~/components/Table/Cell'
 import { Filter } from '~/components/Table/Filter'
-import { FilterHeaderRow, TableText, TimestampCell } from '~/components/Table/styled'
+import { TableText } from '~/components/Table/shared/TableText'
+import { TimestampCell } from '~/components/Table/shared/TimestampCell'
+import { FilterHeaderRow } from '~/components/Table/styled'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 import { ExternalLink } from '~/theme/components/Links'
 import { useChainIdFromUrlParam } from '~/utils/chainParams'
@@ -87,6 +90,7 @@ export function PoolDetailsTransactionsTable({
   protocolVersion?: GraphQLApi.ProtocolVersion
 }) {
   const { t } = useTranslation()
+  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const chainId = useChainIdFromUrlParam() ?? UniverseChainId.Mainnet
   const activeLocalCurrency = useAppFiatCurrency()
   const { convertFiatAmountFormatted, formatNumberOrString } = useLocalizationContext()
@@ -296,7 +300,7 @@ export function PoolDetailsTransactionsTable({
         data={transactions}
         loading={loading}
         error={error}
-        v2={false}
+        v2={isMultichainTokenUx}
         loadMore={loadMore}
         maxHeight={600}
         defaultPinnedColumns={['timestamp', 'swap-type']}

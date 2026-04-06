@@ -118,7 +118,7 @@ export function AddressHoverCard({ address, platform, children }: AddressHoverCa
         backgroundColor="$surface4"
         borderColor="$surface3"
         borderRadius="$rounded20"
-        borderWidth={1}
+        borderWidth="$spacing1"
         p="$spacing16"
         zIndex={zIndexes.popover}
         enterStyle={{ opacity: 0, y: -4 }}

@@ -84,7 +84,7 @@ export function renderSnowflakesWeb({
         const driftOffset = getSnowflakeDrift?.(flake.id) || { x: 0, y: 0 }
 
         return (
-          // biome-ignore lint/correctness/noRestrictedElements: This is a custom snowflake animation
+          // oxlint-disable-next-line react/forbid-elements -- This is a custom snowflake animation
           <div
             key={`${keyPrefix}-${flake.id}`}
             className={`animated-snowflake-${keyPrefix}`}
@@ -99,7 +99,7 @@ export function renderSnowflakesWeb({
             onAnimationEnd={() => removeSnowflake(flake.id)}
           >
             {/* Inner div applies momentum-based drift on top of fall animation */}
-            {/* biome-ignore lint/correctness/noRestrictedElements: Drift momentum wrapper */}
+            {/* oxlint-disable-next-line react/forbid-elements -- Drift momentum wrapper */}
             <div
               style={{
                 transform: `translate(${driftOffset.x}px, ${driftOffset.y}px)`,

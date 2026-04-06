@@ -39,18 +39,19 @@ test.describe(
       await page.goto(`/swap`)
 
       await page.getByTestId(TestID.ChooseInputToken).click()
-      // eslint-disable-next-line
+      // oxlint-disable-next-line
       await page.getByTestId('token-option-1-WETH').first().click()
 
       await page.getByTestId(TestID.ChooseOutputToken).click()
-      // eslint-disable-next-line
+      // oxlint-disable-next-line
       await page.getByTestId('token-option-1-ETH').first().click()
 
       await page.getByTestId(TestID.AmountInputIn).fill('0.01')
 
       await expectSingleTransaction(async () => {
         await page.getByTestId(TestID.ReviewSwap).click()
-        await expect(page.getByText('Unwrapped')).toBeVisible()
+        await page.getByTestId(TestID.Swap).click()
+        await expect(page.getByTestId(TestID.ActivityPopup).getByText('Unwrapped')).toBeVisible()
         await expect(page.getByText('0.010 WETH for 0.010 ETH')).toBeVisible()
       })
     })
@@ -65,7 +66,7 @@ test.describe(
 
       await page.goto(`/swap`)
       await page.getByTestId(TestID.ChooseOutputToken).click()
-      // eslint-disable-next-line
+      // oxlint-disable-next-line
       await page.getByTestId('token-option-1-WETH').first().click()
 
       await page.getByTestId(TestID.AmountInputIn).click()
@@ -73,7 +74,8 @@ test.describe(
 
       await expectSingleTransaction(async () => {
         await page.getByTestId(TestID.ReviewSwap).click()
-        await expect(page.getByText('Wrapped')).toBeVisible()
+        await page.getByTestId(TestID.Swap).click()
+        await expect(page.getByTestId(TestID.ActivityPopup).getByText('Wrapped')).toBeVisible()
         await expect(page.getByText('0.010 ETH for 0.010 WETH')).toBeVisible()
       })
     })

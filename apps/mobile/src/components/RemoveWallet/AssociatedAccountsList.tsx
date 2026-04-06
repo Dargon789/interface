@@ -17,7 +17,7 @@ interface SortedAddressData {
 
 type Portfolio = NonNullable<NonNullable<NonNullable<GraphQLApi.AccountListQuery['portfolios']>[0]>>
 
-function _AssociatedAccountsList({ accounts }: { accounts: Account[] }): JSX.Element {
+function AssociatedAccountsListInner({ accounts }: { accounts: Account[] }): JSX.Element {
   const addresses = useMemo(() => accounts.map((account) => account.address), [accounts])
   const { data, loading } = useAccountListData({
     addresses,
@@ -65,7 +65,7 @@ function _AssociatedAccountsList({ accounts }: { accounts: Account[] }): JSX.Ele
   )
 }
 
-export const AssociatedAccountsList = React.memo(_AssociatedAccountsList)
+export const AssociatedAccountsList = React.memo(AssociatedAccountsListInner)
 
 function AssociatedAccountRow({
   index,

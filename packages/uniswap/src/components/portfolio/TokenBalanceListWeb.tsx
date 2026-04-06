@@ -10,6 +10,7 @@ import { HiddenTokensRow } from 'uniswap/src/components/portfolio/HiddenTokensRo
 import { PortfolioEmptyState } from 'uniswap/src/components/portfolio/PortfolioEmptyState'
 import { TokenBalanceItem } from 'uniswap/src/components/portfolio/TokenBalanceItem'
 import { TokenBalanceItemContextMenu } from 'uniswap/src/components/portfolio/TokenBalanceItemContextMenu'
+import { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType, CopyNotificationType } from 'uniswap/src/features/notifications/slice/types'
 import {
@@ -32,7 +33,7 @@ type TokenBalanceListProps = {
   backgroundImageWrapperCallback?: React.FC<{ children: React.ReactNode }>
 }
 
-export const TokenBalanceListWeb = memo(function _TokenBalanceList({
+export const TokenBalanceListWeb = memo(function TokenBalanceListWebInner({
   evmOwner,
   svmOwner,
   onPressReceive,
@@ -213,14 +214,31 @@ const TokenBalanceItemRow = memo(function TokenBalanceItemRow({
     setModalVisible(false)
   }, [])
 
-  const portfolioBalance = useMemo(() => balancesById?.[item], [balancesById, item])
+  const balance = useMemo(() => balancesById?.[item], [balancesById, item])
+  const currencyInfo = balance?.tokens[0]?.currencyInfo
+
+  // Adapter to bridge multichain balance to PortfolioBalance shape for the context menu.
+  const portfolioBalance: PortfolioBalance | undefined = useMemo(() => {
+    if (!balance?.tokens[0]) {
+      return undefined
+    }
+    const primaryToken = balance.tokens[0]
+    return {
+      id: balance.id,
+      cacheId: balance.cacheId,
+      quantity: primaryToken.quantity,
+      balanceUSD: balance.totalValueUsd,
+      currencyInfo: primaryToken.currencyInfo,
+      relativeChange24: balance.pricePercentChange1d,
+      isHidden: balance.isHidden,
+    }
+  }, [balance])
 
   const handlePressToken = useCallback((): void => {
-    const currencyId = portfolioBalance?.currencyInfo.currencyId
-    if (currencyId && onPressToken) {
-      onPressToken(currencyId)
+    if (currencyInfo?.currencyId && onPressToken) {
+      onPressToken(currencyInfo.currencyId)
     }
-  }, [onPressToken, portfolioBalance?.currencyInfo.currencyId])
+  }, [onPressToken, currencyInfo?.currencyId])
 
   const copyAddressToClipboard = useCallback(
     async (address: string): Promise<void> => {
@@ -246,7 +264,7 @@ const TokenBalanceItemRow = memo(function TokenBalanceItemRow({
     )
   }
 
-  if (!portfolioBalance) {
+  if (!balance || !portfolioBalance || !currencyInfo) {
     // This can happen when the view is out of focus and the user sells/sends 100% of a token's balance.
     // In that case, the token is removed from the `balancesById` object, but the FlatList is still using the cached array of IDs until the view comes back into focus.
     // As soon as the view comes back into focus, the FlatList will re-render with the latest data, so users won't really see this Skeleton for more than a few milliseconds when this happens.
@@ -266,11 +284,7 @@ const TokenBalanceItemRow = memo(function TokenBalanceItemRow({
       }
       onPressToken={handlePressToken}
     >
-      <TokenBalanceItem
-        isHidden={portfolioBalance.isHidden ?? false}
-        isLoading={isWarmLoading}
-        currencyInfo={portfolioBalance.currencyInfo}
-      />
+      <TokenBalanceItem isHidden={balance.isHidden ?? false} isLoading={isWarmLoading} currencyInfo={currencyInfo} />
     </TokenBalanceItemContextMenu>
   )
 })

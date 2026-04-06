@@ -1,7 +1,7 @@
+import 'react-native-reanimated'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert } from 'react-native'
-import 'react-native-reanimated'
 import { QRCodeScanner } from 'src/components/QRCodeScanner/QRCodeScanner'
 import { getSupportedURI, URIType } from 'src/components/Requests/ScanSheet/util'
 import { Flex, Text, TouchableArea, useIsDarkMode } from 'ui/src'

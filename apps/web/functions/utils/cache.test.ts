@@ -1,5 +1,4 @@
 import CacheMock from 'browser-cache-mock'
-
 import Cache, { Data } from 'functions/utils/cache'
 import { mocked } from '~/test-utils/mocked'
 

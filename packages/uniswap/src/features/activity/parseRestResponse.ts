@@ -86,7 +86,7 @@ export function parseRestResponseToTransactionDetails({
   tokenVisibilityOverrides?: CurrencyIdToVisibility
 }): TransactionDetails[] | undefined {
   return data.transactions.reduce((accum: TransactionDetails[], transaction) => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (!transaction.transaction) {
       if (!hasLoggedMissingTransactionField) {
         hasLoggedMissingTransactionField = true

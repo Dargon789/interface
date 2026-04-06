@@ -77,13 +77,13 @@ const slice = createSlice({
     },
     removeExpiredBalanceOverrides: (state) => {
       Object.keys(state.tokenBalanceOverrides).forEach((accountId) => {
-        // biome-ignore lint/style/noNonNullAssertion: array access is safe here
+        // oxlint-disable-next-line typescript/no-non-null-assertion -- array access is safe here
         const accountOverrides = state.tokenBalanceOverrides[accountId]!
 
         const now = Date.now()
 
         Object.keys(accountOverrides).forEach((currencyId) => {
-          // biome-ignore lint/style/noNonNullAssertion: array access is safe here
+          // oxlint-disable-next-line typescript/no-non-null-assertion -- array access is safe here
           if (now - accountOverrides[currencyId]!.updatedAt > OVERRIDE_MAX_AGE) {
             logger.warn(
               'portfolio/slice/slice.ts',

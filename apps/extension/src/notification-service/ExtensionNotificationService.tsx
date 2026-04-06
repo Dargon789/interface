@@ -69,6 +69,7 @@ function provideExtensionNotificationService(ctx: {
         'Content-Type': 'application/json',
         'x-request-source': REQUEST_SOURCE,
         'x-uniswap-locale': backendLocale,
+        'x-app-version': (process.env.VERSION ?? '').split('.').slice(0, 3).join('.'),
       }
     },
     getSessionService: () =>

@@ -16,7 +16,7 @@ interface InsufficientFundsNetworkRowProps {
   networkInfo: NetworkInfo
 }
 
-export const InsufficientFundsNetworkRow = memo(function _InsufficientFundsNetworkRow({
+export const InsufficientFundsNetworkRow = memo(function InsufficientFundsNetworkRowInner({
   networkInfo,
 }: InsufficientFundsNetworkRowProps) {
   const { t } = useTranslation()

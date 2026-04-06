@@ -87,5 +87,5 @@ const messageHandler = async (data: WorkerMessage): Promise<WorkerResponse | Wor
 
 // Register async message handler with BIDC
 // BIDC supports async handlers - the response Promise is awaited before sending
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
+// oxlint-disable-next-line typescript/no-floating-promises
 receive(messageHandler as (data: SerializableValue) => Promise<SerializableValue>)

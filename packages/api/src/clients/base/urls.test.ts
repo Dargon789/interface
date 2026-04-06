@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* oxlint-disable typescript/explicit-function-return-type */
 
 import { TrafficFlows } from '@universe/api/src/clients/base/urls'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -160,19 +160,19 @@ describe('urls', () => {
     describe('DataApi', () => {
       it.each([
         // Web
-        { expectedUrl: 'https://beta.gateway.uniswap.org', env: envConfigs.webDev },
+        { expectedUrl: 'https://entry-gateway.backend-staging.api.uniswap.org', env: envConfigs.webDev },
         { expectedUrl: 'https://interface.gateway.uniswap.org', env: envConfigs.webBeta },
         { expectedUrl: 'https://interface.gateway.uniswap.org', env: envConfigs.webProd },
         // Mobile iOS
-        { expectedUrl: 'https://beta.gateway.uniswap.org', env: envConfigs.mobileIosDev },
+        { expectedUrl: 'https://entry-gateway.backend-staging.api.uniswap.org', env: envConfigs.mobileIosDev },
         { expectedUrl: 'https://ios.wallet.gateway.uniswap.org', env: envConfigs.mobileIosBeta },
         { expectedUrl: 'https://ios.wallet.gateway.uniswap.org', env: envConfigs.mobileIosProd },
         // Mobile Android
-        { expectedUrl: 'https://beta.gateway.uniswap.org', env: envConfigs.mobileAndroidDev },
+        { expectedUrl: 'https://entry-gateway.backend-staging.api.uniswap.org', env: envConfigs.mobileAndroidDev },
         { expectedUrl: 'https://android.wallet.gateway.uniswap.org', env: envConfigs.mobileAndroidBeta },
         { expectedUrl: 'https://android.wallet.gateway.uniswap.org', env: envConfigs.mobileAndroidProd },
         // Extension
-        { expectedUrl: 'https://beta.gateway.uniswap.org', env: envConfigs.extensionDev },
+        { expectedUrl: 'https://entry-gateway.backend-staging.api.uniswap.org', env: envConfigs.extensionDev },
         { expectedUrl: 'https://extension.gateway.uniswap.org', env: envConfigs.extensionBeta },
         { expectedUrl: 'https://extension.gateway.uniswap.org', env: envConfigs.extensionProd },
         // Playwright

@@ -57,7 +57,9 @@ export function convertNotificationToIntroCard(
 
   let Icon: GeneratedIcon = Bell
   let loggingName: OnboardingCardLoggingName = OnboardingCardLoggingName.Unknown
+  // oxlint-disable-next-line no-unassigned-vars -- suppressed
   let localGradientIcon: ImageSourcePropType | undefined
+  // oxlint-disable-next-line no-unassigned-vars -- suppressed
   let localGradientImage: ImageSourcePropType | undefined
 
   if (id === 'local:recovery_backup_banner') {

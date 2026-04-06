@@ -152,10 +152,8 @@ export const CHART_DIMENSIONS = {
   // Minimum width for left price scale (y-axis) - ensures y-axis labels have enough space
   // and both charts align horizontally
   Y_AXIS_MIN_WIDTH: 30,
-  // Extra height for ClearingPriceChart to match distribution chart's header row height
-  // The distribution chart has a header row (Placeholder + Group Ticks toggle) that takes ~40px
-  // Instead of adding top padding, we increase the chart height to fill that space
-  CLEARING_PRICE_EXTRA_HEIGHT: 43,
+  // Width of the Y-axis label overlay area on the clearing price chart
+  Y_AXIS_LABEL_WIDTH: 50,
 } as const
 
 // Tooltip stacking configuration for when BidLineTooltip and ClearingPriceTooltip overlap

@@ -1,5 +1,4 @@
 import '@testing-library/jest-native'
-
 import { ReactNode } from 'react'
 import { Text } from 'ui/src'
 import { ActionSheetDropdown } from 'uniswap/src/components/dropdowns/ActionSheetDropdown'
@@ -14,7 +13,7 @@ vi.mock('react-native', async (importOriginal) => {
   // So we need to handle this safely - only set if prototype exists
   const MockedView = actualReactNative.View
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (MockedView?.prototype) {
     MockedView.prototype.measureInWindow = (
       callback: (x: number, y: number, width: number, height: number) => void,
@@ -70,6 +69,7 @@ describe(ActionSheetDropdown, () => {
 
   // TODO: Skip tests that require dropdown to open - doesn't work in jsdom/Vitest environment
   // The dropdown state management and Portal rendering don't function properly in jsdom
+  // oxlint-disable-next-line jest/no-disabled-tests -- suppressed
   it.skip('opens the dropdown when the toggle is pressed', async () => {
     render(<ActionSheetDropdown options={options} />)
 
@@ -82,6 +82,7 @@ describe(ActionSheetDropdown, () => {
     options.forEach(({ key }) => expect(screen.queryByTestId(key)).toBeTruthy())
   })
 
+  // oxlint-disable-next-line jest/no-disabled-tests, jest/expect-expect -- suppressed
   it.skip('closes the dropdown after pressing on a backdrop', async () => {
     const { getByTestId } = render(<ActionSheetDropdown options={options} />)
     await openDropdown()
@@ -94,6 +95,7 @@ describe(ActionSheetDropdown, () => {
     await waitForElementToBeRemoved(() => screen.queryByTestId('dropdown-content'))
   })
 
+  // oxlint-disable-next-line jest/no-disabled-tests, jest/expect-expect -- suppressed
   it.skip('closes the dropdown after pressing on an option', async () => {
     const { getByTestId } = render(<ActionSheetDropdown options={options} />)
 
@@ -107,6 +109,7 @@ describe(ActionSheetDropdown, () => {
     await waitForElementToBeRemoved(() => screen.queryByTestId('dropdown-content'))
   })
 
+  // oxlint-disable-next-line jest/no-disabled-tests -- suppressed
   it.skip('calls the onPress function of the option after pressing on an option', async () => {
     const { getByTestId } = render(<ActionSheetDropdown options={options} />)
 

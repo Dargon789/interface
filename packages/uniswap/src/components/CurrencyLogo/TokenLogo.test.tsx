@@ -1,6 +1,7 @@
 // This test expects the invalid image URLs to fail to load, so
 // we silence the error logs to keep the test output clean.
 import 'utilities/src/logger/mocks'
+import { useFeatureFlag } from '@universe/gating'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { render } from 'uniswap/src/test/test-utils'
@@ -8,6 +9,14 @@ import { render } from 'uniswap/src/test/test-utils'
 vi.mock('ui/src/components/UniversalImage/internal/PlainImage', async (importOriginal) => {
   const actual = await importOriginal<typeof import('ui/src/components/UniversalImage/internal/PlainImage.web')>()
   return { ...actual }
+})
+
+vi.mock('@universe/gating', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@universe/gating')>()
+  return {
+    ...actual,
+    useFeatureFlag: vi.fn(),
+  }
 })
 
 describe('TokenLogo', () => {
@@ -90,6 +99,10 @@ describe('TokenLogo', () => {
   })
 
   describe('network logo', () => {
+    beforeEach(() => {
+      vi.mocked(useFeatureFlag).mockReturnValue(false)
+    })
+
     it('renders network logo by default', () => {
       const { queryByTestId } = render(
         <TokenLogo chainId={UniverseChainId.ArbitrumOne} symbol="DAI" url="https://example.com" />,
@@ -133,14 +146,35 @@ describe('TokenLogo', () => {
       expect(networkLogo).toBeFalsy()
     })
 
-    it('does not render network logo when chainId is Mainnet', () => {
+    it('does not render network logo on Mainnet when showMainnetNetworkLogo is omitted', () => {
       const { queryByTestId } = render(
         <TokenLogo chainId={UniverseChainId.Mainnet} symbol="DAI" url="https://example.com" />,
       )
 
+      expect(queryByTestId('network-logo')).toBeFalsy()
+    })
+
+    it('does not render network logo on Mainnet when showMainnetNetworkLogo is false', () => {
+      const { queryByTestId } = render(
+        <TokenLogo
+          chainId={UniverseChainId.Mainnet}
+          showMainnetNetworkLogo={false}
+          symbol="DAI"
+          url="https://example.com"
+        />,
+      )
+
+      expect(queryByTestId('network-logo')).toBeFalsy()
+    })
+
+    it('renders network logo when chainId is Mainnet and showMainnetNetworkLogo is true', () => {
+      const { queryByTestId } = render(
+        <TokenLogo showMainnetNetworkLogo chainId={UniverseChainId.Mainnet} symbol="DAI" url="https://example.com" />,
+      )
+
       const networkLogo = queryByTestId('network-logo')
 
-      expect(networkLogo).toBeFalsy()
+      expect(networkLogo).toBeTruthy()
     })
   })
 })

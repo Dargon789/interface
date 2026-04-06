@@ -96,8 +96,8 @@ export default function getCalldataInfoFromTransaction({
     }
 
     const isWrapUnwrapSignature = functionSignature === 'deposit()' || functionSignature === 'withdraw(uint256)'
-    const isNativeWrappedCurrencyTo =
-      chainId && to?.toLowerCase() === wrappedNativeCurrency(chainId).address.toLowerCase()
+    const wrappedNative = chainId ? wrappedNativeCurrency(chainId) : undefined
+    const isNativeWrappedCurrencyTo = wrappedNative && to?.toLowerCase() === wrappedNative.address.toLowerCase()
     if (functionSignature.includes('wrap') || (isWrapUnwrapSignature && isNativeWrappedCurrencyTo)) {
       result.contractInteractions = EthSendTransactionRPCActions.Wrap
       return result

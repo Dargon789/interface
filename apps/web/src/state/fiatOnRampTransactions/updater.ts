@@ -133,7 +133,7 @@ export default function Updater(): null {
           return
         }
         const transaction = transactions[assetChange.externalSessionId]
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (transaction) {
           dispatch(
             updateFiatOnRampTransaction({

@@ -48,7 +48,7 @@ export function ReturnToAuctionBanner(): JSX.Element | null {
           py="$spacing12"
           borderRadius="$rounded16"
           backgroundColor="$surface2"
-          borderWidth={1}
+          borderWidth="$spacing1"
           borderColor="$surface3"
           shadowColor="rgba(0,0,0,0.03)"
           shadowOffset={{ width: 0, height: 1 }}

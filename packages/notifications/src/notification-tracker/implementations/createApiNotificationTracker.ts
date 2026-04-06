@@ -113,16 +113,14 @@ export function createApiNotificationTracker(ctx: ApiNotificationTrackerContext)
         // Tradeoff: If localStorage is later cleared but the backend never received the ack,
         // the notification could reappear. However, by the time localStorage is cleaned up
         // or cleared, the notification will typically be expired on the backend anyway.
-        storage
-          .add(notificationId, { timestamp: metadata.timestamp })
-          .catch((storageError) => {
-            getLogger().error(
-              `Storage write failed for notification ${notificationId}: ${storageError instanceof Error ? storageError.message : String(storageError)}`,
-              {
-                tags: { file: 'createApiNotificationTracker', function: 'track' },
-              },
-            )
-          }),
+        storage.add(notificationId, { timestamp: metadata.timestamp }).catch((storageError) => {
+          getLogger().error(
+            `Storage write failed for notification ${notificationId}: ${storageError instanceof Error ? storageError.message : String(storageError)}`,
+            {
+              tags: { file: 'createApiNotificationTracker', function: 'track' },
+            },
+          )
+        }),
       ])
     } catch (error) {
       getLogger().error(

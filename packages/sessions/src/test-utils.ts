@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: mock handlers */
+/* oxlint-disable typescript/no-explicit-any -- mock handlers */
 import type { PartialMessage } from '@bufbuild/protobuf'
 import type { CallOptions } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
@@ -47,7 +47,7 @@ export function createTestTransport(mockEndpoints: MockEndpoints): ReturnType<ty
         const path = new URL(url).pathname
         const handler = mockEndpoints[path as keyof MockEndpoints]
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (!handler) {
           throw new Error(`No mock handler for ${path}`)
         }
@@ -126,7 +126,7 @@ export class InMemoryUniswapIdentifierService implements UniswapIdentifierServic
 }
 
 // Create a mock session client for testing
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 export function createMockSessionClient(
   mockEndpoints: MockEndpoints,
   sessionStorage: SessionStorage,

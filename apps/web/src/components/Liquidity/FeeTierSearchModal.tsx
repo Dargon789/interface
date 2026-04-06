@@ -1,8 +1,10 @@
+import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
+import type { Currency } from '@uniswap/sdk-core'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import ms from 'ms'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-// biome-ignore lint/style/noRestrictedImports: styled-components needed for custom component styling
+// oxlint-disable-next-line no-restricted-imports -- styled-components needed for custom component styling
 import styled from 'styled-components'
 import { Button, Flex, ModalCloseIcon, Text, Tooltip } from 'ui/src'
 import { BackArrow } from 'ui/src/components/icons/BackArrow'
@@ -23,6 +25,7 @@ import useResizeObserver from 'use-resize-observer'
 import { NumberType } from 'utilities/src/format/types'
 import { isMobileWeb } from 'utilities/src/platform'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import type { FeeData } from '~/components/Liquidity/Create/types'
 import { useAllFeeTierPoolData } from '~/components/Liquidity/hooks/useAllFeeTierPoolData'
 import {
   calculateTickSpacingFromFeeAmount,
@@ -33,9 +36,7 @@ import {
 } from '~/components/Liquidity/utils/feeTiers'
 import { LpIncentivesAprDisplay } from '~/components/LpIncentives/LpIncentivesAprDisplay'
 import { StyledPercentInput } from '~/components/PercentInput'
-import { useCreateLiquidityContext } from '~/pages/CreatePosition/CreateLiquidityContextProvider'
 import { NumericalInputMimic, NumericalInputSymbolContainer } from '~/pages/Swap/common/shared'
-import { useMultichainContext } from '~/state/multichain/useMultichainContext'
 import { ClickableTamaguiStyle } from '~/theme/components/styles'
 
 const FeeTierPercentInput = styled(StyledPercentInput)`
@@ -50,20 +51,35 @@ const MIN_FONT_SIZE = 12
 
 const SMALLEST_BIP_AMOUNT = 0.0001
 
-export function FeeTierSearchModal() {
-  const { chainId } = useMultichainContext()
-  const {
-    positionState: { fee: selectedFee, protocolVersion, hook },
-    currencies,
-    setPositionState,
-    feeTierSearchModalOpen,
-    setFeeTierSearchModalOpen,
-    setDynamicFeeTierSpeedbumpData,
-  } = useCreateLiquidityContext()
+interface FeeTierSearchModalProps {
+  isOpen: boolean
+  onClose: () => void
+  chainId?: number
+  protocolVersion: ProtocolVersion
+  hook?: string
+  sdkCurrencies: { TOKEN0: Maybe<Currency>; TOKEN1: Maybe<Currency> }
+  selectedFee?: FeeData
+  onSelectFee: (fee: FeeData) => void
+  onSelectDynamicFee?: (fee: FeeData) => void
+  createDescription?: string
+}
+
+export function FeeTierSearchModal({
+  isOpen,
+  onClose: onCloseProp,
+  chainId,
+  protocolVersion,
+  hook,
+  sdkCurrencies,
+  selectedFee,
+  onSelectFee,
+  onSelectDynamicFee,
+  createDescription,
+}: FeeTierSearchModalProps) {
   const onClose = () => {
     setCreateFeeValue('')
     setCreateModeEnabled(false)
-    setFeeTierSearchModalOpen(false)
+    onCloseProp()
   }
   const { t } = useTranslation()
   const trace = useTrace()
@@ -81,7 +97,7 @@ export function FeeTierSearchModal() {
   const { feeTierData } = useAllFeeTierPoolData({
     chainId,
     protocolVersion,
-    sdkCurrencies: currencies.sdk,
+    sdkCurrencies,
     withDynamicFeeTier,
     hook: hook ?? ZERO_ADDRESS,
   })
@@ -162,7 +178,7 @@ export function FeeTierSearchModal() {
       name={ModalName.FeeTierSearch}
       onClose={onClose}
       isDismissible
-      isModalOpen={feeTierSearchModalOpen}
+      isModalOpen={isOpen}
       paddingX="$spacing8"
       paddingY="$spacing16"
       maxWidth={404}
@@ -188,7 +204,7 @@ export function FeeTierSearchModal() {
         {createModeEnabled ? (
           <Flex gap="$gap20">
             <Text variant="body2" color="$neutral2" textAlign="center">
-              {t('fee.tier.create.description')}
+              {createDescription ?? t('fee.tier.create.description')}
             </Text>
             <Flex row alignItems="center" gap="$spacing28" px="$spacing20">
               <Flex
@@ -281,14 +297,11 @@ export function FeeTierSearchModal() {
                 variant="default"
                 isDisabled={!createFeeValue || createFeeValue === ''}
                 onPress={() => {
-                  setPositionState((prevState) => ({
-                    ...prevState,
-                    fee: {
-                      isDynamic: false,
-                      feeAmount: feeHundredthsOfBips,
-                      tickSpacing: calculateTickSpacingFromFeeAmount(feeHundredthsOfBips),
-                    },
-                  }))
+                  onSelectFee({
+                    isDynamic: false,
+                    feeAmount: feeHundredthsOfBips,
+                    tickSpacing: calculateTickSpacingFromFeeAmount(feeHundredthsOfBips),
+                  })
                   sendAnalyticsEvent(LiquidityEventName.SelectLiquidityPoolFeeTier, {
                     action: FeePoolSelectAction.Search,
                     fee_tier: feeHundredthsOfBips,
@@ -298,7 +311,7 @@ export function FeeTierSearchModal() {
                   onClose()
                 }}
               >
-                {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+                {/* oxlint-disable-next-line typescript/no-unnecessary-condition */}
                 {feeTierData[feeHundredthsOfBips] ? t('fee.tier.select.existing.button') : t('fee.tier.create.button')}
               </Button>
             </Flex>
@@ -377,19 +390,17 @@ export function FeeTierSearchModal() {
                     {...ClickableTamaguiStyle}
                     onPress={() => {
                       if (isDynamicFeeTier(pool.fee)) {
-                        setDynamicFeeTierSpeedbumpData({
-                          open: true,
-                          wishFeeData: pool.fee,
-                        })
+                        if (onSelectDynamicFee) {
+                          onSelectDynamicFee(pool.fee)
+                        } else {
+                          onSelectFee(pool.fee)
+                        }
                       } else {
-                        setPositionState((prevState) => ({
-                          ...prevState,
-                          fee: {
-                            isDynamic: pool.fee.isDynamic,
-                            feeAmount: pool.fee.feeAmount,
-                            tickSpacing: pool.fee.tickSpacing,
-                          },
-                        }))
+                        onSelectFee({
+                          isDynamic: pool.fee.isDynamic,
+                          feeAmount: pool.fee.feeAmount,
+                          tickSpacing: pool.fee.tickSpacing,
+                        })
                       }
 
                       onClose()

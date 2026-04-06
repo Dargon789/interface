@@ -9,6 +9,7 @@ import { StatusIndicatorCircle } from 'ui/src/components/icons/StatusIndicatorCi
 import { NetworkFilter } from 'uniswap/src/components/network/NetworkFilter'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { Dropdown } from '~/components/Dropdowns/Dropdown'
 import { lpStatusConfig } from '~/components/Liquidity/constants'
 import { getProtocolStatusLabel, getProtocolVersionLabel } from '~/components/Liquidity/utils/protocolVersion'
@@ -48,7 +49,7 @@ export function PositionsHeader({
   onStatusChange,
 }: PositionsHeaderProps) {
   const { t } = useTranslation()
-  const { chains } = useEnabledChains()
+  const { chains } = useEnabledChains({ platform: Platform.EVM })
   const navigate = useNavigate()
   const media = useMedia()
 

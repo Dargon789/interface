@@ -5,6 +5,7 @@ ignores: [
     '@tamagui/theme-base',
     'jest-presets',
     'typescript',
+    'eslint',
     '@typescript/native-preview',
     ## Internal packages / workspaces
     'ui',

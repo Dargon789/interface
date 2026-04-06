@@ -6,8 +6,6 @@ import {
   interfaceConfirmBridgeDeposit,
   updateTransaction,
 } from 'uniswap/src/features/transactions/slice'
-import { isNonInstantFlashblockTransactionType } from 'uniswap/src/features/transactions/swap/components/UnichainInstantBalanceModal/utils'
-import { getIsFlashblocksEnabled } from 'uniswap/src/features/transactions/swap/hooks/useIsUnichainFlashblocksEnabled'
 import {
   extractPlanFieldsFromTypeInfo,
   type InterfaceTransactionDetails,
@@ -153,6 +151,7 @@ function useOnActivityUpdate(): OnActivityUpdate {
             type: original.typeInfo.type,
             swapStartTimestamp: original.typeInfo.swapStartTimestamp,
             planAnalytics: extractPlanFieldsFromTypeInfo(original.typeInfo),
+            transactedUSDValue: original.typeInfo.transactedUSDValue,
           })
         } else if (original.typeInfo.type === TransactionType.Bridge) {
           logSwapFinalized({
@@ -166,27 +165,20 @@ function useOnActivityUpdate(): OnActivityUpdate {
             type: original.typeInfo.type,
             swapStartTimestamp: original.typeInfo.swapStartTimestamp,
             planAnalytics: extractPlanFieldsFromTypeInfo(original.typeInfo),
+            transactedUSDValue: original.typeInfo.transactedUSDValue,
           })
         }
 
-        // Check if this is a flashblock transaction that should skip notifications
-        const isUnichainFlashblock = getIsFlashblocksEnabled(chainId)
-        const shouldShowPopup =
-          !isUnichainFlashblock ||
-          isNonInstantFlashblockTransactionType(original) ||
-          !('isFlashblockTxWithinThreshold' in original) ||
-          !original.isFlashblockTxWithinThreshold
-
-        if (shouldShowPopup && hash) {
+        if (hash) {
           popupRegistry.addPopup({ type: PopupType.Transaction, hash }, hash, popupDismissalTime)
         }
         // TransactionType can only be UniswapXOrder here
         // This check is in place in case more types get added in the future
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
       } else if (activity.type === ActivityUpdateTransactionType.UniswapXOrder) {
         handleUniswapXActivityUpdate({ activity, popupDismissalTime })
       } else if (
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         activity.type === ActivityUpdateTransactionType.Plan
       ) {
         const { update } = activity

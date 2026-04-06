@@ -1,9 +1,9 @@
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { CurrencyAmount, Token, ChainId as UniswapSDKChainId } from '@uniswap/sdk-core'
 import type { GraphQLApi } from '@universe/api'
 import { SwapConfigKey } from '@universe/gating'
 import type { ImageSourcePropType } from 'react-native'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { type UNIVERSE_CHAIN_INFO } from 'uniswap/src/features/chains/chainInfo'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
@@ -23,10 +23,12 @@ export enum UniverseChainId {
   Polygon = UniswapSDKChainId.POLYGON,
   Sepolia = UniswapSDKChainId.SEPOLIA,
   Soneium = UniswapSDKChainId.SONEIUM,
+  Tempo = UniswapSDKChainId.TEMPO,
   Unichain = UniswapSDKChainId.UNICHAIN,
   UnichainSepolia = UniswapSDKChainId.UNICHAIN_SEPOLIA,
   WorldChain = UniswapSDKChainId.WORLDCHAIN,
   XLayer = UniswapSDKChainId.XLAYER,
+  Linea = UniswapSDKChainId.LINEA,
   Zksync = UniswapSDKChainId.ZKSYNC,
   Zora = UniswapSDKChainId.ZORA,
   Solana = 501000101,
@@ -106,6 +108,7 @@ export interface UniverseChainInfo extends WagmiChain {
     [RPCType.Fallback]?: ChainRPCUrls
   }
   readonly interfaceName: string
+  readonly searchAliases?: string[]
   readonly label: string
   readonly logo: ImageSourcePropType
   readonly nativeCurrency: {
@@ -133,7 +136,7 @@ export interface UniverseChainInfo extends WagmiChain {
   readonly supportsV4: boolean
   readonly supportsNFTs: boolean
   readonly urlParam: string
-  readonly wrappedNativeCurrency: {
+  readonly wrappedNativeCurrency: null | {
     name: string // 'Wrapped Ether',
     symbol: string // 'WETH',
     decimals: number // 18,

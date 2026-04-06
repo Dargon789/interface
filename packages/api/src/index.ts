@@ -10,17 +10,8 @@
 
 // Foundations
 export { createFetchClient } from '@universe/api/src/clients/base/createFetchClient'
-export {
-  FetchError,
-  is401Error,
-  is404Error,
-  isRateLimitFetchError,
-} from '@universe/api/src/clients/base/errors'
-export type {
-  CustomOptions,
-  FetchClient,
-  StandardFetchOptions,
-} from '@universe/api/src/clients/base/types'
+export { FetchError, is401Error, is404Error, isRateLimitFetchError } from '@universe/api/src/clients/base/errors'
+export type { CustomOptions, FetchClient, StandardFetchOptions } from '@universe/api/src/clients/base/types'
 export { SharedQueryClient } from '@universe/api/src/clients/base/SharedQueryClient'
 
 // Constants and URLs
@@ -47,6 +38,7 @@ export {
   useTokenBasicProjectPartsFragment,
   useTokenMarketPartsFragment,
   useTokenProjectMarketsPartsFragment,
+  useTokenProjectTokensTvlPartsFragment,
   useTokenProjectUrlsPartsFragment,
 } from '@universe/api/src/clients/graphql/fragments'
 export { GQLQueries } from '@universe/api/src/clients/graphql/queries'
@@ -54,20 +46,14 @@ export type { GqlResult } from '@universe/api/src/clients/graphql/types'
 export { isError, isNonPollingRequestInFlight, isWarmLoadingStatus } from '@universe/api/src/clients/graphql/utils'
 
 // Jupiter API
-export {
-  createJupiterApiClient,
-  type JupiterApiClient,
-} from '@universe/api/src/clients/jupiter/createJupiterApiClient'
+export { createJupiterApiClient, type JupiterApiClient } from '@universe/api/src/clients/jupiter/createJupiterApiClient'
 export type {
   JupiterExecuteResponse,
   JupiterOrderResponse,
   JupiterExecuteUrlParams,
   JupiterOrderUrlParams,
 } from '@universe/api/src/clients/jupiter/types'
-export {
-  jupiterExecuteResponseSchema,
-  jupiterOrderResponseSchema,
-} from '@universe/api/src/clients/jupiter/types'
+export { jupiterExecuteResponseSchema, jupiterOrderResponseSchema } from '@universe/api/src/clients/jupiter/types'
 
 // Blockaid API
 export {
@@ -127,8 +113,10 @@ export {
 
 // Liquidity Service API
 export {
-  createLiquidityServiceClient,
-  type LiquidityServiceClient,
+  createV1LiquidityServiceClient,
+  createV2LiquidityServiceClient,
+  type V1LiquidityServiceClient,
+  type V2LiquidityServiceClient,
 } from '@universe/api/src/clients/liquidity/createLiquidityServiceClient'
 export {
   createAuctionMutationClient,
@@ -141,14 +129,27 @@ export {
   type AuctionServiceClient,
 } from '@universe/api/src/clients/auctions/createAuctionServiceClient'
 
+// X Verification Service API
+export {
+  createXVerificationServiceClient,
+  type XVerificationServiceClient,
+} from '@universe/api/src/clients/x/createXVerificationServiceClient'
+
 // Uniswap API
 export {
   createUniswapApiClient,
-  type ScreenRequest,
-  type ScreenResponse,
   type UniswapApiClient,
   type UniswapApiClientContext,
 } from '@universe/api/src/clients/uniswap/createUniswapApiClient'
+
+// Compliance API
+export {
+  createComplianceApiClient,
+  type ComplianceApiClient,
+  type ComplianceApiClientContext,
+  type ScreenRequest,
+  type ScreenResponse,
+} from '@universe/api/src/clients/compliance/createComplianceApiClient'
 
 // Unitags API
 export {
@@ -176,6 +177,17 @@ export {
 } from '@universe/api/src/clients/unitags/types'
 export { createUnitagsApiClient } from '@universe/api/src/clients/unitags/createUnitagsApiClient'
 
+// Gas Service API (ConnectRPC - estimateGasFee via UniRPC v2)
+export {
+  createGasServiceClient,
+  type GasServiceClient,
+  type GasServiceClientContext,
+} from '@universe/api/src/clients/gasService/createGasServiceClient'
+export type {
+  EstimateGasFeeRequest as GasServiceEstimateRequest,
+  EstimateGasFeeResponse as GasServiceEstimateResponse,
+} from '@uniswap/client-unirpc-v2/dist/uniswap/unirpc/v2/service_pb'
+
 // Data API Service (ConnectRPC - listTopTokens, listTopPools, getPortfolio, etc.)
 export {
   createDataApiServiceClient,
@@ -188,14 +200,19 @@ export {
 } from '@universe/api/src/clients/dataApi/getGetPortfolioQueryOptions'
 export {
   TopPoolsOrderBy,
-  TopTokensOrderBy,
+  TokensOrderBy,
   type GetPortfolioRequest,
   type GetPortfolioResponse,
   type ListTopPoolsResponse,
-  type ListTopTokensResponse,
+  type ListTokensResponse,
 } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 export { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-export { type Pool as DataApiPool, type Token as DataApiToken } from '@uniswap/client-data-api/dist/data/v1/types_pb'
+export {
+  type ChainToken as DataApiChainToken,
+  type MultichainToken as DataApiMultichainToken,
+  type Pool as DataApiPool,
+  type Token as DataApiToken,
+} from '@uniswap/client-data-api/dist/data/v1/types_pb'
 
 // Data Service API
 export {
@@ -220,10 +237,7 @@ export type {
 } from '@universe/api/src/clients/notifications/types'
 
 // FOR (Fiat On-Ramp) API
-export {
-  createForApiClient,
-  type ForApiClient,
-} from '@universe/api/src/clients/for/createForApiClient'
+export { createForApiClient, type ForApiClient } from '@universe/api/src/clients/for/createForApiClient'
 export { transformPaymentMethods } from '@universe/api/src/clients/for/utils'
 export type {
   FORCountry,
@@ -280,21 +294,21 @@ export {
   createEmbeddedWalletApiClient,
   type EmbeddedWalletApiClient,
   type EmbeddedWalletClientContext,
+  type RecoveryMethod,
+  type SignAuth,
 } from '@universe/api/src/clients/embeddedWallet/createEmbeddedWalletApiClient'
 
 // Other Utilities
-export {
-  createFetcher,
-  objectToQueryString,
-} from '@universe/api/src/clients/base/utils'
+export { createFetcher, objectToQueryString } from '@universe/api/src/clients/base/utils'
 
 // Session API
-export { ApiInit, SESSION_INIT_QUERY_KEY } from '@universe/api/src/components/ApiInit'
+export { ApiInit, reinitializeSession, SESSION_INIT_QUERY_KEY } from '@universe/api/src/components/ApiInit'
 export { provideSessionService } from '@universe/api/src/provideSessionService'
 export { useIsSessionInitialized } from '@universe/api/src/hooks/useIsSessionInitialized'
 
 // Session Transport (pure factory, no platform detection)
 export { createSessionTransport, type CreateSessionTransportOptions } from '@universe/api/src/session'
+export { createWithSessionRetry } from '@universe/api/src/session/createWithSessionRetry'
 
 export type {
   UseQueryApiHelperHookArgs,
@@ -303,11 +317,7 @@ export type {
 export { useQueryWithImmediateGarbageCollection } from '@universe/api/src/hooks/shared/useQueryWithImmediateGarbageCollection'
 
 // Other Types
-export {
-  CustomRankingType,
-  RankingType,
-  SpamCode,
-} from '@universe/api/src/clients/content/types'
+export { CustomRankingType, RankingType, SpamCode } from '@universe/api/src/clients/content/types'
 
 export { getTransport } from '@universe/api/src/transport'
 

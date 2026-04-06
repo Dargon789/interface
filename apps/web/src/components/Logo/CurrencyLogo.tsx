@@ -15,10 +15,10 @@ export default function CurrencyLogo(
     return null
   }
 
-  return <_CurrencyLogo currency={currency} {...rest} />
+  return <CurrencyLogoInner currency={currency} {...rest} />
 }
 
-const _CurrencyLogo = (
+const CurrencyLogoInner = (
   props: AssetLogoBaseProps & {
     currency: Currency
   },

@@ -7,7 +7,7 @@ import { devtools } from 'zustand/middleware'
 import { useShallow } from 'zustand/react/shallow'
 import { TimePeriod } from '~/appGraphql/data/util'
 
-/* eslint-disable import/no-unused-modules -- enums used by filter components and useTopAuctions */
+/* oxlint-disable import/no-unused-modules -- enums used by filter components and useTopAuctions */
 export enum AuctionVerificationFilter {
   All = 'all',
   Verified = 'verified',

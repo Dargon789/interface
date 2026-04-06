@@ -4,7 +4,6 @@ describe(isSafeNumber, () => {
   it('returns true for a safe number', () => {
     expect(isSafeNumber(1)).toBe(true)
     expect(isSafeNumber('500.53')).toBe(true)
-
     expect(isSafeNumber(Number.MAX_SAFE_INTEGER)).toBe(true)
   })
 
@@ -17,6 +16,30 @@ describe(isSafeNumber, () => {
 
   it('returns true for values that underflow to zero', () => {
     expect(isSafeNumber('1.0e-1000')).toBe(true)
+  })
+
+  it('returns false for non-finite number types', () => {
+    expect(isSafeNumber(Infinity)).toBe(false)
+    expect(isSafeNumber(-Infinity)).toBe(false)
+    expect(isSafeNumber(NaN)).toBe(false)
+  })
+
+  it('returns true for in-progress decimal input', () => {
+    expect(isSafeNumber('.')).toBe(true)
+    expect(isSafeNumber(',')).toBe(true)
+    expect(isSafeNumber(' .')).toBe(true)
+    expect(isSafeNumber(' ,')).toBe(true)
+  })
+
+  it('returns true for in-progress negative input', () => {
+    expect(isSafeNumber('-')).toBe(true)
+    expect(isSafeNumber('-.')).toBe(true)
+    expect(isSafeNumber('-,')).toBe(true)
+  })
+
+  it('returns true for empty or whitespace string', () => {
+    expect(isSafeNumber('')).toBe(true)
+    expect(isSafeNumber('   ')).toBe(true)
   })
 })
 

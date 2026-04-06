@@ -137,7 +137,7 @@ function* cancelClassicPlanStep(params: {
   const provider = yield* call(getProvider, step.chainId)
   const chainTx = yield* call([provider, provider.getTransaction], step.hash)
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- getTransaction can return null
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- getTransaction can return null
   if (!chainTx) {
     // Transaction not found - was likely dropped from mempool or never broadcast
     logger.warn('cancelPlanStepSaga', 'cancelClassicPlanStep', 'Transaction not found on chain', {

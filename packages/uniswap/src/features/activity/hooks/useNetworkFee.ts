@@ -9,6 +9,7 @@ import { buildCurrencyId, buildNativeCurrencyId } from 'uniswap/src/utils/curren
 export function useNetworkFee(transactionDetails: TransactionDetails): {
   value: string
   amount: string
+  isLoading: boolean
 } {
   const formatter = useLocalizationContext()
 

@@ -71,10 +71,10 @@ export const migration12 = createSafeMigration({
       return state
     }
 
-    // eslint-disable-next-line guard-for-in
+    // oxlint-disable-next-line guard-for-in
     for (const chainId in state.transactions) {
       const transactionsForChain = state.transactions[chainId]
-      // eslint-disable-next-line guard-for-in
+      // oxlint-disable-next-line guard-for-in
       for (const txHash in transactionsForChain) {
         const { receipt, ...tx } = transactionsForChain[txHash]
 

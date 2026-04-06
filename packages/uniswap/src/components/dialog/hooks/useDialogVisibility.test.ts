@@ -36,6 +36,7 @@ describe('useDialogVisibility', () => {
   // TODO: These tests pass individually but fail when run together due to test isolation issues.
   // The issue appears to be related to React Query state not being properly isolated between tests.
   // Further investigation needed to fix the root cause.
+  // oxlint-disable-next-line jest/no-disabled-tests -- suppressed
   describe.skip('with preferences', () => {
     it('checks visibility on mount', async () => {
       mockService.shouldShowDialog.mockResolvedValue(true)
@@ -113,6 +114,7 @@ describe('useDialogVisibility', () => {
     })
   })
 
+  // oxlint-disable-next-line jest/no-disabled-tests -- suppressed
   describe.skip('dontShowAgain state', () => {
     it('initializes dontShowAgain to false', () => {
       const { result } = renderHook(() => useDialogVisibility({ isOpen: true }))
@@ -133,6 +135,7 @@ describe('useDialogVisibility', () => {
     })
   })
 
+  // oxlint-disable-next-line jest/no-disabled-tests -- suppressed
   describe.skip('handleClose callback', () => {
     it('saves preference when handleClose is called with dontShowAgain checked', async () => {
       mockService.markDialogHidden.mockResolvedValue(undefined)

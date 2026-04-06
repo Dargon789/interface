@@ -22,6 +22,7 @@ describe('getQuicknodeChainIdPathSuffix', () => {
     [UniverseChainId.Blast, '', 'Blast chain'],
     [UniverseChainId.Bnb, '', 'BNB chain'],
     [UniverseChainId.Celo, '', 'Celo chain'],
+    [UniverseChainId.Linea, '', 'Linea chain'],
     [UniverseChainId.Monad, '', 'Monad'],
     [UniverseChainId.Optimism, '', 'Optimism chain'],
     [UniverseChainId.Polygon, '', 'Polygon chain'],
@@ -33,7 +34,7 @@ describe('getQuicknodeChainIdPathSuffix', () => {
     [UniverseChainId.Zora, '', 'Zora chain'],
   ]
 
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   it.each(testCases)('returns correct path suffix for %s', (chainId, expectedSuffix, _testName) => {
     expect(getQuicknodeChainIdPathSuffix(chainId)).toBe(expectedSuffix)
   })
@@ -68,6 +69,7 @@ describe('getQuicknodeEndpointUrl', () => {
       UniverseChainId.Blast,
       UniverseChainId.Bnb,
       UniverseChainId.Celo,
+      UniverseChainId.Linea,
       UniverseChainId.Monad,
       UniverseChainId.XLayer,
       UniverseChainId.Optimism,
@@ -99,6 +101,7 @@ describe('getQuicknodeChainId', () => {
     expect(getQuicknodeChainId(UniverseChainId.Blast)).toBe('blast-mainnet')
     expect(getQuicknodeChainId(UniverseChainId.Bnb)).toBe('bsc')
     expect(getQuicknodeChainId(UniverseChainId.Celo)).toBe('celo-mainnet')
+    expect(getQuicknodeChainId(UniverseChainId.Linea)).toBe('linea-mainnet')
     expect(getQuicknodeChainId(UniverseChainId.Monad)).toBe('monad-mainnet')
     expect(getQuicknodeChainId(UniverseChainId.Optimism)).toBe('optimism')
     expect(getQuicknodeChainId(UniverseChainId.Polygon)).toBe('matic')

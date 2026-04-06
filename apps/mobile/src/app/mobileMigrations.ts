@@ -1,8 +1,8 @@
 // Type information currently gets lost after a migration
-// biome-ignore-all lint/suspicious/noExplicitAny: Migration logic requires flexible typing
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable max-lines */
+/* oxlint-disable typescript/no-explicit-any -- Migration logic requires flexible typing */
+/* oxlint-disable typescript/explicit-function-return-type */
+/* oxlint-disable typescript/no-unsafe-return */
+/* oxlint-disable max-lines */
 
 import dayjs from 'dayjs'
 import { AccountType } from 'uniswap/src/features/accounts/types'
@@ -18,6 +18,7 @@ import {
   TransactionStatus,
   TransactionType,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { getWalletDeviceLanguage } from 'uniswap/src/i18n/utils'
 import { createSafeMigrationFactory } from 'uniswap/src/state/createSafeMigration'
 import { DappRequestType } from 'uniswap/src/types/walletConnect'
 import { type Account } from 'wallet/src/features/wallet/accounts/types'
@@ -637,7 +638,7 @@ export const convertHiddenNftsToNftsData = createSafeMigration({
 
     const nftsData: AccountToNftData = {}
     for (const accountAddress of accountAddresses) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       nftsData[accountAddress] ??= {}
       const hiddenNftKeys = Object.keys(state.favorites.hiddenNfts[accountAddress])
 
@@ -1000,6 +1001,7 @@ export const addPushNotifications = createSafeMigration({
 
 export const migrateDappRequestInfoTypes = createSafeMigration({
   name: 'migrateDappRequestInfoTypes',
+  // oxlint-disable-next-line complexity -- biome-parity: oxlint is stricter here
   migrate: (state: any) => {
     const newState = { ...state }
 
@@ -1084,4 +1086,28 @@ export const migrateAndRemoveCloudBackupSlice = createSafeMigration({
     delete fallbackState.cloudBackup
     return fallbackState
   },
+})
+
+export const setWalletDeviceLanguage = createSafeMigration({
+  name: 'setWalletDeviceLanguage',
+  migrate: (state: any) => {
+    if (!state?.userSettings) {
+      return state
+    }
+
+    return {
+      ...state,
+      userSettings: {
+        ...state.userSettings,
+        currentLanguage: getWalletDeviceLanguage(),
+      },
+    }
+  },
+  onError: (state: any) => ({
+    ...state,
+    userSettings: {
+      ...(state?.userSettings ?? {}),
+      currentLanguage: Language.English,
+    },
+  }),
 })

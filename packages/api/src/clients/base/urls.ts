@@ -57,9 +57,12 @@ export function getCloudflareApiBaseUrl(params?: { flow?: TrafficFlows; postfix?
     // This is an exception that only applies to dev + TAPI where the order of the prefix matters
     baseUrl = `https://${isDevEnv() ? 'beta.' : ''}trading-api-labs.${getCloudflarePrefix(flow)}.gateway.uniswap.org`
   }
-  // Only changing this for DataApi to use the new prefixing logic that points both prod and beta to prod
-  else if (flow === TrafficFlows.DataApi) {
-    baseUrl = `https://${isDevEnv() && !isPlaywrightEnv() ? 'beta' : getCloudflarePrefix(flow)}.gateway.uniswap.org`
+  // DataApi: use staging entry gateway in dev to avoid CORS issues with beta.gateway.
+  // Entry gateway doesn't use the /v2 path prefix, so postfix is intentionally ignored here.
+  else if (flow === TrafficFlows.DataApi && isDevEnv() && !isPlaywrightEnv()) {
+    return STAGING_ENTRY_GATEWAY_API_BASE_URL
+  } else if (flow === TrafficFlows.DataApi) {
+    baseUrl = `https://${getCloudflarePrefix(flow)}.gateway.uniswap.org`
   } else {
     baseUrl = `https://${getServicePrefix(flow)}${getCloudflarePrefix(flow)}.gateway.uniswap.org`
   }
@@ -80,6 +83,6 @@ export const STAGING_ENTRY_GATEWAY_API_BASE_URL: string = 'https://entry-gateway
 export const PROD_ENTRY_GATEWAY_API_BASE_URL: string = 'https://entry-gateway.backend-prod.api.uniswap.org'
 
 // WebSocket URLs
-export const DEV_WEBSOCKET_BASE_URL: string = 'wss://websockets.backend-prod.api.uniswap.org'
-export const STAGING_WEBSOCKET_BASE_URL: string = 'wss://websockets.backend-prod.api.uniswap.org'
+export const DEV_WEBSOCKET_BASE_URL: string = 'wss://websockets.backend-staging.api.uniswap.org'
+export const STAGING_WEBSOCKET_BASE_URL: string = 'wss://websockets.backend-staging.api.uniswap.org'
 export const PROD_WEBSOCKET_BASE_URL: string = 'wss://websockets.backend-prod.api.uniswap.org'

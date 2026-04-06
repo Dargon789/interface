@@ -7,13 +7,14 @@
  * tag, or we can add on any one-off CSS by either inlining a style tag in the
  * component itself, or importing it via CSS modules.
  */
+// oxlint-disable-next-line no-restricted-imports -- biome-parity: oxlint is stricter here
 import styledFn, {
   createGlobalStyle as createGlobalStyleSC,
   css as cssSC,
   type DefaultTheme as DefaultThemeSC,
   keyframes as keyframesFnSC,
   ThemeProvider as ThemeProviderSC,
-  // biome-ignore lint/style/noRestrictedImports: This is a legacy compatibility file that re-exports styled-components for migration purposes
+  // oxlint-disable-next-line no-restricted-imports -- This is a legacy compatibility file that re-exports styled-components for migration purposes
 } from 'styled-components'
 
 /** @deprecated use `styled` from `ui/src` instead */

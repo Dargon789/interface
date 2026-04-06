@@ -72,7 +72,7 @@ export function useLiquidityChartInteractions({
     // Add event listeners
     svgElement.addEventListener('wheel', handleWheel, { passive: false })
 
-    // eslint-disable-next-line consistent-return
+    // oxlint-disable-next-line consistent-return
     return () => {
       svgElement.removeEventListener('wheel', handleWheel)
     }

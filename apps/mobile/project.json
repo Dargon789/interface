@@ -200,6 +200,12 @@
       }
     },
     "ios": {
+      "command": "bunx expo run:ios --scheme Uniswap --configuration DebugOptimized",
+      "options": {
+        "cwd": "{projectRoot}"
+      }
+    },
+    "ios:debug": {
       "command": "bunx expo run:ios --scheme Uniswap --configuration Debug",
       "options": {
         "cwd": "{projectRoot}"
@@ -241,10 +247,10 @@
         "cwd": "{projectRoot}"
       }
     },
-    "lint:biome": {},
-    "lint:biome:fix": {},
     "lint": {},
     "lint:fix": {},
+    "check": {},
+    "check:fix": {},
     "lint:eslint": {},
     "lint:eslint:fix": {},
     "start": {
@@ -351,6 +357,11 @@
       "options": {
         "cwd": "{projectRoot}"
       }
-    }
+    },
+    "oxfmt": {},
+    "oxfmt:fix": {},
+    "oxlint": {},
+    "oxlint:fix": {},
+    "oxlint:type-aware": {}
   }
 }

@@ -25,6 +25,7 @@ import { parseRestPosition } from '~/components/Liquidity/utils/parseFromRest'
 import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
 import { useAccount } from '~/hooks/useAccount'
 import { usePositionOwnerV2 } from '~/hooks/usePositionOwnerV2'
+import { useDynamicMetatags } from '~/pages/metatags'
 import NotFound from '~/pages/NotFound'
 import { MultichainContextProvider } from '~/state/multichain/MultichainContext'
 import { usePendingLPTransactionsChangeListener } from '~/state/transactions/hooks'
@@ -104,6 +105,21 @@ function V2PositionPage() {
 
   const { currency0Amount, currency1Amount, liquidityAmount } = positionInfo ?? {}
 
+  const metatagProperties = useMemo(() => {
+    const token0Symbol = currency0Amount?.currency.symbol
+    const token1Symbol = currency1Amount?.currency.symbol
+    if (!token0Symbol || !token1Symbol || !pairAddress) {
+      return { title: 'Position on Uniswap', url: window.location.href }
+    }
+    const poolName = `${token0Symbol}/${token1Symbol}`
+    return {
+      title: `${poolName} on Uniswap`,
+      url: window.location.href,
+      image: `${window.location.origin}/api/image/positions/v2/${chainInfo.urlParam}/${pairAddress}`,
+    }
+  }, [currency0Amount?.currency.symbol, currency1Amount?.currency.symbol, chainInfo.urlParam, pairAddress])
+  const metatags = useDynamicMetatags(metatagProperties)
+
   const token0USDValue = useUSDCValue(currency0Amount)
   const token1USDValue = useUSDCValue(currency1Amount)
   const poolTokenPercentage = useGetPoolTokenPercentage(positionInfo)
@@ -153,6 +169,9 @@ function V2PositionPage() {
             baseSymbol: currency0Amount?.currency.symbol,
           })}
         </title>
+        {metatags.map((tag, index) => (
+          <meta key={index} {...tag} />
+        ))}
       </Helmet>
       <BodyWrapper>
         <Flex gap="$gap20" width="100%">

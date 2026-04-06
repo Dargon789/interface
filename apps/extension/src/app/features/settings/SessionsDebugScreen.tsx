@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { getEntryGatewayUrl, provideSessionService } from '@universe/api'
 import {
   ChallengeType,

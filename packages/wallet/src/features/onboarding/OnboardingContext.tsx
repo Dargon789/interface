@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 
 import { UnitagClaim } from '@universe/api'
 import dayjs from 'dayjs'

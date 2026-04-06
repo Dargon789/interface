@@ -134,7 +134,7 @@ export function SettingsCloudBackupStatus({
     )
   }
 
-  const fullScreenContentHeight = (dimensions.fullHeight - insets.top - insets.bottom - spacing.spacing36) / 2
+  const maxListHeight = (dimensions.fullHeight - insets.top - insets.bottom - spacing.spacing16) / 2.5
 
   return (
     <Screen mx="$spacing16" my="$spacing16">
@@ -204,11 +204,11 @@ export function SettingsCloudBackupStatus({
         onAcknowledge={onConfirmDeleteBackup}
       >
         {associatedAccounts.length > 1 && (
-          <Flex shrink gap="$spacing12" pt="$spacing12">
-            <Text textAlign="left" variant="body3" color="$statusCritical">
+          <Flex shrink gap="$spacing12">
+            <Text textAlign="center" variant="body3" color="$statusCritical">
               {t('settings.setting.backup.delete.confirm.message')}
             </Text>
-            <Flex maxHeight={fullScreenContentHeight}>
+            <Flex maxHeight={maxListHeight}>
               <FlatList
                 style={{ flexGrow: 0 }}
                 data={associatedAccounts}

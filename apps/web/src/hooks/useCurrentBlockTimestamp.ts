@@ -12,13 +12,16 @@ import { assume0xAddress } from '~/utils/wagmi'
  */
 export default function useCurrentBlockTimestamp({
   refetchInterval = ms('3min'),
+  chainId,
 }: {
   refetchInterval?: number | false
+  chainId?: UniverseChainId
 } = {}): bigint | undefined {
   const account = useAccount()
+  const resolvedChainId = chainId ?? account.chainId ?? UniverseChainId.Mainnet
 
   return useReadContract({
-    address: assume0xAddress(MULTICALL_ADDRESSES[account.chainId ?? UniverseChainId.Mainnet]),
+    address: assume0xAddress(MULTICALL_ADDRESSES[resolvedChainId]),
     abi: [
       {
         inputs: [],

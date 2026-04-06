@@ -60,7 +60,7 @@ function ApprovalAddressesPopover({ assets, formatAmount }: ApprovalAddressesPop
       <Popover.Content
         elevate
         borderRadius="$rounded12"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3"
         backgroundColor="$surface1"
         p="$spacing12"
@@ -100,7 +100,7 @@ function ApprovalAddressesPopover({ assets, formatAmount }: ApprovalAddressesPop
         <Popover.Arrow
           size="$spacing12"
           backgroundColor={colors.surface1.val}
-          borderWidth={1}
+          borderWidth="$spacing1"
           borderColor={colors.surface3.val}
         />
       </Popover.Content>

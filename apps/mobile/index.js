@@ -7,11 +7,11 @@ if (isNonTestDev) {
   require('./ReactotronConfig')
 }
 
-import { AppRegistry } from 'react-native'
 import 'react-native-gesture-handler'
 import 'react-native-reanimated'
 import 'src/logbox'
 import 'src/polyfills'
+import { AppRegistry } from 'react-native'
 // biome-ignore assist/source/organizeImports: we want to keep the import order
 import App from 'src/app/App'
 import AppConfig from './app.config'

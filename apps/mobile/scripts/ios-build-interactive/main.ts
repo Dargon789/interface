@@ -1,11 +1,11 @@
 #!/usr/bin/env ts-node
-// biome-ignore lint/suspicious/noConsole: CLI tool needs console for user interaction
+// oxlint-disable-next-line no-console -- CLI tool needs console for user interaction
 import { spawn } from 'child_process'
 import { existsSync } from 'fs'
-import inquirer from 'inquirer'
 import { homedir } from 'os'
 import { join } from 'path'
-// eslint-disable-next-line no-relative-import-paths/no-relative-import-paths
+import inquirer from 'inquirer'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths
 import {
   type BuildConfig,
   type BuildType,

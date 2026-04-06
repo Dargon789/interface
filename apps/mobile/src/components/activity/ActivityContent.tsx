@@ -32,7 +32,7 @@ const AMOUNT_TO_DRAW = 18
 const ON_END_REACHED_THRESHOLD = 0.1 // trigger onEndReached at 10% of visible length
 
 export const ActivityContent = memo(
-  forwardRef<FlatList<unknown>, TabProps>(function _ActivityTab(
+  forwardRef<FlatList<unknown>, TabProps>(function ActivityTabInner(
     {
       owner,
       containerProps,
@@ -146,7 +146,7 @@ export const ActivityContent = memo(
           />
         ) : (
           <List
-            // biome-ignore lint/suspicious/noExplicitAny: FlatList ref type is complex with animated wrapper
+            // oxlint-disable-next-line typescript/no-explicit-any -- FlatList ref type is complex with animated wrapper
             ref={ref as ForwardedRef<Animated.FlatList<any>>}
             initialNumToRender={10}
             keyExtractor={keyExtractor}

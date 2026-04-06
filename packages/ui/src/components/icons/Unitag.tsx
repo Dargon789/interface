@@ -13,7 +13,7 @@ const style: UniversalImageStyleProps = {
   },
 }
 
-function _Unitag({ size = '$icon.24' }: { size: IconSizeTokens | number }): JSX.Element {
+function UnitagIcon({ size = '$icon.24' }: { size: IconSizeTokens | number }): JSX.Element {
   const isDarkMode = useIsDarkMode()
 
   const sizeNumber = typeof size === 'number' ? size : getTokenValue(size)
@@ -29,8 +29,8 @@ function _Unitag({ size = '$icon.24' }: { size: IconSizeTokens | number }): JSX.
   if (isWebApp) {
     return <img src={uri} width={universalImageSize.width} height={universalImageSize.height} style={style.image} />
   } else {
-    return <UniversalImage style={style} size={universalImageSize} uri={uri} allowLocalUri />
+    return <UniversalImage allowLocalUri style={style} size={universalImageSize} uri={uri} />
   }
 }
 
-export const Unitag = memo(_Unitag)
+export const Unitag = memo(UnitagIcon)

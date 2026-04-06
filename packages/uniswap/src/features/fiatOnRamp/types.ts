@@ -35,7 +35,7 @@ import {
   OnRampTransferInfo,
   TransactionDetails,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { FiatCurrencyComponents } from 'utilities/src/format/localeBased'
 
 // Transaction types (app-specific, extends TransactionDetails)

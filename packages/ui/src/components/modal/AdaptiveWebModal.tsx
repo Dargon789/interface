@@ -1,4 +1,3 @@
-import { RemoveScroll } from '@tamagui/remove-scroll'
 import { type PropsWithChildren, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import type { DimensionValue } from 'react-native'
 import {
@@ -14,6 +13,7 @@ import {
 } from 'tamagui'
 import { type CloseIconProps, CloseIconWithHover } from 'ui/src/components/icons/CloseIconWithHover'
 import { Flex, type FlexProps } from 'ui/src/components/layout'
+import { RemoveScroll } from 'ui/src/components/RemoveScroll/RemoveScroll'
 import { useScrollbarStyles } from 'ui/src/styles/ScrollbarStyles'
 import { INTERFACE_NAV_HEIGHT, zIndexes } from 'ui/src/theme'
 import { useShadowPropsShort } from 'ui/src/theme/shadows'
@@ -112,10 +112,10 @@ export function WebBottomSheet({
   const sheetHeightStyles: FlexProps | undefined =
     snapPointsMode !== 'percent'
       ? {
-          height: rest.$sm?.['$platform-web']?.height as DimensionValue,
+          height: rest.$md?.['$platform-web']?.height as DimensionValue,
           maxHeight: (isWebApp
             ? `calc(100vh - ${INTERFACE_NAV_HEIGHT}px)`
-            : (rest.$sm?.['$platform-web']?.maxHeight ?? '100dvh')) as DimensionValue,
+            : (rest.$md?.['$platform-web']?.maxHeight ?? '100dvh')) as DimensionValue,
         }
       : undefined
 
@@ -136,6 +136,7 @@ export function WebBottomSheet({
         snapPointsMode={snapPointsMode}
         // Must be spread because setting snapPoints to undefined still changes behavior
         {...(snapPoints && { snapPoints })}
+        zIndex={rest.zIndex ?? zIndexes.modal}
         onOpenChange={handleClose}
       >
         <Sheet.Frame
@@ -176,6 +177,7 @@ export function WebBottomSheet({
           </Flex>
         </Sheet.Frame>
         <Sheet.Overlay
+          zIndex={zIndexes.modalBackdrop}
           animation="lazy"
           backgroundColor="$scrim"
           enterStyle={{ opacity: 0 }}
@@ -210,6 +212,7 @@ type ModalProps = GetProps<typeof View> &
     snapPoints?: GetProps<typeof Sheet>['snapPoints']
     overlayOpacity?: number
     borderColor?: string
+    zIndex?: number
   }>
 
 /**
@@ -217,7 +220,7 @@ type ModalProps = GetProps<typeof View> &
  * On larger screens, it renders as a dialog modal.
  * On smaller screens (mobile devices), it adapts into a bottom sheet.
  */
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function AdaptiveWebModal({
   isOpen,
   onClose,
@@ -264,25 +267,24 @@ export function AdaptiveWebModal({
       <VisuallyHidden>
         <Dialog.Title />
       </VisuallyHidden>
-      {adaptToSheet &&
-        !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
-          <Adapt when="md">
-            <WebBottomSheet
-              isOpen={isOpen}
-              gap={gap ?? '$spacing4'}
-              px={px ?? p ?? '$spacing24'}
-              py={py ?? p ?? '$spacing16'}
-              style={style}
-              hideHandlebar={hideHandlebar}
-              snapPointsMode={snapPointsMode}
-              snapPoints={snapPoints}
-              onClose={onClose}
-              {...filteredRest}
-            >
-              <Adapt.Contents />
-            </WebBottomSheet>
-          </Adapt>
-        )}
+      {adaptToSheet && !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
+        <Adapt when="md">
+          <WebBottomSheet
+            isOpen={isOpen}
+            gap={gap ?? '$spacing4'}
+            px={px ?? p ?? '$spacing24'}
+            py={py ?? p ?? '$spacing16'}
+            style={style}
+            hideHandlebar={hideHandlebar}
+            snapPointsMode={snapPointsMode}
+            snapPoints={snapPoints}
+            onClose={onClose}
+            {...filteredRest}
+          >
+            <Adapt.Contents />
+          </WebBottomSheet>
+        </Adapt>
+      )}
 
       <Dialog.Portal zIndex={zIndex ?? zIndexes.modal}>
         <Overlay key="overlay" {...(overlayOpacity !== undefined && { opacity: overlayOpacity })} />
@@ -367,22 +369,21 @@ export function WebModalWithBottomAttachment({
       <VisuallyHidden>
         <Dialog.Title />
       </VisuallyHidden>
-      {adaptToSheet &&
-        !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
-          <Adapt when="md">
-            <WebBottomSheet
-              isOpen={isOpen}
-              style={style}
-              hideHandlebar={hideHandlebar}
-              snapPointsMode={snapPointsMode}
-              snapPoints={snapPoints}
-              onClose={onClose}
-              {...filteredRest}
-            >
-              <Adapt.Contents />
-            </WebBottomSheet>
-          </Adapt>
-        )}
+      {adaptToSheet && !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
+        <Adapt when="md">
+          <WebBottomSheet
+            isOpen={isOpen}
+            style={style}
+            hideHandlebar={hideHandlebar}
+            snapPointsMode={snapPointsMode}
+            snapPoints={snapPoints}
+            onClose={onClose}
+            {...filteredRest}
+          >
+            <Adapt.Contents />
+          </WebBottomSheet>
+        </Adapt>
+      )}
 
       <Dialog.Portal zIndex={zIndex ?? zIndexes.modal}>
         <Overlay key="overlay" {...(overlayOpacity !== undefined && { opacity: overlayOpacity })} />

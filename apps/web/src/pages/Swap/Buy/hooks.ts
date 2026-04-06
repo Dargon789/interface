@@ -18,7 +18,7 @@ import {
   OffRampTransferDetailsRequest,
   RampDirection,
 } from 'uniswap/src/features/fiatOnRamp/types'
-// biome-ignore lint/style/noRestrictedImports: Buy hooks need direct SDK imports
+// oxlint-disable-next-line no-restricted-imports -- Buy hooks need direct SDK imports
 import { getFiatCurrencyComponents } from 'utilities/src/format/localeBased'
 import { useMeldSupportedCurrencyToCurrencyInfo } from '~/appGraphql/data/types'
 

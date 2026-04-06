@@ -16,7 +16,7 @@ import { InterfaceUserPropertyName, setUserProperty } from 'uniswap/src/features
 import { logger } from 'utilities/src/logger/logger'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
-// biome-ignore lint/style/noRestrictedImports: direct wagmi hooks needed so we can access user's chainId even if unsupported chain
+// oxlint-disable-next-line no-restricted-imports -- direct wagmi hooks needed so we can access user's chainId even if unsupported chain
 import { useAccount as useAccountWagmi } from 'wagmi'
 import { recentConnectorIdAtom } from '~/components/Web3Provider/constants'
 import { RPC_PROVIDERS } from '~/constants/providers'
@@ -50,7 +50,7 @@ export function WebAccountsStoreUpdater() {
   const shouldTrace = useFeatureFlag(FeatureFlags.TraceJsonRpc)
   const isSupportedChain = useIsSupportedChainId(account.chainId)
   const networkProvider = isSupportedChain && account.chainId ? RPC_PROVIDERS[account.chainId] : undefined
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +analyticsContext
+  // oxlint-disable-next-line react/exhaustive-deps -- +analyticsContext
   useEffect(() => {
     if (shouldTrace) {
       provider?.on('debug', trace)

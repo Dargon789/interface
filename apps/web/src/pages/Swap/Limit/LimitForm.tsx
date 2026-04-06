@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { Currency, CurrencyAmount, Token } from '@uniswap/sdk-core'
 import { UNIVERSAL_ROUTER_ADDRESS, UniversalRouterVersion } from '@uniswap/universal-router-sdk'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
@@ -19,7 +19,7 @@ import { ElementName, InterfacePageName, SectionName, SwapEventName } from 'unis
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { useUSDCValueWithStatus } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
 import { CurrencyField } from 'uniswap/src/types/currency'
-// biome-ignore lint/style/noRestrictedImports: We need to import this directly so we can format with `en-US` locale
+// oxlint-disable-next-line no-restricted-imports -- We need to import this directly so we can format with `en-US` locale
 import { formatCurrencyAmount as formatCurrencyAmountRaw } from 'utilities/src/format/localeBased'
 import { NumberType } from 'utilities/src/format/types'
 import { isSafeNumber } from 'utilities/src/primitives/integer'
@@ -32,6 +32,7 @@ import {
 import SwapCurrencyInputPanel from '~/components/CurrencyInputPanel/SwapCurrencyInputPanel'
 import DelegationMismatchModal from '~/components/delegation/DelegationMismatchModal'
 import Column from '~/components/deprecated/Column'
+import { SwitchNetworkAction } from '~/components/Popups/types'
 import { ArrowContainer, ArrowWrapper, SwapSection } from '~/components/swap/styled'
 import { ZERO_PERCENT } from '~/constants/misc'
 import { useConnectionStatus } from '~/features/accounts/store/hooks'
@@ -88,6 +89,39 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
   const isLimitSupportedChain = chainId && LIMIT_SUPPORTED_CHAINS.includes(chainId)
 
   const { limitState, setLimitState, derivedLimitInfo } = useLimitContext()
+
+  // Coerce non-mainnet currencies to mainnet defaults when limit tab mounts or currencies change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: we only want to run this effect when the input or output currency changes.
+  useEffect(() => {
+    const defaultLimitChainId = LIMIT_SUPPORTED_CHAINS[0]
+    const inputIsOnLimitChain = !inputCurrency || LIMIT_SUPPORTED_CHAINS.includes(inputCurrency.chainId)
+    const outputIsOnLimitChain = !outputCurrency || LIMIT_SUPPORTED_CHAINS.includes(outputCurrency.chainId)
+
+    if (inputIsOnLimitChain && outputIsOnLimitChain) {
+      return
+    }
+
+    const stablecoin = getPrimaryStablecoin(defaultLimitChainId)
+    const newInput = inputIsOnLimitChain ? inputCurrency : nativeOnChain(defaultLimitChainId)
+    const newOutput = outputIsOnLimitChain
+      ? outputCurrency
+      : newInput?.equals(stablecoin)
+        ? nativeOnChain(defaultLimitChainId)
+        : stablecoin
+
+    const newCurrencyState = { inputCurrency: newInput, outputCurrency: newOutput }
+    onCurrencyChange?.(newCurrencyState)
+    setCurrencyState(newCurrencyState)
+
+    // Reset limit price state so market price auto-populates for the new pair
+    setLimitState((prev) => ({
+      ...prev,
+      limitPriceEdited: false,
+      limitPriceInverted: getDefaultPriceInverted(newInput, newOutput),
+    }))
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- only react to currency identity changes, callbacks are stable
+  }, [inputCurrency, outputCurrency])
+
   const { currencyBalances, parsedAmounts, parsedLimitPrice, limitOrderTrade, marketPrice } = derivedLimitInfo
   const [showConfirm, setShowConfirm] = useState(false)
   const [swapResult, setSwapResult] = useState<SwapResult>()
@@ -171,7 +205,7 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
   }, [inputCurrency, onSwitchTokens, outputCurrency, setLimitState])
 
   const onSelectCurrency = useCallback(
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     (type: keyof CurrencyState, newCurrency: Currency, isResettingWETHAfterWrap?: boolean) => {
       if ((type === 'inputCurrency' ? outputCurrency : inputCurrency)?.equals(newCurrency)) {
         switchTokens()
@@ -231,7 +265,7 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
     }
   }, [onSelectCurrency, outputCurrency, isSupportedChain, chainId, inputCurrency])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Currency state reset only on currency change
+  // oxlint-disable-next-line react/exhaustive-deps -- Currency state reset only on currency change
   useEffect(() => {
     // If the initial pair is eth <> weth, replace the output currency with a stablecoin
     if (isSupportedChain && inputCurrency && outputCurrency && (inputCurrency.isNative || outputCurrency.isNative)) {
@@ -242,6 +276,7 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
         onSelectCurrency('outputCurrency', getPrimaryStablecoin(chainId))
       }
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   const maxInputAmount: CurrencyAmount<Currency> | undefined = useMemo(
@@ -350,6 +385,8 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
             onCurrencySelect={(currency) => onSelectCurrency('inputCurrency', currency)}
             otherCurrency={outputCurrency}
             onMax={handleMaxInput}
+            chainIds={LIMIT_SUPPORTED_CHAINS}
+            switchNetworkAction={SwitchNetworkAction.Limit}
             id={SectionName.SwapCurrencyInput}
           />
         </Trace>
@@ -376,6 +413,8 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
             onUserInput={onTypeInput('outputAmount')}
             onCurrencySelect={(currency) => onSelectCurrency('outputCurrency', currency)}
             otherCurrency={inputCurrency}
+            chainIds={LIMIT_SUPPORTED_CHAINS}
+            switchNetworkAction={SwitchNetworkAction.Limit}
             id={SectionName.SwapCurrencyOutput}
           />
         </Trace>
@@ -472,7 +511,7 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
             data: fiatValueOutputNumber,
             isLoading: fiatValueTradeOutput.isLoading,
           }}
-          // eslint-disable-next-line max-params
+          // oxlint-disable-next-line max-params
           onCurrencySelection={(field: CurrencyField, currency, isResettingWETHAfterWrap) =>
             onSelectCurrency(
               field === CurrencyField.INPUT ? 'inputCurrency' : 'outputCurrency',

@@ -177,12 +177,16 @@ export function TokenDetailsSwapButtons({
 export function TokenDetailsBuySellButtons({
   userHasBalance,
   actionMenuOptions,
+  buyButtonTitle,
+  buyButtonIcon,
   onPressDisabled,
   onPressBuy,
   onPressSell,
 }: {
   userHasBalance: boolean
   actionMenuOptions: MenuOptionItem[]
+  buyButtonTitle?: string
+  buyButtonIcon?: GeneratedIcon
   onPressDisabled?: () => void
   onPressBuy: () => void
   onPressSell: () => void
@@ -210,31 +214,30 @@ export function TokenDetailsBuySellButtons({
       pt="$spacing12"
     >
       <Flex fill row gap="$spacing12">
-        <Flex flex={1}>
+        <CTAButton
+          disabled={disabled}
+          element={ElementName.Buy}
+          icon={buyButtonIcon}
+          testID={TestID.TokenDetailsBuyButton}
+          title={buyButtonTitle ?? t('common.button.buy')}
+          tokenColor={tokenColor}
+          onPress={onPressBuy}
+          onPressDisabled={onPressDisabled}
+        />
+        {userHasBalance && (
           <CTAButton
             disabled={disabled}
-            element={ElementName.Buy}
-            testID={TestID.TokenDetailsBuyButton}
-            title={t('common.button.buy')}
+            element={ElementName.Sell}
+            testID={TestID.TokenDetailsSellButton}
+            title={t('common.button.sell')}
             tokenColor={tokenColor}
-            onPress={onPressBuy}
+            onPress={onPressSell}
             onPressDisabled={onPressDisabled}
           />
-        </Flex>
-        {userHasBalance && (
-          <Flex flex={1}>
-            <CTAButton
-              disabled={disabled}
-              element={ElementName.Sell}
-              testID={TestID.TokenDetailsSellButton}
-              title={t('common.button.sell')}
-              tokenColor={tokenColor}
-              onPress={onPressSell}
-              onPressDisabled={onPressDisabled}
-            />
-          </Flex>
         )}
-        {!disabled && (
+        {/* buyButtonTitle is only set when hasTokenBalance is false (see useMultichainBuyVariant),
+            so this condition and userHasBalance are mutually exclusive in practice. */}
+        {!buyButtonTitle && !disabled && (
           <ContextMenu
             isPlacementAbove
             closeMenu={closeActionMenu}

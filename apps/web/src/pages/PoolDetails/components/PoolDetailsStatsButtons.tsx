@@ -1,5 +1,5 @@
 import { GraphQLApi } from '@universe/api'
-import { ReactNode, useCallback, useReducer, useState } from 'react'
+import { ReactNode, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router'
 import { Button, Flex, Spacer, styled, useIsTouchDevice, useMedia } from 'ui/src'
@@ -167,7 +167,7 @@ export function PoolDetailsStatsButtons({
       }
     }
   }
-  const [swapModalOpen, toggleSwapModalOpen] = useReducer((state) => !state, false)
+  const [swapModalOpen, setSwapModalOpen] = useState(false)
 
   const media = useMedia()
   const screenSizeLargerThanTablet = !media.xl
@@ -202,7 +202,7 @@ export function PoolDetailsStatsButtons({
         >
           <PoolButton
             icon={swapModalOpen ? <X size="$icon.20" /> : <CoinConvert size="$icon.20" />}
-            onPress={toggleSwapModalOpen}
+            onPress={() => setSwapModalOpen((prev) => !prev)}
             isOpen={swapModalOpen}
             data-testid={`pool-details-${swapModalOpen ? 'close' : 'swap'}-button`}
           >
@@ -220,7 +220,7 @@ export function PoolDetailsStatsButtons({
       <Modal
         name={ModalName.Swap}
         isModalOpen={swapModalOpen}
-        onClose={toggleSwapModalOpen}
+        onClose={() => setSwapModalOpen(false)}
         maxWidth={480}
         gap="$gap24"
       >

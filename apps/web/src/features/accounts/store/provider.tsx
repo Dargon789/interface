@@ -18,9 +18,9 @@ import { isChainIdOnPlatform } from 'uniswap/src/features/platforms/utils/chains
 import {
   UseAccountReturnType,
   useCapabilities,
-  // biome-ignore lint/style/noRestrictedImports: direct wagmi hooks needed for web wallet integration
+  // oxlint-disable-next-line no-restricted-imports -- direct wagmi hooks needed for web wallet integration
   useAccount as useWagmiAccount,
-  // biome-ignore lint/style/noRestrictedImports: direct wagmi hooks needed for web wallet integration
+  // oxlint-disable-next-line no-restricted-imports -- direct wagmi hooks needed for web wallet integration
   useChainId as useWagmiChainId,
   useConnectors as useWagmiConnectors,
   Connector as WagmiConnector,

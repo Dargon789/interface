@@ -43,7 +43,7 @@ export function getTransactionSummaryTitle(
  * [1]: Present verb form (e.g. 'Swapping') (optional)
  * [2]: Base verb form (e.g. 'swap') (optional)
  */
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 function getTransactionTypeVerbs(
   typeInfo: TransactionDetails['typeInfo'],
   t: AppTFunction,

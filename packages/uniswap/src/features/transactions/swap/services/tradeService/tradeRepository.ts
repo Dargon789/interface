@@ -35,7 +35,7 @@ export function createTradeRepository(ctx: {
       const result = await ctx.fetchQuote(params)
 
       // Log if API returned an empty quote response
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- checking for empty quote outside type expectations
+      // oxlint-disable-next-line typescript/no-unnecessary-condition -- checking for empty quote outside type expectations
       if (ctx.logger && !result.quote) {
         ctx.logger.error(new Error('Unexpected empty Trading API response'), {
           tags: { file: 'tradeRepository', function: 'fetchQuote' },

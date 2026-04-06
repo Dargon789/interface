@@ -29,10 +29,10 @@ export function createMockFn(): any {
   // This allows the code to be imported even outside test contexts
   const mockFn: any = (..._args: unknown[]) => undefined
   mockFn.mockImplementation = (impl: any): any => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    // oxlint-disable-next-line typescript/no-unsafe-return
     const newMock: any = (...args: unknown[]) => impl(...args)
     newMock.mockImplementation = mockFn.mockImplementation
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    // oxlint-disable-next-line typescript/no-unsafe-return
     return newMock
   }
   return mockFn

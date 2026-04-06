@@ -25,6 +25,7 @@ const account = signerMnemonicAccount()
 
 const txId = 'uuid-4'
 
+// oxlint-disable-next-line jest/no-export -- suppressed
 export const createFinalizedTxAction = (typeInfo: TransactionTypeInfo): ReturnType<typeof finalizeTransaction> => ({
   payload: {
     ...finalizedTxAction.payload,

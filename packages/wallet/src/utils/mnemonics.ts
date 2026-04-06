@@ -23,7 +23,7 @@ export function translateMnemonicErrorMessage({
     case MnemonicValidationError.InvalidPhrase:
       return t('account.recoveryPhrase.error.invalid')
     case MnemonicValidationError.InvalidWord:
-      return t('account.recoveryPhrase.error.invalidWord', { word: invalidWord })
+      return t('account.recoveryPhrase.error.invalidWord', { word: invalidWord ?? '' })
     case MnemonicValidationError.TooManyWords:
     case MnemonicValidationError.NotEnoughWords:
       return t('account.recoveryPhrase.error.phraseLength')

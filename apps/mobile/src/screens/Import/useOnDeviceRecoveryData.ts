@@ -2,7 +2,7 @@ import { GraphQLApi } from '@universe/api'
 import { useEffect, useMemo, useState } from 'react'
 import { useUnitagsAddressQuery } from 'uniswap/src/data/apiClients/unitagsApi/useUnitagsAddressQuery'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
-// biome-ignore lint/style/noRestrictedImports: Direct access needed for custom portfolio query with multiple addresses
+// oxlint-disable-next-line no-restricted-imports -- Direct access needed for custom portfolio query with multiple addresses
 import { usePortfolioValueModifiers } from 'uniswap/src/features/dataApi/balances/balances'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
@@ -128,7 +128,7 @@ export function useOnDeviceRecoveryData(mnemonicId: string | undefined): {
   const unitagsCombined = unitagStates.map((unitagState) => unitagState.data?.username).join('')
   const unitagLoading = unitagStates.some((unitagState) => unitagState.isLoading)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to recalculate this when unitagsCombined or balancesLoading changes
+  // oxlint-disable-next-line react/exhaustive-deps -- we want to recalculate this when unitagsCombined or balancesLoading changes
   const recoveryWalletInfos = useMemo((): RecoveryWalletInfo[] => {
     return addressesWithIndex.map((addressWithIndex, index): RecoveryWalletInfo => {
       const { address, derivationIndex } = addressWithIndex
@@ -140,6 +140,7 @@ export function useOnDeviceRecoveryData(mnemonicId: string | undefined): {
         unitag: unitagStates[derivationIndex]?.data?.username,
       }
     })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [addressesWithIndex, balances, balancesLoading, ensMap, unitagsCombined])
 
   const significantRecoveryWalletInfos = useMemo(

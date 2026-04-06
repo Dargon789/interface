@@ -1,6 +1,6 @@
 import { ComponentProps, ReactNode, useMemo } from 'react'
 import { GetProps, Popover, useMedia } from 'tamagui'
-// biome-ignore lint/style/noRestrictedImports: needed here
+// oxlint-disable-next-line no-restricted-imports -- needed here
 import { WebBottomSheet } from 'ui/src/components/modal/AdaptiveWebModal'
 import { zIndexes } from 'ui/src/theme'
 import { isWebApp } from 'utilities/src/platform'

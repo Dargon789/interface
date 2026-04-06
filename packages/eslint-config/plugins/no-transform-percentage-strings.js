@@ -23,7 +23,7 @@ module.exports = {
      * Check if a node represents a percentage string literal
      */
     function isPercentageLiteral(node) {
-      // eslint-disable-next-line security/detect-unsafe-regex
+      // oxlint-disable-next-line security/detect-unsafe-regex
       return node.type === 'Literal' && typeof node.value === 'string' && /^-?\d+(\.\d+)?%$/.test(node.value)
     }
 

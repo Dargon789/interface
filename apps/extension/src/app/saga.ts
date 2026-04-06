@@ -11,7 +11,6 @@ import { call, spawn } from 'typed-redux-saga'
 import { getMonitoredSagaReducers, type MonitoredSaga } from 'uniswap/src/utils/saga'
 import { apolloClientRef } from 'wallet/src/data/apollo/usePersistedApolloClient'
 import { authActions, authReducer, authSaga, authSagaName } from 'wallet/src/features/auth/saga'
-import { deviceLocaleWatcher } from 'wallet/src/features/i18n/deviceLocaleWatcherSaga'
 import { initProviders } from 'wallet/src/features/providers/saga'
 import {
   removeDelegationActions,
@@ -106,7 +105,6 @@ const sagasInitializedOnStartup = [
   dappRequestWatcher,
   initProviders,
   watchTransactionEvents,
-  deviceLocaleWatcher,
 ] as const
 
 export const monitoredSagaReducers = getMonitoredSagaReducers(monitoredSagas)

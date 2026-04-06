@@ -97,9 +97,9 @@ describe(useTokenPriceHistory, () => {
 
     await waitFor(() => {
       expect(result.current.data?.spot).toEqual({
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         value: expect.objectContaining({ value: market.price?.value }),
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         relativeChange: expect.objectContaining({ value: market.pricePercentChange?.value }),
       })
     })
@@ -248,7 +248,7 @@ describe(useTokenPriceHistory, () => {
     const yearTokenProject = createUsdcTokenProjectWithMatchingPriceHistory(yearPriceHistory)
 
     const { resolvers } = queryResolvers({
-      // eslint-disable-next-line max-params
+      // oxlint-disable-next-line max-params
       tokenProjects: (parent, args, context, info) => {
         switch (info.variableValues['duration']) {
           case GraphQLApi.HistoryDuration.Day:

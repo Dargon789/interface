@@ -50,10 +50,11 @@ type V2DutchAuctionOrderSuccess = {
 type DutchAuctionOrderResponse = DutchAuctionOrderError | DutchAuctionOrderSuccess | V2DutchAuctionOrderSuccess
 
 function isV2DutchAuctionOrderSuccess(response: any): response is V2DutchAuctionOrderSuccess {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   return (response as V2DutchAuctionOrderSuccess).orderHash !== undefined
 }
 
+// oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
 const isErrorResponse = (res: Response, order: DutchAuctionOrderResponse): order is DutchAuctionOrderError =>
   res.status < 200 || res.status > 202
 

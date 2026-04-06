@@ -4,14 +4,19 @@ import { KycVerificationStatus } from '@uniswap/client-liquidity/dist/uniswap/li
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, styled, useColorsFromTokenColor } from 'ui/src'
+import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { AuctionEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
+import { getTokenWarningSeverity } from 'uniswap/src/features/tokens/warnings/safetyUtils'
+import { TokenWarningCard } from 'uniswap/src/features/tokens/warnings/TokenWarningCard'
+import TokenWarningModal from 'uniswap/src/features/tokens/warnings/TokenWarningModal'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { zeroAddress } from 'viem'
 import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { getAuctionBidInputtedAnalyticsProperties } from '~/components/Toucan/Auction/analytics'
+import { AuctionAccessIndicators } from '~/components/Toucan/Auction/BidForm/AuctionAccessIndicators'
 import { BidBudgetInput } from '~/components/Toucan/Auction/BidForm/BidBudgetInput'
 import { BidFormWarningBanner } from '~/components/Toucan/Auction/BidForm/BidFormWarningBanner'
 import { BidMaxValuationInput } from '~/components/Toucan/Auction/BidForm/BidMaxValuationInput'
@@ -58,6 +63,7 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
   const auctionContractAddress = useAuctionStore((state) => state.auctionAddress)
   const currency = useAuctionStore((state) => state.auctionDetails?.currency)
   const userBids = useAuctionStore((state) => state.userBids)
+  const token = useAuctionStore((state) => state.auctionDetails?.token)
   const auctionTokenName = useAuctionStore((state) => state.auctionDetails?.token?.currency.name)
   const { tokenColor, effectiveTokenColor } = useAuctionTokenColor()
   const auctionAddress = useAuctionStore((state) => state.auctionAddress)
@@ -70,6 +76,10 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
   const [isKycInterstitialModalOpen, setIsKycInterstitialModalOpen] = useState(false)
   const [isKycFailedModalOpen, setIsKycFailedModalOpen] = useState(false)
+  const [showTokenWarningModal, setShowTokenWarningModal] = useState(false)
+
+  const tokenWarningSeverity = token ? getTokenWarningSeverity(token) : WarningSeverity.None
+  const shouldShowTokenWarning = tokenWarningSeverity > WarningSeverity.Low
 
   const {
     budgetField,
@@ -192,7 +202,8 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
   )
 
   return (
-    <>
+    <Flex flexDirection="column" gap="$spacing8">
+      <AuctionAccessIndicators />
       <Flex flexGrow={1} justifyContent="space-between" gap="$spacing24">
         <Flex gap="$spacing12">
           {showDisabledState && (
@@ -250,6 +261,9 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
               auctionTokenName={auctionTokenName}
             />
           )}
+          {shouldShowTokenWarning && token && (
+            <TokenWarningCard currencyInfo={token} onPress={() => setShowTokenWarningModal(true)} />
+          )}
           {kycStatus.kycButtonLabel || kycStatus.whitelistLabel ? (
             <KycActionButton
               kycStatus={kycStatus}
@@ -283,6 +297,15 @@ export function BidForm({ onInputChange, setMobileScreenConfig }: BidFormProps):
         onContinue={kycStatus.onKycAction}
       />
       <KycFailedModal isOpen={isKycFailedModalOpen} onClose={() => setIsKycFailedModalOpen(false)} />
-    </>
+      {shouldShowTokenWarning && token && (
+        <TokenWarningModal
+          currencyInfo0={token}
+          isInfoOnlyWarning
+          isVisible={showTokenWarningModal}
+          closeModalOnly={() => setShowTokenWarningModal(false)}
+          onAcknowledge={() => setShowTokenWarningModal(false)}
+        />
+      )}
+    </Flex>
   )
 }

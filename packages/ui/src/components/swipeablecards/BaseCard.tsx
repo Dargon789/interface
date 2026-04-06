@@ -74,6 +74,7 @@ export function BaseCard({
     if (panOffset) {
       panOffset.value = 0
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [panOffset, stackIndex, activeCardHeight, height])
 
   const animatedStyle = useAnimatedStyle(() => {

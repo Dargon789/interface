@@ -44,6 +44,7 @@ export function BidBudgetInput({ label, field, disabled }: BidBudgetInputProps):
       customPanelStyle={CUSTOM_PANEL_STYLE}
       fontSizeOptions={{ maxFontSize: 18, minFontSize: 12 }}
       fiatValueVariant="body4"
+      balanceVariant="body4"
       inputRowPaddingVertical="$none"
       inputRowMinHeight={32}
       disabled={disabled}

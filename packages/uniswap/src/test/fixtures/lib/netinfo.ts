@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
+// oxlint-disable-next-line typescript/no-restricted-imports
 import {
   NetInfoConnectedStates,
   NetInfoNoConnectionState,

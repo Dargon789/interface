@@ -89,7 +89,7 @@ export function TokenBalanceItemContextMenu({
   openContractAddressExplainerModal,
   openReportTokenModal,
   copyAddressToClipboard,
-  onPressToken: onPressToken,
+  onPressToken,
   disableNotifications,
   recipient,
 }: PropsWithChildren<TokenBalanceItemContextMenuProps>): JSX.Element {

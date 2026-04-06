@@ -2,6 +2,7 @@ import { Token } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
 import { SwapConfigKey } from '@universe/gating'
 import { MONAD_LOGO_FILLED } from 'ui/src/assets'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import {
   DEFAULT_MS_BEFORE_WARNING,
   DEFAULT_NATIVE_ADDRESS_LEGACY,
@@ -54,7 +55,7 @@ export const MONAD_CHAIN_INFO = {
   statusPage: undefined, // TODO: Add status page URL when available
   supportsV4: true,
   supportsNFTs: false,
-  urlParam: 'monad',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Monad],
   rpcUrls: {
     [RPCType.Public]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Monad)] },
     [RPCType.Default]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Monad)] },

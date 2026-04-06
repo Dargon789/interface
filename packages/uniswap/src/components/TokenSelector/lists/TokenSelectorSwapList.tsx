@@ -1,4 +1,5 @@
 import { GqlResult } from '@universe/api'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { memo, useCallback, useMemo, useRef } from 'react'
 import { TokenSelectorOption } from 'uniswap/src/components/lists/items/types'
 import { type OnchainItemSection, OnchainItemSectionName } from 'uniswap/src/components/lists/OnchainItemList/types'
@@ -17,13 +18,14 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { ClearRecentSearchesButton } from 'uniswap/src/features/search/ClearRecentSearchesButton'
 import { isMobileApp } from 'utilities/src/platform'
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 function useTokenSectionsForSwap({
   addresses,
   chainFilter,
   oppositeSelectedToken,
 }: TokenSectionsHookProps): GqlResult<OnchainItemSection<TokenSelectorOption>[]> {
   const { defaultChainId, isTestnetModeEnabled } = useEnabledChains()
+  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const {
     data: portfolioTokenOptions,
@@ -70,14 +72,14 @@ function useTokenSectionsForSwap({
   const error =
     (!portfolioTokenOptions && portfolioTokenOptionsError) ||
     (!trendingTokenOptions && trendingTokenOptionsError) ||
-    (!favoriteTokenOptions && favoriteTokenOptionsError) ||
+    (!isMultichainTokenUx && !favoriteTokenOptions && favoriteTokenOptionsError) ||
     (!commonTokenOptions && commonTokenOptionsError) ||
     (!bridgingTokenOptions && bridgingTokenOptionsError)
 
   const loading =
     (!portfolioTokenOptions && portfolioTokenOptionsLoading) ||
     (!trendingTokenOptions && trendingTokenOptionsLoading) ||
-    (!favoriteTokenOptions && favoriteTokenOptionsLoading) ||
+    (!isMultichainTokenUx && !favoriteTokenOptions && favoriteTokenOptionsLoading) ||
     (!commonTokenOptions && commonTokenOptionsLoading) ||
     (!bridgingTokenOptions && bridgingTokenOptionsLoading)
 
@@ -148,7 +150,7 @@ function useTokenSectionsForSwap({
       ...(recentSection ?? []),
       // TODO(WEB-3061): Favorited wallets/tokens
       // Extension & interface do not support favoriting but has a default list, so we can't rely on empty array check
-      ...(isMobileApp ? (favoriteSection ?? []) : []),
+      ...(isMobileApp && !isMultichainTokenUx ? (favoriteSection ?? []) : []),
       ...(trendingSection ?? []),
     ]
   }, [
@@ -160,6 +162,7 @@ function useTokenSectionsForSwap({
     recentSection,
     favoriteSection,
     isTestnetModeEnabled,
+    isMultichainTokenUx,
   ])
 
   return useMemo(
@@ -173,7 +176,7 @@ function useTokenSectionsForSwap({
   )
 }
 
-function _TokenSelectorSwapList({
+function TokenSelectorSwapListInner({
   onSelectCurrency,
   addresses,
   chainFilter,
@@ -209,4 +212,4 @@ function _TokenSelectorSwapList({
   )
 }
 
-export const TokenSelectorSwapList = memo(_TokenSelectorSwapList)
+export const TokenSelectorSwapList = memo(TokenSelectorSwapListInner)

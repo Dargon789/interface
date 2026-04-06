@@ -46,7 +46,7 @@ export const runSagaEffect = <T>(effect: SagaIterator<T>): Promise<T> => {
 
 // Disable eslint rule to infer return type from the returned value
 // (it is complex and not worth the effort to type it manually)
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+// oxlint-disable-next-line typescript/explicit-function-return-type
 export function createStore({
   additionalSagas = [],
   middlewareAfter = [],

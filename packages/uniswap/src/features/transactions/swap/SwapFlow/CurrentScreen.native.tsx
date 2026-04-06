@@ -8,11 +8,13 @@ import {
   useTransactionModalContext,
 } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
 import { SwapFormButton } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/SwapFormButton'
-import { UnichainInstantBalanceModal } from 'uniswap/src/features/transactions/swap/components/UnichainInstantBalanceModal/UnichainInstantBalanceModal'
+import { SwapFormWarningStoreContextProvider } from 'uniswap/src/features/transactions/swap/form/stores/swapFormWarningStore/SwapFormWarningStoreContextProvider'
 import { SwapFormScreen } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/SwapFormScreen'
 import { SwapFormWarningModals } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/SwapFormWarningModals/SwapFormWarningModals'
-import { SwapFormWarningStoreContextProvider } from 'uniswap/src/features/transactions/swap/form/stores/swapFormWarningStore/SwapFormWarningStoreContextProvider'
-import { SwapReviewScreen } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewScreen'
+import {
+  SwapReviewScreen,
+  SwapReviewScreenProviders,
+} from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewScreen'
 import { useDelayedRender } from 'utilities/src/react/useDelayedRender'
 
 export function CurrentScreen({
@@ -39,14 +41,10 @@ export function CurrentScreen({
         </Trace>
       )
     case TransactionScreen.Review:
-    case TransactionScreen.UnichainInstantBalance:
       return (
-        <>
-          <Trace logImpression section={SectionName.SwapReview}>
-            <SwapReviewScreenDelayedRender onSubmitSwap={onSubmitSwap} />
-          </Trace>
-          {screen === TransactionScreen.UnichainInstantBalance && <UnichainInstantBalanceModal />}
-        </>
+        <Trace logImpression section={SectionName.SwapReview}>
+          <SwapReviewScreenDelayedRender onSubmitSwap={onSubmitSwap} />
+        </Trace>
       )
   }
 }
@@ -66,5 +64,9 @@ function SwapFormScreenDelayedRender({ settings }: { settings: TransactionSettin
 function SwapReviewScreenDelayedRender({ onSubmitSwap }: { onSubmitSwap?: () => Promise<void> | void }): JSX.Element {
   const { isContentHidden } = useDelayedRender(SWAP_REVIEW_SCREEN_TRANSITION_DELAY)
 
-  return <SwapReviewScreen hideContent={isContentHidden} onSubmitSwap={onSubmitSwap} />
+  return (
+    <SwapReviewScreenProviders hideContent={isContentHidden} onSubmitSwap={onSubmitSwap}>
+      <SwapReviewScreen />
+    </SwapReviewScreenProviders>
+  )
 }

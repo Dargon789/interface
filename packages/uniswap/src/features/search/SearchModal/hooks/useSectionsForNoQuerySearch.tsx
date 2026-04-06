@@ -1,5 +1,6 @@
 import { ExploreStatsResponse, PoolStats } from '@uniswap/client-explore/dist/uniswap/explore/v1/service_pb'
 import { ALL_NETWORKS_ARG, GqlResult } from '@universe/api'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
 import { usePoolStatsToPoolOptions } from 'uniswap/src/components/lists/items/pools/usePoolStatsToPoolOptions'
 import { SearchModalOption } from 'uniswap/src/components/lists/items/types'
@@ -7,6 +8,7 @@ import { useFavoriteWalletOptions } from 'uniswap/src/components/lists/items/wal
 import { OnchainItemSection, OnchainItemSectionName } from 'uniswap/src/components/lists/OnchainItemList/types'
 import { useOnchainItemListSection } from 'uniswap/src/components/lists/utils'
 import { useCurrencyInfosToTokenOptions } from 'uniswap/src/components/TokenSelector/hooks/useCurrencyInfosToTokenOptions'
+import { useMultichainSearchResultsToOptions } from 'uniswap/src/components/TokenSelector/hooks/useMultichainSearchResultsToOptions'
 import { useTrendingTokensCurrencyInfos } from 'uniswap/src/components/TokenSelector/hooks/useTrendingTokensCurrencyInfos'
 import { useExploreStatsQuery } from 'uniswap/src/data/rest/exploreStats'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -17,6 +19,7 @@ import {
   NUMBER_OF_RESULTS_SHORT,
 } from 'uniswap/src/features/search/SearchModal/constants'
 import { useRecentlySearchedOptions } from 'uniswap/src/features/search/SearchModal/hooks/useRecentlySearchedOptions'
+import { useSearchMultichainListTokens } from 'uniswap/src/features/search/SearchModal/hooks/useSearchMultichainListTokens'
 import { SearchTab } from 'uniswap/src/features/search/SearchModal/types'
 import { isMobileApp, isWebApp, isWebPlatform } from 'utilities/src/platform'
 
@@ -39,6 +42,9 @@ export function useSectionsForNoQuerySearch({
     endElement: <ClearRecentSearchesButton />,
   })
 
+  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const isMultichainPath = isMultichainTokenUx && chainFilter === null
+
   const numberOfTrendingTokens =
     activeTab === SearchTab.All
       ? isMobileApp
@@ -46,16 +52,37 @@ export function useSectionsForNoQuerySearch({
         : NUMBER_OF_RESULTS_SHORT
       : NUMBER_OF_RESULTS_LONG
   const skipTrendingTokensQuery = activeTab !== SearchTab.Tokens && activeTab !== SearchTab.All
+
   const {
     data: tokens,
-    error: tokensError,
-    refetch: refetchTokens,
-    loading: loadingTokens,
-  } = useTrendingTokensCurrencyInfos(chainFilter, skipTrendingTokensQuery)
-  const trendingTokenOptions = useCurrencyInfosToTokenOptions({ currencyInfos: tokens })
+    error: flatTokensError,
+    refetch: refetchFlatTokens,
+    loading: flatTokensLoading,
+  } = useTrendingTokensCurrencyInfos(chainFilter, skipTrendingTokensQuery || isMultichainPath)
+
+  const {
+    data: multichainResults,
+    error: multichainTokensError,
+    refetch: refetchMultichainTokens,
+    loading: multichainTokensLoading,
+  } = useSearchMultichainListTokens({
+    pageSize: numberOfTrendingTokens,
+    skip: skipTrendingTokensQuery || !isMultichainPath,
+  })
+
+  const flatTokenOptions = useCurrencyInfosToTokenOptions({ currencyInfos: tokens })
+  const multichainTokenOptions = useMultichainSearchResultsToOptions({ results: multichainResults })
+
+  const tokensError = isMultichainPath ? multichainTokensError : flatTokensError
+  const loadingTokens = isMultichainPath ? multichainTokensLoading : flatTokensLoading
+  const refetchTokens = isMultichainPath ? refetchMultichainTokens : refetchFlatTokens
+  const trendingTokenOptions: SearchModalOption[] = isMultichainPath
+    ? (multichainTokenOptions ?? [])
+    : (flatTokenOptions ?? [])
+
   const trendingTokenSection = useOnchainItemListSection({
     sectionKey: OnchainItemSectionName.TrendingTokens,
-    options: trendingTokenOptions?.slice(0, numberOfTrendingTokens),
+    options: trendingTokenOptions.slice(0, numberOfTrendingTokens),
   })
 
   // Load trending pools by 24H volume
@@ -90,7 +117,7 @@ export function useSectionsForNoQuerySearch({
     options: favoriteWalletsOptions,
   })
 
-  // eslint-disable-next-line complexity
+  // oxlint-disable-next-line complexity
   return useMemo((): GqlResult<OnchainItemSection<SearchModalOption>[]> => {
     let sections: OnchainItemSection<SearchModalOption>[] = []
 
@@ -114,11 +141,6 @@ export function useSectionsForNoQuerySearch({
       case SearchTab.Wallets:
         return {
           data: [...(recentSearchSection ?? []), ...(favoriteWalletsSection ?? [])],
-          loading: false,
-        }
-      case SearchTab.NFTCollections:
-        return {
-          data: [...(recentSearchSection ?? [])],
           loading: false,
         }
       default:

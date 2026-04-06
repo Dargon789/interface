@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
+import { Wrench } from 'ui/src/components/icons/Wrench'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { setIsTestnetModeEnabled } from 'uniswap/src/features/settings/slice'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
@@ -14,6 +15,7 @@ export function TestnetsToggle() {
 
   return (
     <SettingsToggle
+      icon={<Wrench size="$icon.24" color="$neutral2" />}
       title={t('settings.setting.wallet.testnetMode.title')}
       dataid={TestID.TestnetsToggle}
       isActive={isTestnetModeEnabled}

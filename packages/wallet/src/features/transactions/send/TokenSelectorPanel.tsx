@@ -5,8 +5,8 @@ import { RotatableChevron } from 'ui/src/components/icons'
 import { iconSizes } from 'ui/src/theme'
 import { PresetAmountButton } from 'uniswap/src/components/CurrencyInputPanel/AmountInputPresets/PresetAmountButton'
 import { CurrencyLogo } from 'uniswap/src/components/CurrencyLogo/CurrencyLogo'
-import { TokenSelectorModal, TokenSelectorVariation } from 'uniswap/src/components/TokenSelector/TokenSelector'
-import { TokenSelectorFlow } from 'uniswap/src/components/TokenSelector/types'
+import { TokenSelectorModal } from 'uniswap/src/components/TokenSelector/TokenSelector'
+import { TokenSelectorFlow, TokenSelectorVariation } from 'uniswap/src/components/TokenSelector/types'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
@@ -78,8 +78,8 @@ export function TokenSelectorPanel({
               {currencyInfo && (
                 <Text color="$neutral2" variant="body3">
                   {t('send.input.token.balance.title', {
-                    balance: formattedCurrencyBalance,
-                    symbol: currencyInfo.currency.symbol,
+                    balance: formattedCurrencyBalance ?? '',
+                    symbol: currencyInfo.currency.symbol ?? '',
                   })}
                 </Text>
               )}

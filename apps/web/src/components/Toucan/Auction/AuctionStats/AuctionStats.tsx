@@ -38,7 +38,7 @@ const STATS_PLACEHOLDER = '--'
  * Formats the implied token price for display.
  * Renders range prices on two lines for better readability.
  */
-function formatImpliedTokenPrice(impliedTokenPrice: { start: string; end?: string } | null): ReactNode {
+export function formatImpliedTokenPrice(impliedTokenPrice: { start: string; end?: string } | null): ReactNode {
   if (!impliedTokenPrice) {
     return STATS_PLACEHOLDER
   }
@@ -287,7 +287,7 @@ export const AuctionStats = () => {
   const totalStats = statItems.length
 
   return (
-    <Flex width={400} maxWidth="100%" flexShrink={0} gap="$spacing16" $xl={{ width: 360 }} $lg={{ width: '100%' }}>
+    <Flex maxWidth="100%" flexShrink={0} gap="$spacing16" $xl={{ width: 360 }} $lg={{ width: '100%' }}>
       {/* Header */}
       <Text variant={media.lg ? 'subheading1' : 'heading3'}>{t('toucan.auction.stats')}</Text>
       {/* Stats Table */}

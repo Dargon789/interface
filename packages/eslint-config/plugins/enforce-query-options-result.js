@@ -31,7 +31,7 @@ module.exports = {
   create(context) {
     const options = context.options[0] || {}
     const importPath = options.importPath || 'utilities/src/reactQuery/queryOptions'
-    const sourceCode = context.getSourceCode()
+    const sourceCode = context.sourceCode
 
     // Track imports state
     let hasQueryOptionsResultImport = false

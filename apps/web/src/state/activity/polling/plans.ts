@@ -104,7 +104,7 @@ export function usePollPendingPlanTransactions(onActivityUpdate: OnActivityUpdat
         }
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- can change during await
+      // oxlint-disable-next-line typescript/no-unnecessary-condition -- can change during await
       if (isActiveRef.current) {
         timeout = setTimeout(poll, PLAN_POLLING_INTERVAL_MS)
       }

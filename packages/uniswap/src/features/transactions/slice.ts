@@ -1,4 +1,4 @@
-/* biome-ignore-all lint/style/noNonNullAssertion: helpful when dealing with deeply nested state objects */
+/* oxlint-disable typescript/no-non-null-assertion -- helpful when dealing with deeply nested state objects */
 import { createAction, createSlice, Draft, PayloadAction } from '@reduxjs/toolkit'
 import { providers } from 'ethers/lib/ethers'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -166,6 +166,7 @@ const slice = createSlice({
     cancelPlanStep: (
       state,
       {
+        // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
         payload: { chainId, id, address, cancelRequest, planId, cancelableStepInfo },
       }: PayloadAction<
         TransactionId & {
@@ -218,7 +219,7 @@ const slice = createSlice({
           type === TransactionType.LocalOffRamp ||
           type === TransactionType.OnRampPurchase ||
           type === TransactionType.OnRampTransfer ||
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          // oxlint-disable-next-line typescript/no-unnecessary-condition
           type === TransactionType.OffRampSale,
         `only FOR transactions can be upserted`,
       )

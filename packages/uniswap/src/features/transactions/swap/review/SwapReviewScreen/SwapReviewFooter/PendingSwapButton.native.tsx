@@ -5,9 +5,9 @@ import { Button, CustomButtonFrame, Flex, ThemedSpinningLoader, useIsShortMobile
 import { AnimatedFlex } from 'ui/src/components/layout/AnimatedFlex'
 import type { Warning } from 'uniswap/src/components/modals/WarningModal/types'
 import { getPlanProgressEstimates, PlanProgressEstimates } from 'uniswap/src/features/transactions/swap/plan/utils'
-import { DelayedSubmissionText } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewFooter/DelayedSubmissionText'
 import { useSwapReviewStore } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewStore/useSwapReviewStore'
 import { useSwapReviewTransactionStore } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewTransactionStore/useSwapReviewTransactionStore'
+import { DelayedSubmissionText } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewFooter/DelayedSubmissionText'
 import { isChained } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { ONE_SECOND_MS } from 'utilities/src/time/time'
@@ -97,6 +97,7 @@ function useSwapProgressState(): {
         duration: currentStepDuration,
       }),
     )
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [currentStepIndex])
 
   const animatedStyle = useAnimatedStyle(() => {

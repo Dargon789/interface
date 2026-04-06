@@ -12,8 +12,8 @@ import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { useSnowflakeAnimation } from 'uniswap/src/hooks/useSnowflakeAnimation'
 import { isMobileWeb } from 'utilities/src/platform'
-import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { MenuStateVariant, useSetMenuCallback } from '~/components/AccountDrawer/menuState'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { useActiveAddresses } from '~/features/accounts/store/hooks'
 
 const DisconnectedContainer = styled(Flex, {
@@ -87,7 +87,7 @@ export function DisconnectedState({ parentRef }: { parentRef: RefObject<HTMLDivE
   })
 
   return (
-    // biome-ignore lint/correctness/noRestrictedElements: Web-only mouse tracking for glow effect
+    // oxlint-disable-next-line react/forbid-elements -- Web-only mouse tracking for glow effect
     <div
       style={{
         width: '100%',

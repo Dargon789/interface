@@ -5,7 +5,7 @@ import { useDispatch } from 'react-redux'
 import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { Button, Flex, styled, Text, useMedia } from 'ui/src'
 import { Plus } from 'ui/src/components/icons/Plus'
-import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
+import { getChainInfo, TOUCAN_AUCTION_SUPPORTED_CHAINS } from 'uniswap/src/features/chains/chainInfo'
 import { isSVMChain } from 'uniswap/src/features/platforms/utils/chains'
 import { ElementName, InterfacePageName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
@@ -13,8 +13,6 @@ import { getTokenExploreURL } from '~/appGraphql/data/util'
 import { VolumeTimeFrameSelector } from '~/components/Explore/VolumeTimeFrameSelector'
 import PoolNotFoundModal from '~/components/NotFoundModal/PoolNotFoundModal'
 import TokenNotFoundModal from '~/components/NotFoundModal/TokenNotFoundModal'
-import { ToucanTable } from '~/components/Toucan/TopAuctionsTable'
-import { TopVerifiedAuctionsSection } from '~/components/Toucan/TopVerifiedAuctionsSection'
 import { MAX_WIDTH_MEDIA_BREAKPOINT } from '~/constants/breakpoints'
 import { AuctionStatusFilter as AuctionStatusFilterComponent } from '~/pages/Explore/AuctionStatusFilter'
 import { AuctionVerificationFilter as AuctionVerificationFilterComponent } from '~/pages/Explore/AuctionVerificationFilter'
@@ -25,6 +23,8 @@ import { TableNetworkFilter } from '~/pages/Explore/NetworkFilter'
 import { ProtocolFilter } from '~/pages/Explore/ProtocolFilter'
 import { useExploreParams } from '~/pages/Explore/redirects'
 import { SearchBar } from '~/pages/Explore/SearchBar'
+import { ToucanTable } from '~/pages/Explore/tables/Auctions/TopAuctionsTable'
+import { TopVerifiedAuctionsSection } from '~/pages/Explore/tables/Auctions/TopVerifiedAuctionsSection'
 import { ExploreTopPoolTable } from '~/pages/Explore/tables/Pools/PoolTable'
 import { RecentTransactionsTable } from '~/pages/Explore/tables/RecentTransactions/RecentTransactions'
 import { TopTokensTable } from '~/pages/Explore/tables/Tokens/TopTokensTable'
@@ -129,12 +129,13 @@ const Explore = ({ initialTab }: { initialTab?: ExploreTab }) => {
   }, [initialTab, Pages])
 
   // scroll to tab navbar on initial page mount only
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Intentionally only runs once on mount
+  // oxlint-disable-next-line react/exhaustive-deps -- Intentionally only runs once on mount
   useEffect(() => {
     if (tabNavRef.current && initialTab) {
       const offsetTop = tabNavRef.current.getBoundingClientRect().top + window.scrollY
       window.scrollTo({ top: offsetTop - 90, behavior: 'smooth' })
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   useEffect(() => {
@@ -304,7 +305,7 @@ const Explore = ({ initialTab }: { initialTab?: ExploreTab }) => {
                   {t('toucan.auctions')}
                 </Text>
                 <Flex row gap="$spacing8" justifyContent="flex-start" $md={{ width: '100%' }}>
-                  <TableNetworkFilter />
+                  <TableNetworkFilter networks={TOUCAN_AUCTION_SUPPORTED_CHAINS} />
                   <AuctionVerificationFilterComponent />
                   <AuctionStatusFilterComponent />
                   <SearchBar tab={currentKey} />

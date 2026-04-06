@@ -1,6 +1,6 @@
 import { fireEvent as rtlFireEvent } from '@testing-library/react'
 import { act } from '@testing-library/react-native'
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
+// oxlint-disable-next-line typescript/no-restricted-imports
 import { View } from 'react-native'
 import { Flex } from 'ui/src'
 import { MenuOptionItem } from 'uniswap/src/components/menus/ContextMenu'
@@ -90,6 +90,24 @@ describe('ContextMenu', () => {
       expect(queryByText('Option 1')).toBeTruthy()
       expect(queryByText('Option 2')).toBeTruthy()
     })
+  })
+
+  it('renders contentOverride instead of menu items when provided', () => {
+    const { queryByText } = renderWithProviders(
+      <ContextMenu
+        menuItems={mockMenuItems}
+        contentOverride={<div>Custom Content</div>}
+        triggerMode={ContextMenuTriggerMode.Primary}
+        isOpen={true}
+        closeMenu={vi.fn()}
+        openMenu={vi.fn()}
+      >
+        <Flex>Trigger</Flex>
+      </ContextMenu>,
+    )
+
+    expect(queryByText('Custom Content')).toBeTruthy()
+    expect(queryByText('Option 1')).toBeFalsy()
   })
 
   describe('handles edge cases', () => {

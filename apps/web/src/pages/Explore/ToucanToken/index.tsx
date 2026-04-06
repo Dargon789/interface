@@ -15,25 +15,27 @@ import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import { InterfacePageName } from 'uniswap/src/features/telemetry/constants/trace/page'
 import { Trace } from 'uniswap/src/features/telemetry/Trace'
+import { ActivitySection } from '~/components/Toucan/Auction/ActivityTimeline/ActivitySection'
 import { BidDistributionChartTab } from '~/components/Toucan/Auction/AuctionChartShared'
 import { AuctionHeader } from '~/components/Toucan/Auction/AuctionHeader'
 import { AuctionStats } from '~/components/Toucan/Auction/AuctionStats/AuctionStats'
 import { AuctionIntroBanner } from '~/components/Toucan/Auction/Banners/AuctionIntro/AuctionIntroBanner'
 import { AuctionStatsBanner } from '~/components/Toucan/Auction/Banners/AuctionStatsBanner/AuctionStatsBanner'
 import { TokenLaunchedBanner } from '~/components/Toucan/Auction/Banners/TokenLaunched/TokenLaunchedBanner'
-import { BidActivities } from '~/components/Toucan/Auction/BidActivities/BidActivities'
 import { AuctionChartContainer } from '~/components/Toucan/Auction/BidDistributionChart/AuctionChartContainer'
 import { BidForm } from '~/components/Toucan/Auction/BidForm/BidForm'
-import { BidFormTabs } from '~/components/Toucan/Auction/Bids/BidFormTabs'
+import { AuctionGraduated } from '~/components/Toucan/Auction/Bids/AuctionGraduated'
+import { Bids } from '~/components/Toucan/Auction/Bids/Bids'
 import { WithdrawModal } from '~/components/Toucan/Auction/Bids/WithdrawModal/WithdrawModal'
 import { useBidFormState } from '~/components/Toucan/Auction/hooks/useBidFormState'
 import { useWithdrawButtonState } from '~/components/Toucan/Auction/hooks/useWithdrawButtonState'
 import { AuctionStoreProvider } from '~/components/Toucan/Auction/store/AuctionStoreContextProvider'
 import { AuctionProgressState, BidInfoTab } from '~/components/Toucan/Auction/store/types'
-import { useAuctionStore } from '~/components/Toucan/Auction/store/useAuctionStore'
+import { useAuctionStore, useAuctionStoreActions } from '~/components/Toucan/Auction/store/useAuctionStore'
 import { ToucanActionButton } from '~/components/Toucan/Shared/ToucanActionButton'
 import { ToucanContainer } from '~/components/Toucan/Shared/ToucanContainer'
 import { ToucanIntroModal } from '~/components/Toucan/ToucanIntroModal'
+import { LeftPanel, RightPanel, TokenDetailsLayout } from '~/pages/TokenDetails/components/skeleton/Skeleton'
 import { useAppDispatch, useAppSelector } from '~/state/hooks'
 import { InterfaceState } from '~/state/webReducer'
 
@@ -46,7 +48,6 @@ export enum MobileScreen {
 
 export interface MobileScreenConfig {
   screen: MobileScreen
-  bidFormTab?: BidInfoTab
   showBidFormModal?: boolean
 }
 
@@ -69,7 +70,7 @@ function ToucanTokenContent({
     currentBlockNumber: state.currentBlockNumber,
   }))
   const media = useMedia()
-  const { canPlaceBid, showAuctionGraduated, showMobileWithdrawButton } = useBidFormState()
+  const { canPlaceBid, showMobileWithdrawButton, hasUserBids } = useBidFormState()
 
   // Withdraw button state for mobile fixed button
   const {
@@ -84,6 +85,7 @@ function ToucanTokenContent({
   })
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false)
   const isAuctionEnded = auctionState === AuctionProgressState.ENDED
+  const showAuctionGraduated = isAuctionEnded && isGraduated && hasUserBids
   const shouldShowTokenLaunchedBanner = isAuctionEnded && auctionDetails !== null
 
   const [chartActiveTab, setChartActiveTab] = useState<BidDistributionChartTab>(BidDistributionChartTab.ClearingPrice)
@@ -99,12 +101,17 @@ function ToucanTokenContent({
     }
   }, [auctionState, chartActiveTab, AUTO_SWITCH_TARGET_TAB])
 
-  // Default mobile screen to AuctionGraduated view when auction has graduated and user has bids
+  // Sync activeBidFormTab to store so chart knows whether to render bid line
+  const { setActiveBidFormTab } = useAuctionStoreActions()
+  useEffect(() => {
+    setActiveBidFormTab(showAuctionGraduated ? BidInfoTab.AUCTION_GRADUATED : BidInfoTab.PLACE_A_BID)
+  }, [showAuctionGraduated, setActiveBidFormTab])
+
+  // Default mobile screen to bid form view when auction has graduated and user has bids
   useEffect(() => {
     if (showAuctionGraduated && media.lg) {
       setMobileScreenConfig({
         screen: MobileScreen.BID_FORM,
-        bidFormTab: BidInfoTab.AUCTION_GRADUATED,
       })
     }
   }, [showAuctionGraduated, media.lg])
@@ -133,44 +140,15 @@ function ToucanTokenContent({
         )}
         <AuctionHeader />
         <AuctionStatsBanner />
-        <Flex
-          row
-          width="100%"
-          mt="$spacing24"
-          gap="$spacing32"
-          borderWidth="$spacing1"
-          borderRadius="$rounded20"
-          borderColor="$surface3"
-          padding="$spacing24"
-          height="auto"
-          $xxl={{
-            px: '$spacing32',
-          }}
-          $xl={{
-            px: '$spacing2',
-            gap: '$spacing16',
-          }}
-          $sm={{
-            padding: '$spacing12',
-          }}
-        >
-          <Flex
-            maxWidth={780}
-            width="62%"
-            gap="$spacing2"
+        <TokenDetailsLayout justifyContent="flex-start" px="$none" gap={46}>
+          <LeftPanel
+            maxWidth={744}
+            gap="$spacing40"
             display="flex"
-            $xl={{
-              pl: '$spacing16',
-              width: '56%',
-            }}
             $lg={{
-              px: '$spacing16',
+              gap: '$gap32',
               maxWidth: '100%',
-              width: '100%',
               display: mobileScreenConfig.screen === MobileScreen.CHART ? 'flex' : 'none',
-            }}
-            $sm={{
-              p: '$spacing4',
             }}
           >
             <AuctionChartContainer
@@ -178,40 +156,23 @@ function ToucanTokenContent({
               onTabChange={setChartActiveTab}
               onMobileScreenChange={setMobileScreenConfig}
             />
-          </Flex>
-          <Flex
-            maxWidth={400}
-            width="36%"
+            <ActivitySection />
+            <AuctionStats />
+          </LeftPanel>
+
+          <RightPanel
+            width={390}
             display="flex"
-            $xl={{
-              width: '40%',
-            }}
+            gap="$spacing24"
+            alignSelf="flex-start"
             $lg={{
               display: mobileScreenConfig.screen === MobileScreen.BID_FORM ? 'flex' : 'none',
-              maxWidth: '100%',
-              width: '100%',
             }}
           >
-            <BidFormTabs
-              key={mobileScreenConfig.bidFormTab}
-              onBidFormInputChange={handleBidFormInputChange}
-              onMobileScreenChange={setMobileScreenConfig}
-              forcedActiveTab={mobileScreenConfig.bidFormTab}
-            />
-          </Flex>
-        </Flex>
-        <Flex
-          row
-          width="100%"
-          gap="$spacing48"
-          my="$spacing48"
-          mx="$spacing4"
-          $xl={{ gap: '$spacing32' }}
-          $lg={{ flexDirection: 'column', gap: '$spacing32', mx: 0 }}
-        >
-          <BidActivities />
-          <AuctionStats />
-        </Flex>
+            {showAuctionGraduated ? <AuctionGraduated /> : <BidForm onInputChange={handleBidFormInputChange} />}
+            {hasUserBids && <Bids />}
+          </RightPanel>
+        </TokenDetailsLayout>
       </ToucanContainer>
       {/* Fixed bottom button - $sm only - show Place Bid OR Withdraw */}
       {(canPlaceBid || showMobileWithdrawButton) && (

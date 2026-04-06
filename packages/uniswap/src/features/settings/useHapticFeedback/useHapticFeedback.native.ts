@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { ImpactFeedbackStyle, impactAsync, NotificationFeedbackType, notificationAsync } from 'expo-haptics'
 import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'

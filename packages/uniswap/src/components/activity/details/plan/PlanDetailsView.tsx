@@ -162,6 +162,7 @@ function PlanDetailsSteps({ typeInfo }: { typeInfo: PlanTransactionInfo }): JSX.
   return (
     <Flex
       width="100%"
+      overflow="hidden"
       gap="$spacing2"
       p="$spacing12"
       backgroundColor="$surface2"
@@ -192,12 +193,17 @@ function extractSwapCurrencyId(transactionDetails: TransactionDetails, mode: 'in
       return undefined
     case TransactionType.Swap:
       return mode === 'input' ? typeInfo.inputCurrencyId : typeInfo.outputCurrencyId
-    case TransactionType.Wrap:
-      if (typeInfo.unwrapped) {
-        return mode === 'input' ? buildWrappedNativeCurrencyId(chainId) : buildNativeCurrencyId(chainId)
-      } else {
-        return mode === 'input' ? buildNativeCurrencyId(chainId) : buildWrappedNativeCurrencyId(chainId)
+    case TransactionType.Wrap: {
+      const wrappedId = buildWrappedNativeCurrencyId(chainId)
+      if (!wrappedId) {
+        return undefined
       }
+      if (typeInfo.unwrapped) {
+        return mode === 'input' ? wrappedId : buildNativeCurrencyId(chainId)
+      } else {
+        return mode === 'input' ? buildNativeCurrencyId(chainId) : wrappedId
+      }
+    }
     default:
       return undefined
   }

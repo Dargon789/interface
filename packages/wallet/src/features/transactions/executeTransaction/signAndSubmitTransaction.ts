@@ -140,7 +140,7 @@ export async function signAndSubmitTransaction({
           transactionResponse = await provider.getTransaction(transactionHash)
         } catch (error) {
           logger.debug('signAndSubmitTransaction', 'signAndSubmitTransaction', 'Transaction not found, retrying...')
-          // eslint-disable-next-line max-depth
+          // oxlint-disable-next-line max-depth
           if (retryCount > 10) {
             throw error
           }

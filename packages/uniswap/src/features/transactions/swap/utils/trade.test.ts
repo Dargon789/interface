@@ -6,6 +6,7 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { BridgeTrade, ClassicTrade } from 'uniswap/src/features/transactions/swap/types/trade'
 import { requireAcceptNewTrade } from 'uniswap/src/features/transactions/swap/utils/trade'
 
+// oxlint-disable-next-line jest/no-export -- suppressed
 export const mockPool = new Pool(
   UNI[UniverseChainId.Mainnet],
   WBTC,

@@ -1,5 +1,5 @@
 // Disabling this because we need access to `chrome` in the global scope.
-/* biome-ignore-all lint/style/noRestrictedGlobals: we need access to `chrome` in the global scope */
+/* oxlint-disable no-restricted-globals -- we need access to `chrome` in the global scope */
 
 import { isExtensionApp } from 'utilities/src/platform'
 
@@ -38,7 +38,7 @@ export function getChromeWithThrow(): typeof chrome {
  * and we want to be able to have access to these types while preventing accidental use when not available.
  */
 export function getChromeRuntime(): typeof chrome.runtime | undefined {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (typeof chrome !== 'undefined' && chrome.runtime) {
     return chrome.runtime
   }
@@ -53,7 +53,7 @@ export function getChromeRuntime(): typeof chrome.runtime | undefined {
  * Use this when the code is running in the Extension context.
  */
 export function getChromeRuntimeWithThrow(): typeof chrome.runtime {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (typeof chrome !== 'undefined' && chrome.runtime) {
     return chrome.runtime
   }
@@ -65,7 +65,7 @@ export function getChromeRuntimeWithThrow(): typeof chrome.runtime {
 
 function warnIfChromeIsAccessedInContentScript(): void {
   if (isExtensionApp) {
-    // biome-ignore lint/suspicious/noConsole: Console logging needed for debugging
+    // oxlint-disable-next-line no-console -- Console logging needed for debugging
     console.warn(
       'You are trying to access `chrome.runtime` inside the injected content script ' +
         'even though it does not exist in this context. ' +

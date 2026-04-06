@@ -40,7 +40,7 @@ export function DownloadGraduatedWalletCard(): JSX.Element | null {
   )
 
   const onPressCard = useEvent(() => {
-    setPage(Page.GetApp)
+    setPage(Page.DownloadApp)
     openModal()
   })
 
@@ -66,7 +66,7 @@ export function DownloadGraduatedWalletCard(): JSX.Element | null {
           overflow="hidden"
           my="$spacing8"
           backgroundColor="$surface1"
-          borderWidth={1}
+          borderWidth="$spacing1"
           borderColor="$surface3"
           style={{
             boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.02), 0px 4px 16px -2px rgba(255, 158, 209, 0.14)',

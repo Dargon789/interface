@@ -1,8 +1,8 @@
 import { Currency } from '@uniswap/sdk-core'
 import { useCallback, useEffect } from 'react'
 import { Flex } from 'ui/src'
-import { TokenSelectorContent, TokenSelectorVariation } from 'uniswap/src/components/TokenSelector/TokenSelector'
-import { TokenSelectorFlow } from 'uniswap/src/components/TokenSelector/types'
+import { TokenSelectorContent } from 'uniswap/src/components/TokenSelector/TokenSelector'
+import { TokenSelectorFlow, TokenSelectorVariation } from 'uniswap/src/components/TokenSelector/types'
 import { useActiveAddresses } from 'uniswap/src/features/accounts/store/hooks'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -24,6 +24,7 @@ interface CurrencySearchProps {
   onDismiss: () => void
   chainIds?: UniverseChainId[]
   variation?: TokenSelectorVariation
+  flow?: TokenSelectorFlow
 }
 
 export function CurrencySearch({
@@ -33,6 +34,7 @@ export function CurrencySearch({
   onDismiss,
   chainIds,
   variation,
+  flow = TokenSelectorFlow.Swap,
 }: CurrencySearchProps) {
   const addresses = useActiveAddresses()
 
@@ -69,17 +71,23 @@ export function CurrencySearch({
     showSwitchNetworkNotification({ chainId, prevChainId, action: switchNetworkAction })
   }, [currentTab, chainId, prevChainId, isMultichainContext, switchNetworkAction])
 
+  const isSingleChainContext = chainIds?.length === 1
+  const resolvedChainId = isSingleChainContext
+    ? chainIds[0]
+    : !isMultichainContext || isUserSelectedToken
+      ? chainId
+      : undefined
+
   return (
     <Trace logImpression eventOnTrigger={InterfaceEventName.TokenSelectorOpened} modal={ModalName.TokenSelectorWeb}>
       <Flex width="100%" flexGrow={1} flexShrink={1} flexBasis="auto">
         <TokenSelectorContent
           renderedInModal={false}
           addresses={addresses}
-          isLimits={currentTab === SwapTab.Limit}
-          chainId={!isMultichainContext || isUserSelectedToken ? chainId : undefined}
+          chainId={resolvedChainId}
           chainIds={chainIds ?? chains}
           currencyField={currencyField}
-          flow={TokenSelectorFlow.Swap}
+          flow={currentTab === SwapTab.Limit ? TokenSelectorFlow.Limit : flow}
           isSurfaceReady={true}
           variation={
             variation ??

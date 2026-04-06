@@ -1,4 +1,4 @@
-/* eslint-disable import/no-unused-modules */
+/* oxlint-disable import/no-unused-modules */
 import { EthereumRpcErrorSchema } from 'src/app/features/dappRequests/types/ErrorTypes'
 import { EthersTransactionRequestSchema } from 'src/app/features/dappRequests/types/EthersTypes'
 import { NonfungiblePositionManagerCallSchema } from 'src/app/features/dappRequests/types/NonfungiblePositionManagerTypes'

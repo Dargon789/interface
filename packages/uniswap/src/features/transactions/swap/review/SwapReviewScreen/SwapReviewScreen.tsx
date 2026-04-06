@@ -1,18 +1,14 @@
-import type { ReactNode } from 'react'
+import type { PropsWithChildren, ReactNode } from 'react'
 import { memo } from 'react'
 import { Flex } from 'ui/src'
 import { ProgressIndicator } from 'uniswap/src/components/ConfirmSwapModal/ProgressIndicator'
 import { TransactionModalInnerContainer } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModal'
-import { useTransactionModalContext } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
+import {
+  TransactionScreen,
+  useTransactionModalContext,
+} from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
 import { usePrepareSwapTransactionEffect } from 'uniswap/src/features/transactions/swap/review/hooks/usePrepareSwapTransactionEffect'
 import { useSwapOnPrevious } from 'uniswap/src/features/transactions/swap/review/hooks/useSwapOnPrevious'
-import { SwapErrorScreen } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapErrorScreen'
-import { SwapReviewFooter } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewFooter/SwapReviewFooter'
-import { SwapReviewLoadingView } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewLoadingView'
-import { SwapReviewSwapDetails } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewSwapDetails'
-import { SwapReviewWarningModal } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewWarningModal'
-import { SwapReviewWrapTransactionDetails } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewWrapTransactionDetails'
-import { TransactionAmountsReview } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/TransactionAmountsReview'
 import { SwapReviewCallbacksContextProvider } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewCallbacksStore/SwapReviewCallbacksStoreContextProvider'
 import { useSwapReviewCallbacksStore } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewCallbacksStore/useSwapReviewCallbacksStore'
 import { SwapReviewStoreContextProvider } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewStore/SwapReviewStoreContextProvider'
@@ -29,6 +25,13 @@ import {
   useSwapReviewTransactionStore,
 } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewTransactionStore/useSwapReviewTransactionStore'
 import { SwapReviewWarningStoreContextProvider } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewWarningStore/SwapReviewWarningStoreContextProvider'
+import { SwapErrorScreen } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapErrorScreen'
+import { SwapReviewFooter } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewFooter/SwapReviewFooter'
+import { SwapReviewLoadingView } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewLoadingView'
+import { SwapReviewSwapDetails } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewSwapDetails'
+import { SwapReviewWarningModal } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewWarningModal'
+import { SwapReviewWrapTransactionDetails } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewWrapTransactionDetails'
+import { TransactionAmountsReview } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/TransactionAmountsReview'
 import { useSwapDependenciesStore } from 'uniswap/src/features/transactions/swap/stores/swapDependenciesStore/useSwapDependenciesStore'
 import { useSwapTxStore } from 'uniswap/src/features/transactions/swap/stores/swapTxStore/useSwapTxStore'
 import { isChained } from 'uniswap/src/features/transactions/swap/utils/routing'
@@ -41,17 +44,21 @@ interface SwapReviewScreenProps {
   onSubmitSwap?: () => Promise<void> | void
 }
 
-export function SwapReviewScreen({ hideContent, onSubmitSwap }: SwapReviewScreenProps): JSX.Element {
-  return <SwapReviewScreenProviders hideContent={hideContent} onSubmitSwap={onSubmitSwap} />
-}
-
-export function SwapReviewScreenProviders({ hideContent, onSubmitSwap }: SwapReviewScreenProps): JSX.Element {
-  const { onClose, authTrigger, setScreen } = useTransactionModalContext()
+export function SwapReviewScreenProviders({
+  children,
+  hideContent,
+  onSubmitSwap,
+}: PropsWithChildren<SwapReviewScreenProps>): JSX.Element {
+  const { onClose, authTrigger, setScreen, screen } = useTransactionModalContext()
   const { derivedSwapInfo, getExecuteSwapService } = useSwapDependenciesStore((s) => ({
     derivedSwapInfo: s.derivedSwapInfo,
     getExecuteSwapService: s.getExecuteSwapService,
   }))
   const swapTxContext = useSwapTxStore((s) => s)
+
+  if (screen !== TransactionScreen.Review) {
+    return <>{children}</>
+  }
 
   return (
     <SwapReviewStoreContextProvider hideContent={hideContent}>
@@ -65,7 +72,7 @@ export function SwapReviewScreenProviders({ hideContent, onSubmitSwap }: SwapRev
           onClose={onClose}
         >
           <SwapReviewTransactionStoreContextProvider derivedSwapInfo={derivedSwapInfo} swapTxContext={swapTxContext}>
-            <SwapReviewContent />
+            {children}
           </SwapReviewTransactionStoreContextProvider>
         </SwapReviewCallbacksContextProvider>
       </SwapReviewWarningStoreContextProvider>
@@ -73,7 +80,7 @@ export function SwapReviewScreenProviders({ hideContent, onSubmitSwap }: SwapRev
   )
 }
 
-function SwapReviewContent(): JSX.Element | null {
+export function SwapReviewScreen(): JSX.Element | null {
   const { acceptedDerivedSwapInfo, isWrap, newTradeRequiresAcceptance } = useSwapReviewTransactionStore((s) => ({
     acceptedDerivedSwapInfo: s.acceptedDerivedSwapInfo,
     isWrap: s.isWrap,
@@ -89,7 +96,7 @@ function SwapReviewContent(): JSX.Element | null {
   const { trade } = acceptedDerivedSwapInfo?.trade ?? {}
   const isChainedAction = Boolean(trade && isChained({ routing: trade.routing }))
 
-  const showInterfaceReviewSteps = useShowInterfaceReviewSteps()
+  const showInterfaceReviewSteps = useShowInterfaceReviewSteps() && !newTradeRequiresAcceptance
 
   const { onPrev } = useSwapOnPrevious()
 

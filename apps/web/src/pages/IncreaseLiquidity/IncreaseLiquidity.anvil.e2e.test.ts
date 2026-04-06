@@ -12,6 +12,16 @@ import { assume0xAddress } from '~/utils/wagmi'
 
 const test = getTest({ withAnvil: true })
 
+function modifyV4RequestData(data: { v4IncreaseLpPosition: { simulateTransaction: boolean } }) {
+  data.v4IncreaseLpPosition.simulateTransaction = false
+  return data
+}
+
+function modifyV3RequestData(data: { v3IncreaseLpPosition: { simulateTransaction: boolean } }) {
+  data.v3IncreaseLpPosition.simulateTransaction = false
+  return data
+}
+
 test.describe(
   'Increase liquidity',
   {
@@ -23,7 +33,11 @@ test.describe(
   },
   () => {
     test('should increase liquidity of a position', async ({ page, anvil }) => {
-      await stubLiquidityServiceEndpoint({ page, endpoint: LiquidityService.methods.increaseLPPosition })
+      await stubLiquidityServiceEndpoint({
+        page,
+        endpoint: LiquidityService.methods.increaseLPPosition,
+        modifyRequestData: modifyV4RequestData,
+      })
       await anvil.setErc20Balance({ address: assume0xAddress(USDT.address), balance: ONE_MILLION_USDT })
       await page.route(
         `${uniswapUrls.apiBaseUrlV2}/${getPosition.service.typeName}/${getPosition.name}`,
@@ -40,6 +54,89 @@ test.describe(
       await page.getByRole('button', { name: 'Review' }).click()
       await page.getByRole('button', { name: 'Confirm' }).click()
       await expect(page.getByText('Approved').first()).toBeVisible()
+    })
+
+    test.describe('approval flow', () => {
+      test('should approve and increase liquidity on a V4 position', async ({ page, anvil }) => {
+        await stubLiquidityServiceEndpoint({
+          page,
+          endpoint: LiquidityService.methods.increaseLPPosition,
+          modifyRequestData: modifyV4RequestData,
+        })
+        await anvil.setErc20Balance({ address: assume0xAddress(USDT.address), balance: ONE_MILLION_USDT })
+        await page.route(
+          `${uniswapUrls.apiBaseUrlV2}/${getPosition.service.typeName}/${getPosition.name}`,
+          async (route) => {
+            await route.fulfill({ path: Mocks.Positions.get_v4_position })
+          },
+        )
+
+        await page.goto('/positions/v4/ethereum/1')
+        await page.getByRole('button', { name: 'Add liquidity' }).dblclick()
+        await page.getByTestId(TestID.AmountInputIn).nth(1).click()
+        await page.getByTestId(TestID.AmountInputIn).nth(1).fill('1')
+
+        await page.getByRole('button', { name: 'Review' }).click()
+        await page.getByRole('button', { name: 'Confirm' }).click()
+        await expect(page.getByText('Approved').first()).toBeVisible()
+      })
+
+      test('should approve and increase liquidity on a V3 position', async ({ page, anvil }) => {
+        await stubLiquidityServiceEndpoint({
+          page,
+          endpoint: LiquidityService.methods.increaseLPPosition,
+          modifyRequestData: modifyV3RequestData,
+        })
+        await anvil.setErc20Balance({ address: assume0xAddress(USDT.address), balance: ONE_MILLION_USDT })
+        await page.route(
+          `${uniswapUrls.apiBaseUrlV2}/${getPosition.service.typeName}/${getPosition.name}`,
+          async (route) => {
+            await route.fulfill({ path: Mocks.Positions.get_v3_position })
+          },
+        )
+
+        await page.goto('/positions/v3/ethereum/1028438')
+        await page.getByRole('button', { name: 'Add liquidity' }).dblclick()
+        await page.getByTestId(TestID.AmountInputIn).nth(1).click()
+        await page.getByTestId(TestID.AmountInputIn).nth(1).fill('1')
+
+        await page.getByRole('button', { name: 'Review' }).click()
+        await page.getByRole('button', { name: 'Confirm' }).click()
+        await expect(page.getByText('Approved').first()).toBeVisible()
+      })
+
+      test('should skip permit2 approval when allowance already set', async ({ page, anvil }) => {
+        await stubLiquidityServiceEndpoint({
+          page,
+          endpoint: LiquidityService.methods.increaseLPPosition,
+          modifyRequestData: modifyV4RequestData,
+        })
+        await anvil.setErc20Balance({ address: assume0xAddress(USDT.address), balance: ONE_MILLION_USDT })
+        await page.route(
+          `${uniswapUrls.apiBaseUrlV2}/${getPosition.service.typeName}/${getPosition.name}`,
+          async (route) => {
+            await route.fulfill({ path: Mocks.Positions.get_v4_position })
+          },
+        )
+        await stubLiquidityServiceEndpoint({
+          page,
+          endpoint: LiquidityService.methods.checkLPApproval,
+          modifyResponseData: (data) => {
+            return { ...data, token1Approval: null, permitBatchData: null }
+          },
+        })
+        await anvil.setErc20Allowance({ address: assume0xAddress(USDT.address), spender: PERMIT2_ADDRESS })
+
+        await page.goto('/positions/v4/ethereum/1')
+        await page.getByRole('button', { name: 'Add liquidity' }).click()
+        await page.getByTestId(TestID.AmountInputIn).nth(1).click()
+        await page.getByTestId(TestID.AmountInputIn).nth(1).fill('1')
+
+        await page.getByRole('button', { name: 'Review' }).click()
+        await expect(page.getByText('Approval required')).not.toBeVisible()
+        await expect(page.getByText('Signature required')).not.toBeVisible()
+        await page.getByRole('button', { name: 'Confirm' }).click()
+      })
     })
 
     test.describe('error handling', () => {
@@ -69,37 +166,6 @@ test.describe(
 
         await expect(page.getByText('Something went wrong')).not.toBeVisible()
         await expect(page.getByText('Request failed')).not.toBeVisible()
-        await expect(page.getByRole('button', { name: 'Review' })).toBeVisible()
-      })
-
-      test('should gracefully handle errors when approved and permit2 is not needed', async ({ page, anvil }) => {
-        await anvil.setErc20Balance({ address: assume0xAddress(USDT.address), balance: ONE_MILLION_USDT })
-        await page.route(
-          `${uniswapUrls.apiBaseUrlV2}/${getPosition.service.typeName}/${getPosition.name}`,
-          async (route) => {
-            await route.fulfill({ path: Mocks.Positions.get_v4_position })
-          },
-        )
-        await stubLiquidityServiceEndpoint({
-          page,
-          endpoint: LiquidityService.methods.checkLPApproval,
-          modifyResponseData: (data) => {
-            return { ...data, token1Approval: null, permitBatchData: null }
-          },
-        })
-        await anvil.setErc20Allowance({ address: assume0xAddress(USDT.address), spender: PERMIT2_ADDRESS })
-
-        await page.goto('/positions/v4/ethereum/1')
-        await page.getByRole('button', { name: 'Add liquidity' }).click()
-        await page.getByTestId(TestID.AmountInputIn).nth(1).click()
-        await page.getByTestId(TestID.AmountInputIn).nth(1).fill('1')
-
-        await expect(page.getByText('Something went wrong')).toBeVisible()
-
-        await page.getByTestId(TestID.AmountInputIn).nth(1).click()
-        await page.getByTestId(TestID.AmountInputIn).nth(1).fill('2')
-
-        await expect(page.getByText('Something went wrong')).not.toBeVisible()
         await expect(page.getByRole('button', { name: 'Review' })).toBeVisible()
       })
     })

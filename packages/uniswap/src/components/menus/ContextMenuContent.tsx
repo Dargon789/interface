@@ -47,11 +47,17 @@ export function MenuContent({
   )
 
   return (
-    // biome-ignore lint/correctness/noRestrictedElements: needed here
+    // oxlint-disable-next-line react/forbid-elements -- needed here
     <div
       // Prevent any right-click from bubbling up or showing default context menu
       onContextMenu={(e) => {
         e.preventDefault()
+        e.stopPropagation()
+      }}
+      onClick={(e) => {
+        e.stopPropagation()
+      }}
+      onMouseDown={(e) => {
         e.stopPropagation()
       }}
     >
@@ -66,34 +72,41 @@ export function MenuContent({
         maxWidth={MENU_MAX_WIDTH}
         {...containerStyles}
       >
-        {items.map(({ Icon, iconColor, destructive, disabled, showDivider, onPress, label, ...otherProps }, index) => {
-          const wrappedOnPress = trackItemClicks
-            ? createMenuItemHandler({ originalOnPress: onPress, label, index })
-            : onPress
-          return (
-            <Fragment key={index}>
-              {showDivider && <Separator my="$spacing6" />}
-              <DropdownMenuSheetItem
-                role="none"
-                variant={isWebPlatform ? 'small' : 'medium'}
-                icon={
-                  Icon && (
-                    <Icon
-                      size="$icon.16"
-                      color={getMenuItemColor({ overrideColor: iconColor, destructive, disabled })}
-                    />
-                  )
-                }
-                destructive={destructive}
-                disabled={disabled}
-                label={label}
-                {...otherProps}
-                handleCloseMenu={handleCloseMenu}
-                onPress={wrappedOnPress}
-              />
-            </Fragment>
-          )
-        })}
+        {items.map(
+          (
+            { Icon, iconColor, destructive, disabled, showDivider, onPress, label, trailingIcon, ...otherProps },
+            index,
+          ) => {
+            const wrappedOnPress = trackItemClicks
+              ? createMenuItemHandler({ originalOnPress: onPress, label, index })
+              : onPress
+
+            return (
+              <Fragment key={index}>
+                {showDivider && <Separator my="$spacing6" />}
+                <DropdownMenuSheetItem
+                  role="none"
+                  variant={isWebPlatform ? 'small' : 'medium'}
+                  icon={
+                    Icon && (
+                      <Icon
+                        size="$icon.16"
+                        color={getMenuItemColor({ overrideColor: iconColor, destructive, disabled })}
+                      />
+                    )
+                  }
+                  destructive={destructive}
+                  disabled={disabled}
+                  label={label}
+                  rightElement={trailingIcon}
+                  {...otherProps}
+                  handleCloseMenu={handleCloseMenu}
+                  onPress={wrappedOnPress}
+                />
+              </Fragment>
+            )
+          },
+        )}
       </Flex>
     </div>
   )

@@ -5,7 +5,7 @@ import { Eye, EyeOff } from 'ui/src/components/icons'
 import { AnimatedFlex } from 'ui/src/components/layout/AnimatedFlex'
 import { TextInput, TextInputProps } from 'uniswap/src/components/input/TextInput'
 
-export const PasswordInput = forwardRef<NativeTextInput, TextInputProps>(function _PasswordInput(props, ref) {
+export const PasswordInput = forwardRef<NativeTextInput, TextInputProps>(function PasswordInputInner(props, ref) {
   const [showPassword, setShowPassword] = useState(false)
 
   const { value, placeholder, onChangeText, returnKeyType, onSubmitEditing, ...rest } = props

@@ -68,7 +68,7 @@ export class CustomHistogramSeriesRenderer<TData extends CustomHistogramData> im
     this._options = options
   }
 
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   _drawImpl(
     renderingScope: BitmapCoordinatesRenderingScope,
     priceToCoordinate: PriceToCoordinateConverter,

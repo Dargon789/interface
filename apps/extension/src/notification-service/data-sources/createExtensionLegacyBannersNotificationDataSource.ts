@@ -13,7 +13,6 @@ import {
 } from '@universe/notifications'
 import { AppRoutes, SettingsRoutes, UnitagClaimRoutes } from 'src/app/navigation/constants'
 import { getReduxStore } from 'src/store/store'
-
 import { AccountType } from 'uniswap/src/features/accounts/types'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { UNITAG_SUFFIX_NO_LEADING_DOT } from 'uniswap/src/features/unitags/constants'

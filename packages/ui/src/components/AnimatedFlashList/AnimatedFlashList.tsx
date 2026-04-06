@@ -7,10 +7,10 @@ import type { FlatListProps } from 'react-native'
  * - Native: Uses Reanimated animated FlashList (AnimatedFlashList.native.tsx)
  */
 
-// biome-ignore lint/suspicious/noExplicitAny: Generic FlashList props require any for flexibility
+// oxlint-disable-next-line typescript/no-explicit-any -- Generic FlashList props require any for flexibility
 export type AnimatedFlashListProps = FlatListProps<any> &
   Pick<
-    // biome-ignore lint/suspicious/noExplicitAny: Generic FlashList props require any for flexibility
+    // oxlint-disable-next-line typescript/no-explicit-any -- Generic FlashList props require any for flexibility
     FlashListProps<any>,
     | 'disableAutoLayout'
     | 'estimatedItemSize'
@@ -22,10 +22,10 @@ export type AnimatedFlashListProps = FlatListProps<any> &
 
 export const AnimatedFlashList = (() => {
   throw new Error('AnimatedFlashList: Implemented in .native.tsx and .web.tsx')
-  // biome-ignore lint/suspicious/noExplicitAny: Stub component type
+  // oxlint-disable-next-line typescript/no-explicit-any -- Stub component type
 }) as any
 
 export const AnimatedBottomSheetFlashList = (() => {
   throw new Error('AnimatedBottomSheetFlashList: Implemented in .native.tsx and .web.tsx')
-  // biome-ignore lint/suspicious/noExplicitAny: Stub component type
+  // oxlint-disable-next-line typescript/no-explicit-any -- Stub component type
 }) as any

@@ -41,7 +41,7 @@ async function init(): Promise<void> {
 }
 
 async function initInternal(): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   state = (await chrome.storage.local.get([STATE_STORAGE_KEY]))?.[STATE_STORAGE_KEY] || initialDappState
 
   chrome.storage.local.onChanged.addListener((changes) => {

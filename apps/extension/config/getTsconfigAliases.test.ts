@@ -1,4 +1,4 @@
-/* eslint-disable no-relative-import-paths/no-relative-import-paths */
+/* oxlint-disable universe-custom/no-relative-import-paths */
 import path from 'path'
 import { getTsconfigAliases } from './getTsconfigAliases'
 

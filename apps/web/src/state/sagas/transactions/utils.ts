@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { datadogRum } from '@datadog/browser-rum'
 import type { TransactionResponse } from '@ethersproject/abstract-provider'
 import type { JsonRpcSigner, Web3Provider } from '@ethersproject/providers'
@@ -199,23 +199,23 @@ export function* handleOnChainStep<T extends OnChainTransactionStep>(params: Han
     const { hash, data, nonce } = yield* call(submitTransaction, params)
     transaction = createTransaction(hash)
 
+    // For plans, individual tx state and validation is handled by the backend
     if (!planId) {
       yield* put(addTransaction(transaction))
-    }
-
-    if (step.txRequest.data !== data && onModification) {
-      yield* call(onModification, { hash, data, nonce })
+      if (step.txRequest.data !== data && onModification) {
+        yield* call(onModification, { hash, data, nonce })
+      }
     }
   } else {
     const hash = yield* call(submitTransactionAsync, params)
     transaction = createTransaction(hash)
 
+    // For plans, individual tx state and validation is handled by the backend
     if (!planId) {
       yield* put(addTransaction(transaction))
-    }
-
-    if (onModification) {
-      yield* spawn(handleOnModificationAsync, { onModification, hash, step })
+      if (onModification) {
+        yield* spawn(handleOnModificationAsync, { onModification, hash, step })
+      }
     }
   }
 
@@ -544,25 +544,30 @@ export function getSwapTransactionInfo(params: {
   trade: ClassicTrade | BridgeTrade | SolanaTrade | ChainedActionTrade
   swapStartTimestamp?: number
   planAnalytics?: PlanSwapTransactionInfoFields
+  transactedUSDValue?: number
 }): SwapInfo | BridgeTransactionInfo
 export function getSwapTransactionInfo(params: {
   trade: UniswapXTrade
   swapStartTimestamp?: number
   planAnalytics?: PlanSwapTransactionInfoFields
+  transactedUSDValue?: number
 }): SwapInfo & { isUniswapXOrder: true }
 export function getSwapTransactionInfo({
   trade,
   swapStartTimestamp,
   planAnalytics,
+  transactedUSDValue,
 }: {
   trade: ClassicTrade | BridgeTrade | UniswapXTrade | SolanaTrade | ChainedActionTrade
   swapStartTimestamp?: number
   planAnalytics?: PlanSwapTransactionInfoFields
+  transactedUSDValue?: number
 }): SwapInfo | BridgeTransactionInfo {
   const commonAttributes = {
     inputCurrencyId: currencyId(trade.inputAmount.currency),
     outputCurrencyId: currencyId(trade.outputAmount.currency),
     swapStartTimestamp,
+    transactedUSDValue,
     ...planAnalytics,
   }
 
@@ -659,6 +664,17 @@ export function* sendToast(appNotification: AppNotification, planId: string): Sa
   yield* call(() => {
     switch (appNotification.type) {
       case AppNotificationType.SwapPending: {
+        popupRegistry.addPopup(
+          {
+            type: PopupType.Plan,
+            planId,
+          },
+          planId,
+          DEFAULT_TXN_DISMISS_MS,
+        )
+        break
+      }
+      case AppNotificationType.Transaction: {
         popupRegistry.addPopup(
           {
             type: PopupType.Plan,

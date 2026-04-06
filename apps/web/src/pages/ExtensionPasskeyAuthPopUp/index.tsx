@@ -46,7 +46,7 @@ export default function ExtensionPasskeyAuthPopUp() {
 
   const [searchParams] = useSearchParams()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Intentionally only runs once on mount
+  // oxlint-disable-next-line react/exhaustive-deps -- Intentionally only runs once on mount
   useEffect(() => {
     const chromeRuntime = getChromeRuntime()
 
@@ -98,10 +98,15 @@ export default function ExtensionPasskeyAuthPopUp() {
       } satisfies PasskeySignInFlowOpened,
       handleMessageRequestPasskey,
     )
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   const onPressSignIn = async () => {
-    if (signInAttemptStatus !== ReferrerVerification.Allowed || !passkeyRequestData) {
+    if (
+      signInAttemptStatus !== ReferrerVerification.Allowed ||
+      !passkeyRequestData ||
+      !passkeyRequestData.challengeJson
+    ) {
       logger.debug('ExtensionPasskeyAuthPopUp/index.tsx', 'onPressSignIn', 'Invalid state', {
         signInAttemptStatus,
         passkeyRequestData,
@@ -112,6 +117,9 @@ export default function ExtensionPasskeyAuthPopUp() {
     const chromeRuntime = getChromeRuntimeWithThrow()
 
     try {
+      if (!passkeyRequestData.challengeJson) {
+        return
+      }
       const credential = await authenticatePasskey(passkeyRequestData.challengeJson)
 
       if (!credential) {
@@ -201,7 +209,13 @@ export default function ExtensionPasskeyAuthPopUp() {
 
               <Flex row py="$spacing16">
                 <Button
-                  icon={signInAttemptStatus === ReferrerVerification.Verifying ? <SpinningLoader /> : <Passkey />}
+                  icon={
+                    signInAttemptStatus === ReferrerVerification.Verifying ? (
+                      <SpinningLoader />
+                    ) : (
+                      <Passkey color="$neutral1" />
+                    )
+                  }
                   size="large"
                   variant="branded"
                   onPress={onPressSignIn}

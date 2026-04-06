@@ -2,8 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { Flex, Text, Tooltip } from 'ui/src'
 import { Wrench } from 'ui/src/components/icons/Wrench'
 import { zIndexes } from 'ui/src/theme'
-import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { MenuStateVariant, useSetMenu } from '~/components/AccountDrawer/menuState'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 
 export default function TestnetModeTooltip() {
   const { t } = useTranslation()

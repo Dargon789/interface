@@ -1,8 +1,8 @@
 import { useReducer } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Flex, Separator, Text } from 'ui/src'
-import { DoubleChevron } from 'ui/src/components/icons/DoubleChevron'
-import { DoubleChevronInverted } from 'ui/src/components/icons/DoubleChevronInverted'
+import { ChevronsIn } from 'ui/src/components/icons/ChevronsIn'
+import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
 import { UniswapWalletOptions } from '~/components/WalletModal/UniswapWalletOptions'
 import { WalletModalLayout } from '~/components/WalletModal/WalletModalLayout'
 import { WalletOptionsGrid } from '~/components/WalletModal/WalletOptionsGrid'
@@ -27,11 +27,7 @@ export function StandardWalletModal(): JSX.Element {
         <Text variant="body3" color="$neutral2" whiteSpace="nowrap">
           <Trans i18nKey="wallet.other" />
         </Text>
-        {expandMoreWallets ? (
-          <DoubleChevron size={20} color="$neutral3" />
-        ) : (
-          <DoubleChevronInverted size={20} color="$neutral3" />
-        )}
+        {expandMoreWallets ? <ChevronsIn size={20} color="$neutral3" /> : <ChevronsOut size={20} color="$neutral3" />}
       </Flex>
       <Separator />
     </Flex>

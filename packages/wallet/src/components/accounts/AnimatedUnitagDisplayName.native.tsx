@@ -23,7 +23,7 @@ import { AnimatedUnitagDisplayNameProps } from 'wallet/src/components/accounts/A
  * Used in the account header that displays the user's unitag and name if available and
  * address. The unitag is animated which shows the unitag suffix.
  */
-function _AnimatedUnitagDisplayName({
+function AnimatedUnitagDisplayNameInner({
   displayName,
   unitagIconSize = '$icon.24',
   address,
@@ -168,4 +168,4 @@ export function useLayoutWidth(pause = false): {
   return { width, onLayout }
 }
 
-export const AnimatedUnitagDisplayName = memo(_AnimatedUnitagDisplayName)
+export const AnimatedUnitagDisplayName = memo(AnimatedUnitagDisplayNameInner)

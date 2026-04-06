@@ -28,7 +28,7 @@ function getEntryGatewayProxyTarget(): string {
   }
 }
 
-// eslint-disable-next-line import/no-unused-modules -- used in vite.config.mts
+// oxlint-disable-next-line import/no-unused-modules -- used in vite.config.mts
 export function createEntryGatewayProxy(ctx: {
   getLogger: () => {
     log: typeof console.log
@@ -139,7 +139,7 @@ export function createEntryGatewayProxy(ctx: {
       })
 
       // Log any errors
-      // eslint-disable-next-line max-params
+      // oxlint-disable-next-line max-params
       proxy.on('error', (err, req, res) => {
         getLogger().log('[Proxy] Error:', err)
       })

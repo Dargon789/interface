@@ -15,7 +15,6 @@ import { signWcRequestSaga } from 'src/features/walletConnect/signWcRequestSaga'
 import { call, fork, join, spawn } from 'typed-redux-saga'
 import { waitForRehydration } from 'uniswap/src/utils/saga'
 import { apolloClientRef } from 'wallet/src/data/apollo/usePersistedApolloClient'
-import { deviceLocaleWatcher } from 'wallet/src/features/i18n/deviceLocaleWatcherSaga'
 import { transactionWatcher } from 'wallet/src/features/transactions/watcher/transactionWatcherSaga'
 
 // These sagas are not persisted, so we can run them before rehydration
@@ -32,7 +31,6 @@ const sagas = [
   signWcRequestSaga,
   telemetrySaga,
   walletConnectSaga,
-  deviceLocaleWatcher,
 ]
 
 export function* rootMobileSaga(): SagaIterator {

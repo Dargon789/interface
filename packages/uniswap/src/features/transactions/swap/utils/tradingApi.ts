@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { BigNumber } from '@ethersproject/bignumber'
 import { MixedRouteSDK } from '@uniswap/router-sdk'
 import type { Currency, TradeType } from '@uniswap/sdk-core'

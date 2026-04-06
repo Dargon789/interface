@@ -7,15 +7,33 @@
  */
 export function isSafeNumber(number: number | string): boolean {
   if (typeof number === 'number') {
-    return number <= Number.MAX_SAFE_INTEGER
+    // isFinite guards against NaN, Infinity, and -Infinity
+    return Number.isFinite(number) && number <= Number.MAX_SAFE_INTEGER
   }
 
   if (typeof number === 'string') {
+    const trimmed = number.trim()
+
+    // User is beginning to input a decimal value
+    if (trimmed === ',' || trimmed === '.') {
+      return true
+    }
+
+    // User is beginning to input a negative value
+    if (trimmed === '-') {
+      return true
+    }
+
+    // User is beginning to input a negative decimal value
+    if (trimmed === '-,' || trimmed === '-.') {
+      return true
+    }
+
     if (!isNumeric(number, true)) {
       return false
     }
 
-    const parsed = Number(number.trim())
+    const parsed = Number(trimmed)
     return !Number.isFinite(parsed) ? false : parsed <= Number.MAX_SAFE_INTEGER
   }
 

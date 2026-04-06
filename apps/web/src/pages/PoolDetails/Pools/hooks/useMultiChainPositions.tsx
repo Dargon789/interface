@@ -85,7 +85,7 @@ export default function useMultiChainPositions(account: string): UseMultiChainPo
   const { priceMap, pricesLoading } = usePoolPriceMap(positions)
 
   const fetchPositionFees = useCallback(
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     async (pm: NonfungiblePositionManager, positionIds: BigNumber[], chainId: number) => {
       const callData = positionIds.map((id) =>
         pm.interface.encodeFunctionData('collect', [
@@ -93,7 +93,7 @@ export default function useMultiChainPositions(account: string): UseMultiChainPo
         ]),
       )
       const fees = (await pm.callStatic.multicall(callData)).reduce(
-        // eslint-disable-next-line max-params
+        // oxlint-disable-next-line max-params
         (acc, feeBytes, index) => {
           const key = chainId.toString() + positionIds[index]
           acc[key] = pm.interface.decodeFunctionResult('collect', feeBytes) as FeeAmounts
@@ -130,7 +130,7 @@ export default function useMultiChainPositions(account: string): UseMultiChainPo
 
   // Combines PositionDetails with Pool data to build our return type
   const fetchPositionInfo = useCallback(
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     async (positionDetails: PositionDetails[], chainId: UniverseChainId, multicall: UniswapInterfaceMulticall) => {
       const poolInterface = new Interface(IUniswapV3PoolStateJSON.abi) as UniswapV3PoolInterface
       const tokens = await getTokens(
@@ -164,7 +164,7 @@ export default function useMultiChainPositions(account: string): UseMultiChainPo
         })
       }, [])
 
-      // eslint-disable-next-line max-params
+      // oxlint-disable-next-line max-params
       return (await multicall.callStatic.multicall(calls)).returnData.reduce((acc: PositionInfo[], result, i) => {
         if (result.success) {
           const slot0 = poolInterface.decodeFunctionResult('slot0', result.returnData)
@@ -195,9 +195,9 @@ export default function useMultiChainPositions(account: string): UseMultiChainPo
       try {
         const pm = pms[chainId]
         const multicall = multicalls[chainId]
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         const balance = await pm?.balanceOf(account)
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (!pm || !multicall || balance.lt(1)) {
           return []
         }
@@ -228,7 +228,7 @@ export default function useMultiChainPositions(account: string): UseMultiChainPo
   }, [chains, fetchPositionsForChain, setPositions])
 
   // Fetches positions when existing positions are stale and the document has focus
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +positionsFetching
+  // oxlint-disable-next-line react/exhaustive-deps -- +positionsFetching
   useEffect(() => {
     if (positionsFetching.current || cachedPositions?.stale === false) {
       return undefined
@@ -252,13 +252,13 @@ export default function useMultiChainPositions(account: string): UseMultiChainPo
     () =>
       positions?.map((position) => {
         const key = position.chainId.toString() + position.details.tokenId
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         const fees = feeMap[key]
           ? [
               // We parse away from SDK/ethers types so fees can be multiplied by primitive number prices
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+              // oxlint-disable-next-line typescript/no-unnecessary-condition
               parseFloat(CurrencyAmount.fromRawAmount(position.pool.token0, feeMap[key]?.[0].toString()).toExact()),
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+              // oxlint-disable-next-line typescript/no-unnecessary-condition
               parseFloat(CurrencyAmount.fromRawAmount(position.pool.token1, feeMap[key]?.[1].toString()).toExact()),
             ]
           : undefined

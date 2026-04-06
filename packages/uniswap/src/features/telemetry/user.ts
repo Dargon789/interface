@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { analytics, UserPropertyValue } from 'utilities/src/telemetry/analytics/analytics'
 
 /**
@@ -90,7 +90,7 @@ export enum UniswapUserPropertyName {
   IsDelegatedEOA = 'is_delegated_eoa',
 }
 
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 export function setUserProperty(
   property: MobileUserPropertyName | ExtensionUserPropertyName | InterfaceUserPropertyName | UniswapUserPropertyName,
   value: UserPropertyValue,

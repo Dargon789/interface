@@ -25,7 +25,7 @@ const BASE_ARGS = {
   sendPortionEnabled: true,
 }
 
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 function constructArgs(currencyIn: Currency, currencyOut: Currency, routingType: URAQuoteType): GetQuoteArgs {
   return {
     ...BASE_ARGS,

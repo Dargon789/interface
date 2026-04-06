@@ -1,5 +1,4 @@
 import { TradingApi } from '@universe/api'
-import { Experiments } from '@universe/gating'
 import ms from 'ms'
 import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -12,7 +11,6 @@ import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { SwapEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { type SwapTradeBaseProperties } from 'uniswap/src/features/telemetry/types'
-import { logExperimentQualifyingEvent } from 'uniswap/src/features/telemetry/utils/logExperimentQualifyingEvent'
 import { selectSwapStartTimestamp } from 'uniswap/src/features/timing/selectors'
 import { updateSwapStartTimestamp } from 'uniswap/src/features/timing/slice'
 import { UnexpectedTransactionStateError } from 'uniswap/src/features/transactions/errors'
@@ -26,7 +24,6 @@ import {
   type ExtractedBaseTradeAnalyticsProperties,
   getBaseTradeAnalyticsProperties,
 } from 'uniswap/src/features/transactions/swap/analytics'
-import { getFlashblocksExperimentStatus } from 'uniswap/src/features/transactions/swap/hooks/useIsUnichainFlashblocksEnabled'
 import { planActions } from 'uniswap/src/features/transactions/swap/plan/planSaga'
 import { type PlanAnalyticsFields, planAnalyticsToCamelCase } from 'uniswap/src/features/transactions/swap/plan/types'
 import { handleSwitchChains } from 'uniswap/src/features/transactions/swap/plan/utils'
@@ -90,6 +87,7 @@ function* handleSwapTransactionStep(params: HandleSwapStepParams): SagaGenerator
     trade,
     swapStartTimestamp: analytics.swap_start_timestamp,
     planAnalytics: planAnalyticsToCamelCase(analytics),
+    transactedUSDValue: analytics.token_in_amount_usd,
   })
   const txRequest = yield* call(getSwapTxRequest, step, signature)
 
@@ -116,19 +114,8 @@ function* handleSwapTransactionStep(params: HandleSwapStepParams): SagaGenerator
   handleSwapTransactionAnalytics({ ...params, hash })
 
   const chainId = trade.inputAmount.currency.chainId
-  const { shouldLogQualifyingEvent, shouldShowModal } = getFlashblocksExperimentStatus({
-    chainId,
-    routing: trade.routing,
-  })
 
-  if (shouldLogQualifyingEvent) {
-    logExperimentQualifyingEvent({
-      experiment: Experiments.UnichainFlashblocksModal,
-    })
-  }
-
-  // Show regular popup for control variant or ineligible swaps
-  if (!shouldShowModal && !planId) {
+  if (!planId) {
     popupRegistry.addPopup(
       { type: PopupType.Transaction, hash },
       hash,
@@ -152,6 +139,7 @@ function createHandleSwapTransactionBatchedStep(ctx: { disableOneClickSwap: () =
       trade,
       swapStartTimestamp: analytics.swap_start_timestamp,
       planAnalytics: planAnalyticsToCamelCase(analytics),
+      transactedUSDValue: analytics.token_in_amount_usd,
     })
 
     const batchId = yield* handleAtomicSendCalls({

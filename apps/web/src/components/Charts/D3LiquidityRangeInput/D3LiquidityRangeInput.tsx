@@ -291,7 +291,7 @@ export function D3LiquidityRangeInput({
           )}
           {!showChartErrorView && <LiquidityRangeActionButtons />}
         </Flex>
-        <DefaultPriceStrategies isLoading={isLoading} />
+        {!showChartErrorView && !creatingPoolOrPair && <DefaultPriceStrategies isLoading={isLoading} />}
         <D3LiquidityMinMaxInput />
       </LiquidityChartStoreProvider>
     </Flex>

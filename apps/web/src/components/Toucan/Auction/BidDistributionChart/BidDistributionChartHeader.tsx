@@ -6,6 +6,8 @@ import { BidDistributionChartTab } from '~/components/Toucan/Auction/AuctionChar
 interface BidDistributionChartHeaderProps {
   activeTab: BidDistributionChartTab
   onTabChange: (tab: BidDistributionChartTab) => void
+  /** When true, show 2 tabs (combined Price & Distribution, Demand) instead of 3 */
+  combinedMode?: boolean
 }
 
 interface TabConfig {
@@ -20,6 +22,7 @@ const preloadBidDistributionChart = () =>
 export const BidDistributionChartHeader = ({
   activeTab,
   onTabChange,
+  combinedMode = false,
 }: BidDistributionChartHeaderProps): JSX.Element => {
   const { t } = useTranslation()
   const media = useMedia()
@@ -27,21 +30,33 @@ export const BidDistributionChartHeader = ({
   const tabVariant = media.lg ? 'subheading1' : 'heading3'
 
   const tabs: TabConfig[] = useMemo(
-    () => [
-      {
-        key: BidDistributionChartTab.ClearingPrice,
-        label: t('toucan.bidDistribution.tabs.clearingPriceChart'),
-      },
-      {
-        key: BidDistributionChartTab.Demand,
-        label: t('toucan.bidDistribution.tabs.demandChart'),
-      },
-      {
-        key: BidDistributionChartTab.Distribution,
-        label: t('toucan.bidDistribution.tabs.distributionChart'),
-      },
-    ],
-    [t],
+    () =>
+      combinedMode
+        ? [
+            {
+              key: BidDistributionChartTab.ClearingPrice,
+              label: t('toucan.bidDistribution.tabs.clearingPriceChart'),
+            },
+            {
+              key: BidDistributionChartTab.Demand,
+              label: t('toucan.bidDistribution.tabs.demandChart'),
+            },
+          ]
+        : [
+            {
+              key: BidDistributionChartTab.ClearingPrice,
+              label: t('toucan.bidDistribution.tabs.clearingPriceChart'),
+            },
+            {
+              key: BidDistributionChartTab.Demand,
+              label: t('toucan.bidDistribution.tabs.demandChart'),
+            },
+            {
+              key: BidDistributionChartTab.Distribution,
+              label: t('toucan.bidDistribution.tabs.distributionChart'),
+            },
+          ],
+    [t, combinedMode],
   )
 
   const prefetchTab = useCallback((tab: BidDistributionChartTab) => {

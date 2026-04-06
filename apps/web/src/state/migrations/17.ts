@@ -11,7 +11,7 @@ export type PersistAppStateV17 = {
   }
 }
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 function searchResultId(searchResult: PreV55SearchResult): string {
   const { type } = searchResult
   const address = isPoolSearchResult(searchResult) ? searchResult.poolId : searchResult.address
@@ -62,7 +62,7 @@ export const migration17 = createSafeMigration({
 
     // dedupe search history
     const dedupedSearchHistory = (newState.searchHistory?.results ?? []).filter(
-      // eslint-disable-next-line max-params
+      // oxlint-disable-next-line max-params
       (result: PreV55SearchResult, index: number, self: PreV55SearchResult[]) =>
         self.findIndex((t) => t.searchId === result.searchId) === index,
     )

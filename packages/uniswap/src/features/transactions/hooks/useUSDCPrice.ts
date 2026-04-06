@@ -103,11 +103,14 @@ export function useUSDCValue(
  * @param currencyAmount
  * @returns Returns fiat value of the currency amount, and loading status of the currency<->stable quote
  */
-export function useUSDCValueWithStatus(currencyAmount: CurrencyAmount<Currency> | undefined | null): {
+export function useUSDCValueWithStatus(
+  currencyAmount: CurrencyAmount<Currency> | undefined | null,
+  pollInterval: PollingInterval = PollingInterval.Fast,
+): {
   value: CurrencyAmount<Currency> | null
   isLoading: boolean
 } {
-  const { price, isLoading } = useUSDCPrice(currencyAmount?.currency)
+  const { price, isLoading } = useUSDCPrice(currencyAmount?.currency, pollInterval)
 
   return useMemo(() => {
     if (!price || !currencyAmount) {

@@ -1,4 +1,4 @@
-/* eslint-disable max-params */
+/* oxlint-disable max-params */
 
 import type { Currency } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'

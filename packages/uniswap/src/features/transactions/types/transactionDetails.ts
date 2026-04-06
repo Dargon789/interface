@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { Protocol } from '@uniswap/router-sdk'
 import { Currency, CurrencyAmount, TradeType } from '@uniswap/sdk-core'
 import { GasEstimate, GraphQLApi, TradingApi } from '@universe/api'
@@ -71,8 +71,6 @@ export interface InterfaceTransactionExtensions {
   batchInfo?: { connectorId?: string; batchId: string; chainId: UniverseChainId }
   /** Transaction deadline for cleanup */
   deadline?: number
-  /** Used to track if this transaction was a flashblock transaction within the instant threshold */
-  isFlashblockTxWithinThreshold?: boolean
 }
 
 export interface WalletTransactionExtensions {

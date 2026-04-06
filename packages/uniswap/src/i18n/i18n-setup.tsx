@@ -1,5 +1,4 @@
 import 'uniswap/src/i18n/locales/@types/i18next'
-
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import enUS from 'uniswap/src/i18n/locales/source/en-US.json'
@@ -84,7 +83,7 @@ i18n
   })
   .catch(() => undefined)
 
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 i18n.on('missingKey', (_lngs, _ns, key, _res) => {
   logger.error(new Error(`Missing i18n string key ${key} for language ${i18n.language}`), {
     tags: {

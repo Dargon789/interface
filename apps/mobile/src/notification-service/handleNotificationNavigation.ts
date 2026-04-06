@@ -31,7 +31,7 @@ function handleMobileNavigation(url: string, path: string): void {
   // Handle mobile://modal/{ModalName} pattern for direct modal navigation
   if (path.startsWith('modal/')) {
     const modalName = path.replace('modal/', '')
-    // biome-ignore lint/suspicious/noExplicitAny: Navigation refs need flexible typing for dynamic routes
+    // oxlint-disable-next-line typescript/no-explicit-any -- Navigation refs need flexible typing for dynamic routes
     navigationRef.navigate(modalName as any)
     return
   }
@@ -80,7 +80,7 @@ function handleMobileNavigation(url: string, path: string): void {
       selectingCurrencyChainId: selectingChainId,
     }
 
-    // biome-ignore lint/suspicious/noExplicitAny: Navigation refs need flexible typing for dynamic routes
+    // oxlint-disable-next-line typescript/no-explicit-any -- Navigation refs need flexible typing for dynamic routes
     navigationRef.navigate(ModalName.Swap as any, initialState)
     return
   }
@@ -91,7 +91,7 @@ function handleMobileNavigation(url: string, path: string): void {
     const chainParam = urlObj.searchParams.get('chain')
     const chainId = chainParam ? CHAIN_ID_MAP[chainParam.toLowerCase()] : undefined
 
-    // biome-ignore lint/suspicious/noExplicitAny: Navigation refs need flexible typing for dynamic routes
+    // oxlint-disable-next-line typescript/no-explicit-any -- Navigation refs need flexible typing for dynamic routes
     navigationRef.navigate(ModalName.Explore as any, {
       screen: MobileScreens.Explore,
       params: { chainId },
@@ -101,7 +101,7 @@ function handleMobileNavigation(url: string, path: string): void {
 
   // Handle mobile://backup pattern for backup flow navigation
   if (path === 'backup') {
-    // biome-ignore lint/suspicious/noExplicitAny: Navigation refs need flexible typing for dynamic routes
+    // oxlint-disable-next-line typescript/no-explicit-any -- Navigation refs need flexible typing for dynamic routes
     navigationRef.navigate(MobileScreens.OnboardingStack as any, {
       screen: OnboardingScreens.Backup,
       params: {
@@ -119,12 +119,12 @@ function handleMobileNavigation(url: string, path: string): void {
   // e.g., "SettingsStack/SettingsViewSeedPhrase" → navigate(SettingsStack, { screen: SettingsViewSeedPhrase })
   if (parts.length >= 2) {
     const [stack, screen] = parts
-    // biome-ignore lint/suspicious/noExplicitAny: Navigation refs need flexible typing for dynamic routes
+    // oxlint-disable-next-line typescript/no-explicit-any -- Navigation refs need flexible typing for dynamic routes
     const screenParams: any = { screen }
-    // biome-ignore lint/suspicious/noExplicitAny: Navigation refs need flexible typing for dynamic routes
+    // oxlint-disable-next-line typescript/no-explicit-any -- Navigation refs need flexible typing for dynamic routes
     navigationRef.navigate(stack as any, screenParams)
   } else if (parts.length === 1) {
-    // biome-ignore lint/suspicious/noExplicitAny: Navigation refs need flexible typing for dynamic routes
+    // oxlint-disable-next-line typescript/no-explicit-any -- Navigation refs need flexible typing for dynamic routes
     navigationRef.navigate(parts[0] as any)
   }
 }
@@ -153,7 +153,7 @@ function handleUnitagNavigation(url: string, screen: string): void {
     return
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: Navigation refs need flexible typing for dynamic routes
+  // oxlint-disable-next-line typescript/no-explicit-any -- Navigation refs need flexible typing for dynamic routes
   const params: any = {
     screen: UnitagScreens.ClaimUnitag,
     params: {
@@ -161,7 +161,7 @@ function handleUnitagNavigation(url: string, screen: string): void {
       address: activeAddress,
     },
   }
-  // biome-ignore lint/suspicious/noExplicitAny: Navigation refs need flexible typing for dynamic routes
+  // oxlint-disable-next-line typescript/no-explicit-any -- Navigation refs need flexible typing for dynamic routes
   navigationRef.navigate(MobileScreens.UnitagStack as any, params)
 }
 

@@ -26,9 +26,9 @@ interface BarItem {
   isUp: boolean
 }
 
-export class RoundedCandleSeriesRenderer<TData extends CandlestickData<UTCTimestamp>>
-  implements ICustomSeriesPaneRenderer
-{
+export class RoundedCandleSeriesRenderer<
+  TData extends CandlestickData<UTCTimestamp>,
+> implements ICustomSeriesPaneRenderer {
   _data: PaneRendererCustomData<Time, TData> | null = null
   _options: RoundedCandleSeriesOptions | null = null
 

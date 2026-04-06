@@ -18,6 +18,7 @@ import {
   type NotificationService,
 } from '@universe/notifications'
 import { Appearance } from 'react-native'
+import DeviceInfo from 'react-native-device-info'
 import { MobileState } from 'src/app/mobileReducer'
 import { store } from 'src/app/store'
 import { createMobileStorageAdapter } from 'src/notification-service/createMobileStorageAdapter'
@@ -54,10 +55,14 @@ function provideMobileNotificationService(ctx: { getIsApiDataSourceEnabled: () =
       const locale = getLocale(currentLanguage)
       const backendLocale = mapLocaleToBackendLocale(locale)
 
+      const version = DeviceInfo.getVersion()
+      const semver = version.split('.').length === 2 ? `${version}.0` : version
+
       return {
         'Content-Type': 'application/json',
         'x-request-source': REQUEST_SOURCE,
         'x-uniswap-locale': backendLocale,
+        'x-app-version': semver,
       }
     },
     getSessionService: () =>
@@ -89,7 +94,7 @@ function provideMobileNotificationService(ctx: { getIsApiDataSourceEnabled: () =
   const bannersDataSource = createMobileLegacyBannersNotificationDataSource({
     tracker,
     pollIntervalMs: 10 * ONE_SECOND_MS,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    // oxlint-disable-next-line typescript/no-unsafe-return
     getState: (): MobileState => store.getState(),
     getIsDarkMode: (): boolean => {
       const state = store.getState()
@@ -135,7 +140,7 @@ function provideMobileNotificationService(ctx: { getIsApiDataSourceEnabled: () =
   }
 
   const localTriggersDataSource = createMobileLocalTriggerDataSource({
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    // oxlint-disable-next-line typescript/no-unsafe-return
     getState: (): MobileState => store.getState(),
     dispatch: store.dispatch,
     tracker,
@@ -151,7 +156,7 @@ function provideMobileNotificationService(ctx: { getIsApiDataSourceEnabled: () =
       ? undefined
       : createReactiveDataSource({
           condition: createOfflineCondition({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+            // oxlint-disable-next-line typescript/no-unsafe-return
             getState: (): MobileState => store.getState(),
           }),
           tracker,

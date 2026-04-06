@@ -108,9 +108,29 @@ describe('TokenDetailsBuySellButtons', () => {
     expect(defaultProps.onPressSell).toHaveBeenCalledTimes(1)
   })
 
-  it('should show action menu when not disabled', () => {
-    const { getByTestId } = render(<TokenDetailsBuySellButtons {...defaultProps} />)
+  it('should render custom buyButtonTitle when provided', () => {
+    const { getByText } = render(<TokenDetailsBuySellButtons {...defaultProps} buyButtonTitle="Buy with cash" />)
+
+    expect(getByText('Buy with cash')).toBeTruthy()
+  })
+
+  it('should render default "Buy" title when buyButtonTitle is not provided', () => {
+    const { getByText } = render(<TokenDetailsBuySellButtons {...defaultProps} />)
+
+    expect(getByText('Buy')).toBeTruthy()
+  })
+
+  it('should show action menu when using default Buy title', () => {
+    const { getByTestId } = render(<TokenDetailsBuySellButtons {...defaultProps} userHasBalance />)
 
     expect(getByTestId(TestID.TokenDetailsActionButton)).toBeTruthy()
+  })
+
+  it('should hide action menu when buyButtonTitle is set', () => {
+    const { queryByTestId } = render(
+      <TokenDetailsBuySellButtons {...defaultProps} userHasBalance buyButtonTitle="Buy with cash" />,
+    )
+
+    expect(queryByTestId(TestID.TokenDetailsActionButton)).toBeNull()
   })
 })

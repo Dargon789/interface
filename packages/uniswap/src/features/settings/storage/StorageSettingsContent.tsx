@@ -190,7 +190,7 @@ function StorageSettingsRow({
   return (
     <TouchableArea
       testID={testID}
-      borderWidth={1}
+      borderWidth="$spacing1"
       borderColor="$surface3"
       borderRadius="$rounded16"
       p="$spacing12"

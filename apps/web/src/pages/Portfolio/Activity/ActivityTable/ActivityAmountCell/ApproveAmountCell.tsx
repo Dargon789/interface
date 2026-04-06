@@ -18,7 +18,7 @@ interface ApproveAmountCellProps {
   t: ReturnType<typeof useTranslation>['t']
 }
 
-function _ApproveAmountCell({
+function ApproveAmountCellInner({
   singleCurrencyInfo,
   approvalAmount,
   variant,
@@ -65,4 +65,4 @@ function _ApproveAmountCell({
   )
 }
 
-export const ApproveAmountCell = memo(_ApproveAmountCell)
+export const ApproveAmountCell = memo(ApproveAmountCellInner)

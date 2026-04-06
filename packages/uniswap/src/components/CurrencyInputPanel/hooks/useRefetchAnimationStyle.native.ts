@@ -23,6 +23,7 @@ export function useRefetchAnimationStyle({
       -1,
       true,
     )
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   const previousAmount = usePrevious(currencyAmount)

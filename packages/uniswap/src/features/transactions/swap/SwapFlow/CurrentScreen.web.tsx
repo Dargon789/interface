@@ -6,12 +6,12 @@ import {
   TransactionScreen,
   useTransactionModalContext,
 } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
-import { UnichainInstantBalanceModal } from 'uniswap/src/features/transactions/swap/components/UnichainInstantBalanceModal/UnichainInstantBalanceModal'
 import { SwapFormScreen } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/SwapFormScreen'
-import { useIsUnichainFlashblocksEnabled } from 'uniswap/src/features/transactions/swap/hooks/useIsUnichainFlashblocksEnabled'
 import { useSwapOnPrevious } from 'uniswap/src/features/transactions/swap/review/hooks/useSwapOnPrevious'
-import { SwapReviewScreen } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewScreen'
-import { useSwapDependenciesStore } from 'uniswap/src/features/transactions/swap/stores/swapDependenciesStore/useSwapDependenciesStore'
+import {
+  SwapReviewScreen,
+  SwapReviewScreenProviders,
+} from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewScreen'
 import { isWebApp } from 'utilities/src/platform'
 
 export function CurrentScreen({
@@ -25,9 +25,6 @@ export function CurrentScreen({
 }): JSX.Element {
   const { screen } = useTransactionModalContext()
 
-  const chainId = useSwapDependenciesStore((s) => s.derivedSwapInfo.chainId)
-  const isFlashblocksEnabled = useIsUnichainFlashblocksEnabled(chainId)
-
   const { onPrev } = useSwapOnPrevious()
 
   return (
@@ -40,21 +37,23 @@ export function CurrentScreen({
           We want to render the `Modal` from the start to allow the tamagui animation to happen once we switch the `isModalOpen` prop to `true`.
           We only render `SwapReviewScreen` once the user is truly on that step though.
         */}
-      <Modal
-        height="auto"
-        alignment={isWebApp ? 'center' : 'top'}
-        isModalOpen={screen === TransactionScreen.Review}
-        name={ModalName.SwapReview}
-        padding="$spacing12"
-        gap={0}
-        onClose={onPrev}
-      >
-        <Trace logImpression section={SectionName.SwapReview}>
-          <SwapReviewScreen hideContent={false} onSubmitSwap={onSubmitSwap} />
-        </Trace>
-      </Modal>
-
-      {isFlashblocksEnabled && <UnichainInstantBalanceModal />}
+      <SwapReviewScreenProviders hideContent={false} onSubmitSwap={onSubmitSwap}>
+        <Modal
+          height="auto"
+          alignment={isWebApp ? 'center' : 'top'}
+          isModalOpen={screen === TransactionScreen.Review}
+          name={ModalName.SwapReview}
+          padding="$spacing12"
+          gap={0}
+          onClose={onPrev}
+        >
+          {screen === TransactionScreen.Review && (
+            <Trace logImpression section={SectionName.SwapReview}>
+              <SwapReviewScreen />
+            </Trace>
+          )}
+        </Modal>
+      </SwapReviewScreenProviders>
     </>
   )
 }

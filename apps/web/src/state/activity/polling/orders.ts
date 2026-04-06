@@ -147,7 +147,7 @@ function updateOrders({
       if ('tradeType' in pendingOrder.typeInfo && pendingOrder.typeInfo.tradeType === TradeType.EXACT_INPUT) {
         const exactInputTypeInfo = updatedTransaction.typeInfo as ExactInputSwapTransactionInfo
         exactInputTypeInfo.settledOutputCurrencyAmountRaw = updatedOrder.settledAmounts[0].amountOut
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
       } else if ('tradeType' in pendingOrder.typeInfo && pendingOrder.typeInfo.tradeType === TradeType.EXACT_OUTPUT) {
         // TODO(WEB-3962): Handle settled EXACT_OUTPUT amounts
       }

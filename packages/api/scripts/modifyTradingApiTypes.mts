@@ -21,17 +21,15 @@ const responseFiles = [approvalResponseFile, createSwapResponseFile, createSendR
 
 const planResponseFile = project.addSourceFileAtPath(`${path}/PlanResponse.ts`)
 
-
 const nullablePermitFile = project.addSourceFileAtPath(`${path}/NullablePermit.ts`)
 const planStepFile = project.addSourceFileAtPath(`${path}/PlanStep.ts`)
-
 
 // Enums
 const routingFile = project.addSourceFileAtPath(`${path}/Routing.ts`)
 const orderTypeFile = project.addSourceFileAtPath(`${path}/OrderType.ts`)
 const orderStatusFile = project.addSourceFileAtPath(`${path}/OrderStatus.ts`)
 
-function addImport(params: { file: SourceFile, importName: string, importPath?: string }): void {
+function addImport(params: { file: SourceFile; importName: string; importPath?: string }): void {
   const { file, importName, importPath = '../../types' } = params
   if (!file.getImportDeclaration((imp) => imp.getModuleSpecifierValue() === importPath)) {
     file.addImportDeclaration({
@@ -60,10 +58,10 @@ function saveFiles(params: { files: (SourceFile | SourceFile[])[] }) {
 }
 
 function modifyType(params: {
-  file: SourceFile,
-  typeName: string,
-  newProperties: { name: string; type: string; isOptional?: boolean }[],
-  replace?: boolean,
+  file: SourceFile
+  typeName: string
+  newProperties: { name: string; type: string; isOptional?: boolean }[]
+  replace?: boolean
 }): void {
   const { file, typeName, newProperties, replace = false } = params
   const typeAlias = file.getTypeAlias(typeName)
@@ -100,7 +98,7 @@ function modifyType(params: {
   }
 }
 
-function addToTypeAlias(params: { file: SourceFile, typeName: string, typeToAdd: string }): void {
+function addToTypeAlias(params: { file: SourceFile; typeName: string; typeToAdd: string }): void {
   const { file, typeName, typeToAdd } = params
   const typeAlias = file.getTypeAlias(typeName)
   if (typeAlias) {
@@ -120,8 +118,8 @@ function addToTypeAlias(params: { file: SourceFile, typeName: string, typeToAdd:
 }
 
 function addEnumMember(params: {
-  file: SourceFile,
-  enumName: string,
+  file: SourceFile
+  enumName: string
   newMember: { name: string; value: string }
   deprecated?: boolean
 }): void {
@@ -143,12 +141,18 @@ function addEnumMember(params: {
   enumDecl.addMember({
     name: newMember.name,
     initializer: `"${newMember.value}"`,
-    docs: deprecated ? [{ description: '@deprecated Deprecation flag added via modifyTradingApiTypes.mts in order to not break existing code.' }] : undefined,
+    docs: deprecated
+      ? [
+          {
+            description:
+              '@deprecated Deprecation flag added via modifyTradingApiTypes.mts in order to not break existing code.',
+          },
+        ]
+      : undefined,
   })
 
   console.log(`Added enum member ${newMember.name} = "${newMember.value}" to ${enumName}`)
 }
-
 
 function main() {
   // Modify the request interfaces
@@ -157,9 +161,7 @@ function main() {
     modifyType({
       file,
       typeName: file.getBaseName().replace('.ts', ''),
-      newProperties: [
-        { name: 'gasStrategies', type: 'GasStrategy[]', isOptional: true },
-      ],
+      newProperties: [{ name: 'gasStrategies', type: 'GasStrategy[]', isOptional: true }],
     })
   })
 
@@ -169,9 +171,7 @@ function main() {
     modifyType({
       file,
       typeName: file.getBaseName().replace('.ts', ''),
-      newProperties: [
-        { name: 'gasEstimates', type: 'GasEstimate[]', isOptional: true },
-      ],
+      newProperties: [{ name: 'gasEstimates', type: 'GasEstimate[]', isOptional: true }],
     })
   })
   addImport({ file: chainedQuoteFile, importName: 'GasEstimate' })
@@ -193,24 +193,40 @@ function main() {
     typeToAdd: '| null',
   })
 
-  
   modifyType({
     file: planResponseFile,
     typeName: 'PlanResponse',
-    newProperties: [
-      { name: 'lastUserActionAt', type: 'string', isOptional: true },
-    ],
+    newProperties: [{ name: 'lastUserActionAt', type: 'string', isOptional: true }],
   })
 
   // Add new enum member
   addEnumMember({ file: routingFile, enumName: 'Routing', newMember: { name: 'JUPITER', value: 'JUPITER' } })
 
   // TODO: Check if this was removed from the API. Leaving it in to not break existing code.
-  addEnumMember({ file: routingFile, enumName: 'Routing', newMember: { name: 'DUTCH_LIMIT', value: 'DUTCH_LIMIT' }, deprecated: true })
-  addEnumMember({ file: orderTypeFile, enumName: 'OrderType', newMember: { name: 'DUTCH', value: 'DUTCH' }, deprecated: true })
-  addEnumMember({ file: orderTypeFile, enumName: 'OrderType', newMember: { name: 'DUTCH_LIMIT', value: 'DUTCH_LIMIT' }, deprecated: true })
-  addEnumMember({ file: orderStatusFile, enumName: 'OrderStatus', newMember: { name: 'UNVERIFIED', value: 'unverified' }, deprecated: true })
-
+  addEnumMember({
+    file: routingFile,
+    enumName: 'Routing',
+    newMember: { name: 'DUTCH_LIMIT', value: 'DUTCH_LIMIT' },
+    deprecated: true,
+  })
+  addEnumMember({
+    file: orderTypeFile,
+    enumName: 'OrderType',
+    newMember: { name: 'DUTCH', value: 'DUTCH' },
+    deprecated: true,
+  })
+  addEnumMember({
+    file: orderTypeFile,
+    enumName: 'OrderType',
+    newMember: { name: 'DUTCH_LIMIT', value: 'DUTCH_LIMIT' },
+    deprecated: true,
+  })
+  addEnumMember({
+    file: orderStatusFile,
+    enumName: 'OrderStatus',
+    newMember: { name: 'UNVERIFIED', value: 'unverified' },
+    deprecated: true,
+  })
 
   saveFiles({
     files: [
@@ -223,8 +239,7 @@ function main() {
       orderStatusFile,
       chainedQuoteFile,
       planStepFile,
-    ]
-
+    ],
   })
   console.log('Trading API types have been updated')
 }

@@ -57,7 +57,7 @@ test.describe(
       await expectSingleTransaction(async () => {
         await page.getByRole('button', { name: 'Collect fees' }).click()
         await page.getByTestId(TestID.ClaimFees).click()
-        await expect(page.getByText('Collecting fees')).toBeVisible()
+        await expect(page.getByTestId(TestID.ActivityPopup).getByText('Collecting fees')).toBeVisible()
       })
     })
 
@@ -85,7 +85,7 @@ test.describe(
       await expectSingleTransaction(async () => {
         await page.getByRole('button', { name: 'Collect fees' }).click()
         await page.getByTestId(TestID.ClaimFees).click()
-        await expect(page.getByText('Collecting fees')).toBeVisible()
+        await expect(page.getByTestId(TestID.ActivityPopup).getByText('Collecting fees')).toBeVisible()
       })
     })
   },

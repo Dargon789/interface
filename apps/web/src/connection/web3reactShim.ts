@@ -3,7 +3,7 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useAccount } from '~/hooks/useAccount'
 import { useEthersProvider } from '~/hooks/useEthersProvider'
 
-// eslint-disable-next-line import/no-unused-modules -- shim is used via a build alias in craco.config.cjs
+// oxlint-disable-next-line import/no-unused-modules -- shim is used via a build alias in craco.config.cjs
 export function useWeb3React() {
   const account = useAccount()
   const provider = useEthersProvider({ chainId: account.chainId })

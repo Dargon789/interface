@@ -62,16 +62,16 @@
     },
     "lint": {},
     "lint:fix": {},
-    "lint:biome": {},
-    "lint:biome:fix": {},
+    "check": {},
+    "check:fix": {},
     "lint:eslint": {
-      "command": "NODE_OPTIONS=--max_old_space_size=8192 eslint . --ext ts,tsx --max-warnings=0",
+      "command": "NODE_OPTIONS='--max_old_space_size=8192 --max-semi-space-size=256' eslint --cache --cache-location node_modules/.cache/eslint/ --max-warnings=0 .",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "lint:eslint:fix": {
-      "command": "NODE_OPTIONS=--max-old-space-size=8192 eslint . --ext ts,tsx --fix",
+      "command": "NODE_OPTIONS='--max_old_space_size=8192 --max-semi-space-size=256' eslint --cache --cache-location node_modules/.cache/eslint/ . --fix",
       "options": {
         "cwd": "{projectRoot}"
       }
@@ -217,6 +217,11 @@
         "cwd": "{projectRoot}"
       },
       "dependsOn": ["build:wxt"]
-    }
+    },
+    "oxfmt": {},
+    "oxfmt:fix": {},
+    "oxlint": {},
+    "oxlint:fix": {},
+    "oxlint:type-aware": {}
   }
 }

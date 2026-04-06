@@ -11,7 +11,6 @@ import { ContextMenu } from 'uniswap/src/components/menus/ContextMenu'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
 import { NftView, NftViewProps } from 'uniswap/src/components/nfts/NftView'
 import { useActiveAddresses } from 'uniswap/src/features/accounts/store/hooks'
-import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { useNFTContextMenuItems } from 'uniswap/src/features/nfts/hooks/useNftContextMenuItems'
 import { getNFTAssetKey } from 'uniswap/src/features/nfts/utils'
@@ -48,13 +47,12 @@ type NftCardProps = Omit<NftViewProps, 'onPress'> & {
   onPress?: () => void
 }
 
-function _NFTCard(props: NftCardProps): JSX.Element {
+function NFTCardInner(props: NftCardProps): JSX.Element {
   const { value: isHovered, setTrue: setIsHovered, setFalse: setIsHoveredFalse } = useBooleanState(false)
   const colors = useSporeColors()
   const { t } = useTranslation()
   const { isExternalWallet } = usePortfolioAddresses()
   const activeAddresses = useActiveAddresses()
-  const { defaultChainId } = useEnabledChains()
 
   const nftUniqueId = useMemo(
     () => getNFTAssetKey(props.item.contractAddress ?? '', props.item.tokenId ?? ''),
@@ -121,13 +119,12 @@ function _NFTCard(props: NftCardProps): JSX.Element {
     if (!openseaUrl && chainId && props.item.contractAddress && props.item.tokenId) {
       return getNftExplorerLink({
         chainId,
-        fallbackChainId: defaultChainId,
         contractAddress: props.item.contractAddress,
         tokenId: props.item.tokenId,
       })
     }
     return null
-  }, [openseaUrl, chainId, props.item.contractAddress, props.item.tokenId, defaultChainId])
+  }, [openseaUrl, chainId, props.item.contractAddress, props.item.tokenId])
 
   const onCopySuccess = useCallback(() => {
     popupRegistry.addPopup(
@@ -163,6 +160,7 @@ function _NFTCard(props: NftCardProps): JSX.Element {
   )
 
   const handlePress = useCallback(
+    // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
     async (event?: any) => {
       // Prefer OpenSea URL, fall back to block explorer if no OpenSea URL available
       const url = openseaUrl || explorerUrl
@@ -182,6 +180,7 @@ function _NFTCard(props: NftCardProps): JSX.Element {
       })
       props.onPress?.()
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     [openseaUrl, explorerUrl, props.item.collectionName, props.item.contractAddress, props.item.tokenId, props.onPress],
   )
 
@@ -195,7 +194,6 @@ function _NFTCard(props: NftCardProps): JSX.Element {
         borderWidth="$spacing1"
         borderColor="$surface3"
         gap="$spacing4"
-        transition="all 80ms ease-in-out"
         {...(isActive && !isMobileWeb ? activeCardStyles : {})}
         onMouseEnter={setIsHovered}
         onMouseLeave={setIsHoveredFalse}
@@ -244,7 +242,6 @@ function _NFTCard(props: NftCardProps): JSX.Element {
           </Text>
           <GroupHoverTransition
             height={SUBTITLE_HEIGHT}
-            transition="all 80ms ease-in-out"
             useGroupItemHover
             defaultContent={
               <Flex row alignItems="center" gap="$spacing4" justifyContent="space-between" height={SUBTITLE_HEIGHT}>
@@ -280,6 +277,6 @@ function _NFTCard(props: NftCardProps): JSX.Element {
   )
 }
 
-export const NFTCard = memo(_NFTCard)
+export const NFTCard = memo(NFTCardInner)
 
 NFTCard.displayName = 'NFTCard'

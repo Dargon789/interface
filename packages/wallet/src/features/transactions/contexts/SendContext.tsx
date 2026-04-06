@@ -74,7 +74,7 @@ export function SendContextProvider({
     isExtraTx: true,
   })?.toExact()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -setSendForm
+  // oxlint-disable-next-line react/exhaustive-deps -- -setSendForm
   const updateSendForm = useCallback(
     (passedNewState: Parameters<SendContextState['updateSendForm']>[0]): void => {
       const newState = { ...passedNewState }

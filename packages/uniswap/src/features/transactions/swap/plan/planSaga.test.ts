@@ -41,7 +41,7 @@ vi.mock('uniswap/src/features/transactions/swap/plan/planSagaUtils', async (impo
   const actual: Record<string, unknown> = await importOriginal()
   return {
     ...actual,
-    // biome-ignore lint/correctness/useYield: saga mock — runSaga requires generator functions
+    // oxlint-disable-next-line require-yield -- saga mock — runSaga requires generator functions
     initializePlan: vi.fn().mockImplementation(function* () {
       return initializePlanResult
     }),
@@ -56,7 +56,8 @@ vi.mock('uniswap/src/features/transactions/swap/plan/planSagaUtils', async (impo
     lockPlanForExecution: (...args: unknown[]): unknown => mockLockPlanForExecution(...args),
     unlockPlanExecution: (...args: unknown[]): unknown => mockUnlockPlanExecution(...args),
     getWalletExecutionContext: (): undefined => undefined,
-    // eslint-disable-next-line object-shorthand, @typescript-eslint/explicit-function-return-type
+    // oxlint-disable-next-line typescript/explicit-function-return-type
+    // eslint-disable-next-line object-shorthand
     showPendingOnEarlyModalClose: function* () {
       yield // no-op: avoids the real saga which waits on signalSwapModalClosed
     },
@@ -64,7 +65,7 @@ vi.mock('uniswap/src/features/transactions/swap/plan/planSagaUtils', async (impo
 })
 
 vi.mock('uniswap/src/features/transactions/swap/plan/watchPlanStepSaga', () => ({
-  // biome-ignore lint/correctness/useYield: saga mock — runSaga requires generator functions
+  // oxlint-disable-next-line require-yield -- saga mock — runSaga requires generator functions
   watchPlanStep: vi.fn().mockImplementation(function* () {
     return watchPlanStepResult
   }),
@@ -198,23 +199,23 @@ function createPlanParams(trade: ChainedActionTrade): {
       onSuccess,
       onFailure,
       selectChain: vi.fn().mockResolvedValue(true),
-      // biome-ignore lint/correctness/useYield: saga mock
+      // oxlint-disable-next-line require-yield -- saga mock
       handleApprovalTransactionStep: vi.fn().mockImplementation(function* () {
         return '0xhash'
       }),
-      // biome-ignore lint/correctness/useYield: saga mock
+      // oxlint-disable-next-line require-yield -- saga mock
       handleSwapTransactionStep: vi.fn().mockImplementation(function* () {
         return '0xhash'
       }),
-      // biome-ignore lint/correctness/useYield: saga mock
+      // oxlint-disable-next-line require-yield -- saga mock
       handleSwapTransactionBatchedStep: vi.fn().mockImplementation(function* () {
         return { batchId: '1', hash: '0xhash' }
       }),
-      // biome-ignore lint/correctness/useYield: saga mock
+      // oxlint-disable-next-line require-yield -- saga mock
       handleSignatureStep: vi.fn().mockImplementation(function* () {
         return '0xsig'
       }),
-      // biome-ignore lint/correctness/useYield: saga mock
+      // oxlint-disable-next-line require-yield -- saga mock
       handleUniswapXPlanSignatureStep: vi.fn().mockImplementation(function* () {
         return '0xsig'
       }),

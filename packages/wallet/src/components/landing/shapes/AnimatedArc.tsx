@@ -19,11 +19,11 @@ function makeTransparent(color: string): string {
     return 'transparent'
   }
   // processColor returns 0xAARRGGBB format
-  // biome-ignore lint/suspicious/noBitwiseOperators: bitwise operation required to convert to unsigned 32-bit integer
+  // oxlint-disable-next-line no-bitwise -- bitwise operation required to convert to unsigned 32-bit integer
   const r = (processed >> 16) & 0xff
-  // biome-ignore lint/suspicious/noBitwiseOperators: bitwise operation required to convert to unsigned 32-bit integer
+  // oxlint-disable-next-line no-bitwise -- bitwise operation required to convert to unsigned 32-bit integer
   const g = (processed >> 8) & 0xff
-  // biome-ignore lint/suspicious/noBitwiseOperators: bitwise operation required to convert to unsigned 32-bit integer
+  // oxlint-disable-next-line no-bitwise -- bitwise operation required to convert to unsigned 32-bit integer
   const b = processed & 0xff
   return `rgba(${r}, ${g}, ${b}, 0)`
 }

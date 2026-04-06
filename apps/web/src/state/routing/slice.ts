@@ -104,7 +104,7 @@ export const routingApi = createApi({
   baseQuery: fetchBaseQuery(),
   endpoints: (build) => ({
     getQuote: build.query<TradeResult, GetQuoteArgs>({
-      // eslint-disable-next-line max-params
+      // oxlint-disable-next-line max-params
       async queryFn(args, _api, _extraOptions, fetch) {
         logSwapQuoteFetch({
           chainId: args.tokenInChainId,

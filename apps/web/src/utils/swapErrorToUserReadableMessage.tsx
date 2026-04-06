@@ -50,6 +50,7 @@ export function didUserReject(error: any): boolean {
   return false
 }
 
+// oxlint-disable-next-line no-unused-expressions -- biome-parity: oxlint is stricter here
 WalletSignTransactionError
 /**
  * This is hacking out the revert reason from the ethers provider thrown error however it can.

@@ -4,12 +4,12 @@
     "check:deps:usage": {},
     "typecheck": {},
     "typecheck:tsgo": {},
-    "lint:biome": {},
-    "lint:biome:fix": {},
     "lint:eslint": {},
     "lint:eslint:fix": {},
     "lint": {},
     "lint:fix": {},
+    "check": {},
+    "check:fix": {},
     "test": {
       "command": "jest",
       "options": {
@@ -21,6 +21,11 @@
       "options": {
         "cwd": "{projectRoot}"
       }
-    }
+    },
+    "oxfmt": {},
+    "oxfmt:fix": {},
+    "oxlint": {},
+    "oxlint:fix": {},
+    "oxlint:type-aware": {}
   }
 }

@@ -19,6 +19,7 @@ interface Props {
   size: number
   chainId: UniverseChainId | null
   customIcon?: ReactNode
+  showMainnetNetworkLogo?: boolean
 }
 
 /*
@@ -35,10 +36,11 @@ export function SplitLogo({
   outputFallbackSymbol,
   chainId,
   customIcon,
+  showMainnetNetworkLogo = false,
 }: Props): JSX.Element {
   const iconSize = size / 2
   const networkLogo =
-    chainId && chainId !== UniverseChainId.Mainnet ? (
+    chainId && (chainId !== UniverseChainId.Mainnet || showMainnetNetworkLogo) ? (
       <TransactionSummaryNetworkLogo chainId={chainId} size={size * STATUS_RATIO} />
     ) : undefined
 

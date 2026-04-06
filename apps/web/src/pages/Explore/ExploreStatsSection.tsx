@@ -59,7 +59,7 @@ export const ExploreStatsSection = ({ shouldHideStats = false }: { shouldHideSta
       { label: t('explore.v4TVL'), value: formatPrice(protocolTVL.v4), change: protocolChangePercent.v4 },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     return stats.filter((state): state is Exclude<typeof state, null> => state !== null)
   }, [
     t,
@@ -161,7 +161,7 @@ const StatDisplayWithPopover = memo(({ data, isLoading }: StatDisplayProps) => {
   const { convertFiatAmountFormatted } = useLocalizationContext()
 
   return (
-    <Popover hoverable placement="bottom-start" offset={{ mainAxis: 10 }}>
+    <Popover hoverable={{ delay: { open: 200 }, restMs: 100 }} placement="bottom-start" offset={{ mainAxis: 10 }}>
       <Popover.Trigger>
         <StatDisplay data={data} isLoading={isLoading} isHoverable />
       </Popover.Trigger>

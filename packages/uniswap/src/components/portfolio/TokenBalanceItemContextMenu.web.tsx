@@ -17,7 +17,7 @@ export const TokenBalanceItemContextMenu = memo(function TokenBalanceItemContext
   openReportTokenModal,
   copyAddressToClipboard,
   triggerMode,
-  onPressToken: onPressToken,
+  onPressToken,
   disableNotifications,
   recipient,
 }: PropsWithChildren<TokenBalanceItemContextMenuProps>): JSX.Element {
@@ -45,7 +45,7 @@ export const TokenBalanceItemContextMenu = memo(function TokenBalanceItemContext
 
   const actionableItem = useMemo(() => {
     return (
-      // biome-ignore lint/correctness/noRestrictedElements: needed here
+      // oxlint-disable-next-line react/forbid-elements -- needed here
       <div style={{ cursor: 'pointer' }} onContextMenu={isExtensionApp ? ignoreDefault : openMenu}>
         <TouchableArea
           onPressIn={(e) => e.stopPropagation()}

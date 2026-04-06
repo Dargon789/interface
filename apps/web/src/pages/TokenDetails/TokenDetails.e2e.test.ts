@@ -68,7 +68,6 @@ test.describe(
       await page.goto('/explore/tokens/ethereum/NATIVE')
       await page.getByTestId(TestID.Web3StatusConnected).click()
       await getVisibleDropdownElementByTestId(page, TestID.WalletSettings).click()
-      await getVisibleDropdownElementByTestId(page, TestID.AdvancedSettingsButton).click()
       await getVisibleDropdownElementByTestId(page, TestID.TestnetsToggle).click()
       // Close the testnet mode info modal that appears
       const modalButton = page.getByRole('button', { name: 'Close' })

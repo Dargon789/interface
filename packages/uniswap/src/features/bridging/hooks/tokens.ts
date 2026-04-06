@@ -200,7 +200,22 @@ function useBridgingTokensToTokenOptions(
       if (!chainIdA || !chainIdB) {
         return 0
       }
-      return enabledChainIds.indexOf(chainIdA) - enabledChainIds.indexOf(chainIdB)
+      const indexA = enabledChainIds.indexOf(chainIdA)
+      const indexB = enabledChainIds.indexOf(chainIdB)
+
+      if (indexA === -1 && indexB === -1) {
+        // If neither chain is enabled, treat them as equal
+        return 0
+      } else if (indexA === -1) {
+        // If only A is not enabled, B comes first
+        return 1
+      } else if (indexB === -1) {
+        // If only B is not enabled, A comes first
+        return -1
+      }
+
+      // Otherwise, sort by their index in enabledChainIds
+      return indexA - indexB
     })
 
     return sortedBridgingTokens
@@ -219,6 +234,11 @@ function useBridgingTokensToTokenOptions(
           type: OnchainItemListOptionType.Token,
         }
       })
-      .filter((tokenOption): tokenOption is TokenOption => tokenOption !== undefined)
+      .filter((tokenOption): tokenOption is TokenOption => {
+        if (!tokenOption || !('currencyInfo' in tokenOption)) {
+          return false
+        }
+        return enabledChainIds.includes(tokenOption.currencyInfo.currency.chainId)
+      })
   }, [bridgingTokens, portfolioBalancesById, enabledChainIds])
 }

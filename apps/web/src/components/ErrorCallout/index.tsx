@@ -47,7 +47,7 @@ export function ErrorCallout({
         {/* the error message will be of type true or a string. True means there was an error but the message is unknown. */}
         {errorMessage !== true && (
           <Text variant="body3" color="$neutral3">
-            {t('common.error.label')}: {errorMessage}
+            {t('common.error.requestFailed')}: {errorMessage}
           </Text>
         )}
         {Boolean(onPress) && (

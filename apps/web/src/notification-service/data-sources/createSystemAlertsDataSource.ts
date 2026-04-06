@@ -114,9 +114,8 @@ function checkChainConnectivity(ctx: {
   blockTimestamp: bigint | undefined
   machineTime: number
   isLandingPage: boolean
-  occurrence: number
 }): { shouldShow: boolean; notification?: InAppNotification } {
-  const { swapInputChainId, blockTimestamp, machineTime, isLandingPage, occurrence } = ctx
+  const { swapInputChainId, blockTimestamp, machineTime, isLandingPage } = ctx
 
   // Don't show on landing page
   if (isLandingPage) {
@@ -146,7 +145,6 @@ function checkChainConnectivity(ctx: {
       chainId: swapInputChainId,
       isMainnet: swapInputChainId === UniverseChainId.Mainnet,
       statusPageUrl: chainInfo.statusPage,
-      occurrence,
     }),
   }
 }
@@ -229,10 +227,6 @@ export function createSystemAlertsDataSource(ctx: CreateSystemAlertsDataSourceCo
   let intervalId: ReturnType<typeof setInterval> | null = null
   let currentCallback: ((notifications: InAppNotification[], source: string) => void) | null = null
   let lastEmittedAlertType: SystemAlertType | null = null
-  // Counter for generating unique notification IDs per chain connectivity occurrence.
-  // Increments each time the alert transitions from inactive to active,
-  // so dismissed notifications stay dismissed and new occurrences get a fresh notification.
-  let chainConnectivityOccurrence = 0
 
   /**
    * Check all conditions and return the highest priority active alert.
@@ -254,7 +248,6 @@ export function createSystemAlertsDataSource(ctx: CreateSystemAlertsDataSourceCo
           blockTimestamp: getBlockTimestamp(),
           machineTime: getMachineTime(),
           isLandingPage,
-          occurrence: chainConnectivityOccurrence,
         }),
       [SystemAlertType.Outage]: () =>
         checkOutage({
@@ -297,12 +290,6 @@ export function createSystemAlertsDataSource(ctx: CreateSystemAlertsDataSourceCo
           currentCallback([activeAlert.notification], 'system_alerts')
         }
       } else if (lastEmittedAlertType !== null) {
-        // When an alert clears, bump the occurrence counter so that the next
-        // chain connectivity alert gets a fresh notification ID. This means
-        // previously dismissed notifications stay dismissed.
-        if (lastEmittedAlertType === SystemAlertType.ChainConnectivity) {
-          chainConnectivityOccurrence++
-        }
         lastEmittedAlertType = null
       }
     } catch (error) {
@@ -351,15 +338,14 @@ function createChainConnectivityNotification(params: {
   chainId: number
   isMainnet: boolean
   statusPageUrl?: string
-  occurrence: number
 }): InAppNotification {
-  const { chainLabel, chainId, isMainnet, statusPageUrl, occurrence } = params
+  const { chainLabel, chainId, isMainnet, statusPageUrl } = params
 
   const title = i18n.t('network.warning')
   const subtitle = isMainnet ? i18n.t('network.lostConnection') : i18n.t('network.mightBeDown', { network: chainLabel })
 
   const notification = new Notification({
-    id: `local:session:chain_connectivity:${chainId}:${occurrence}`,
+    id: `local:session:chain_connectivity:${chainId}`,
     content: new Content({
       style: ContentStyle.SYSTEM_BANNER,
       title,

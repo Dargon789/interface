@@ -75,6 +75,6 @@ vi.mock('utilities/src/logger/logger', () => ({
   getLogger: vi.fn(() => createMockLogger()),
   getDevLogger: vi.fn(() => createMockLogger()),
   createLogger: vi.fn(() => createMockLogger()),
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  // oxlint-disable-next-line typescript/no-unsafe-return
   addErrorExtras: vi.fn((error, context) => context),
 }))

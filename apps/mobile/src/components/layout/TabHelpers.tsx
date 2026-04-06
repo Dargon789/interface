@@ -1,4 +1,4 @@
-/* eslint-disable react-native/no-unused-styles */
+/* oxlint-disable react-native/no-unused-styles */
 import { FlashList, FlashListProps } from '@shopify/flash-list'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React, { RefObject, useCallback, useMemo } from 'react'

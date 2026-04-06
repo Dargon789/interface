@@ -49,7 +49,7 @@ function useHopBadgeContent({ hop, tokenPair }: { hop: RoutingHop; tokenPair: st
   const { t } = useTranslation()
 
   // Disabling this rule so that it elint warns us when we add a new hop type and it's properly handled.
-  // eslint-disable-next-line consistent-return
+  // oxlint-disable-next-line consistent-return
   return useMemo(() => {
     switch (hop.type) {
       case 'uniswapPool': {

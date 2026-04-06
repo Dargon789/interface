@@ -1,4 +1,4 @@
-/* eslint-disable no-new */
+/* oxlint-disable no-new */
 import { TradeType } from '@uniswap/sdk-core'
 import { TradingApi } from '@universe/api'
 import { UnwrapTrade, WrapTrade } from 'uniswap/src/features/transactions/swap/types/trade'
@@ -59,6 +59,7 @@ describe('WrapTrade', () => {
     expect(trade.quote).toBe(mockWrapQuote)
   })
 
+  // oxlint-disable-next-line jest/expect-expect -- suppressed
   it('should raise a ts error for invalid routing types', () => {
     new WrapTrade({
       ...mockBaseArgs,
@@ -86,6 +87,7 @@ describe('UnwrapTrade', () => {
     expect(trade.quote).toBe(mockUnwrapQuote)
   })
 
+  // oxlint-disable-next-line jest/expect-expect -- suppressed
   it('should raise a ts error for invalid routing types', () => {
     new UnwrapTrade({
       ...mockBaseArgs,

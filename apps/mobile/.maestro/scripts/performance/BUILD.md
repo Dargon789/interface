@@ -18,7 +18,7 @@ The build process uses **esbuild** to:
 Run the build command:
 
 ```bash
-yarn e2e:build-js
+bun e2e:build-js
 ```
 
 This executes `.maestro/scripts/tooling/buildPerformanceScripts.ts` which:
@@ -63,7 +63,7 @@ dist/
 To add a new script:
 
 1. Create the TypeScript file in `src/actions/` or `src/utils/`
-2. Run `yarn e2e:build-js` to build
+2. Run `bun e2e:build-js` to build
 
 The build script automatically discovers and builds:
 

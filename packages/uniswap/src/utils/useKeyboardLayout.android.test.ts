@@ -37,6 +37,7 @@ vi.mock('react-native/Libraries/Utilities/Platform', () => ({
 }))
 
 // TODO: debug and re-enable this test. It started failing when we moved it to the shared `wallet` package.
+// oxlint-disable-next-line jest/no-disabled-tests -- suppressed
 describe.skip(useKeyboardLayout, () => {
   it('returns isVisible as false if keyboard is not visible', () => {
     const { result } = renderHook(() => useKeyboardLayout())

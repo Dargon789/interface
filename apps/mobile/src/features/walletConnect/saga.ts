@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { AnyAction } from '@reduxjs/toolkit'
 import { WalletKitTypes } from '@reown/walletkit'
 import { FeatureFlags, getFeatureFlag } from '@universe/gating'
@@ -208,6 +208,12 @@ export function* handleSessionProposal(proposal: ProposalTypes.Struct & { verify
         },
       },
     })
+
+    // If the dapp only requested unsupported chains in optionalNamespaces (with no requiredNamespaces),
+    // buildApprovedNamespaces returns empty namespaces. Reject and show an error.
+    if (Object.keys(namespaces).length === 0) {
+      throw new Error('Dapp requested only unsupported chains')
+    }
 
     // Extract chains from approved namespaces to show in UI for pending session
     const proposalChainIds: UniverseChainId[] = []

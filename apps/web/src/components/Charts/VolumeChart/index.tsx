@@ -48,7 +48,7 @@ class VolumeChartModel extends CustomVolumeChartModel<SingleHistogramData> {
   }
 }
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 function formatHistoryDuration(t: TFunction, duration: GraphQLApi.HistoryDuration): string {
   switch (duration) {
     case GraphQLApi.HistoryDuration.FiveMinute:

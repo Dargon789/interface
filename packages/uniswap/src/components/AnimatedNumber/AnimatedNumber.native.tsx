@@ -67,7 +67,7 @@ const RollNumber = ({
     marginLeft: isRightToLeft ? -ADDITIONAL_WIDTH_FOR_ANIMATIONS : 0,
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +digit, currency
+  // oxlint-disable-next-line react/exhaustive-deps -- +digit, currency
   useEffect(() => {
     const finishColor = shouldFadeDecimals && index > decimalSeparatorIndex ? colors.neutral3.val : colors.neutral1.val
     if (nextColor && index > commonPrefixLength - 1 && chars !== lastChars.current) {
@@ -121,6 +121,7 @@ const RollNumber = ({
       const newOffset = DIGIT_HEIGHT * -digit
       yOffset.value = newOffset
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [digit])
 
   const animatedWrapperStyle = useAnimatedStyle(() => {

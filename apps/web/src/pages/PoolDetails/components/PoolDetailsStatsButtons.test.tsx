@@ -1,5 +1,4 @@
 import '~/test-utils/tokens/mocks'
-
 import userEvent from '@testing-library/user-event'
 import { GraphQLApi } from '@universe/api'
 import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
@@ -56,7 +55,6 @@ describe('PoolDetailsStatsButton', () => {
     navigateToTokenDetails: () => {},
     navigateToPoolDetails: () => {},
     navigateToExternalProfile: () => {},
-    navigateToNftCollection: () => {},
     navigateToNftDetails: () => {},
     navigateToAdvancedSettings: () => {},
     onSwapChainsChanged: () => {},

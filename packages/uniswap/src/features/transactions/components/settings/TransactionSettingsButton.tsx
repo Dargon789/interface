@@ -58,6 +58,7 @@ export const TransactionSettingsButton = memo(
   },
 )
 
+// oxlint-disable-next-line react/display-name -- biome-parity: oxlint is stricter here
 export const TransactionSettingsButtonWithTooltip = memo(
   ({
     Tooltip,

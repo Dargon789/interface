@@ -35,7 +35,7 @@ export function generateActivityItemRenderer({
   isExternalProfile?: boolean
   authTrigger: ((args: { successCallback: () => void; failureCallback: () => void }) => Promise<void>) | undefined
 }): ActivityItemRenderer {
-  // eslint-disable-next-line complexity
+  // oxlint-disable-next-line complexity
   return function ActivityItemComponent({ item, index }: { item: ActivityItem; index: number }): JSX.Element {
     // if it's a loading item, render the loading placeholder
     if (isLoadingItem(item)) {

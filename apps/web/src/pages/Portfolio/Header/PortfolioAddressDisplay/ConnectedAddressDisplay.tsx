@@ -1,5 +1,3 @@
-/* eslint-disable-next-line no-restricted-imports, no-restricted-syntax */
-
 import { useMemo } from 'react'
 import { Flex } from 'ui/src'
 import { iconSizes } from 'ui/src/theme/iconSizes'

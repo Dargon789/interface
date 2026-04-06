@@ -80,10 +80,10 @@ describe('useQuoteRoutingParams', () => {
           TradingApi.ProtocolItems.V3,
           TradingApi.ProtocolItems.V4,
         ]
-        // eslint-disable-next-line max-nested-callbacks
+        // oxlint-disable-next-line max-nested-callbacks
         mockUseProtocolsForChain.mockImplementation(() => selectedProtocols)
 
-        // eslint-disable-next-line max-nested-callbacks
+        // oxlint-disable-next-line max-nested-callbacks
         const { result } = renderHook(() =>
           useQuoteRoutingParams({
             selectedProtocols,
@@ -110,10 +110,10 @@ describe('useQuoteRoutingParams', () => {
           TradingApi.ProtocolItems.V3,
           TradingApi.ProtocolItems.V4,
         ]
-        // eslint-disable-next-line max-nested-callbacks
+        // oxlint-disable-next-line max-nested-callbacks
         mockUseProtocolsForChain.mockImplementation(() => selectedProtocols) // Original protocols without V4
 
-        // eslint-disable-next-line max-nested-callbacks
+        // oxlint-disable-next-line max-nested-callbacks
         const { result } = renderHook(() =>
           useQuoteRoutingParams({
             selectedProtocols,
@@ -140,10 +140,10 @@ describe('useQuoteRoutingParams', () => {
           TradingApi.ProtocolItems.V3,
           TradingApi.ProtocolItems.V4,
         ]
-        // eslint-disable-next-line max-nested-callbacks
+        // oxlint-disable-next-line max-nested-callbacks
         mockUseProtocolsForChain.mockImplementation(() => selectedProtocols)
 
-        // eslint-disable-next-line max-nested-callbacks
+        // oxlint-disable-next-line max-nested-callbacks
         const { result } = renderHook(() =>
           useQuoteRoutingParams({
             selectedProtocols,
@@ -165,10 +165,10 @@ describe('useQuoteRoutingParams', () => {
           TradingApi.ProtocolItems.V2,
           TradingApi.ProtocolItems.V3,
         ]
-        // eslint-disable-next-line max-nested-callbacks
+        // oxlint-disable-next-line max-nested-callbacks
         mockUseProtocolsForChain.mockImplementation(() => selectedProtocols)
 
-        // eslint-disable-next-line max-nested-callbacks
+        // oxlint-disable-next-line max-nested-callbacks
         const { result } = renderHook(() =>
           useQuoteRoutingParams({
             selectedProtocols,

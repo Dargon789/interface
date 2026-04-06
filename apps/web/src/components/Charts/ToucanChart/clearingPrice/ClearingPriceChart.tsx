@@ -97,6 +97,7 @@ export function ClearingPriceChart({
         auctionStartBlockTimestamp,
         auctionEndBlockTimestamp,
       }),
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     [
       auctionDetails,
       auctionDetails.token?.currency.decimals,

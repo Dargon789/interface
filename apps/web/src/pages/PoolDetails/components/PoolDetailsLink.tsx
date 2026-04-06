@@ -134,7 +134,7 @@ export function PoolDetailsLink({ address, chainId, tokens, loading }: PoolDetai
   }, [navigate, tokens, isPool, chainUrlParam])
 
   const [truncateAddress, setTruncateAddress] = useState<false | 'start' | 'both'>(false)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +truncateAddress
+  // oxlint-disable-next-line react/exhaustive-deps -- +truncateAddress
   const onTextRender = useCallback(
     (textRef: HTMLElement | null) => {
       if (textRef) {
@@ -146,6 +146,7 @@ export function PoolDetailsLink({ address, chainId, tokens, loading }: PoolDetai
     },
     // This callback must run after it sets truncateAddress to 'start' to see if it needs to 'both'.
     // It checks if the textRef has overflow, and sets truncateAddress accordingly to avoid it.
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     [truncateAddress],
   )
 

@@ -54,9 +54,9 @@ const getBinanceConnector = () => {
 
 export const orderedTransportUrls = (chain: ReturnType<typeof getChainInfo>): string[] => {
   const orderedRpcUrls = [
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     ...(chain.rpcUrls.interface?.http ?? []),
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     ...(chain.rpcUrls.default?.http ?? []),
     ...(chain.rpcUrls.public?.http ?? []),
     ...(chain.rpcUrls.fallback?.http ?? []),
@@ -104,6 +104,7 @@ function createWagmiConfig(params: {
   /** The connector list to use. */
   connectors: any[]
   /** Optional custom `onFetchResponse` handler – defaults to `defaultOnFetchResponse`. */
+  // oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
   onFetchResponse?: (response: Response, chain: Chain, url: string) => void
 }): Config<typeof ORDERED_EVM_CHAINS> {
   const { connectors, onFetchResponse = defaultOnFetchResponse } = params
@@ -132,7 +133,7 @@ function createWagmiConfig(params: {
   })
 }
 
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 const defaultOnFetchResponse = (response: Response, chain: Chain, url: string) => {
   if (response.status !== 200) {
     const message = `RPC provider returned non-200 status: ${response.status}`
@@ -169,7 +170,7 @@ export const wagmiConfig = createWagmiConfig({ connectors: defaultConnectors })
 
 declare module 'wagmi' {
   interface Register {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+    // oxlint-disable-next-line typescript/consistent-type-imports
     config: typeof wagmiConfig
   }
 }

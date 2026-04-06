@@ -72,6 +72,7 @@ function InsufficientNativeTokenWarningContent({
   parsedInsufficientNativeTokenWarning,
   nativeCurrencyInfo,
   nativeCurrency,
+  // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
   gasFee,
 }: {
   addresses: AddressGroup

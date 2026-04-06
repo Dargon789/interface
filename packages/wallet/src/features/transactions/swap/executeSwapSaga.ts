@@ -7,8 +7,6 @@ import { pushNotification } from 'uniswap/src/features/notifications/slice/slice
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
 import type { SwapTradeBaseProperties } from 'uniswap/src/features/telemetry/types'
 import { transactionActions } from 'uniswap/src/features/transactions/slice'
-import { FLASHBLOCKS_UI_SKIP_ROUTES } from 'uniswap/src/features/transactions/swap/components/UnichainInstantBalanceModal/constants'
-import { getIsFlashblocksEnabled } from 'uniswap/src/features/transactions/swap/hooks/useIsUnichainFlashblocksEnabled'
 import { SwapExecutionCallbacks } from 'uniswap/src/features/transactions/swap/types/swapCallback'
 import type {
   SwapGasFeeEstimation,
@@ -326,17 +324,12 @@ export function createExecuteSwapSaga(
           params: swapParams,
         }
 
-        if (
-          !getIsFlashblocksEnabled(chainId) ||
-          FLASHBLOCKS_UI_SKIP_ROUTES.includes(preSignedTransaction.swapTxContext.routing)
-        ) {
-          yield* put(
-            pushNotification({
-              type: AppNotificationType.SwapPending,
-              wrapType: WrapType.NotApplicable,
-            }),
-          )
-        }
+        yield* put(
+          pushNotification({
+            type: AppNotificationType.SwapPending,
+            wrapType: WrapType.NotApplicable,
+          }),
+        )
 
         swapResult = yield* executeTransactionStep({
           executor,

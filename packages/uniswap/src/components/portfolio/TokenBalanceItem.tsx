@@ -28,7 +28,7 @@ interface TokenBalanceItemProps {
  * If you add any props to this component, make sure you use the react-devtools profiler to confirm that this doesn't break the memoization.
  * This component needs to be as fast as possible and shouldn't re-render often or else it causes performance issues.
  */
-export const TokenBalanceItem = memo(function _TokenBalanceItem({
+export const TokenBalanceItem = memo(function TokenBalanceItemInner({
   currencyInfo,
   isLoading,
   padded,

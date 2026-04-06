@@ -1,6 +1,7 @@
 import { GraphQLApi } from '@universe/api'
 import { ARBITRUM_LOGO, ETH_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import {
   DEFAULT_MS_BEFORE_WARNING,
   DEFAULT_NATIVE_ADDRESS_LEGACY,
@@ -51,6 +52,7 @@ export const ARBITRUM_CHAIN_INFO = {
   },
   openseaName: 'arbitrum',
   interfaceName: 'arbitrum',
+  searchAliases: ['arb', 'arbitrum one', 'arb one'],
   label: 'Arbitrum',
   logo: ARBITRUM_LOGO,
   nativeCurrency: {
@@ -68,7 +70,7 @@ export const ARBITRUM_CHAIN_INFO = {
   statusPage: undefined,
   supportsV4: true,
   supportsNFTs: true,
-  urlParam: 'arbitrum',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.ArbitrumOne],
   rpcUrls: {
     [RPCType.Public]: { http: [getQuicknodeEndpointUrl(UniverseChainId.ArbitrumOne)] },
     [RPCType.Default]: { http: ['https://arb1.arbitrum.io/rpc'] },

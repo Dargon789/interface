@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { MixedRouteSDK, Trade as RouterSDKTrade, ZERO_PERCENT } from '@uniswap/router-sdk'
 import { Currency, CurrencyAmount, Percent, Price, TradeType } from '@uniswap/sdk-core'
 import {
@@ -684,7 +684,12 @@ export class BridgeTrade {
     currencyIn,
     currencyOut,
     tradeType,
-  }: { quote: BridgeQuoteResponse; currencyIn: Currency; currencyOut: Currency; tradeType: TradeType }) {
+  }: {
+    quote: BridgeQuoteResponse
+    currencyIn: Currency
+    currencyOut: Currency
+    tradeType: TradeType
+  }) {
     this.quote = quote
     this.swapFee = getTradingApiSwapFee(quote)
 
@@ -863,7 +868,11 @@ export class ChainedActionTrade {
     quote,
     currencyIn,
     currencyOut,
-  }: { quote: ChainedQuoteResponse; currencyIn: Currency; currencyOut: Currency }) {
+  }: {
+    quote: ChainedQuoteResponse
+    currencyIn: Currency
+    currencyOut: Currency
+  }) {
     this.quote = quote
 
     const inputAmount = getCurrencyAmount({

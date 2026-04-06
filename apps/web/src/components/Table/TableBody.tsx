@@ -1,18 +1,22 @@
 import { CellContext, flexRender, RowData } from '@tanstack/react-table'
 import { forwardRef, useMemo } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { Flex, Text } from 'ui/src'
+import { Flex, styled, Text } from 'ui/src'
 import { WifiError } from 'ui/src/components/icons/WifiError'
 import { breakpoints } from 'ui/src/theme'
 import { useIsOffline } from 'utilities/src/connection/useIsOffline'
 import { ROW_HEIGHT_DESKTOP, ROW_HEIGHT_MOBILE_WEB } from '~/components/Table/constants'
 import { ErrorModal } from '~/components/Table/ErrorBox'
-import { CellContainer, DataRow, NoDataFoundTableRow } from '~/components/Table/styled'
+import { CellContainer, DataRow, TableRowBase } from '~/components/Table/styled'
 import { TableRow } from '~/components/Table/TableRow'
 import { useTableSize } from '~/components/Table/TableSizeProvider'
 import { TableBodyProps } from '~/components/Table/types'
-import { getColumnSizingStyles } from '~/components/Table/utils'
+import { getColumnSizingStyles } from '~/components/Table/utils/getColumnSizingStyles'
 import { ThemedText } from '~/theme/components'
+
+const NoDataFoundTableRow = styled(TableRowBase, {
+  justifyContent: 'center',
+})
 
 function TableBodyInner<T extends RowData>(
   {
@@ -24,7 +28,9 @@ function TableBodyInner<T extends RowData>(
     loadingRowsCount = 20,
     rowHeight: propRowHeight,
     compactRowHeight: propCompactRowHeight,
+    subRowHeight: propSubRowHeight,
     hasPinnedColumns = false,
+    dimmed,
   }: TableBodyProps<T>,
   ref: React.Ref<HTMLDivElement>,
 ) {
@@ -100,6 +106,9 @@ function TableBodyInner<T extends RowData>(
           rowWrapper={rowWrapper}
           rowHeight={propRowHeight}
           compactRowHeight={propCompactRowHeight}
+          subRowHeight={propSubRowHeight}
+          isExpanded={row.getCanExpand() ? row.getIsExpanded() : undefined}
+          dimmed={dimmed}
         />
       ))}
     </Flex>

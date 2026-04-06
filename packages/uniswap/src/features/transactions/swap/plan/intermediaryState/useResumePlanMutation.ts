@@ -49,6 +49,7 @@ export function useResumePlanMutation({
         },
         resumePlanSwapFormState: createSwapFormStateFromPlanResponse(planResponse, inputCurrencyAmount),
       })
+      activePlanStore.getState().actions.clearPriceChangeInterrupted(planId)
       updateGlobalPlanState({ activePlan: transformed, originalResponse: planResponse })
 
       if (assetDetails) {
@@ -101,8 +102,6 @@ function createSwapFormStateFromPlanResponse(
     exactAmountFiat: undefined,
     showPendingUI: false,
     isConfirmed: false,
-    instantReceiptFetchTime: undefined,
-    instantOutputAmountRaw: undefined,
     txHash: undefined,
     txHashReceivedTime: undefined,
     isSubmitting: false,

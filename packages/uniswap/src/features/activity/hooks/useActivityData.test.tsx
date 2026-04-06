@@ -207,7 +207,7 @@ describe('useActivityData', () => {
       })
 
       expect(result.current.refetch).toBe(mockOnRetry)
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      // oxlint-disable-next-line typescript/no-floating-promises
       result.current.refetch()
       expect(mockOnRetry).toHaveBeenCalled()
     })

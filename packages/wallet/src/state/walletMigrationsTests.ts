@@ -6,9 +6,9 @@
  *
  * For unit tests of individual migrations, see walletMigrations.test.ts.
  */
-/* biome-ignore-all lint/suspicious/noExplicitAny: Migration test utilities require flexible typing */
-/* eslint-disable max-lines */
-/* eslint-disable max-params */
+/* oxlint-disable typescript/no-explicit-any -- Migration test utilities require flexible typing */
+/* oxlint-disable max-lines */
+/* oxlint-disable max-params */
 
 import { RankingType } from '@universe/api'
 import { BigNumber } from 'ethers'

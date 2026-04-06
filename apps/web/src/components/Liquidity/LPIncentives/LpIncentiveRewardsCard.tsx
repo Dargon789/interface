@@ -31,8 +31,8 @@ import { Trace } from 'uniswap/src/features/telemetry/Trace'
 import { HexString } from 'utilities/src/addresses/hex'
 import { logger } from 'utilities/src/logger/logger'
 import { isMobileWeb } from 'utilities/src/platform'
-import dottedBackground from '~/assets/images/dotted-grid.png'
 import dottedBackgroundDark from '~/assets/images/dotted-grid-dark.png'
+import dottedBackground from '~/assets/images/dotted-grid.png'
 import tokenLogo from '~/assets/images/token-logo.png'
 import { formatTokenAmount } from '~/components/Liquidity/LPIncentives/utils/formatTokenAmount'
 import { LP_INCENTIVES_REWARD_TOKEN } from '~/components/LpIncentives/constants'
@@ -180,7 +180,7 @@ function LpIncentiveRewardsCard({
         p={isSmallScreen ? '$spacing16' : '$spacing24'}
         justifyContent="space-between"
         backgroundColor="$surface2"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3"
         borderRadius="$rounded20"
         overflow="hidden"

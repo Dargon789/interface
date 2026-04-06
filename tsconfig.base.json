@@ -60,7 +60,12 @@
       "@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_connect": [
         "./node_modules/@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_connect",
         "./packages/api/stubs/privy-service-connect"
-      ]
+      ],
+      "@universe/privacy/*": ["./packages/privacy/*"],
+      "@universe/logger/*": ["./packages/logger/*"],
+      "@universe/react-query/*": ["./packages/react-query/*"],
+      "@universe/analytics/*": ["./packages/analytics/*"],
+      "@universe/trpc/*": ["./packages/trpc/*"]
     }
   }
 }

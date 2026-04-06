@@ -1,5 +1,5 @@
-import { FORCountry } from 'uniswap/src/features/fiatOnRamp/types'
 import 'utilities/src/logger/mocks'
+import { FORCountry } from 'uniswap/src/features/fiatOnRamp/types'
 
 // Mock the navigatorLocale function
 vi.mock('uniswap/src/features/language/navigatorLocale', () => ({

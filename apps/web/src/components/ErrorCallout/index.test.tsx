@@ -14,7 +14,7 @@ describe('ErrorCallout', () => {
   it('should not render errorMessage if true', () => {
     const { asFragment, queryByText } = render(<ErrorCallout errorMessage={true} />)
 
-    expect(queryByText('Error:')).not.toBeInTheDocument()
+    expect(queryByText('Request failed:')).not.toBeInTheDocument()
     expect(asFragment()).toMatchSnapshot()
   })
 })

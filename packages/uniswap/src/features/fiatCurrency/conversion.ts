@@ -88,6 +88,7 @@ export const mapFiatCurrencyToServerCurrency: Record<FiatCurrency, SupportedServ
 
 export interface FiatConverter {
   convertFiatAmount: (amount: number) => { amount: number; currency: FiatCurrency }
+  // oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
   convertFiatAmountFormatted: (
     fromAmount: Maybe<number | string>,
     numberType: FiatNumberType,
@@ -141,7 +142,7 @@ export function useFiatConverter({
     [conversionRate, outputCurrency, toCurrency],
   )
   const convertFiatAmountFormattedInner = useCallback(
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     (fromAmount: Maybe<number | string>, numberType: FiatNumberType, placeholder = '-'): string => {
       if (fromAmount === undefined || fromAmount === null) {
         return placeholder

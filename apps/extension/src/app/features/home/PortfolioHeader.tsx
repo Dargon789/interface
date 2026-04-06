@@ -55,6 +55,7 @@ const RotatingSettingsIcon = ({ onPressSettings }: { onPressSettings(): void }):
         }),
       )
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [isScreenFocused])
 
   const onBegin = (): void => {
@@ -94,7 +95,7 @@ const RotatingSettingsIcon = ({ onPressSettings }: { onPressSettings(): void }):
   )
 }
 
-export const PortfolioHeader = memo(function _PortfolioHeader({ address }: PortfolioHeaderProps): JSX.Element {
+export const PortfolioHeader = memo(function PortfolioHeaderInner({ address }: PortfolioHeaderProps): JSX.Element {
   const dispatch = useDispatch()
 
   const displayName = useDisplayName(address)

@@ -103,14 +103,14 @@ Note: If you are indeed using an Apple Silicon Mac, we recommend setting up your
     Look at the `.bun-version` file in your workspace to determine which version to install. Run the following command to install it, being mindful of the version string here (npm comes with node, so it should work if the above step has been completed correctly)
 
     ```bash
-    curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.1"
+    curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.11"
     ```
 
     Check version to verify installation
 
     ```bash
     > bun -v
-    1.3.1
+    1.3.11
     ```
 
 5. Install `ruby`

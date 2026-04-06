@@ -8,7 +8,9 @@
  */
 
 import { vi } from 'vitest'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths -- biome-parity: oxlint is stricter here
 import { mockLocalizationContext } from './src/test/mocks/locale'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths -- biome-parity: oxlint is stricter here
 import { mockSharedPersistQueryClientProvider } from './src/test/mocks/mockSharedPersistQueryClientProvider'
 
 // Custom react-native-localize mock (the package's mock uses jest.fn() which isn't available)

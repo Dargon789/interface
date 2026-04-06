@@ -1,4 +1,4 @@
-/* eslint-disable jest/expect-expect */
+/* oxlint-disable jest/expect-expect */
 import { BigNumber } from '@ethersproject/bignumber'
 import { toIncludeSameMembers } from 'jest-extended'
 import {

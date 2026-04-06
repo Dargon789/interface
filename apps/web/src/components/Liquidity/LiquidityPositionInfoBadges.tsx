@@ -138,10 +138,14 @@ export function LiquidityPositionInfoBadges({
             {icon}
             {copyable ? (
               <CopyHelper toCopy={label} iconSize={12} iconPosition="right">
-                {displayLabel}
+                <Text variant={size === 'small' ? 'body4' : 'body3'} color="$neutral2">
+                  {displayLabel}
+                </Text>
               </CopyHelper>
             ) : (
-              displayLabel
+              <Text variant={size === 'small' ? 'body4' : 'body3'} color={badge.onPress ? '$neutral1' : '$neutral2'}>
+                {displayLabel}
+              </Text>
             )}
             {iconAfter}
           </PositionInfoBadge>

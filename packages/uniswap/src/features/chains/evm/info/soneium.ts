@@ -1,6 +1,7 @@
 import { Token } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
 import { ETH_LOGO, SONEIUM_LOGO } from 'ui/src/assets'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import {
   DEFAULT_NATIVE_ADDRESS_LEGACY,
   DEFAULT_RETRY_OPTIONS,
@@ -55,6 +56,7 @@ export const SONEIUM_CHAIN_INFO = {
   },
   openseaName: 'soneium',
   interfaceName: 'soneium',
+  searchAliases: ['sony', 'sonieum'],
   label: 'Soneium',
   logo: SONEIUM_LOGO,
   nativeCurrency: {
@@ -78,7 +80,7 @@ export const SONEIUM_CHAIN_INFO = {
   statusPage: 'https://status.soneium.org/',
   supportsV4: true,
   supportsNFTs: true,
-  urlParam: 'soneium',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Soneium],
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
     symbol: 'WETH',

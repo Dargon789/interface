@@ -1,5 +1,4 @@
 import '~/test-utils/tokens/mocks'
-
 import { DAI } from 'uniswap/src/constants/tokens'
 import { SwapTab } from 'uniswap/src/types/screens/interface'
 import { shortenAddress } from 'utilities/src/addresses'

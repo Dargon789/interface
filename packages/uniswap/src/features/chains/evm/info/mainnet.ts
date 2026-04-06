@@ -3,6 +3,7 @@ import { GraphQLApi } from '@universe/api'
 import { SwapConfigKey } from '@universe/gating'
 import { ETH_LOGO, ETHEREUM_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import {
   DEFAULT_MS_BEFORE_WARNING,
   DEFAULT_NATIVE_ADDRESS_LEGACY,
@@ -89,7 +90,7 @@ export const MAINNET_CHAIN_INFO = {
           http: [`https://mainnet.infura.io/v3/${config.infuraKey}`, getQuicknodeEndpointUrl(UniverseChainId.Mainnet)],
         },
       },
-  urlParam: 'ethereum',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Mainnet],
   statusPage: undefined,
   spotPriceStablecoinAmountOverride: CurrencyAmount.fromRawAmount(tokens.USDC, 100_000e6),
   tokens,
@@ -182,7 +183,7 @@ export const SEPOLIA_CHAIN_INFO = {
   statusPage: undefined,
   supportsV4: true,
   supportsNFTs: false,
-  urlParam: 'ethereum_sepolia',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Sepolia],
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
     symbol: 'WETH',

@@ -2,11 +2,13 @@ const { RuleTester } = require('eslint')
 const rule = require('./no-transform-percentage-strings')
 
 const ruleTester = new RuleTester({
-  parserOptions: {
+  languageOptions: {
     ecmaVersion: 2020,
     sourceType: 'module',
-    ecmaFeatures: {
-      jsx: true,
+    parserOptions: {
+      ecmaFeatures: {
+        jsx: true,
+      },
     },
   },
 })

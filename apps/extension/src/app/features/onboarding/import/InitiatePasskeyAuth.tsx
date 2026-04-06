@@ -114,7 +114,7 @@ function InitiatePasskeyAuthContent(): JSX.Element {
 
   const popupWindow = useRef<chrome.windows.Window | undefined>(undefined)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Only run once on mount to initiate auth flow, all handlers are created fresh each render
+  // oxlint-disable-next-line react/exhaustive-deps -- Only run once on mount to initiate auth flow, all handlers are created fresh each render
   useEffect(() => {
     let handleMessagePasskeySignInFlowOpened: Parameters<typeof chrome.runtime.onMessageExternal.addListener>[0]
     let handleMessagePasskeyCredentialRetrieved: Parameters<typeof chrome.runtime.onMessageExternal.addListener>[0]
@@ -159,11 +159,11 @@ function InitiatePasskeyAuthContent(): JSX.Element {
 
         chrome.runtime.onMessageExternal.addListener(handleMessagePasskeyCredentialRetrieved)
 
+        // oxlint-disable-next-line max-params
         handleMessagePasskeySignInFlowOpened = async (
           message: unknown,
           _sender: unknown,
           sendResponse: (response: unknown) => void,
-          // eslint-disable-next-line max-params
         ) => {
           try {
             logger.debug('InitiatePasskeyAuth.tsx', 'handleMessagePasskeySignInFlowOpened', 'Message received', {
@@ -219,6 +219,7 @@ function InitiatePasskeyAuthContent(): JSX.Element {
       chrome.runtime.onMessageExternal.removeListener(handleMessagePasskeySignInFlowOpened)
       chrome.runtime.onMessageExternal.removeListener(handleMessagePasskeyCredentialRetrieved)
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   const [showBringWindowToFrontButton, setShowBringWindowToFrontButton] = useState(false)

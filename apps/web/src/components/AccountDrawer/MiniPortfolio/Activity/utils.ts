@@ -68,7 +68,7 @@ export const createGroups = (activities: Array<Activity> = [], hideSpam = false)
     } else {
       const year = getYear(addedTime)
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (!yearMap[year]) {
         yearMap[year] = [activity]
       } else {
@@ -102,9 +102,9 @@ export function getActivityNonce(activity: Activity): BigNumber | undefined {
   if (
     // sometime the nonce is being sent in as null value
     // when creating a limit order (should be undefined or BigNumberish)
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     activity.options?.request?.nonce !== undefined &&
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     activity.options.request.nonce !== null
   ) {
     return BigNumber.from(activity.options.request.nonce)

@@ -43,12 +43,14 @@ export function createBaseNotificationProcessor(tracker: NotificationTracker): N
         }
       }
 
-      // Step 3: Filter out notifications that are locally tracked or don't have DISMISS action
+      // Step 3: Filter out notifications that are locally tracked or don't have DISMISS action.
+      // Required cards are exempt from the DISMISS check — they self-dismiss when their
+      // underlying data condition resolves (e.g. wallet receives funds).
       const filteredPrimary = primaryNotifications.filter((notification) => {
         if (processedIds.has(notification.id)) {
           return false
         }
-        if (!hasDismissAction(notification)) {
+        if (!isRequiredCard(notification) && !hasDismissAction(notification)) {
           getLogger().warn(
             'createBaseNotificationProcessor',
             'process',
@@ -64,7 +66,7 @@ export function createBaseNotificationProcessor(tracker: NotificationTracker): N
         if (processedIds.has(notification.id)) {
           return false
         }
-        if (!hasDismissAction(notification)) {
+        if (!isRequiredCard(notification) && !hasDismissAction(notification)) {
           getLogger().warn(
             'createBaseNotificationProcessor',
             'process',
@@ -91,6 +93,19 @@ export function createBaseNotificationProcessor(tracker: NotificationTracker): N
       }
     },
   })
+}
+
+/**
+ * Returns true if the notification is a required card — one that self-dismisses when its
+ * underlying data condition resolves rather than via explicit user action.
+ */
+function isRequiredCard(notification: InAppNotification): boolean {
+  try {
+    const extra = notification.content?.extra ? JSON.parse(notification.content.extra) : {}
+    return extra.cardType === 'required'
+  } catch {
+    return false
+  }
 }
 
 /**

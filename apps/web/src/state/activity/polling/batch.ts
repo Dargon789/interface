@@ -96,7 +96,7 @@ export function usePollPendingBatchTransactions(onActivityUpdate: OnActivityUpda
           )
         }
       } catch (error) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         FAILURE_COUNT_MAP[transaction.batchInfo.batchId] = (FAILURE_COUNT_MAP[transaction.batchInfo.batchId] ?? 0) + 1
         if (FAILURE_COUNT_MAP[transaction.batchInfo.batchId] >= FAILURE_COUNT_THRESHOLD) {
           const connectorId = transaction.batchInfo.connectorId

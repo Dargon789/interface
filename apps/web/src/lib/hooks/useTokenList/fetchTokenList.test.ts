@@ -13,7 +13,7 @@ const fetchMocker = createFetchMock(vi)
 const mockContenthashToUri = mocked(contenthashToUri)
 const mockLoggerDebug = mocked(mockLogger.debug)
 
-// eslint-disable-next-line jest/no-disabled-tests
+// oxlint-disable-next-line jest/no-disabled-tests
 describe.skip('fetchTokenList', () => {
   const resolver = vi.fn()
 

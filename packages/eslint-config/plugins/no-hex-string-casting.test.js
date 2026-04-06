@@ -3,9 +3,11 @@
 const { RuleTester } = require('eslint')
 const rule = require('./no-hex-string-casting')
 
+const tsParser = require('@typescript-eslint/parser')
+
 const ruleTester = new RuleTester({
-  parser: require.resolve('@typescript-eslint/parser'),
-  parserOptions: {
+  languageOptions: {
+    parser: tsParser,
     ecmaVersion: 2020,
     sourceType: 'module',
   },

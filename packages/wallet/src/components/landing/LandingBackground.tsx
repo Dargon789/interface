@@ -76,6 +76,7 @@ const OnboardingAnimation = ({
         easing: Easing.elastic(1.1),
       }),
     )
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   useTimeout(() => {
@@ -184,6 +185,7 @@ const AnimatedElements = ({
     )
     innerAnimation.value = withDelay(INNER_CIRCLE_SHOW_DELAY, withSpring(0.8))
     outerAnimation.value = withDelay(OUTER_CIRCLE_SHOW_DELAY, withSpring(0.8))
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   const innerCircleStyle = useAnimatedStyle(() => {

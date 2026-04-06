@@ -1,5 +1,4 @@
 import '~/test-utils/tokens/mocks'
-
 import type { Token } from '@uniswap/sdk-core'
 import { TradeType as MockTradeType } from '@uniswap/sdk-core'
 import { TradingApi } from '@universe/api'

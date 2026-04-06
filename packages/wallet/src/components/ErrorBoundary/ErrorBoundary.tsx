@@ -104,7 +104,7 @@ export function ErrorBoundary({
   // We want to temporary disable non global error boundaries until https://linear.app/uniswap/issue/WALL-4461 is done
   const disableLocalErrorBoundaries = true
   // we do not pass `name` to global error boundary
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (disableLocalErrorBoundaries && props.name) {
     return <>{props.children}</>
   }

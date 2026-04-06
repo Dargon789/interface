@@ -6,7 +6,7 @@ import {
   formatCurrencyAmount,
   formatNumberOrString,
   formatPercent,
-  /** biome-ignore lint/style/noRestrictedImports: this the implementation of the wrapper we recommend to use */
+  /* oxlint-disable-next-line no-restricted-imports -- this the implementation of the wrapper we recommend to use */
 } from 'utilities/src/format/localeBased'
 import { NumberType, PercentNumberDecimals } from 'utilities/src/format/types'
 

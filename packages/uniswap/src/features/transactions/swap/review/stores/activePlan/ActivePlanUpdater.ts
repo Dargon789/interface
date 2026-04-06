@@ -68,11 +68,6 @@ export function ActivePlanUpdater(): null {
   const previousScreen = usePrevious(currentScreen)
 
   const updateActivePlan = useEvent((data: PlanResponse) => {
-    // Skip updates while the saga is executing — it manages plan state directly and stale poll responses could overwrite its calldata.
-    if (isSubmitting || isPlanExecutionLocked) {
-      return
-    }
-
     const transformedResponse = transformPlanResponse(data)
 
     activePlanStore.setState({
@@ -103,6 +98,23 @@ export function ActivePlanUpdater(): null {
       updateActivePlan(activePlanQuery.data)
     }
   }, [activePlanQuery.data, updateActivePlan])
+
+  useEffect(() => {
+    if (activePlanQuery.isFetching) {
+      // Create a deferred that resolves when this fetch settles
+      let resolve: () => void
+      const promise = new Promise<void>((r) => {
+        resolve = r
+      })
+      activePlanStore.getState().actions.setPendingRefreshPromise(promise)
+      // Resolve when fetching stops (effect cleanup)
+      return () => {
+        resolve()
+        activePlanStore.getState().actions.clearPendingRefreshPromise()
+      }
+    }
+    return undefined
+  }, [activePlanQuery.isFetching])
 
   useEffect(() => {
     if (previousScreen === TransactionScreen.Review && currentScreen !== TransactionScreen.Review) {

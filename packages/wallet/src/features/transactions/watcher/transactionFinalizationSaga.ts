@@ -18,8 +18,6 @@ import { sendAnalyticsEvent, sendAppsFlyerEvent } from 'uniswap/src/features/tel
 import { selectSwapTransactionsCount } from 'uniswap/src/features/transactions/selectors'
 import { transactionActions } from 'uniswap/src/features/transactions/slice'
 import { getRouteAnalyticsData, tradeRoutingToFillType } from 'uniswap/src/features/transactions/swap/analytics'
-import { isNonInstantFlashblockTransactionType } from 'uniswap/src/features/transactions/swap/components/UnichainInstantBalanceModal/utils'
-import { getIsFlashblocksEnabled } from 'uniswap/src/features/transactions/swap/hooks/useIsUnichainFlashblocksEnabled'
 import { activePlanStore } from 'uniswap/src/features/transactions/swap/review/stores/activePlan/activePlanStore'
 import { isClassic, isUniswapX } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { SwapEventType, timestampTracker } from 'uniswap/src/features/transactions/swap/utils/SwapEventTimestampTracker'
@@ -46,17 +44,7 @@ export function* finalizeTransaction({
 }): Generator<unknown> {
   yield* put(transactionActions.finalizeTransaction(transaction))
 
-  const isUnichainFlashblock = getIsFlashblocksEnabled(transaction.chainId)
-  const shouldSkipSuccessNotification =
-    isUnichainFlashblock &&
-    'isFlashblockTxWithinThreshold' in transaction &&
-    transaction.isFlashblockTxWithinThreshold &&
-    !isNonInstantFlashblockTransactionType(transaction)
-
-  // Only show notification badge if not a fast flashblock transaction
-  if (!shouldSkipSuccessNotification) {
-    yield* put(setNotificationStatus({ address: transaction.from, hasNotifications: true }))
-  }
+  yield* put(setNotificationStatus({ address: transaction.from, hasNotifications: true }))
 
   // Refetch data when a local tx has confirmed
   const activeAddress = yield* select(selectActiveAccountAddress)
@@ -100,7 +88,7 @@ export async function invalidateAndRefetchWalletDelegationQueries(): Promise<voi
 /**
  * Send analytics events for finalized transactions
  */
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function logTransactionEvent(actionData: ReturnType<typeof transactionActions.finalizeTransaction>): void {
   const { payload } = actionData
   const { chainId, addedTime, from, typeInfo, receipt, transactionOriginType } = payload

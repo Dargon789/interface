@@ -87,11 +87,15 @@ export function formatCompactAmountText({
   outputSymbol: string | undefined
   separator?: string
 }): string | null {
-  if (!inputAmount || !outputAmount || !inputSymbol || !outputSymbol) {
+  const left = inputAmount && inputSymbol ? `${inputAmount} ${getSymbolDisplayText(inputSymbol)}` : null
+  const right = outputAmount && outputSymbol ? `${outputAmount} ${getSymbolDisplayText(outputSymbol)}` : null
+  if (!left && !right) {
     return null
   }
-
-  return `${inputAmount} ${inputSymbol} ${separator} ${outputAmount} ${outputSymbol}`
+  if (left && right) {
+    return `${left} ${separator} ${right}`
+  }
+  return left ?? right
 }
 
 // Helper to format single token compact amount text

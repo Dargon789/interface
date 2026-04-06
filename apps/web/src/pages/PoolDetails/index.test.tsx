@@ -9,7 +9,7 @@ import { mocked } from '~/test-utils/mocked'
 import { validParams, validPoolDataResponse } from '~/test-utils/pools/fixtures'
 import { act, render, waitFor } from '~/test-utils/render'
 
-// eslint-disable-next-line import/no-unused-modules, jest/no-export
+// oxlint-disable-next-line import/no-unused-modules, jest/no-export
 export const mockNavigate = vi.fn()
 
 vi.mock('react-router', async () => {

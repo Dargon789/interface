@@ -10,7 +10,7 @@ import { useOrderedWallets } from '~/features/wallet/connection/hooks/useOrdered
 import { mocked } from '~/test-utils/mocked'
 import { renderHook } from '~/test-utils/render'
 
-// biome-ignore lint/suspicious/noVar: Testing variable hoisting behavior requires var
+// oxlint-disable-next-line no-var -- Testing variable hoisting behavior requires var
 var mockIsMobileWeb = false
 vi.mock('utilities/src/platform', async () => {
   const actual = await vi.importActual('utilities/src/platform')
@@ -514,34 +514,34 @@ describe('useOrderedWallets', () => {
       })
     })
 
-    it('should show embedded wallet in primary view', () => {
+    it('should not include embedded wallet in primary view', () => {
       const { result } = renderHook(() => useOrderedWallets({ showSecondaryConnectors: false }))
 
       const expectedWalletIds = [
         CONNECTION_PROVIDER_IDS.METAMASK_RDNS, // Injected wallet
-        CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID,
       ]
 
       result.current.forEach((wallet, index) => {
         expect(wallet.id).toEqual(expectedWalletIds[index])
       })
       expect(result.current.length).toEqual(expectedWalletIds.length)
+      expect(result.current.find((w) => w.id === CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID)).toBeUndefined()
     })
 
-    it('should include recent mobile wallets in primary view', () => {
+    it('should include recent non-injected wallet at position 2 in primary view', () => {
       mocked(useRecentConnectorId).mockReturnValue(CONNECTION_PROVIDER_IDS.WALLET_CONNECT_CONNECTOR_ID)
       const { result } = renderHook(() => useOrderedWallets({ showSecondaryConnectors: false }))
 
       const expectedWalletIds = [
         CONNECTION_PROVIDER_IDS.WALLET_CONNECT_CONNECTOR_ID, // Recent wallet moved to top
         CONNECTION_PROVIDER_IDS.METAMASK_RDNS, // Injected wallet
-        CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID,
       ]
 
       result.current.forEach((wallet, index) => {
         expect(wallet.id).toEqual(expectedWalletIds[index])
       })
       expect(result.current.length).toEqual(expectedWalletIds.length)
+      expect(result.current.find((w) => w.id === CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID)).toBeUndefined()
     })
   })
 
@@ -593,7 +593,7 @@ describe('useOrderedWallets', () => {
       expect(result.current.length).toEqual(expectedWalletIds.length)
     })
 
-    it('should show embedded wallet on mobile when enabled', () => {
+    it('should not include embedded wallet on mobile in secondary view', () => {
       mockIsMobileWeb = true
       const mobileWallets = [
         createExternalWallet({
@@ -640,7 +640,6 @@ describe('useOrderedWallets', () => {
       const { result } = renderHook(() => useOrderedWallets({ showSecondaryConnectors: true }))
 
       const expectedWalletIds = [
-        CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID,
         CONNECTION_PROVIDER_IDS.WALLET_CONNECT_CONNECTOR_ID,
         CONNECTION_PROVIDER_IDS.COINBASE_SDK_CONNECTOR_ID,
         CONNECTION_PROVIDER_IDS.BINANCE_WALLET_CONNECTOR_ID,
@@ -651,6 +650,7 @@ describe('useOrderedWallets', () => {
         expect(wallet.id).toEqual(expectedWalletIds[index])
       })
       expect(result.current.length).toEqual(expectedWalletIds.length)
+      expect(result.current.find((w) => w.id === CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID)).toBeUndefined()
     })
   })
 })

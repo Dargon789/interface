@@ -16,54 +16,18 @@ import {
   getStatsigClient,
 } from '@universe/gating'
 import JSBI from 'jsbi'
+import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import {
+  CHAIN_GAS_STRATEGY_OVERRIDES,
+  DEFAULT_GAS_STRATEGY,
+  FAST_GAS_STRATEGY,
+  NORMAL_GAS_STRATEGY,
+  URGENT_GAS_STRATEGY,
+} from 'uniswap/src/features/gas/consts'
+import { hasSufficientFundsIncludingTempoGas } from 'uniswap/src/features/gas/tempo'
 import { createEthersProvider } from 'uniswap/src/features/providers/createEthersProvider'
 import { getCurrencyAmount, ValueType } from 'uniswap/src/features/tokens/getCurrencyAmount'
 import { type Prettify } from 'viem'
-
-// Normal speed strategy - Lower multipliers for economical transactions
-export const NORMAL_GAS_STRATEGY: GasStrategy = {
-  limitInflationFactor: 1.1,
-  displayLimitInflationFactor: 1,
-  priceInflationFactor: 1.1,
-  percentileThresholdFor1559Fee: 50,
-  thresholdToInflateLastBlockBaseFee: 0.9,
-  baseFeeMultiplier: 1,
-  baseFeeHistoryWindow: 20,
-  minPriorityFeeRatioOfBaseFee: 0.1,
-  minPriorityFeeGwei: 1,
-  maxPriorityFeeGwei: 5,
-}
-
-// Fast speed strategy - Moderate multipliers for balanced speed/cost
-export const FAST_GAS_STRATEGY: GasStrategy = {
-  limitInflationFactor: 1.12,
-  displayLimitInflationFactor: 1,
-  priceInflationFactor: 1.25,
-  percentileThresholdFor1559Fee: 60,
-  thresholdToInflateLastBlockBaseFee: 0.8,
-  baseFeeMultiplier: 1,
-  baseFeeHistoryWindow: 20,
-  minPriorityFeeRatioOfBaseFee: 0.15,
-  minPriorityFeeGwei: 1.5,
-  maxPriorityFeeGwei: 7,
-}
-
-// Urgent speed strategy - Higher multipliers for fast confirmation
-export const URGENT_GAS_STRATEGY: GasStrategy = {
-  limitInflationFactor: 1.15,
-  displayLimitInflationFactor: 1,
-  priceInflationFactor: 1.5,
-  percentileThresholdFor1559Fee: 75,
-  thresholdToInflateLastBlockBaseFee: 0.75,
-  baseFeeMultiplier: 1,
-  baseFeeHistoryWindow: 20,
-  minPriorityFeeRatioOfBaseFee: 0.2,
-  minPriorityFeeGwei: 2,
-  maxPriorityFeeGwei: 9,
-}
-
-// The default "Urgent" strategy that was previously hardcoded in the gas service
-export const DEFAULT_GAS_STRATEGY: GasStrategy = URGENT_GAS_STRATEGY
 
 export enum GasSpeed {
   Normal = 'normal',
@@ -144,6 +108,38 @@ export function hasSufficientFundsIncludingGas(params: {
   return !totalSpend || !nativeCurrencyBalance?.lessThan(totalSpend)
 }
 
+export function hasSufficientGasBalance({
+  chainId,
+  gasBalance,
+  gasFee,
+  gasTokenTransactionAmount,
+}: {
+  chainId: UniverseChainId
+  gasBalance: CurrencyAmount<Currency> | undefined
+  gasFee: string | undefined
+  /** Amount being spent from the gas token balance (e.g. pathUSD on Tempo, native on other chains).
+   *  Consumers set this when `currencyAmountIn?.currency.equals(gasToken)`. */
+  gasTokenTransactionAmount?: CurrencyAmount<Currency>
+}): boolean {
+  // Without a fee estimate or balance we cannot prove insufficiency — return true
+  // so callers don't flash "insufficient gas" warnings while data is loading.
+  if (!gasFee || !gasBalance) {
+    return true
+  }
+  if (chainId === UniverseChainId.Tempo) {
+    return hasSufficientFundsIncludingTempoGas({
+      pathUsdBalance: gasBalance,
+      gasFee,
+      pathUsdTransactionAmount: gasTokenTransactionAmount,
+    })
+  }
+  return hasSufficientFundsIncludingGas({
+    transactionAmount: gasTokenTransactionAmount,
+    gasFee,
+    nativeCurrencyBalance: gasBalance,
+  })
+}
+
 // Function to find the name of a gas strategy based on the GasEstimate
 export function findLocalGasStrategy(
   gasEstimate: GasEstimate,
@@ -178,15 +174,21 @@ export function getActiveGasStrategy({
   type: GasStrategyType
   isStatsigReady?: boolean
 }): GasStrategy {
-  if (isStatsigReady === false || !getIsStatsigReady()) {
-    return DEFAULT_GAS_STRATEGY
+  let baseStrategy: GasStrategy = DEFAULT_GAS_STRATEGY
+
+  if (isStatsigReady !== false && getIsStatsigReady()) {
+    const config = getStatsigClient().getDynamicConfig(DynamicConfigs.GasStrategies)
+    const gasStrategies = isValidGasStrategies(config.value) ? config.value : undefined
+    const activeStrategy = gasStrategies?.strategies.find(
+      (s) => s.conditions.chainId === chainId && s.conditions.types === type && s.conditions.isActive,
+    )
+    if (activeStrategy) {
+      baseStrategy = activeStrategy.strategy
+    }
   }
-  const config = getStatsigClient().getDynamicConfig(DynamicConfigs.GasStrategies)
-  const gasStrategies = isValidGasStrategies(config.value) ? config.value : undefined
-  const activeStrategy = gasStrategies?.strategies.find(
-    (s) => s.conditions.chainId === chainId && s.conditions.types === type && s.conditions.isActive,
-  )
-  return activeStrategy ? activeStrategy.strategy : DEFAULT_GAS_STRATEGY
+
+  const overrides = chainId ? CHAIN_GAS_STRATEGY_OVERRIDES[chainId] : undefined
+  return { ...baseStrategy, ...overrides }
 }
 
 export function areEqualGasStrategies(a?: GasStrategy, b?: GasStrategy): boolean {

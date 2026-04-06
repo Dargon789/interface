@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- TODO(Toucan): split renderer into smaller modules */
+/* oxlint-disable max-lines -- TODO(Toucan): split renderer into smaller modules */
 
 import { BitmapCoordinatesRenderingScope, CanvasRenderingTarget2D } from 'fancy-canvas'
 import {

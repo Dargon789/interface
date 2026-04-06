@@ -29,6 +29,7 @@ export function ToucanActionButton({
   emphasis,
   'dd-action-name': datadogActionName,
   elementName,
+  // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
   ...props
 }: ToucanActionButtonProps & ButtonProps): JSX.Element {
   const tokenColor = useAuctionStore((state) => state.tokenColor)

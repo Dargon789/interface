@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -81,7 +81,7 @@ const InitialPriceInput = () => {
   }, [formattedDefaultInitialPrice, isInitialPriceDirty, setPriceRangeState])
 
   const { baseCurrency, quoteCurrency } = getBaseAndQuoteCurrencies(currencies.display, priceInverted)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +priceInverted
+  // oxlint-disable-next-line react/exhaustive-deps -- +priceInverted
   useEffect(() => {
     try {
       if (initialPrice && baseCurrency && quoteCurrency) {

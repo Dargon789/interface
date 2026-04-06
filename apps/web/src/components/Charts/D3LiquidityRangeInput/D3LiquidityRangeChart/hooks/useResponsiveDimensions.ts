@@ -11,7 +11,7 @@ export function useResponsiveDimensions() {
 
   const deviceDimensions = useDeviceDimensions()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +deviceDimensions
+  // oxlint-disable-next-line react/exhaustive-deps -- +deviceDimensions
   useEffect(() => {
     const calculateDimensions = () => {
       const chartContainer = document.getElementById('d3-liquidity-range-input')

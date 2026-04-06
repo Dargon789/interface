@@ -104,7 +104,7 @@ const ImplButton = memo(function ImplButton({
  * Benchmark screen for comparing native vs JS hashcash performance.
  * Access via Dev menu in development builds.
  */
-// eslint-disable-next-line import/no-unused-modules -- dynamically loaded in navigation.tsx via require()
+// oxlint-disable-next-line import/no-unused-modules -- dynamically loaded in navigation.tsx via require()
 export function HashcashBenchmarkScreen(): JSX.Element {
   // Individual selectors for minimal re-renders
   const selectedDifficulty = useHashcashBenchmarkStore((state) => state.selectedDifficulty)
@@ -290,7 +290,7 @@ export function HashcashBenchmarkScreen(): JSX.Element {
         if (!acc[result.difficulty]) {
           acc[result.difficulty] = {}
         }
-        // biome-ignore lint/style/noNonNullAssertion: we just initialized this above
+        // oxlint-disable-next-line typescript/no-non-null-assertion -- we just initialized this above
         acc[result.difficulty]![result.implementation] = result
         return acc
       },

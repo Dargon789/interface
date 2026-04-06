@@ -3,6 +3,7 @@ import type {
   ClearingPriceChartPoint,
   ClearingPriceTooltipState,
 } from '~/components/Charts/ToucanChart/clearingPrice/types'
+import { CHART_DIMENSIONS } from '~/components/Toucan/Auction/BidDistributionChart/constants'
 
 interface HandleCrosshairMoveParams {
   param: MouseEventParams<Time>
@@ -30,17 +31,17 @@ export function handleClearingPriceCrosshairMove(params: HandleCrosshairMovePara
     return
   }
 
-  const priceScaleWidth = chart.priceScale('left').width()
   const chartWidth = chart.paneSize().width
-  const x = param.point.x + priceScaleWidth
+  // Offset by Y_AXIS_LABEL_WIDTH since the tooltip is positioned inside ChartWrapper
+  // but the chart pane starts after the Y-axis label area
+  const x = param.point.x + CHART_DIMENSIONS.Y_AXIS_LABEL_WIDTH
 
-  // Determine if we should flip to the left side
-  // Flip when we're past 60% of the chart width
-  const flipThreshold = chartWidth * 0.6
+  // Default: tooltip to the left of crosshair. Flip to right when near left edge.
+  const flipThreshold = chartWidth * 0.4
   const flipLeft = param.point.x > flipThreshold
 
-  // Vertical positioning - keep tooltip near top of chart
-  const y = Math.max(10, Math.min(param.point.y, 60))
+  // Vertical positioning - track close to the price point
+  const y = Math.max(10, param.point.y)
 
   onTooltipStateChange({
     x,
@@ -51,18 +52,19 @@ export function handleClearingPriceCrosshairMove(params: HandleCrosshairMovePara
 }
 
 export function calculateTooltipTransform(state: ClearingPriceTooltipState): string {
-  const tooltipOffset = 12
+  const tooltipOffset = 8
 
   let transformX: string
   if (state.flipLeft) {
-    // Position to the left of the crosshair
+    // Default: position to the left of the crosshair
     transformX = `calc(${state.x - tooltipOffset}px - 100%)`
   } else {
-    // Position to the right of the crosshair
+    // Flipped: position to the right of the crosshair (near left edge)
     transformX = `calc(${state.x + tooltipOffset}px)`
   }
 
-  const transformY = `${state.y}px`
+  // Offset upward so tooltip appears above the price point
+  const transformY = `calc(${state.y}px - 100% - 8px)`
 
   return `translate(${transformX}, ${transformY})`
 }

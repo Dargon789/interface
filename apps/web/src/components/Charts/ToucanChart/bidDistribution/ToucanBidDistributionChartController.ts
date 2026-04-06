@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- TODO(Toucan): keep controller small; current file is an orchestration hub */
+/* oxlint-disable max-lines -- TODO(Toucan): keep controller small; current file is an orchestration hub */
 
 import { IChartApi, ISeriesApi, MouseEventParams, Time, UTCTimestamp } from 'lightweight-charts'
 import { opacify } from 'ui/src/theme'

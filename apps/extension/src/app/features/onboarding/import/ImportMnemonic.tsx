@@ -284,7 +284,7 @@ const RecoveryPhraseWord = forwardRef<
     handleKeyPress: (index: number) => (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => void
     onSubmitEditing: () => void
   }
->(function _RecoveryPhraseWord(
+>(function RecoveryPhraseWordInner(
   { word, index, handleBlur, handleChange, handleKeyPress, onSubmitEditing },
   ref,
 ): JSX.Element {

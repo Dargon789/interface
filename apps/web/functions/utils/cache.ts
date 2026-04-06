@@ -6,11 +6,13 @@ interface TokenData {
 interface PoolData {
   token0Symbol?: string
   token1Symbol?: string
-  feeTier: string
+  feeTier?: string
   protocolVersion: GraphQLApi.ProtocolVersion
   token0Image?: string
   token1Image?: string
 }
+
+export type PositionStatus = 'in_range' | 'out_of_range' | 'closed'
 
 export interface Data {
   title: string
@@ -20,6 +22,7 @@ export interface Data {
   ogImage?: string
   poolData?: PoolData
   tokenData?: TokenData
+  positionStatus?: PositionStatus
 }
 
 const CACHE_NAME = 'functions-cache' as const

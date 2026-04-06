@@ -5,7 +5,6 @@ import {
 } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { TradeType } from '@uniswap/sdk-core'
 import { TradingApi } from '@universe/api'
-
 import {
   TransactionDetails,
   TransactionOriginType,
@@ -50,6 +49,7 @@ export default function extractRestUniswapXOrderDetails(transaction: UniswapXTra
       status,
       orderType,
       encodedOrder,
+      expiryMillis,
     } = transaction
 
     if (!orderHash || !chainId || !inputToken || !outputToken) {
@@ -69,6 +69,7 @@ export default function extractRestUniswapXOrderDetails(transaction: UniswapXTra
       addedTime: Number(timestampMillis),
       status: mapUniswapXStatusToLocalTxStatus(status),
       from: offerer, // This transaction is not on-chain, so use the offerer address as the from address
+      expiry: expiryMillis ? Number(expiryMillis) / 1000 : undefined,
       // TODO(CONS-722): remove special limit typeInfo once limit orders can be excluded from REST query
       typeInfo:
         orderType === UniswapXOrderType.LIMIT

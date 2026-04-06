@@ -4,8 +4,9 @@ import { Language } from 'uniswap/src/features/language/constants'
 import { getCurrentLanguageFromNavigator } from 'uniswap/src/features/language/utils'
 import { DEFAULT_DEVICE_ACCESS_TIMEOUT, type DeviceAccessTimeout } from 'uniswap/src/features/settings/constants'
 import { WALLET_TESTNET_CONFIG } from 'uniswap/src/features/telemetry/constants'
-import { isExtensionApp, isWebApp } from 'utilities/src/platform'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+import { getWalletDeviceLanguage } from 'uniswap/src/i18n/utils'
+import { isMobileApp } from 'utilities/src/platform'
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { analytics } from 'utilities/src/telemetry/analytics/analytics'
 
 export interface UserSettingsState {
@@ -20,7 +21,7 @@ export interface UserSettingsState {
 }
 
 export const initialUserSettingsState: UserSettingsState = {
-  currentLanguage: isWebApp || isExtensionApp ? getCurrentLanguageFromNavigator() : Language.English,
+  currentLanguage: isMobileApp ? getWalletDeviceLanguage() : getCurrentLanguageFromNavigator(),
   currentCurrency: FiatCurrency.UnitedStatesDollar,
   hideSmallBalances: true,
   hideSpamTokens: true,

@@ -44,12 +44,12 @@ const BaseAnimatedText = ({
 }: TextProps): JSX.Element => {
   const animatedProps = useAnimatedProps(
     () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      // oxlint-disable-next-line typescript/no-unsafe-return
       return {
         text: text?.value,
         defaultValue: text?.value,
         // Here we use any because the text prop is not available in the type
-        // biome-ignore lint/suspicious/noExplicitAny: Text prop not available in animated type definition
+        // oxlint-disable-next-line typescript/no-explicit-any -- Text prop not available in animated type definition
       } as any
     },
     [text],
@@ -115,7 +115,7 @@ export const AnimatedText = ({ style, ...propsIn }: TextProps): JSX.Element => {
 
   return (
     <BaseAnimatedText
-      // biome-ignore lint/suspicious/noExplicitAny: Ambigous to type
+      // oxlint-disable-next-line typescript/no-explicit-any -- Ambigous to type
       {...(props as any)}
       allowFontScaling={enableFontScaling}
       maxFontSizeMultiplier={multiplier}

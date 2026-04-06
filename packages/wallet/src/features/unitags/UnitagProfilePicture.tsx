@@ -17,6 +17,7 @@ export function UnitagProfilePicture({
   return unitagAvatarUri || forcePassedAvatarUri ? (
     <Flex
       shrink
+      centered
       backgroundColor="$surface1"
       borderColor="$surface1"
       borderRadius="$roundedFull"

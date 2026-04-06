@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: e2e test file */
+/* oxlint-disable typescript/no-explicit-any -- e2e test file */
 import type { BrowserContext } from '@playwright/test'
 import { sleep } from 'utilities/src/time/timing'
 
@@ -8,11 +8,13 @@ export async function waitForExtensionLoad(
     timeout?: number
     waitForOnboarding?: boolean
   },
+  // oxlint-disable-next-line typescript/no-explicit-any -- biome-parity: oxlint is stricter here
 ): Promise<{ extensionId: string; onboardingPage?: any }> {
   const timeout = options?.timeout ?? 30000
   const startTime = Date.now()
 
   let extensionId: string | undefined
+  // oxlint-disable-next-line typescript/no-explicit-any -- biome-parity: oxlint is stricter here
   let onboardingPage: any
 
   while (Date.now() - startTime < timeout) {
@@ -29,19 +31,7 @@ export async function waitForExtensionLoad(
       }
     }
 
-    // Check background pages
-    if (!extensionId) {
-      const backgroundPages = context.backgroundPages()
-      for (const page of backgroundPages) {
-        const url = page.url()
-        if (url.startsWith('chrome-extension://')) {
-          extensionId = url.split('/')[2]
-          break
-        }
-      }
-    }
-
-    // Check service workers
+    // Check service workers (MV3 extensions use service workers, not background pages)
     if (!extensionId) {
       const workers = context.serviceWorkers()
       for (const worker of workers) {

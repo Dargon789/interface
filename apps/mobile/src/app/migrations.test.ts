@@ -1,3 +1,4 @@
+/* oxlint-disable jest/expect-expect */
 import { toIncludeSameMembers } from 'jest-extended'
 import { migrations } from 'src/app/migrations'
 import {
@@ -66,6 +67,7 @@ import {
   testResetTokensOrderBy,
   testResetTokensOrderByAndMetadataDisplayType,
   testRestructureTransactionsAndNotifications,
+  testSetWalletDeviceLanguage,
   testTransformNotificationCountToStatus,
   testUpdateLanguageSettings,
 } from 'src/app/mobileMigrationTests'
@@ -165,6 +167,7 @@ import {
   v92Schema,
   v93Schema,
   v95Schema,
+  v96Schema,
 } from 'src/app/schema'
 import { persistConfig } from 'src/app/store'
 import { initialBiometricsSettingsState } from 'src/features/biometricsSettings/slice'
@@ -189,6 +192,7 @@ import { initialTokensState } from 'uniswap/src/features/tokens/warnings/slice/s
 import { initialTransactionsState } from 'uniswap/src/features/transactions/slice'
 import { TransactionStatus, TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { initialVisibilityState } from 'uniswap/src/features/visibility/slice'
+import { getWalletDeviceLanguage } from 'uniswap/src/i18n/utils'
 import {
   testAddActivityVisibility,
   testMigrateDismissedTokenWarnings,
@@ -232,6 +236,16 @@ import {
   testUpdateExploreOrderByType,
 } from 'wallet/src/state/walletMigrationsTests'
 import { signerMnemonicAccount } from 'wallet/src/test/fixtures'
+
+jest.mock('uniswap/src/i18n/utils', () => {
+  const actual = jest.requireActual<typeof import('uniswap/src/i18n/utils')>('uniswap/src/i18n/utils')
+  const { Language } =
+    require('uniswap/src/features/language/constants') as typeof import('uniswap/src/features/language/constants')
+  return {
+    ...actual,
+    getWalletDeviceLanguage: jest.fn(() => Language.English),
+  }
+})
 
 expect.extend({ toIncludeSameMembers })
 
@@ -742,5 +756,9 @@ describe('Redux state migrations', () => {
         },
       },
     })
+  })
+
+  it('migrates from v96 to v97', () => {
+    testSetWalletDeviceLanguage(migrations[97], v96Schema, jest.mocked(getWalletDeviceLanguage))
   })
 })

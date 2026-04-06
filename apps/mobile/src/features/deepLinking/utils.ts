@@ -27,7 +27,7 @@ function* dismissReactNavigationModalsWithoutAnimation(): Generator {
   const navigationState = navigationRef.getState()
 
   // Early return if navigationState is not available (e.g., in tests, or if modal has no state)
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (!navigationState || !navigationState.routes) {
     return
   }

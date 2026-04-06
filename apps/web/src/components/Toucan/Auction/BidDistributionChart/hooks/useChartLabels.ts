@@ -47,7 +47,7 @@ export function useChartLabels(params: UseChartLabelsParams) {
         minSigDigits: 3,
         maxSigDigits: 4,
       })
-      // eslint-disable-next-line no-unsanitized/property -- HTML is generated from number, not user input
+      // oxlint-disable-next-line no-unsanitized/property -- HTML is generated from number, not user input
       label.innerHTML = formatted.html
 
       return label

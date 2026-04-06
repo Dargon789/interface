@@ -1,8 +1,8 @@
 import { UNI_ADDRESSES } from '@uniswap/sdk-core'
 import { AssetType } from 'uniswap/src/entities/assets'
 import { mapTAPIPlanStatusToTXStatus } from 'uniswap/src/features/activity/extract/statusMappers'
+import { getAmountsFromTrade } from 'uniswap/src/features/transactions/swap/utils/getAmountsFromTrade'
 import {
-  DappInfoTransactionDetails,
   TransactionDetails,
   TransactionStatus,
   TransactionType,
@@ -12,35 +12,9 @@ import { isPlanTransactionDetails } from 'uniswap/src/features/transactions/type
 import { getValidAddress } from 'uniswap/src/utils/addresses'
 import { buildCurrencyId, buildNativeCurrencyId, isNativeCurrencyAddress } from 'uniswap/src/utils/currencyId'
 import { logger } from 'utilities/src/logger/logger'
-import {
-  ActivityProtocolInfo,
-  ActivityRowFragments,
-} from '~/pages/Portfolio/Activity/ActivityTable/activityTableModels'
+import { ActivityRowFragments } from '~/pages/Portfolio/Activity/ActivityTable/activityTableModels'
+import { toProtocolInfo } from '~/pages/Portfolio/Activity/ActivityTable/protocolInfo'
 import { ActivityFilterType } from '~/pages/Portfolio/Activity/Filters/utils'
-
-function toProtocolInfo(dappInfo: DappInfoTransactionDetails | undefined): ActivityProtocolInfo | null {
-  if (!dappInfo?.name) {
-    return null
-  }
-  return {
-    name: normalizeProtocolName(dappInfo.name),
-    logoUrl: dappInfo.icon,
-  }
-}
-
-/**
- * Normalizes protocol names for display in the activity table.
- * Applies hardcoded corrections to protocol names from the backend.
- */
-function normalizeProtocolName(name: string): string {
-  if (name === 'Across API') {
-    return 'Across'
-  }
-  if (name === 'Uniswap V4' || name === 'Uniswap V3' || name === 'Uniswap V2') {
-    return 'Uniswap'
-  }
-  return name
-}
 
 // Cache size set to 2x the maximum possible transactions (250) to handle refetches and scrolling
 const MAX_CACHE_SIZE = 500
@@ -98,14 +72,15 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
   const { typeInfo, chainId } = details
 
   switch (typeInfo.type) {
-    case TransactionType.Swap:
+    case TransactionType.Swap: {
+      const { inputCurrencyAmountRaw, outputCurrencyAmountRaw } = getAmountsFromTrade(typeInfo)
       return {
         amount: {
           kind: 'pair',
           inputCurrencyId: typeInfo.inputCurrencyId,
           outputCurrencyId: typeInfo.outputCurrencyId,
-          inputAmountRaw: 'inputCurrencyAmountRaw' in typeInfo ? typeInfo.inputCurrencyAmountRaw : undefined,
-          outputAmountRaw: 'outputCurrencyAmountRaw' in typeInfo ? typeInfo.outputCurrencyAmountRaw : undefined,
+          inputAmountRaw: inputCurrencyAmountRaw || undefined,
+          outputAmountRaw: outputCurrencyAmountRaw || undefined,
         },
         counterparty: null,
         typeLabel: {
@@ -114,6 +89,7 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
         },
         protocolInfo: toProtocolInfo(typeInfo.dappInfo),
       }
+    }
     case TransactionType.Plan: {
       if (!isPlanTransactionDetails(details)) {
         logInvalidTransactionType(typeInfo)
@@ -139,14 +115,15 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
         },
       }
     }
-    case TransactionType.Bridge:
+    case TransactionType.Bridge: {
+      const { inputCurrencyAmountRaw, outputCurrencyAmountRaw } = getAmountsFromTrade(typeInfo)
       return {
         amount: {
           kind: 'pair',
           inputCurrencyId: typeInfo.inputCurrencyId,
           outputCurrencyId: typeInfo.outputCurrencyId,
-          inputAmountRaw: 'inputCurrencyAmountRaw' in typeInfo ? typeInfo.inputCurrencyAmountRaw : undefined,
-          outputAmountRaw: 'outputCurrencyAmountRaw' in typeInfo ? typeInfo.outputCurrencyAmountRaw : undefined,
+          inputAmountRaw: inputCurrencyAmountRaw || undefined,
+          outputAmountRaw: outputCurrencyAmountRaw || undefined,
         },
         counterparty: null,
         typeLabel: {
@@ -155,6 +132,7 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
         },
         protocolInfo: toProtocolInfo(typeInfo.routingDappInfo),
       }
+    }
     case TransactionType.Send: {
       const currencyId = buildCurrencyId(chainId, typeInfo.tokenAddress)
 

@@ -1,11 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Text } from 'ui/src'
-import { useAbbreviatedTimeString } from '~/components/Table/utils'
-
-interface TimeCellProps {
-  /** Timestamp - either ISO string or milliseconds */
-  timestamp: string | number | undefined
-}
+import { useAbbreviatedTimeString } from '~/components/Table/utils/useAbbreviatedTimeString'
 
 /**
  * Hook to get the formatted time ago string with "ago" suffix
@@ -23,18 +17,4 @@ export function useTimeAgo(timestamp: string | number | undefined): string {
   }
 
   return `${timeAgo} ${t('common.ago')}`
-}
-
-/**
- * Renders a relative time display (e.g., "5m ago", "2h ago")
- * Uses the shared useAbbreviatedTimeString hook for consistent formatting
- */
-export function TimeCell({ timestamp }: TimeCellProps): JSX.Element {
-  const timeAgo = useTimeAgo(timestamp)
-
-  return (
-    <Text variant="body4" color="$neutral2">
-      {timeAgo}
-    </Text>
-  )
 }

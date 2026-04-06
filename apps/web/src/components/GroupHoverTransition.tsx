@@ -4,10 +4,8 @@ import { Flex } from 'ui/src'
 interface GroupHoverTransitionProps {
   defaultContent: ReactNode
   hoverContent: ReactNode
-  /** When false, only default content is shown and no group-hover transition is applied. */
   showTransition?: boolean
   height: number
-  /** CSS transition for the slide (e.g. 'all 0.1s ease-in-out'). */
   transition?: string
   /** When true, use $group-item-hover (for parent with group="item"). Default uses $group-hover. */
   useGroupItemHover?: boolean
@@ -19,12 +17,12 @@ interface GroupHoverTransitionProps {
  * Requires a parent with the `group` prop (e.g. <Flex group> or <Flex group="item">).
  * Caller should ensure defaultContent and hoverContent each have the given height.
  */
-function _GroupHoverTransition({
+function GroupHoverTransitionInner({
   defaultContent,
   hoverContent,
   showTransition = true,
   height,
-  transition = 'all 0.1s ease-in-out',
+  transition = 'transform 0.1s ease-in-out',
   useGroupItemHover = false,
 }: GroupHoverTransitionProps): JSX.Element {
   if (!showTransition) {
@@ -56,4 +54,4 @@ function _GroupHoverTransition({
   )
 }
 
-export const GroupHoverTransition = memo(_GroupHoverTransition)
+export const GroupHoverTransition = memo(GroupHoverTransitionInner)

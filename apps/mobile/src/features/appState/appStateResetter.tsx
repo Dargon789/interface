@@ -1,8 +1,8 @@
 import { type ApolloClient, useApolloClient } from '@apollo/client'
 import { type Dispatch } from '@reduxjs/toolkit'
 import { type QueryClient, useQueryClient } from '@tanstack/react-query'
+import { Image } from 'expo-image'
 import { useMemo } from 'react'
-import FastImage from 'react-native-fast-image'
 import { useDispatch } from 'react-redux'
 import { resetBiometricSettings } from 'src/features/biometricsSettings/slice'
 import { resetModals } from 'src/features/modals/modalSlice'
@@ -46,9 +46,8 @@ export function createMobileAppStateResetter({
       await Promise.all([
         apolloClient.resetStore().then(() => logger.info('Apollo cache cleared successfully')),
         queryClient.resetQueries().then(() => logger.info('React Query cache cleared successfully')),
-        FastImage.clearMemoryCache()
-          .then(() => FastImage.clearDiskCache())
-          .then(() => logger.info('FastImage cache cleared successfully')),
+        Image.clearDiskCache().then(() => logger.info('Image disk cache cleared successfully')),
+        Image.clearMemoryCache().then(() => logger.info('Image memory cache cleared successfully')),
       ])
     },
   })

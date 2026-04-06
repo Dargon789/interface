@@ -12,7 +12,7 @@ import { UNITAG_SUFFIX } from 'uniswap/src/features/unitags/constants'
 import { getValidAddress } from 'uniswap/src/utils/addresses'
 import { isWebApp } from 'utilities/src/platform'
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function useWalletSearchResults(
   query: string,
   selectedChain: UniverseChainId | null,

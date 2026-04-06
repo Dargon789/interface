@@ -62,7 +62,7 @@ function ActionButton({ label, Icon, onClick, url }: ActionButtonProps): JSX.Ele
   )
 }
 
-export const PortfolioActionButtons = memo(function _PortfolioActionButtons(): JSX.Element {
+export const PortfolioActionButtons = memo(function PortfolioActionButtonsInner(): JSX.Element {
   const { t } = useTranslation()
   const media = useMedia()
   const { isTestnetModeEnabled } = useEnabledChains()

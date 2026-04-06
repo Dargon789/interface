@@ -194,14 +194,14 @@ const TouchableAreaComponentWithoutMemo = forwardRef<TamaguiElement, TouchableAr
         hitSlop={hitSlop}
         variant={variant}
         pressStyle={pressStyle}
-        onLayout={onLayout}
-        onPress={onPress ? handlePress : undefined}
-        onPressIn={onPressIn ? handlePressIn : undefined}
-        onPressOut={onPressOut ? handlePressOut : undefined}
         {...restProps}
         {...animationAndAnimateOnly}
         width={width}
         height={height}
+        onLayout={onLayout}
+        onPress={onPress ? handlePress : undefined}
+        onPressIn={onPressIn ? handlePressIn : undefined}
+        onPressOut={onPressOut ? handlePressOut : undefined}
       >
         <WithInjectedColors enabled={shouldAutomaticallyInjectColors} variant={variant} disabled={restProps.disabled}>
           {children}
@@ -224,14 +224,14 @@ const TouchableAreaComponentWithoutMemo = forwardRef<TamaguiElement, TouchableAr
       variant={variant}
       hitSlop={hitSlop}
       pressStyle={pressStyle}
-      onLayout={onLayout}
-      onPress={onPress ? handlePress : undefined}
-      onPressIn={onPressIn ? handlePressIn : undefined}
-      onPressOut={onPressOut ? handlePressOut : undefined}
       {...restProps}
       {...animationAndAnimateOnly}
       width={width}
       height={height}
+      onLayout={onLayout}
+      onPress={onPress ? handlePress : undefined}
+      onPressIn={onPressIn ? handlePressIn : undefined}
+      onPressOut={onPressOut ? handlePressOut : undefined}
     >
       <WithInjectedColors enabled={shouldAutomaticallyInjectColors} variant={variant} disabled={restProps.disabled}>
         {children}

@@ -69,7 +69,7 @@ export function shortenAddress({
  * @param chars - The number of characters to show at the beginning after the 0x and end.
  * @param charsEnd - (Optional) The number of characters to show at the end if different from chars.
  */
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 export function shortenHash(hash = '', chars = 4, charsEnd?: number): string {
   if (!hash) {
     return ''
@@ -87,7 +87,7 @@ export function shortenHash(hash = '', chars = 4, charsEnd?: number): string {
  * @param charsEnd amount of characters to shorten in the end
  * @returns formatted string
  */
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 function ellipseAddressAdd0x(address: string, charsStart: number, charsEnd: number): string {
   const hasPrefix = address.startsWith('0x')
   const prefix = hasPrefix ? '' : '0x'

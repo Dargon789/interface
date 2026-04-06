@@ -7,15 +7,15 @@ import { Flex, type FlexProps } from 'ui/src/components/layout/Flex'
  */
 export type AnimatedFlexProps = Omit<FlexProps, 'style'> & {
   // Style prop that accepts both regular and animated styles from useAnimatedStyle
-  // biome-ignore lint/suspicious/noExplicitAny: Style prop accepts animated styles which have complex types
+  // oxlint-disable-next-line typescript/no-explicit-any -- Style prop accepts animated styles which have complex types
   style?: any
   // Reanimated entering/exiting animations - used on native, ignored on web
-  // biome-ignore lint/suspicious/noExplicitAny: Reanimated animation types are complex and platform-specific
+  // oxlint-disable-next-line typescript/no-explicit-any -- Reanimated animation types are complex and platform-specific
   entering?: any
-  // biome-ignore lint/suspicious/noExplicitAny: Reanimated animation types are complex and platform-specific
+  // oxlint-disable-next-line typescript/no-explicit-any -- Reanimated animation types are complex and platform-specific
   exiting?: any
   // Layout animation
-  // biome-ignore lint/suspicious/noExplicitAny: Reanimated animation types are complex and platform-specific
+  // oxlint-disable-next-line typescript/no-explicit-any -- Reanimated animation types are complex and platform-specific
   layout?: any
 }
 

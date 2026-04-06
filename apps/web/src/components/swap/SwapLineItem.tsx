@@ -90,7 +90,7 @@ function FeeRow({ trade: { swapFee, outputAmount } }: { trade: SubmittableTrade 
   return <>{convertFiatAmountFormatted(outputFeeFiatValue.toExact(), NumberType.FiatGasPrice)}</>
 }
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 function useLineItem(props: SwapLineItemProps): LineItemData | undefined {
   const { trade, syncing, type } = props
   const { formatPercent } = useLocalizationContext()

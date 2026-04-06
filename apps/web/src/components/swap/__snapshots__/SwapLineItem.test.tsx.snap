@@ -95,7 +95,7 @@ exports[`SwapLineItem.tsx > dutch order eth input 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -104,7 +104,7 @@ exports[`SwapLineItem.tsx > dutch order eth input 1`] = `
                 class="c2"
               >
                 <div
-                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
                 >
                   <div
                     class="c4"
@@ -186,7 +186,7 @@ exports[`SwapLineItem.tsx > dutch order eth input 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -299,7 +299,7 @@ exports[`SwapLineItem.tsx > dutch v2 order eth input 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -308,7 +308,7 @@ exports[`SwapLineItem.tsx > dutch v2 order eth input 1`] = `
                 class="c2"
               >
                 <div
-                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
                 >
                   <div
                     class="c4"
@@ -390,7 +390,7 @@ exports[`SwapLineItem.tsx > dutch v2 order eth input 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -500,7 +500,7 @@ exports[`SwapLineItem.tsx > exact input 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -509,7 +509,7 @@ exports[`SwapLineItem.tsx > exact input 1`] = `
                 class="c2"
               >
                 <div
-                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
                 >
                   <div
                     class="c4"
@@ -568,7 +568,7 @@ exports[`SwapLineItem.tsx > exact input 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -678,7 +678,7 @@ exports[`SwapLineItem.tsx > exact input api 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -687,7 +687,7 @@ exports[`SwapLineItem.tsx > exact input api 1`] = `
                 class="c2"
               >
                 <div
-                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
                 >
                   <div
                     class="c4"
@@ -746,7 +746,7 @@ exports[`SwapLineItem.tsx > exact input api 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -856,7 +856,7 @@ exports[`SwapLineItem.tsx > exact output 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -865,7 +865,7 @@ exports[`SwapLineItem.tsx > exact output 1`] = `
                 class="c2"
               >
                 <div
-                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
                 >
                   <div
                     class="c4"
@@ -924,7 +924,7 @@ exports[`SwapLineItem.tsx > exact output 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -1034,7 +1034,7 @@ exports[`SwapLineItem.tsx > fee on buy 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -1043,7 +1043,7 @@ exports[`SwapLineItem.tsx > fee on buy 1`] = `
                 class="c2"
               >
                 <div
-                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
                 >
                   <div
                     class="c4"
@@ -1102,7 +1102,7 @@ exports[`SwapLineItem.tsx > fee on buy 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -1212,7 +1212,7 @@ exports[`SwapLineItem.tsx > fee on sell 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -1221,7 +1221,7 @@ exports[`SwapLineItem.tsx > fee on sell 1`] = `
                 class="c2"
               >
                 <div
-                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+                  class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
                 >
                   <div
                     class="c4"
@@ -1280,7 +1280,7 @@ exports[`SwapLineItem.tsx > fee on sell 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"
@@ -1356,7 +1356,7 @@ exports[`SwapLineItem.tsx > preview exact in 1`] = `
           class="c2"
         >
           <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column"
+            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _cursor-default"
           >
             <div
               class="c0 c3 css-142zc9n"

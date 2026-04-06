@@ -22,6 +22,7 @@ import {
   WidgetUrlResponse,
 } from '@universe/api'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { config } from 'uniswap/src/config'
 import { ForApiClient } from 'uniswap/src/data/apiClients/forApi/ForApiClient'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { ONE_HOUR_MS, ONE_MINUTE_MS } from 'utilities/src/time/time'
@@ -101,6 +102,8 @@ export function useFiatOnRampAggregatorCountryListQuery(
 
 /**
  * Get user's country based on IP
+ * In E2E test mode, returns a hardcoded US response to avoid flaky failures
+ * from Maestro Cloud IP geolocation resolving to unsupported regions.
  */
 export function useFiatOnRampAggregatorGetCountryQuery(
   params?: undefined,
@@ -110,7 +113,14 @@ export function useFiatOnRampAggregatorGetCountryQuery(
 
   return useQuery<GetCountryResponse, Error>({
     queryKey: forQueryKeys.country(),
-    queryFn: skip ? skipToken : (): Promise<GetCountryResponse> => ForApiClient.getCountry(),
+    queryFn: skip
+      ? skipToken
+      : (): Promise<GetCountryResponse> => {
+          if (config.isE2ETest) {
+            return Promise.resolve({ countryCode: 'US', displayName: 'United States' } as GetCountryResponse)
+          }
+          return ForApiClient.getCountry()
+        },
     staleTime: DEFAULT_STALE_TIME,
     gcTime: DEFAULT_GC_TIME,
     refetchOnMount: options?.refetchOnMountOrArgChange ? 'always' : true,

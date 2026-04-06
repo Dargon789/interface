@@ -13,6 +13,7 @@ import { TokenDetailsContextProvider, useTokenDetailsContext } from 'src/compone
 import { TokenDetailsHeader } from 'src/components/TokenDetails/TokenDetailsHeader'
 import { TokenDetailsLinks } from 'src/components/TokenDetails/TokenDetailsLinks'
 import { TokenDetailsStats } from 'src/components/TokenDetails/TokenDetailsStats'
+import { TokenPerformance } from 'src/components/TokenDetails/TokenPerformance'
 import { TokenDetailsActionButtonsWrapper } from 'src/screens/TokenDetailsScreen/TokenDetailsActionButtonsWrapper'
 import { HeaderRightElement, HeaderTitleElement } from 'src/screens/TokenDetailsScreen/TokenDetailsHeaders'
 import { TokenDetailsModals } from 'src/screens/TokenDetailsScreen/TokenDetailsModals'
@@ -69,7 +70,7 @@ function TokenDetailsWrapper(): JSX.Element {
   )
 }
 
-const TokenDetailsQuery = memo(function _TokenDetailsQuery(): JSX.Element {
+const TokenDetailsQuery = memo(function TokenDetailsQueryInner(): JSX.Element {
   const { currencyId, setError } = useTokenDetailsContext()
 
   const { error } = GraphQLApi.useTokenDetailsScreenQuery({
@@ -84,7 +85,7 @@ const TokenDetailsQuery = memo(function _TokenDetailsQuery(): JSX.Element {
   return <TokenDetails />
 })
 
-const TokenDetails = memo(function _TokenDetails(): JSX.Element {
+const TokenDetails = memo(function TokenDetailsInner(): JSX.Element {
   const centerElement = useMemo(() => <HeaderTitleElement />, [])
   const rightElement = useMemo(() => <HeaderRightElement />, [])
   const { isContentHidden } = useDelayedRender(CONTEXT_MENU_RENDER_DELAY_MS)
@@ -118,6 +119,7 @@ const TokenDetails = memo(function _TokenDetails(): JSX.Element {
             <Separator />
           </Flex>
           <Flex gap="$spacing24">
+            <TokenPerformance />
             <Flex px="$spacing16">
               <TokenDetailsStats />
             </Flex>
@@ -133,7 +135,7 @@ const TokenDetails = memo(function _TokenDetails(): JSX.Element {
   )
 })
 
-const TokenDetailsErrorCard = memo(function _TokenDetailsErrorCard(): JSX.Element | null {
+const TokenDetailsErrorCard = memo(function TokenDetailsErrorCardInner(): JSX.Element | null {
   const apolloClient = useApolloClient()
   const { error, setError } = useTokenDetailsContext()
 
@@ -151,7 +153,7 @@ const TokenDetailsErrorCard = memo(function _TokenDetailsErrorCard(): JSX.Elemen
   ) : null
 })
 
-const TokenBalancesWrapper = memo(function _TokenBalancesWrapper(): JSX.Element | null {
+const TokenBalancesWrapper = memo(function TokenBalancesWrapperInner(): JSX.Element | null {
   const activeAddress = useActiveAccountAddressWithThrow()
   const { currencyId, isChainEnabled } = useTokenDetailsContext()
 
@@ -184,7 +186,7 @@ const TokenBalancesWrapper = memo(function _TokenBalancesWrapper(): JSX.Element 
   ) : null
 })
 
-const TokenWarningCardWrapper = memo(function _TokenWarningCardWrapper(): JSX.Element | null {
+const TokenWarningCardWrapper = memo(function TokenWarningCardWrapperInner(): JSX.Element | null {
   const { currencyInfo, openTokenWarningModal } = useTokenDetailsContext()
 
   return <TokenWarningCard currencyInfo={currencyInfo} onPress={openTokenWarningModal} />

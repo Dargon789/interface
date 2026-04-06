@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* oxlint-disable typescript/no-unsafe-return */
 /**
  * BigInt serialization utilities for JSON
  *
@@ -30,7 +30,7 @@ const BIGINT_PREFIX = '__bigint__:' as const
  * // With custom replacer
  * const json = jsonStringify(data, (key, val) => key === 'secret' ? '[REDACTED]' : val)
  */
-// eslint-disable-next-line max-params -- match JSON.stringify parameters
+// oxlint-disable-next-line max-params -- match JSON.stringify parameters
 export function jsonStringify(
   value: unknown,
   replacer?: (key: string, value: unknown) => unknown,

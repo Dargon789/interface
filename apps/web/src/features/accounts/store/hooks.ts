@@ -1,4 +1,4 @@
-/* eslint-disable import/no-unused-modules */
+/* oxlint-disable import/no-unused-modules */
 
 import { useMemo } from 'react'
 import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'

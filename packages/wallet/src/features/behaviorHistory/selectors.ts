@@ -12,12 +12,6 @@ export const selectBackupReminderLastSeenTs = (state: WalletState): number | und
 
 export const selectHasUsedExplore = (state: WalletState): boolean => state.behaviorHistory.hasUsedExplore
 
-export const selectHasViewedBridgedAssetsCard = (state: WalletState): boolean =>
-  state.behaviorHistory.hasViewedBridgedAssetsCard ?? false
-
-export const selectHasViewedBridgedAssetsV2Card = (state: WalletState): boolean =>
-  state.behaviorHistory.hasViewedBridgedAssetsV2Card ?? false
-
 export const selectHasViewedOffRampTooltip = (state: WalletState): boolean =>
   state.behaviorHistory.hasViewedOffRampTooltip
 
@@ -41,7 +35,7 @@ export const selectHasDismissedSmartWalletHomeScreenNudge = (state: WalletState,
   return state.behaviorHistory.smartWalletNudge?.[walletAddress]?.hasDismissedHomeScreenNudge ?? false
 }
 
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 export const selectHasShownEip5792Nudge = (state: WalletState, walletAddress: string, dappUrl: string): boolean => {
   if (selectIsAllSmartWalletNudgesDisabled(state, walletAddress)) {
     return true

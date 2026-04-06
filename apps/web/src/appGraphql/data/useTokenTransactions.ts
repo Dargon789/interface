@@ -29,10 +29,12 @@ export function useTokenTransactions({
   address,
   chainId,
   filter = [TokenTransactionType.BUY, TokenTransactionType.SELL],
+  multichain,
 }: {
   address: string
   chainId: UniverseChainId
   filter?: TokenTransactionType[]
+  multichain?: boolean
 }) {
   const skipV3V4Solana = isSVMChain(chainId) // Solana token txs data are surfaced via Gql Token.V2Transactions
 
@@ -46,6 +48,7 @@ export function useTokenTransactions({
       address: normalizeTokenAddressForCache(address),
       chain: toGraphQLChain(chainId),
       first: TokenTransactionDefaultQuerySize,
+      multichain,
     },
     skip: skipV3V4Solana,
   })
@@ -59,6 +62,7 @@ export function useTokenTransactions({
       address: normalizeTokenAddressForCache(address),
       chain: toGraphQLChain(chainId),
       first: TokenTransactionDefaultQuerySize,
+      multichain,
     },
     skip: skipV3V4Solana,
   })
@@ -72,6 +76,7 @@ export function useTokenTransactions({
       address: normalizeTokenAddressForCache(address),
       first: TokenTransactionDefaultQuerySize,
       chain: toGraphQLChain(chainId),
+      multichain,
     },
   })
   const loadingMoreV4 = useRef(false)

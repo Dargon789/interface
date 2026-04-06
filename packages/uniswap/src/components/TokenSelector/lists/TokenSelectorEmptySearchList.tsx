@@ -6,7 +6,7 @@ import { OnSelectCurrency } from 'uniswap/src/components/TokenSelector/types'
 import type { AddressGroup } from 'uniswap/src/features/accounts/store/types/AccountsState'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 
-function _TokenSelectorEmptySearchList({
+function TokenSelectorEmptySearchListInner({
   addresses,
   chainFilter,
   onSelectCurrency,
@@ -44,4 +44,4 @@ function _TokenSelectorEmptySearchList({
   )
 }
 
-export const TokenSelectorEmptySearchList = memo(_TokenSelectorEmptySearchList)
+export const TokenSelectorEmptySearchList = memo(TokenSelectorEmptySearchListInner)

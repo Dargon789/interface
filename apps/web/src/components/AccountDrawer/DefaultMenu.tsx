@@ -3,12 +3,11 @@ import { Flex } from 'ui/src'
 import { TransitionItem } from 'ui/src/animations'
 import { InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
-import { AdvancedSettingsMenu } from '~/components/AccountDrawer/AdvancedSettingsMenu'
 import LanguageMenu from '~/components/AccountDrawer/LanguageMenu'
 import LocalCurrencyMenu from '~/components/AccountDrawer/LocalCurrencyMenu'
 import { MainMenu } from '~/components/AccountDrawer/MainMenu/MainMenu'
-import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { MenuStateVariant, useMenuState, useSetMenuCallback } from '~/components/AccountDrawer/menuState'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import PasskeyMenu from '~/components/AccountDrawer/PasskeyMenu/PasskeyMenu'
 import PortfolioBalanceMenu from '~/components/AccountDrawer/PortfolioBalanceMenu'
 import SettingsMenu from '~/components/AccountDrawer/SettingsMenu'
@@ -25,7 +24,6 @@ export function DefaultMenu() {
   const openLocalCurrencySettings = useSetMenuCallback(MenuStateVariant.LOCAL_CURRENCY_SETTINGS)
   const openPortfolioBalanceSettings = useSetMenuCallback(MenuStateVariant.PORTFOLIO_BALANCE_SETTINGS)
   const openPasskeySettings = useSetMenuCallback(MenuStateVariant.PASSKEYS)
-  const openAdvancedSettings = useSetMenuCallback(MenuStateVariant.ADVANCED_SETTINGS)
   const openStorageSettings = useSetMenuCallback(MenuStateVariant.STORAGE_SETTINGS)
 
   const { isOpen: drawerOpen } = useAccountDrawer()
@@ -33,7 +31,7 @@ export function DefaultMenu() {
   const prevMenuVariant = usePrevious(menuState.variant)
 
   const animationDirection = useMemo(() => {
-    const menuIndices = {
+    const menuIndices: Partial<Record<MenuStateVariant, number>> = {
       [MenuStateVariant.MAIN]: 0,
       [MenuStateVariant.SWITCH]: 1,
       [MenuStateVariant.CONNECT_PLATFORM]: 1,
@@ -43,17 +41,16 @@ export function DefaultMenu() {
       [MenuStateVariant.LOCAL_CURRENCY_SETTINGS]: 2,
       [MenuStateVariant.PORTFOLIO_BALANCE_SETTINGS]: 2,
       [MenuStateVariant.PASSKEYS]: 2,
-      [MenuStateVariant.ADVANCED_SETTINGS]: 2,
       [MenuStateVariant.STORAGE_SETTINGS]: 3,
-    } as const
+    }
 
     if (!prevMenuVariant || prevMenuVariant === menuState.variant) {
       return 'forward'
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     const newIndex = menuIndices[menuState.variant] ?? 2
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     const oldIndex = menuIndices[prevMenuVariant] ?? 2
     return newIndex > oldIndex ? 'forward' : 'backward'
   }, [menuState.variant, prevMenuVariant])
@@ -82,7 +79,7 @@ export function DefaultMenu() {
     )
   }, [menuState])
 
-  // eslint-disable-next-line consistent-return
+  // oxlint-disable-next-line consistent-return
   const SubMenu = useMemo(() => {
     switch (menuState.variant) {
       case MenuStateVariant.MAIN:
@@ -101,12 +98,9 @@ export function DefaultMenu() {
             openLocalCurrencySettings={openLocalCurrencySettings}
             openPasskeySettings={openPasskeySettings}
             openPortfolioBalanceSettings={openPortfolioBalanceSettings}
-            openAdvancedSettings={openAdvancedSettings}
+            openStorageSettings={openStorageSettings}
           />
         )
-
-      case MenuStateVariant.ADVANCED_SETTINGS:
-        return <AdvancedSettingsMenu onClose={openSettings} openStorageSettings={openStorageSettings} />
       case MenuStateVariant.LANGUAGE_SETTINGS:
         return <LanguageMenu onClose={openSettings} />
       case MenuStateVariant.PORTFOLIO_BALANCE_SETTINGS:
@@ -114,9 +108,11 @@ export function DefaultMenu() {
       case MenuStateVariant.LOCAL_CURRENCY_SETTINGS:
         return <LocalCurrencyMenu onClose={openSettings} />
       case MenuStateVariant.STORAGE_SETTINGS:
-        return <StorageMenu onClose={openAdvancedSettings} />
+        return <StorageMenu onClose={openSettings} />
       case MenuStateVariant.PASSKEYS:
         return <PasskeyMenu onClose={openSettings} />
+      default:
+        return null
     }
   }, [
     menuState,
@@ -124,7 +120,6 @@ export function DefaultMenu() {
     openLocalCurrencySettings,
     openPortfolioBalanceSettings,
     openPasskeySettings,
-    openAdvancedSettings,
     openStorageSettings,
     openSettings,
     returnToMain,

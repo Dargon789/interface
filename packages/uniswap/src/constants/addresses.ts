@@ -31,8 +31,16 @@ export function getNativeAddress(chainId: UniverseChainId): string {
   return getChainInfo(chainId).nativeCurrency.address
 }
 
-export function getWrappedNativeAddress(chainId: UniverseChainId): string {
-  return getChainInfo(chainId).wrappedNativeCurrency.address
+export function getWrappedNativeAddress(chainId: UniverseChainId): string | undefined {
+  return getChainInfo(chainId).wrappedNativeCurrency?.address
+}
+
+export function getWrappedNativeAddressWithThrow(chainId: UniverseChainId): string {
+  const address = getChainInfo(chainId).wrappedNativeCurrency?.address
+  if (!address) {
+    throw new Error(`Wrapped native currency not found for chain ID: ${chainId}`)
+  }
+  return address
 }
 
 // TODO: Load this from config or backend once we have it (WALL-6592)

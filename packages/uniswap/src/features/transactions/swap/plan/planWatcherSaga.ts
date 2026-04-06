@@ -27,7 +27,7 @@ export class PlanWatcher {
    * The first instance of this polling utility will not have access to the latest store.
    * As a temporary fix, we can use an index to track & cancel the previous instance of the polling utility.
    */
-  private static index = 0
+  private static index = 0;
 
   static *initialize(): Generator<unknown> {
     yield* call(PlanWatcher.waitForStatsigReady)
@@ -137,13 +137,13 @@ export class PlanWatcher {
       if (listener) {
         logger.warn('planWatcherSaga', 'waitForPlanStatus', 'Plan listener timed out', { planId })
         // Resolve with undefined to unblock the caller - they should handle this case
-        // biome-ignore lint/suspicious/noExplicitAny: Resolving with undefined to signal timeout
+        // oxlint-disable-next-line typescript/no-explicit-any -- Resolving with undefined to signal timeout
         resolvePromise(undefined as any)
         delete PlanWatcher.listeners[planId]
       }
     }, PLAN_MAX_AGE_MS)
 
-    // biome-ignore lint/style/noNonNullAssertion: Must appease typechecker since resolvePromise is assigned inside promise scope
+    // oxlint-disable-next-line typescript/no-non-null-assertion -- Must appease typechecker since resolvePromise is assigned inside promise scope
     PlanWatcher.listeners[planId] = { updatePlanStatus: resolvePromise!, promise, timeoutId }
     return yield* call(() => promise)
   }

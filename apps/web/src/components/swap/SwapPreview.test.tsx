@@ -1,5 +1,4 @@
 import '~/test-utils/tokens/mocks'
-
 import { SwapPreview } from '~/components/swap/SwapPreview'
 import {
   ETH_MAINNET,

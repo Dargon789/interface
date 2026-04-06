@@ -38,5 +38,5 @@
       "src/*": ["./src/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", "global.d.ts"]
+  "include": ["**/*.ts", "**/*.tsx", "src/polyfills/**/*.js", "global.d.ts"]
 }

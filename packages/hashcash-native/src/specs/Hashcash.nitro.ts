@@ -43,11 +43,10 @@ export interface FindProofParams {
  * Computes SHA256 hashes to find a counter value that produces
  * a hash with the required number of leading zero bytes.
  */
-export interface Hashcash
-  extends HybridObject<{
-    ios: 'swift'
-    android: 'kotlin'
-  }> {
+export interface Hashcash extends HybridObject<{
+  ios: 'swift'
+  android: 'kotlin'
+}> {
   /**
    * Find a proof-of-work solution for the given challenge.
    *

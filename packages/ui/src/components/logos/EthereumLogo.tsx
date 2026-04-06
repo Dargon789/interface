@@ -1,6 +1,5 @@
-import { Circle as _Circle, ClipPath, Defs, G, Path, Rect, Svg } from 'react-native-svg'
-
-// eslint-disable-next-line no-relative-import-paths/no-relative-import-paths
+import { Circle, ClipPath, Defs, G, Path, Rect, Svg } from 'react-native-svg'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths
 import { createIcon } from '../factories/createIcon'
 
 export const [EthereumLogo, AnimatedEthereumLogo] = createIcon({
@@ -9,7 +8,7 @@ export const [EthereumLogo, AnimatedEthereumLogo] = createIcon({
     <Svg viewBox="0 0 20 20" fill="none" {...props}>
       <G clipPath="url(#clip0_2_30)">
         <Rect width="20" height="20" fill="currentColor" />
-        <_Circle cx="10" cy="10" r="10" fill="currentColor" />
+        <Circle cx="10" cy="10" r="10" fill="currentColor" />
         <Path d="M9.97278 4L9.89323 4.27021V12.1105L9.97278 12.1899L13.6121 10.0386L9.97278 4Z" fill="currentColor" />
         <Path d="M9.97272 4L6.33333 10.0386L9.97272 12.1899V8.38441V4Z" fill="currentColor" />
         <Path

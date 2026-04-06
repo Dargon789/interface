@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { Protocol } from '@uniswap/router-sdk'
 import type { Currency, CurrencyAmount, TradeType } from '@uniswap/sdk-core'
 import { Pair } from '@uniswap/v2-sdk'
@@ -146,7 +146,7 @@ const STEP_TYPE_TO_IS_TRADE_STEP: Record<TradingApi.PlanStepType, boolean> = {
 function isTradeStep(stepType: TradingApi.PlanStepType): boolean {
   // We ignore this rule here in case the backend adds a new step before we update the types in this repo.
   // If a a new step is added, the typecheck will fail for `STEP_TYPE_TO_IS_TRADE_STEP` anyway.
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   return STEP_TYPE_TO_IS_TRADE_STEP[stepType] ?? true
 }
 
@@ -312,7 +312,7 @@ export function useSwapAnalytics(derivedSwapInfo: DerivedSwapInfo): void {
 
   const { data: portfolioData } = usePortfolioTotalValue({ ...activeAddresses, fetchPolicy: 'cache-first' })
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we only want to re-run this when we get a new `quoteId`
+  // oxlint-disable-next-line react/exhaustive-deps -- we only want to re-run this when we get a new `quoteId`
   useEffect(() => {
     if (!trade) {
       return
@@ -346,11 +346,12 @@ export function useSwapAnalytics(derivedSwapInfo: DerivedSwapInfo): void {
         error_message: trade.blockingError.message,
       })
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [quoteId])
 }
 
 // Typing is improved by using the actual return type instead of narrowing to `SwapTradeBaseProperties`
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+// oxlint-disable-next-line typescript/explicit-function-return-type
 export function getBaseTradeAnalyticsProperties({
   formatter,
   trade,

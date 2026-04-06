@@ -1,9 +1,22 @@
+import { Image as ExpoImage, type ImageContentFit } from 'expo-image'
 import { useState } from 'react'
 import { Image } from 'react-native'
-import { type PlainImageProps } from 'ui/src/components/UniversalImage/types'
+import { useImageSettings } from 'ui/src/components/UniversalImage/ImageSettingsContext'
+import {
+  type PlainImageExpoProps,
+  type PlainImageProps,
+  UniversalImageResizeMode,
+} from 'ui/src/components/UniversalImage/types'
 
-export function PlainImage({ uri, size, fallback, resizeMode, style, testID, onLoad }: PlainImageProps): JSX.Element {
+export function PlainImage(props: PlainImageProps): JSX.Element {
+  const { uri, size, fallback, resizeMode, style, testID, onLoad, onError } = props
+
   const [hasError, setHasError] = useState(false)
+
+  const { enableExpoImage } = useImageSettings()
+  if (enableExpoImage) {
+    return <PlainImageExpo {...props} />
+  }
 
   if (hasError && fallback) {
     return fallback
@@ -21,6 +34,55 @@ export function PlainImage({ uri, size, fallback, resizeMode, style, testID, onL
       width={size.width}
       onError={() => {
         setHasError(true)
+        onError?.()
+      }}
+      onLoad={onLoad}
+    />
+  )
+}
+
+const RESIZE_MODE_TO_CONTENT_FIT: Record<UniversalImageResizeMode, ImageContentFit> = {
+  [UniversalImageResizeMode.Cover]: 'cover',
+  [UniversalImageResizeMode.Contain]: 'contain',
+  [UniversalImageResizeMode.Stretch]: 'fill',
+  [UniversalImageResizeMode.Center]: 'none',
+}
+
+export function PlainImageExpo({
+  cacheInMemory,
+  fallback,
+  onError,
+  onLoad,
+  resizeMode,
+  size,
+  style,
+  testID,
+  uri,
+}: PlainImageExpoProps): JSX.Element {
+  const [hasError, setHasError] = useState(false)
+
+  if (hasError && fallback) {
+    return fallback
+  }
+
+  const contentFit = resizeMode ? RESIZE_MODE_TO_CONTENT_FIT[resizeMode] : undefined
+
+  return (
+    <ExpoImage
+      cachePolicy={cacheInMemory ? 'memory-disk' : 'disk'}
+      contentFit={contentFit}
+      source={{ uri }}
+      style={{
+        aspectRatio: size.aspectRatio,
+        width: size.width,
+        height: size.height,
+        ...style,
+      }}
+      testID={testID}
+      transition={200}
+      onError={() => {
+        setHasError(true)
+        onError?.()
       }}
       onLoad={onLoad}
     />

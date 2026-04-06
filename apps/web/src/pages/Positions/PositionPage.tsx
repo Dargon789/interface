@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { BigNumber } from '@ethersproject/bignumber'
 import { Position, PositionStatus, ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { Currency, CurrencyAmount, Percent, Price } from '@uniswap/sdk-core'
@@ -68,6 +68,7 @@ import { useAccount } from '~/hooks/useAccount'
 import { useSrcColor } from '~/hooks/useColor'
 import { useLpIncentivesFormattedEarnings } from '~/hooks/useLpIncentivesFormattedEarnings'
 import { usePositionTokenURI } from '~/hooks/usePositionTokenURI'
+import { useDynamicMetatags } from '~/pages/metatags'
 import NotFound from '~/pages/NotFound'
 import { MultichainContextProvider } from '~/state/multichain/MultichainContext'
 import { usePendingLPTransactionsChangeListener } from '~/state/transactions/hooks'
@@ -145,6 +146,28 @@ function PositionPage({ chainId }: { chainId: EVMUniverseChainId | undefined }) 
 
   const navigate = useNavigate()
   const { t } = useTranslation()
+
+  const metatagProperties = useMemo(() => {
+    const token0Symbol = positionInfo?.currency0Amount.currency.symbol
+    const token1Symbol = positionInfo?.currency1Amount.currency.symbol
+    if (!token0Symbol || !token1Symbol || !chainInfo?.urlParam || !tokenIdFromUrl) {
+      return { title: 'Position on Uniswap', url: window.location.href }
+    }
+    const poolName = `${token0Symbol}/${token1Symbol}`
+    const version = pathname.includes('v3') ? 'v3' : 'v4'
+    return {
+      title: `${poolName} on Uniswap`,
+      url: window.location.href,
+      image: `${window.location.origin}/api/image/positions/${version}/${chainInfo.urlParam}/${tokenIdFromUrl}`,
+    }
+  }, [
+    positionInfo?.currency0Amount.currency.symbol,
+    positionInfo?.currency1Amount.currency.symbol,
+    pathname,
+    chainInfo?.urlParam,
+    tokenIdFromUrl,
+  ])
+  const metatags = useDynamicMetatags(metatagProperties)
 
   const { currency0Amount, currency1Amount, status, fee0Amount, fee1Amount } = positionInfo ?? {}
   const fiatFeeValue0 = useUSDCValue(fee0Amount, PollingInterval.Slow)
@@ -340,6 +363,9 @@ function PositionPage({ chainId }: { chainId: EVMUniverseChainId | undefined }) 
             baseSymbol: currency0Amount.currency.symbol,
           })}
         </title>
+        {metatags.map((tag, index) => (
+          <meta key={index} {...tag} />
+        ))}
       </Helmet>
       <BodyWrapper mb={100}>
         <Flex gap="$gap20">
@@ -1013,33 +1039,33 @@ const PriceDisplay = ({
   setPriceInverted,
 }: {
   labelText: string
-  price: string | React.ReactNode
+  price: string
   tokenASymbol?: string
   tokenBSymbol?: string
   setPriceInverted: (value: React.SetStateAction<boolean>) => void
 }) => {
   return (
-    <Flex gap="$gap4">
-      <Text variant="subheading2" color="$neutral2">
+    <Flex gap="$gap4" flex={1} maxWidth="60%" minWidth={0} overflow="hidden">
+      <Text variant="subheading2" color="$neutral2" numberOfLines={1}>
         {labelText}
       </Text>
-      <Text variant="subheading1">{price}</Text>
-      <Flex group row>
-        <Flex row gap="$gap8" alignItems="center">
-          <Text variant="body4" color="$neutral2">
-            {tokenASymbol} = 1 {tokenBSymbol}
-          </Text>
-          <TouchableArea
-            animation={null}
-            $group-hover={{ opacity: 1 }}
-            opacity={0}
-            onPress={() => {
-              setPriceInverted((prev: boolean) => !prev)
-            }}
-          >
-            <ExchangeHorizontal color="$neutral2" size="$icon.16" />
-          </TouchableArea>
-        </Flex>
+      <Text variant="subheading1" ellipsizeMode="middle" numberOfLines={1} title={price}>
+        {price}
+      </Text>
+      <Flex group row alignItems="center" gap="$gap8">
+        <Text variant="body4" color="$neutral2" numberOfLines={1}>
+          {tokenASymbol} = 1 {tokenBSymbol}
+        </Text>
+        <TouchableArea
+          animation={null}
+          $group-hover={{ opacity: 1 }}
+          opacity={0}
+          onPress={() => {
+            setPriceInverted((prev: boolean) => !prev)
+          }}
+        >
+          <ExchangeHorizontal color="$neutral2" size="$icon.16" />
+        </TouchableArea>
       </Flex>
     </Flex>
   )
@@ -1084,7 +1110,7 @@ const PriceRangeSection = ({
       <Text variant="heading3" color="$neutral1">
         Price Range
       </Text>
-      <Flex row justifyContent="space-between">
+      <Flex row justifyContent="space-between" gap="$gap16">
         <PriceDisplay
           labelText={t('pool.minPrice')}
           price={minPrice}

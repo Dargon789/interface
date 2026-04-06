@@ -19,13 +19,18 @@ import { PopupType } from '~/components/Popups/types'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 import { useCurrency } from '~/hooks/Tokens'
 import { Swap } from '~/pages/Swap'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 import { CurrencyState } from '~/state/swap/types'
 import { getInitialLogoUrl } from '~/utils/getInitialLogoURL'
 
 export function TDPSwapComponent() {
   const { t } = useTranslation()
-  const { address, currency, currencyChainId, tokenColor } = useTDPContext()
+  const { address, currency, currencyChainId, tokenColor } = useTDPStore((s) => ({
+    address: s.address,
+    currency: s.currency!,
+    currencyChainId: s.currencyChainId,
+    tokenColor: s.tokenColor,
+  }))
   const navigate = useNavigate()
 
   const currencyInfo = useCurrencyInfo(currencyId(currency))
@@ -131,6 +136,7 @@ export function TDPSwapComponent() {
         initialOutputCurrency={initialOutputCurrency}
         onCurrencyChange={handleCurrencyChange}
         tokenColor={tokenColor}
+        tdpCurrency={currency}
       />
       <TokenWarningCard currencyInfo={currencyInfo} onPress={() => setShowWarningModal(true)} />
       {currencyInfo && (
@@ -162,7 +168,7 @@ function getCurrencyURLAddress(currency?: Currency): string {
 // Defaults the input currency to the output currency's native currency or undefined if the output currency is already the chain's native currency
 // Note: Query string input currency takes precedence if it's set
 function useSwapInitialCurrencies() {
-  const { currency } = useTDPContext()
+  const currency = useTDPStore((s) => s.currency)!
   const { useParsedQueryString } = useUrlContext()
   const parsedQs = useParsedQueryString()
 

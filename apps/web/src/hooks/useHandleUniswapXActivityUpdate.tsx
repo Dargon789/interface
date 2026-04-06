@@ -74,6 +74,7 @@ export function useHandleUniswapXActivityUpdate(): (params: HandleUniswapXActivi
           status: update.status,
           swapStartTimestamp: extractTransactionTypeInfoAttribute(original.typeInfo, 'swapStartTimestamp'),
           planAnalytics: extractPlanFieldsFromTypeInfo(original.typeInfo),
+          transactedUSDValue: extractTransactionTypeInfoAttribute(original.typeInfo, 'transactedUSDValue'),
         })
       }
     },

@@ -128,9 +128,14 @@ export function useActivityFiltering({
 
   // Show loading skeleton when:
   // 1. Initial load (isLoading is true, no cached data)
-  // 2. Chain filter changed and we're fetching new data
-  // 3. Server-side transaction type filter changed and we're fetching new data
-  const showLoading = isLoading || (chainIdChanged && isFetching) || (serverFilterChanged && isFetching)
+  // 2. Fetching with no data to display yet (e.g. cache cleared or empty cached result being refetched)
+  // 3. Chain filter changed and we're fetching new data
+  // 4. Server-side transaction type filter changed and we're fetching new data
+  const showLoading =
+    isLoading ||
+    (isFetching && !sectionData?.length) ||
+    (chainIdChanged && isFetching) ||
+    (serverFilterChanged && isFetching)
 
   const { sentinelRef } = useInfiniteScroll({
     onLoadMore: fetchNextPage,
@@ -144,11 +149,11 @@ export function useActivityFiltering({
     () =>
       filterTransactions({
         transactions: sectionData || [],
-        // If server-side filtering handled the type filter, skip client-side type filtering
-        typeFilter: serverFilterTypes ? ActivityFilterType.All : selectedTransactionType,
+        // Always apply client-side type filtering — local transactions bypass server-side filtering
+        typeFilter: selectedTransactionType,
         timeFilter: selectedTimePeriod,
       }),
-    [sectionData, selectedTransactionType, selectedTimePeriod, serverFilterTypes],
+    [sectionData, selectedTransactionType, selectedTimePeriod],
   )
 
   return {

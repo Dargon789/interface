@@ -57,7 +57,7 @@ export function NavBar(): JSX.Element {
   const colors = useSporeColors()
   const isDarkMode = useIsDarkMode()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to ignore isNarrow because of unknown reason
+  // oxlint-disable-next-line react/exhaustive-deps -- we want to ignore isNarrow because of unknown reason
   useEffect(() => {
     if (isNarrow || !exploreButtonLayout?.width || !swapButtonLayout?.width) {
       return
@@ -66,6 +66,7 @@ export function NavBar(): JSX.Element {
     // When the 2 buttons overflow, we set `isNarrow` to true and adjust the design accordingly.
     // To test this, you can use an iPhone Mini set to Spanish.
     setIsNarrow(exploreButtonLayout.width + swapButtonLayout.width + NAV_BAR_GAP + NAV_BAR_MARGIN_SIDES > screenWidth)
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [exploreButtonLayout?.width, swapButtonLayout?.width, screenWidth])
 
   const onExploreLayout = useCallback((e: LayoutChangeEvent) => setExploreButtonLayout(e.nativeEvent.layout), [])
@@ -121,7 +122,7 @@ type SwapTabBarButtonProps = {
   onSwapLayout: (event: LayoutChangeEvent) => void
 }
 
-const SwapFAB = memo(function _SwapFAB({ activeScale = 0.96, onSwapLayout }: SwapTabBarButtonProps) {
+const SwapFAB = memo(function SwapFABInner({ activeScale = 0.96, onSwapLayout }: SwapTabBarButtonProps) {
   const { t } = useTranslation()
   const { defaultChainId } = useEnabledChains()
   const { hapticFeedback } = useHapticFeedback()

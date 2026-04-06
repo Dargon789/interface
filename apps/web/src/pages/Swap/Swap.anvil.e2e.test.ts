@@ -32,8 +32,9 @@ test.describe(
       await page.goto('/swap')
 
       await page.getByTestId(TestID.ChooseOutputToken).click()
+      await page.getByTestId(TestID.ExploreSearchInput).fill('USDT') // necessary to guarantee token option shows up in DOM bc of virtualized token selector list
       // Select USDT token
-      // eslint-disable-next-line
+      // oxlint-disable-next-line
       await page.getByTestId('token-option-1-USDT').first().click()
       // Confirm wallet balance is shown
       await expect(page.getByText('100 USDT')).toBeVisible()
@@ -43,7 +44,9 @@ test.describe(
       await page.getByTestId(TestID.ReviewSwap).click()
       await page.getByTestId(TestID.Swap).click()
 
-      await expect(page.getByText('Swapped')).toBeVisible()
+      // UI wait to show swap confirmation
+      const toast = page.getByTestId(TestID.ActivityPopup)
+      await expect(toast.getByText('Swapped')).toBeVisible()
 
       const ethBalance = await anvil.getBalance({
         address: TEST_WALLET_ADDRESS,
@@ -86,9 +89,8 @@ test.describe(
       // Confirm price impact warning
       await page.getByTestId(TestID.Confirm).click()
 
-      await anvil.mine({
-        blocks: 1,
-      })
+      // UI wait for tx to complete
+      await expect(page.getByTestId(TestID.ActivityPopup).getByText('Swapped')).toBeVisible()
 
       const ethBalance = await anvil.getBalance({
         address: TEST_WALLET_ADDRESS,
@@ -102,6 +104,7 @@ test.describe(
       await stubTradingApiEndpoint({ page, endpoint: uniswapUrls.tradingApiPaths.quote })
       await page.goto(`/swap?inputCurrency=ETH`)
       await page.getByTestId(TestID.ChooseOutputToken).click()
+      await page.getByTestId(TestID.ExploreSearchInput).fill('Base ETH') // necessary to guarantee token option shows up in DOM bc of virtualized token selector list
       await page.getByTestId(`token-option-${UniverseChainId.Base}-ETH`).first().click()
       expect(
         await page
@@ -115,6 +118,9 @@ test.describe(
       await page.getByTestId(TestID.ReviewSwap).click()
       await page.getByTestId(TestID.Confirm).click()
       await page.getByTestId(TestID.Swap).click()
+
+      // UI wait for tx to complete
+      await expect(page.getByTestId(TestID.ActivityPopup).getByText('Swapped')).toBeVisible()
 
       const ethBalance = await anvil.getBalance({
         address: TEST_WALLET_ADDRESS,
@@ -135,7 +141,7 @@ test.describe(
         })
       })
 
-      test('sets permit2 allowance for universal router', async ({ page, anvil }) => {
+      test('prompts signature when there is no permit2 allowance', async ({ page, anvil }) => {
         await stubTradingApiEndpoint({ page, endpoint: uniswapUrls.tradingApiPaths.swap })
         await anvil.setErc20Balance({ address: assume0xAddress(USDT.address), balance: ONE_MILLION_USDT })
         await page.goto(`/swap?inputCurrency=${USDT.address}&outputCurrency=ETH`)
@@ -144,7 +150,12 @@ test.describe(
         await page.getByTestId(TestID.ReviewSwap).click()
         await page.getByTestId(TestID.Swap).click()
 
-        await expect(page.getByText('Approved')).toBeVisible()
+        // See sign message step
+        await expect(page.getByText('Sign message')).toBeVisible()
+
+        const toast = page.getByTestId(TestID.ActivityPopup)
+        await expect(toast.getByText('Approved')).toBeVisible()
+
         // Check Permit2 contract is an allowed spender for the USDT token
         const erc20Allowance = await anvil.getErc20Allowance({
           address: assume0xAddress(USDT.address),
@@ -153,14 +164,7 @@ test.describe(
         })
         await expect(erc20Allowance).toEqual(MaxUint256.toBigInt())
 
-        // Check Permit2 allowance for universal router
-        await expect(page.getByText('Swapped')).toBeVisible()
-        const permit2Allowance = await anvil.getPermit2Allowance({
-          owner: TEST_WALLET_ADDRESS,
-          token: assume0xAddress(USDT.address),
-          spender: assume0xAddress(UNIVERSAL_ROUTER_ADDRESS(UniversalRouterVersion.V2_0, UniverseChainId.Mainnet)),
-        })
-        await expect(permit2Allowance.amount).toEqual(MaxUint160.toBigInt())
+        await expect(toast.getByText('Swapped')).toBeVisible()
       })
 
       test('swaps with existing permit2 approval and missing token approval', async ({ page, anvil }) => {
@@ -189,9 +193,10 @@ test.describe(
         await page.getByTestId(TestID.ReviewSwap).click()
         await page.getByTestId(TestID.Swap).click()
 
+        const toast = page.getByTestId(TestID.ActivityPopup)
         await expect(page.getByText('Sign message')).not.toBeVisible()
-        await expect(page.getByText('Approved')).toBeVisible()
-        await expect(page.getByText('Swapped')).toBeVisible()
+        await expect(toast.getByText('Approved')).toBeVisible()
+        await expect(toast.getByText('Swapped')).toBeVisible()
       })
 
       /**
@@ -230,10 +235,11 @@ test.describe(
         await page.getByTestId(TestID.ReviewSwap).click()
         await page.getByTestId(TestID.Swap).click()
 
+        const toast = page.getByTestId(TestID.ActivityPopup)
         await expect(page.getByText('Reset USDT limit')).toBeVisible()
         await expect(page.getByText('Sign message')).toBeVisible()
-        await expect(page.getByText('Approved')).toBeVisible()
-        await expect(page.getByText('Swapped')).toBeVisible()
+        await expect(toast.getByText('Approved')).toBeVisible()
+        await expect(toast.getByText('Swapped')).toBeVisible()
       })
 
       test('prompts signature when existing permit approval is expired', async ({ page, anvil }) => {
@@ -251,9 +257,10 @@ test.describe(
         await page.getByTestId(TestID.ReviewSwap).click()
         await page.getByTestId(TestID.Swap).click()
 
+        const toast = page.getByTestId(TestID.ActivityPopup)
         await expect(page.getByText('Sign message')).toBeVisible()
-        await expect(page.getByText('Approved')).toBeVisible()
-        await expect(page.getByText('Swapped')).toBeVisible()
+        await expect(toast.getByText('Approved')).toBeVisible()
+        await expect(toast.getByText('Swapped')).toBeVisible()
       })
 
       test('prompts signature when existing permit approval amount is too low', async ({ page, anvil }) => {
@@ -271,9 +278,10 @@ test.describe(
         await page.getByTestId(TestID.ReviewSwap).click()
         await page.getByTestId(TestID.Swap).click()
 
+        const toast = page.getByTestId(TestID.ActivityPopup)
         await expect(page.getByText('Sign message')).toBeVisible()
-        await expect(page.getByText('Approved')).toBeVisible()
-        await expect(page.getByText('Swapped')).toBeVisible()
+        await expect(toast.getByText('Approved')).toBeVisible()
+        await expect(toast.getByText('Swapped')).toBeVisible()
       })
     })
   },

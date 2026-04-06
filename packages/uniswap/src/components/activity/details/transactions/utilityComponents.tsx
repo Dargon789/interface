@@ -20,17 +20,17 @@ export function useTokenAmountInfo({
   currency: Maybe<Currency>
   amountRaw: string
   isApproximateAmount?: boolean
-}): { descriptor: string; value: string } {
+}): { descriptor: string; value: string; isLoading: boolean } {
   const formatter = useLocalizationContext()
   const symbol = getSymbolDisplayText(currency?.symbol)
-  const { tilde, amount, value } = useFormattedCurrencyAmountAndUSDValue({
+  const { tilde, amount, value, isLoading } = useFormattedCurrencyAmountAndUSDValue({
     currency,
     currencyAmountRaw: amountRaw,
     formatter,
     isApproximateAmount,
   })
 
-  return { descriptor: `${tilde}${amount} ${symbol ?? ''}`, value }
+  return { descriptor: `${tilde}${amount} ${symbol ?? ''}`, value, isLoading }
 }
 
 export function TwoTokenDetails({
@@ -40,6 +40,8 @@ export function TwoTokenDetails({
   usdValueA,
   tokenDescriptorB,
   usdValueB,
+  isLoadingA,
+  isLoadingB,
   separatorElement,
   disableClick,
   onClose,
@@ -51,6 +53,8 @@ export function TwoTokenDetails({
   usdValueA: string
   tokenDescriptorB: string
   usdValueB: string
+  isLoadingA?: boolean
+  isLoadingB?: boolean
   separatorElement: JSX.Element
   disableClick?: boolean
   onClose?: () => void
@@ -68,7 +72,7 @@ export function TwoTokenDetails({
         <Flex centered row justifyContent="space-between">
           <Flex>
             <Text variant="heading3">{tokenDescriptorA}</Text>
-            <ValueText value={usdValueA} />
+            <ValueText value={usdValueA} isLoading={isLoadingA} />
           </Flex>
           <CurrencyLogo hideNetworkLogo={hideNetworkLogos} currencyInfo={inputCurrency} size={iconSizes.icon40} />
         </Flex>
@@ -79,7 +83,7 @@ export function TwoTokenDetails({
         <Flex centered row justifyContent="space-between">
           <Flex>
             <Text variant="heading3">{tokenDescriptorB}</Text>
-            <ValueText value={usdValueB} />
+            <ValueText value={usdValueB} isLoading={isLoadingB} />
           </Flex>
           <CurrencyLogo hideNetworkLogo={hideNetworkLogos} currencyInfo={outputCurrency} size={iconSizes.icon40} />
         </Flex>
@@ -88,11 +92,11 @@ export function TwoTokenDetails({
   )
 }
 
-export function ValueText({ value }: { value: string }): JSX.Element {
-  const isLoading = value === '-'
-  return isLoading ? (
-    <Loader.Box height={fonts.body3.lineHeight} width={iconSizes.icon36} />
-  ) : (
+export function ValueText({ value, isLoading }: { value: string; isLoading?: boolean }): JSX.Element {
+  if (isLoading) {
+    return <Loader.Box height={fonts.body3.lineHeight} width={iconSizes.icon36} />
+  }
+  return (
     <Text color="$neutral2" variant="body3">
       {value}
     </Text>

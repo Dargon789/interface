@@ -44,7 +44,7 @@ export default function ExtensionUninstall() {
           maxWidth={MAX_WIDTH}
           borderRadius="$rounded32"
           borderColor="$surface3"
-          borderWidth={1}
+          borderWidth="$spacing1"
           shadowColor="$shadowColor"
           shadowOpacity={0.6}
           shadowRadius={20}

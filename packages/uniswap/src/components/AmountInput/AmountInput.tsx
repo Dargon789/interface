@@ -25,7 +25,7 @@ type Props = {
   inputEnforcer?: (value?: string) => boolean
 } & TextInputProps
 
-export const AmountInput = forwardRef<Input, Props>(function _AmountInput(
+export const AmountInput = forwardRef<Input, Props>(function AmountInputInner(
   {
     onChangeText,
     value,
@@ -106,7 +106,7 @@ export const AmountInput = forwardRef<Input, Props>(function _AmountInput(
       ...(adjustWidthToContent ? { fontSize } : {}),
       ...(width !== undefined ? { width } : {}),
     }),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: TODO https://linear.app/uniswap/issue/INFRA-1031/optimize-memoization-in
+    // oxlint-disable-next-line react/exhaustive-deps -- TODO https://linear.app/uniswap/issue/INFRA-1031/optimize-memoization-in
     [ref, value, dimTextColor, formattedValue, handleChange, rest, width, adjustWidthToContent, fontSize],
   )
 
@@ -149,7 +149,7 @@ export const AmountInput = forwardRef<Input, Props>(function _AmountInput(
   return textInputElement
 })
 
-const TextInputWithNativeKeyboard = forwardRef<Input, TextInputProps>(function _TextInputWithNativeKeyboard(
+const TextInputWithNativeKeyboard = forwardRef<Input, TextInputProps>(function TextInputWithNativeKeyboardInner(
   props: TextInputProps,
   ref,
 ) {

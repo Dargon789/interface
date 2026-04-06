@@ -15,7 +15,7 @@ export const TooltipContainer = forwardRef<HTMLDivElement, TooltipContainerProps
       position="absolute"
       pointerEvents="none"
       backgroundColor="$surface1"
-      borderWidth={1}
+      borderWidth="$spacing1"
       borderColor="$surface3"
       borderRadius="$rounded6"
       {...shadowProps}

@@ -1,12 +1,11 @@
 import { createColumnHelper, Row } from '@tanstack/react-table'
 import { SharedEventName } from '@uniswap/analytics-events'
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { Flex, Text, TouchableArea } from 'ui/src'
 import { InfoCircleFilled } from 'ui/src/components/icons/InfoCircleFilled'
 import { RotateRight } from 'ui/src/components/icons/RotateRight'
-import { TransactionDetailsModal } from 'uniswap/src/components/activity/details/TransactionDetailsModal'
 import { isLoadingItem } from 'uniswap/src/components/activity/utils'
 import { ActivityRenderData } from 'uniswap/src/features/activity/hooks/useActivityData'
 import { ElementName, SectionName } from 'uniswap/src/features/telemetry/constants'
@@ -15,12 +14,10 @@ import { TransactionDetails } from 'uniswap/src/features/transactions/types/tran
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { ONE_DAY_MS } from 'utilities/src/time/time'
-import { POPUP_MEDIUM_DISMISS_MS } from '~/components/Popups/constants'
-import { popupRegistry } from '~/components/Popups/registry'
-import { PopupType } from '~/components/Popups/types'
 import { Table } from '~/components/Table'
 import { Cell } from '~/components/Table/Cell'
 import { hasRow } from '~/components/Table/utils/hasRow'
+import { useOpenTransactionDetailsModal } from '~/components/TopLevelModals/TransactionDetailsModalDispatcher'
 import { ActivityAmountCell } from '~/pages/Portfolio/Activity/ActivityTable/ActivityAmountCell/ActivityAmountCell'
 import { TimeCell } from '~/pages/Portfolio/Activity/ActivityTable/TimeCell'
 import { filterTransactionDetailsFromActivityItems } from '~/pages/Portfolio/Activity/Filters/utils'
@@ -44,7 +41,7 @@ export const MiniActivityTable = memo(function MiniActivityTable({
   const { t } = useTranslation()
   const trace = useTrace()
   const { chainId, externalAddress, isExternalWallet } = usePortfolioRoutes()
-  const [selectedTransaction, setSelectedTransaction] = useState<TransactionDetails | null>(null)
+  const openTransactionDetailsModal = useOpenTransactionDetailsModal()
   const navigate = useNavigate()
   const viewAllHref = buildPortfolioUrl({
     tab: PortfolioTab.Activity,
@@ -128,34 +125,22 @@ export const MiniActivityTable = memo(function MiniActivityTable({
         section: SectionName.PortfolioOverviewTab,
         ...trace,
       })
-      setSelectedTransaction(transaction)
+      openTransactionDetailsModal(transaction, { isExternalProfile: isExternalWallet })
     },
-    [trace],
+    [trace, openTransactionDetailsModal, isExternalWallet],
   )
 
   const rowWrapper = useCallback(
     (row: Row<TransactionDetails>, content: JSX.Element) => {
       const transaction = row.original
       return (
-        <TouchableArea onPress={() => handleTransactionClick(transaction)} cursor="pointer">
+        <TouchableArea onPress={() => handleTransactionClick(transaction)} cursor="pointer" pressStyle={{ scale: 1 }}>
           {content}
         </TouchableArea>
       )
     },
     [handleTransactionClick],
   )
-
-  const handleCloseTransactionDetails = useCallback(() => {
-    setSelectedTransaction(null)
-  }, [])
-
-  const onCopySuccess = useCallback(() => {
-    popupRegistry.addPopup(
-      { type: PopupType.Success, message: t('notification.copied.transactionId') },
-      'copy-transaction-id-success',
-      POPUP_MEDIUM_DISMISS_MS,
-    )
-  }, [t])
 
   const handleSeeAllActivity = useCallback(() => {
     navigate(viewAllHref)
@@ -224,15 +209,6 @@ export const MiniActivityTable = memo(function MiniActivityTable({
           label={t('portfolio.overview.activity.table.viewAllActivity')}
           elementName={ElementName.PortfolioViewAllActivity}
           testId={TestID.PortfolioOverviewViewAllActivity}
-        />
-      )}
-      {selectedTransaction && (
-        <TransactionDetailsModal
-          isExternalProfile={isExternalWallet}
-          transactionDetails={selectedTransaction}
-          onClose={handleCloseTransactionDetails}
-          authTrigger={undefined}
-          onCopySuccess={onCopySuccess}
         />
       )}
     </Flex>

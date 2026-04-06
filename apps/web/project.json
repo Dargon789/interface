@@ -22,6 +22,14 @@
       },
       "dependsOn": ["preview:e2e", "wait-for-webserver"]
     },
+    "e2e:dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nx playwright:test web",
+        "cwd": "{projectRoot}"
+      },
+      "dependsOn": ["dev:e2e", "wait-for-webserver"]
+    },
     "e2e:anvil": {
       "executor": "nx:run-commands",
       "options": {
@@ -109,6 +117,13 @@
         "cwd": "{projectRoot}"
       }
     },
+    "dev:e2e": {
+      "command": "REACT_APP_SKIP_CSP=1 REACT_APP_IS_PLAYWRIGHT_ENV=true vite dev",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "continuous": true
+    },
     "build:production": {
       "command": "NODE_OPTIONS=\"--max-old-space-size=$([ -n \\\"$GITHUB_ACTIONS\\\" ] && echo 32768 || echo 16384)\" CLOUDFLARE_ENV=production vite build",
       "options": {
@@ -138,7 +153,7 @@
       }
     },
     "build:e2e": {
-      "command": "REACT_APP_SKIP_CSP=1 VITE_DISABLE_SOURCEMAP=true nx run web:build:production",
+      "command": "REACT_APP_SKIP_CSP=1 REACT_APP_IS_PLAYWRIGHT_ENV=true VITE_DISABLE_SOURCEMAP=true nx run web:build:production",
       "options": {
         "cwd": "{projectRoot}"
       },
@@ -184,19 +199,19 @@
     },
     "lint": {
       "executor": "nx:noop",
-      "dependsOn": ["check:circular", "check:deps:usage", "lint:eslint", "lint:biome", "typecheck", "typecheck:cloud"]
+      "dependsOn": ["check:circular", "check:deps:usage", "lint:eslint", "oxlint"]
     },
     "lint:fix": {},
-    "lint:biome": {},
-    "lint:biome:fix": {},
+    "check": {},
+    "check:fix": {},
     "lint:eslint": {
-      "command": "NODE_OPTIONS=--max_old_space_size=8192 eslint --ignore-path .gitignore --cache --cache-location node_modules/.cache/eslint/ --max-warnings=0 .",
+      "command": "NODE_OPTIONS='--max_old_space_size=8192 --max-semi-space-size=256' eslint --cache --cache-location node_modules/.cache/eslint/ --max-warnings=0 .",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "lint:eslint:fix": {
-      "command": "NODE_OPTIONS=--max_old_space_size=8192 eslint --ignore-path .gitignore --cache --cache-location node_modules/.cache/eslint/ . --fix",
+      "command": "NODE_OPTIONS='--max_old_space_size=8192 --max-semi-space-size=256' eslint --cache --cache-location node_modules/.cache/eslint/ . --fix",
       "options": {
         "cwd": "{projectRoot}"
       }
@@ -223,7 +238,7 @@
       "dependsOn": ["^typecheck", "typecheck:cloud"]
     },
     "typecheck:tsgo": {
-      "dependsOn": ["typecheck:cloud"]
+      "dependsOn": ["typecheck:cloud:tsgo"]
     },
     "typecheck:cloud": {
       "command": "tsc -p functions/tsconfig.json",
@@ -231,7 +246,14 @@
         "cwd": "{projectRoot}"
       },
       "cache": true,
-      "dependsOn": ["^typecheck"],
+      "inputs": ["{projectRoot}/functions/**/*.ts"]
+    },
+    "typecheck:cloud:tsgo": {
+      "command": "tsgo -p functions/tsconfig.json",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
       "inputs": ["{projectRoot}/functions/**/*.ts"]
     },
     "find:unused": {
@@ -250,25 +272,37 @@
       "command": "NODE_OPTIONS='--no-deprecation' vitest run src/components",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["^prepare"],
+      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
+      "cache": true
     },
     "test:set2": {
       "command": "NODE_OPTIONS='--no-deprecation' vitest run src/pages src/state",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["^prepare"],
+      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
+      "cache": true
     },
     "test:set3": {
       "command": "NODE_OPTIONS='--no-deprecation' vitest run src/hooks src/nft src/utils",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["^prepare"],
+      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
+      "cache": true
     },
     "test:set4": {
       "command": "NODE_OPTIONS='--no-deprecation' vitest run src --exclude 'src/components/**' --exclude 'src/pages/**' --exclude 'src/state/**' --exclude 'src/hooks/**' --exclude 'src/nft/**' --exclude 'src/utils/**'",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["^prepare"],
+      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
+      "cache": true
     },
     "test:watch": {
       "command": "NODE_OPTIONS='--no-deprecation' vitest watch",
@@ -329,6 +363,11 @@
       "options": {
         "cwd": "{projectRoot}"
       }
-    }
+    },
+    "oxfmt": {},
+    "oxfmt:fix": {},
+    "oxlint": {},
+    "oxlint:fix": {},
+    "oxlint:type-aware": {}
   }
 }

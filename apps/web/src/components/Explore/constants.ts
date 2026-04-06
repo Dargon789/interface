@@ -50,7 +50,7 @@ export const ORDERED_TIMES: TimePeriod[] = [
 
 export const SOLANA_ORDERED_TIMES: TimePeriod[] = [TimePeriod.HOUR, TimePeriod.DAY]
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 export function getTimePeriodFromDisplay(display: TimePeriodDisplay): TimePeriod {
   switch (display) {
     case TimePeriodDisplay.HOUR:

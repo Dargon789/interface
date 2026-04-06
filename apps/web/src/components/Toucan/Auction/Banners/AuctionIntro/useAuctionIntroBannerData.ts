@@ -83,7 +83,7 @@ export function useAuctionIntroBannerData(): UseAuctionIntroBannerDataResult {
   const lockedTokenColorRef = useRef<string | null>(null)
 
   // Reset locked color when logoUrl changes (e.g., navigating to a different auction)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: logoUrl is intentionally a dependency to trigger reset on token change
+  // oxlint-disable-next-line react/exhaustive-deps -- logoUrl is intentionally a dependency to trigger reset on token change
   useEffect(() => {
     lockedTokenColorRef.current = null
   }, [logoUrl])

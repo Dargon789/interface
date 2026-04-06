@@ -55,7 +55,7 @@ export function mockFiatConverter({
     convertFiatAmount(amount): { amount: number; currency: FiatCurrency } {
       return { amount, currency }
     },
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     convertFiatAmountFormatted(fromAmount, numberType, placeholder): string {
       return mockLocalizedFormatter(locale).formatNumberOrString({
         value: fromAmount,

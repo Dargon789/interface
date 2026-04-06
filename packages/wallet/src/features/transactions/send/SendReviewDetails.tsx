@@ -1,4 +1,4 @@
-/* eslint-disable complexity */
+/* oxlint-disable complexity */
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'

@@ -37,7 +37,7 @@ export function SearchInput({
         onChangeText={handleChangeText}
         testID={dataTestId}
         backgroundColor="$surface2"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderRadius="$rounded12"
         width={width}
         height={40}

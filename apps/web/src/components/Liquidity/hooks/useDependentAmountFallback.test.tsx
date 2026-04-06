@@ -9,10 +9,14 @@ import {
   V3CreateLPPosition,
   V3IncreaseLPPosition,
 } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
+import {
+  IncreasePositionRequest as V2IncreasePositionRequest,
+  IncreasePositionResponse as V2IncreasePositionResponse,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
+import { LPToken } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/types_pb'
 import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
 import JSBI from 'jsbi'
 import { USDC_MAINNET } from 'uniswap/src/constants/tokens'
-import { liquidityQueries } from 'uniswap/src/data/apiClients/liquidityService/liquidityQueries'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { ONE_SECOND_MS } from 'utilities/src/time/time'
 import { vi } from 'vitest'
@@ -123,6 +127,30 @@ const BASE_INCREASE_PARAMS = new IncreaseLPPositionRequest({
   },
 })
 
+const BASE_V2_INCREASE_PARAMS = new V2IncreasePositionRequest({
+  walletAddress: '0x123',
+  chainId: 1,
+  protocol: Protocols.V3,
+  token0Address: TEST_TOKEN_1.address,
+  token1Address: TEST_TOKEN_2.address,
+  independentToken: new LPToken({ tokenAddress: TEST_TOKEN_1.address, amount: '1000' }),
+  slippageTolerance: 0.5,
+  deadline: Date.now() + 1000000,
+  simulateTransaction: true,
+})
+
+const BASE_V2_INCREASE_PARAMS_NO_SIMULATE = new V2IncreasePositionRequest({
+  walletAddress: '0x123',
+  chainId: 1,
+  protocol: Protocols.V3,
+  token0Address: TEST_TOKEN_1.address,
+  token1Address: TEST_TOKEN_2.address,
+  independentToken: new LPToken({ tokenAddress: TEST_TOKEN_1.address, amount: '1000' }),
+  slippageTolerance: 0.5,
+  deadline: Date.now() + 1000000,
+  simulateTransaction: false,
+})
+
 const BASE_INCREASE_PARAMS_NO_SIMULATE = new IncreaseLPPositionRequest({
   increaseLpPosition: {
     case: 'v3IncreaseLpPosition',
@@ -167,12 +195,18 @@ describe('useIncreasePositionDependentAmountFallback', () => {
       error: null,
     } as any)
 
-    const { result } = renderHook(() => useIncreasePositionDependentAmountFallback(BASE_INCREASE_PARAMS, true))
+    const { result } = renderHook(() =>
+      useIncreasePositionDependentAmountFallback({
+        queryParams: BASE_INCREASE_PARAMS,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN0,
+      }),
+    )
 
-    expect(useQueryMock).toHaveBeenCalledTimes(1)
+    expect(useQueryMock).toHaveBeenCalledTimes(2)
     const callArgs = useQueryMock.mock.calls[0][0]
     expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('increasePosition')
+    expect(callArgs.queryKey[1]).toBe('increasePositionDeprecated')
 
     // Verify params structure
     const params = callArgs.queryKey[2] as IncreaseLPPositionRequest
@@ -195,12 +229,18 @@ describe('useIncreasePositionDependentAmountFallback', () => {
       error: null,
     } as any)
 
-    renderHook(() => useIncreasePositionDependentAmountFallback(BASE_INCREASE_PARAMS_NO_SIMULATE, true))
+    renderHook(() =>
+      useIncreasePositionDependentAmountFallback({
+        queryParams: BASE_INCREASE_PARAMS_NO_SIMULATE,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN0,
+      }),
+    )
 
-    expect(useQueryMock).toHaveBeenCalledTimes(1)
+    expect(useQueryMock).toHaveBeenCalledTimes(2)
     const callArgs = useQueryMock.mock.calls[0][0]
     expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('increasePosition')
+    expect(callArgs.queryKey[1]).toBe('increasePositionDeprecated')
 
     // Verify params structure
     const params = callArgs.queryKey[2] as IncreaseLPPositionRequest
@@ -219,12 +259,18 @@ describe('useIncreasePositionDependentAmountFallback', () => {
       error: null,
     } as any)
 
-    const { result } = renderHook(() => useIncreasePositionDependentAmountFallback(BASE_INCREASE_PARAMS, true))
+    const { result } = renderHook(() =>
+      useIncreasePositionDependentAmountFallback({
+        queryParams: BASE_INCREASE_PARAMS,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN0,
+      }),
+    )
 
-    expect(useQueryMock).toHaveBeenCalledTimes(1)
+    expect(useQueryMock).toHaveBeenCalledTimes(2)
     const callArgs = useQueryMock.mock.calls[0][0]
     expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('increasePosition')
+    expect(callArgs.queryKey[1]).toBe('increasePositionDeprecated')
 
     expect(result.current).toBe(undefined)
   })
@@ -236,15 +282,19 @@ describe('useIncreasePositionDependentAmountFallback', () => {
     } as any)
 
     const { result, rerender } = renderHook(() =>
-      useIncreasePositionDependentAmountFallback(BASE_INCREASE_PARAMS, true),
+      useIncreasePositionDependentAmountFallback({
+        queryParams: BASE_INCREASE_PARAMS,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN0,
+      }),
     )
 
     expect(result.current).toBe(undefined)
 
-    expect(useQueryMock).toHaveBeenCalledTimes(1)
+    expect(useQueryMock).toHaveBeenCalledTimes(2)
     const firstCallArgs = useQueryMock.mock.calls[0][0]
     expect(firstCallArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(firstCallArgs.queryKey[1]).toBe('increasePosition')
+    expect(firstCallArgs.queryKey[1]).toBe('increasePositionDeprecated')
 
     // Verify params structure
     const firstParams = firstCallArgs.queryKey[2] as IncreaseLPPositionRequest
@@ -263,14 +313,12 @@ describe('useIncreasePositionDependentAmountFallback', () => {
 
     rerender()
 
-    // The hook will be called 3 times total:
-    // 1. Initial render
-    // 2. After rerender() is called
-    // 3. After useEffect updates hasErrorResponse state, causing another render
-    expect(useQueryMock).toHaveBeenCalledTimes(3)
-    const lastCallArgs = useQueryMock.mock.calls[2][0]
+    // 2 calls per render × 3 renders (initial + rerender + useEffect state update) = 6
+    expect(useQueryMock).toHaveBeenCalledTimes(6)
+    // Last V1 call is at index 4 (3rd render, first useQuery call)
+    const lastCallArgs = useQueryMock.mock.calls[4][0]
     expect(lastCallArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(lastCallArgs.queryKey[1]).toBe('increasePosition')
+    expect(lastCallArgs.queryKey[1]).toBe('increasePositionDeprecated')
 
     // Verify params structure remains the same
     const lastParams = lastCallArgs.queryKey[2] as IncreaseLPPositionRequest
@@ -281,6 +329,109 @@ describe('useIncreasePositionDependentAmountFallback', () => {
     expect(lastCallArgs.enabled).toBe(true)
     expect(lastCallArgs.retry).toBe(false)
     expect(lastCallArgs.refetchInterval).toBe(false)
+  })
+})
+
+describe('useIncreasePositionDependentAmountFallback (V2)', () => {
+  beforeEach(() => {
+    useQueryMock.mockReturnValue({
+      data: undefined,
+      error: null,
+    } as any)
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns dependent token amount from V2 response when exactField is TOKEN0', () => {
+    const v2Response = new V2IncreasePositionResponse({
+      token0: new LPToken({ tokenAddress: TEST_TOKEN_1.address, amount: '500' }),
+      token1: new LPToken({ tokenAddress: TEST_TOKEN_2.address, amount: '750' }),
+    })
+    useQueryMock.mockReturnValue({
+      data: v2Response,
+      error: null,
+    } as any)
+
+    const { result } = renderHook(() =>
+      useIncreasePositionDependentAmountFallback({
+        queryParams: BASE_V2_INCREASE_PARAMS,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN0,
+      }),
+    )
+
+    // When TOKEN0 is exact, the dependent token is token1
+    expect(result.current).toBe('750')
+  })
+
+  it('returns dependent token amount from V2 response when exactField is TOKEN1', () => {
+    const v2Response = new V2IncreasePositionResponse({
+      token0: new LPToken({ tokenAddress: TEST_TOKEN_1.address, amount: '500' }),
+      token1: new LPToken({ tokenAddress: TEST_TOKEN_2.address, amount: '750' }),
+    })
+    useQueryMock.mockReturnValue({
+      data: v2Response,
+      error: null,
+    } as any)
+
+    const { result } = renderHook(() =>
+      useIncreasePositionDependentAmountFallback({
+        queryParams: BASE_V2_INCREASE_PARAMS,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN1,
+      }),
+    )
+
+    // When TOKEN1 is exact, the dependent token is token0
+    expect(result.current).toBe('500')
+  })
+
+  it('uses V2 query path (not V1) for V2 request params', () => {
+    useQueryMock.mockReturnValue({
+      data: undefined,
+      error: null,
+    } as any)
+
+    renderHook(() =>
+      useIncreasePositionDependentAmountFallback({
+        queryParams: BASE_V2_INCREASE_PARAMS,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN0,
+      }),
+    )
+
+    expect(useQueryMock).toHaveBeenCalledTimes(2)
+
+    // V1 query (first call) should be disabled
+    const v1CallArgs = useQueryMock.mock.calls[0][0]
+    expect(v1CallArgs.enabled).toBe(false)
+
+    // V2 query (second call) should be enabled
+    const v2CallArgs = useQueryMock.mock.calls[1][0]
+    expect(v2CallArgs.enabled).toBe(true)
+    expect(v2CallArgs.queryKey[1]).toBe('increasePosition')
+  })
+
+  it('only enables V2 query if simulateTransaction is true', () => {
+    renderHook(() =>
+      useIncreasePositionDependentAmountFallback({
+        queryParams: BASE_V2_INCREASE_PARAMS_NO_SIMULATE,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN0,
+      }),
+    )
+
+    expect(useQueryMock).toHaveBeenCalledTimes(2)
+
+    // V1 query should be disabled (not a V1 request)
+    const v1CallArgs = useQueryMock.mock.calls[0][0]
+    expect(v1CallArgs.enabled).toBe(false)
+
+    // V2 query should also be disabled (simulateTransaction is false)
+    const v2CallArgs = useQueryMock.mock.calls[1][0]
+    expect(v2CallArgs.enabled).toBe(false)
   })
 })
 
@@ -295,12 +446,19 @@ describe('useCreatePositionDependentAmountFallback', () => {
       error: null,
     } as any)
 
-    const { result } = renderHook(() => useCreatePositionDependentAmountFallback(BASE_CREATE_PARAMS, true))
+    const { result } = renderHook(() =>
+      useCreatePositionDependentAmountFallback({
+        queryParams: BASE_CREATE_PARAMS,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN0,
+      }),
+    )
 
-    expect(useQueryMock).toHaveBeenCalledTimes(1)
+    // Three useQuery calls (v1 deprecated + classic + v2)
+    expect(useQueryMock).toHaveBeenCalledTimes(3)
     const callArgs = useQueryMock.mock.calls[0][0]
     expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('createPosition')
+    expect(callArgs.queryKey[1]).toBe('createPositionDeprecated')
 
     // Verify params structure
     const params = callArgs.queryKey[2] as CreateLPPositionRequest
@@ -323,12 +481,18 @@ describe('useCreatePositionDependentAmountFallback', () => {
       error: null,
     } as any)
 
-    renderHook(() => useCreatePositionDependentAmountFallback(BASE_CREATE_PARAMS_NO_SIMULATE, true))
+    renderHook(() =>
+      useCreatePositionDependentAmountFallback({
+        queryParams: BASE_CREATE_PARAMS_NO_SIMULATE,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN0,
+      }),
+    )
 
-    expect(useQueryMock).toHaveBeenCalledTimes(1)
+    expect(useQueryMock).toHaveBeenCalledTimes(3)
     const callArgs = useQueryMock.mock.calls[0][0]
     expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('createPosition')
+    expect(callArgs.queryKey[1]).toBe('createPositionDeprecated')
 
     // Verify params structure
     const params = callArgs.queryKey[2] as CreateLPPositionRequest
@@ -346,12 +510,18 @@ describe('useCreatePositionDependentAmountFallback', () => {
       data: undefined,
       error: null,
     } as any)
-    const { result } = renderHook(() => useCreatePositionDependentAmountFallback(BASE_CREATE_PARAMS, true))
+    const { result } = renderHook(() =>
+      useCreatePositionDependentAmountFallback({
+        queryParams: BASE_CREATE_PARAMS,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN0,
+      }),
+    )
 
-    expect(useQueryMock).toHaveBeenCalledTimes(1)
+    expect(useQueryMock).toHaveBeenCalledTimes(3)
     const callArgs = useQueryMock.mock.calls[0][0]
     expect(callArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(callArgs.queryKey[1]).toBe('createPosition')
+    expect(callArgs.queryKey[1]).toBe('createPositionDeprecated')
 
     expect(result.current).toBe(undefined)
   })
@@ -362,14 +532,21 @@ describe('useCreatePositionDependentAmountFallback', () => {
       error: null,
     } as any)
 
-    const { result, rerender } = renderHook(() => useCreatePositionDependentAmountFallback(BASE_CREATE_PARAMS, true))
+    const { result, rerender } = renderHook(() =>
+      useCreatePositionDependentAmountFallback({
+        queryParams: BASE_CREATE_PARAMS,
+        isQueryEnabled: true,
+        exactField: PositionField.TOKEN0,
+      }),
+    )
 
     expect(result.current).toBe(undefined)
 
-    expect(useQueryMock).toHaveBeenCalledTimes(1)
+    // Three useQuery calls per render (v1 deprecated + classic + v2)
+    expect(useQueryMock).toHaveBeenCalledTimes(3)
     const firstCallArgs = useQueryMock.mock.calls[0][0]
     expect(firstCallArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(firstCallArgs.queryKey[1]).toBe('createPosition')
+    expect(firstCallArgs.queryKey[1]).toBe('createPositionDeprecated')
 
     // Verify params structure
     const firstParams = firstCallArgs.queryKey[2] as CreateLPPositionRequest
@@ -383,19 +560,17 @@ describe('useCreatePositionDependentAmountFallback', () => {
 
     useQueryMock.mockReturnValue({
       data: undefined,
-      error: new Error('fail'),
+      error: new Error('fallback fail'),
     } as any)
 
     rerender()
 
-    // The hook will be called 3 times total:
-    // 1. Initial render
-    // 2. After rerender() is called
-    // 3. After useEffect updates hasErrorResponse state, causing another render
-    expect(useQueryMock).toHaveBeenCalledTimes(3)
-    const lastCallArgs = useQueryMock.mock.calls[2][0]
+    // 3 calls per render × 3 renders (initial + rerender + useEffect state update) = 9
+    expect(useQueryMock).toHaveBeenCalledTimes(9)
+    // Last v1 call is at index 6 (3rd render, first useQuery call)
+    const lastCallArgs = useQueryMock.mock.calls[6][0]
     expect(lastCallArgs.queryKey[0]).toBe(ReactQueryCacheKey.LiquidityService)
-    expect(lastCallArgs.queryKey[1]).toBe('createPosition')
+    expect(lastCallArgs.queryKey[1]).toBe('createPositionDeprecated')
 
     // Verify params structure remains the same
     const lastParams = lastCallArgs.queryKey[2] as CreateLPPositionRequest

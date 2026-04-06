@@ -69,7 +69,6 @@ describe('Liquidity', () => {
       },
     }),
     txRequest: mockTxRequest,
-    sqrtRatioX96: '1000000000000000000',
     unsigned: false,
     approveToken0Request: undefined,
     approveToken1Request: undefined,
@@ -91,7 +90,6 @@ describe('Liquidity', () => {
 
       expect(generateLPTransactionSteps(liquidityTxContext)).toEqual([
         {
-          sqrtRatioX96: '1000000000000000000',
           txRequest: liquidityTxContext.txRequest,
           type: TransactionStepType.IncreasePositionTransaction,
         },
@@ -116,7 +114,6 @@ describe('Liquidity', () => {
           pair: undefined,
         },
         {
-          sqrtRatioX96: '1000000000000000000',
           txRequest: liquidityTxContext.txRequest,
           type: TransactionStepType.IncreasePositionTransaction,
         },
@@ -152,7 +149,6 @@ describe('Liquidity', () => {
           pair: undefined,
         },
         {
-          sqrtRatioX96: '1000000000000000000',
           txRequest: liquidityTxContext.txRequest,
           type: TransactionStepType.IncreasePositionTransaction,
         },
@@ -205,7 +201,6 @@ describe('Liquidity', () => {
           pair: undefined,
         },
         {
-          sqrtRatioX96: '1000000000000000000',
           txRequest: liquidityTxContext.txRequest,
           type: TransactionStepType.IncreasePositionTransaction,
         },
@@ -224,7 +219,6 @@ describe('Liquidity', () => {
           {
             type: TransactionStepType.IncreasePositionTransactionBatched,
             batchedTxRequests: [liquidityTxContext.txRequest],
-            sqrtRatioX96: '1000000000000000000',
           },
         ])
       })
@@ -237,14 +231,12 @@ describe('Liquidity', () => {
           approveToken0Request: mockApproveRequest,
           unsigned: false,
           increasePositionRequestArgs: baseLiquidityTxContext.increasePositionRequestArgs,
-          sqrtRatioX96: baseLiquidityTxContext.sqrtRatioX96,
         }
 
         expect(generateLPTransactionSteps(liquidityTxContext)).toEqual([
           {
             type: TransactionStepType.IncreasePositionTransactionBatched,
             batchedTxRequests: [liquidityTxContext.approveToken0Request, liquidityTxContext.txRequest],
-            sqrtRatioX96: '1000000000000000000',
           },
         ])
       })
@@ -258,7 +250,6 @@ describe('Liquidity', () => {
           approveToken1Request: mockApproveRequest,
           unsigned: false,
           increasePositionRequestArgs: baseLiquidityTxContext.increasePositionRequestArgs,
-          sqrtRatioX96: baseLiquidityTxContext.sqrtRatioX96,
         }
 
         expect(generateLPTransactionSteps(liquidityTxContext)).toEqual([
@@ -269,7 +260,6 @@ describe('Liquidity', () => {
               liquidityTxContext.approveToken1Request,
               liquidityTxContext.txRequest,
             ],
-            sqrtRatioX96: '1000000000000000000',
           },
         ])
       })
@@ -285,7 +275,6 @@ describe('Liquidity', () => {
           approveToken1Request: mockApproveRequest,
           unsigned: false,
           increasePositionRequestArgs: baseLiquidityTxContext.increasePositionRequestArgs,
-          sqrtRatioX96: baseLiquidityTxContext.sqrtRatioX96,
         }
 
         expect(generateLPTransactionSteps(liquidityTxContext)).toEqual([
@@ -298,7 +287,6 @@ describe('Liquidity', () => {
               liquidityTxContext.approveToken1Request,
               liquidityTxContext.txRequest,
             ],
-            sqrtRatioX96: '1000000000000000000',
           },
         ])
       })
@@ -312,7 +300,6 @@ describe('Liquidity', () => {
           token1PermitTransaction: mockApproveRequest,
           unsigned: false,
           increasePositionRequestArgs: baseLiquidityTxContext.increasePositionRequestArgs,
-          sqrtRatioX96: baseLiquidityTxContext.sqrtRatioX96,
         }
 
         expect(generateLPTransactionSteps(liquidityTxContext)).toEqual([
@@ -323,7 +310,6 @@ describe('Liquidity', () => {
               liquidityTxContext.token1PermitTransaction,
               liquidityTxContext.txRequest,
             ],
-            sqrtRatioX96: '1000000000000000000',
           },
         ])
       })
@@ -338,7 +324,6 @@ describe('Liquidity', () => {
         delegatedAddress: null,
         action: baseLiquidityTxContext.action,
         txRequest: mockTxRequest,
-        sqrtRatioX96: '1000000000000000000',
         approveToken0Request: undefined,
         approveToken1Request: undefined,
         approvePositionTokenRequest: undefined,
@@ -352,7 +337,6 @@ describe('Liquidity', () => {
 
       expect(generateLPTransactionSteps(liquidityTxContext)).toEqual([
         {
-          sqrtRatioX96: '1000000000000000000',
           txRequest: liquidityTxContext.txRequest,
           type: TransactionStepType.DecreasePositionTransaction,
         },

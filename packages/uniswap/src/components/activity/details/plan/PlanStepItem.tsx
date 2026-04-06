@@ -42,7 +42,7 @@ export function PlanStepItem({ transactionDetails }: { transactionDetails: Trans
           {StepStatusIconMap[transactionDetails.status]}
         </Flex>
       ) : null}
-      <Flex row grow flexShrink={1} alignItems="center" gap="$spacing8">
+      <Flex row grow flexShrink={1} minWidth={0} alignItems="center" gap="$spacing8">
         <StepDescriptor info={typeInfo} chainId={transactionDetails.chainId} />
         <StepStatusBadge status={transactionDetails.status} />
       </Flex>
@@ -163,7 +163,7 @@ function ApproveStepDescriptor({
   const symbol = useCurrencyInfo(buildCurrencyId(chainId, info.tokenAddress))?.currency.symbol ?? ''
 
   return (
-    <Text variant="body3" flexShrink={1}>
+    <Text variant="body3" flexShrink={1} numberOfLines={1}>
       {t('common.approveSpend', { symbol })}
     </Text>
   )
@@ -175,7 +175,7 @@ function SwapStepDescriptor({ info }: { info: SwapTypeTransactionInfo }): JSX.El
   const { tokenInAmount, tokenInSymbol, tokenOutAmount, tokenOutSymbol } = useFormattedAmountsFromTypeInfo(info)
 
   return (
-    <Text variant="body3" flexShrink={1}>
+    <Text variant="body3" flexShrink={1} numberOfLines={1}>
       {t('transaction.status.plan.step.swap', {
         tokenInAmount,
         tokenInSymbol,
@@ -195,7 +195,7 @@ function BridgeStepDescriptor({ info }: { info: BridgeTransactionInfo }): JSX.El
   const chainLabel = outputChainId ? getChainInfo(outputChainId).label : ''
 
   return (
-    <Text variant="body3" flexShrink={1}>
+    <Text variant="body3" flexShrink={1} numberOfLines={1}>
       {t('transaction.status.plan.step.bridge', {
         tokenInAmount,
         tokenInSymbol,
@@ -226,7 +226,7 @@ function WrapStepDescriptor({ info, chainId }: { info: WrapTransactionInfo; chai
   }, [info.currencyAmountRaw, info.unwrapped, nativeCurrencyInfo, wrappedCurrencyInfo])
 
   return (
-    <Text variant="body3" flexShrink={1}>
+    <Text variant="body3" flexShrink={1} numberOfLines={1}>
       {t('transaction.status.plan.step.wrap', {
         amount: formatCurrencyAmount({ value: currencyAmount }),
         symbol: currencyAmount?.currency.symbol ?? '',

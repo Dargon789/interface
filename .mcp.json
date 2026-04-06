@@ -14,6 +14,14 @@
         "-y",
         "playwriter@latest"
       ]
+    },
+    "chrome-devtools": {
+      "command": "bunx",
+      "args": [
+        "chrome-devtools-mcp@latest",
+        "--autoConnect",
+        "--channel=beta"
+      ]
     }
   }
 }

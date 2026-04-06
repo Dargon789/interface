@@ -196,12 +196,14 @@ export function useBidMarkerPositions({
       const maxTop = Math.max(containerHeight - MARKER_CONFIG.AVATAR_SIZE, 0)
       const clampedTop = Math.min(Math.max(top, 0), maxTop)
 
-      let isInRange = false
+      const bidRangeMap: Record<string, boolean> = {}
       if (clearingPriceBigInt !== null && group.bids.length > 0) {
         try {
-          isInRange = group.bids.some((bid) => BigInt(bid.maxPrice) >= clearingPriceBigInt)
+          for (const bid of group.bids) {
+            bidRangeMap[bid.bidId] = BigInt(bid.maxPrice) >= clearingPriceBigInt
+          }
         } catch {
-          isInRange = false
+          // leave bidRangeMap empty on parse failure
         }
       }
 
@@ -209,14 +211,14 @@ export function useBidMarkerPositions({
         id: `${group.tick}`,
         left: plotCenter,
         top: clampedTop,
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- connectedWalletAddress can be undefined
+        // oxlint-disable-next-line typescript/no-unnecessary-condition -- connectedWalletAddress can be undefined
         address: connectedWalletAddress ?? group.bids[0]?.walletId ?? '',
         bids: group.bids,
-        isInRange,
+        bidRangeMap,
       })
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- hasValidCoordinate is set inside forEach callback
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- hasValidCoordinate is set inside forEach callback
     if (!hasValidCoordinate) {
       return markerPositionsRef.current
     }

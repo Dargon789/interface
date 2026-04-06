@@ -23,7 +23,7 @@ export function useChainFiatFee(params: {
 
   const { price: usdPrice, isLoading: usdPriceLoading } = useUSDCPrice(currencyAmount?.currency)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -chainId
+  // oxlint-disable-next-line react/exhaustive-deps -- -chainId
   useEffect(() => {
     if (!currencyAmount) {
       onError?.(true)

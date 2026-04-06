@@ -43,7 +43,7 @@ interface SelectorBaseListProps<T extends OnchainItemListOption> {
   contentContainerStyle?: ContentStyle
 }
 
-function _SelectorBaseList<T extends OnchainItemListOption>({
+function SelectorBaseListInner<T extends OnchainItemListOption>({
   renderItem,
   sections,
   chainFilter,
@@ -61,7 +61,7 @@ function _SelectorBaseList<T extends OnchainItemListOption>({
   const { t } = useTranslation()
   const sectionListRef = useRef<OnchainItemListRef>(undefined)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +chainFilter
+  // oxlint-disable-next-line react/exhaustive-deps -- +chainFilter
   useEffect(() => {
     if (sections?.length) {
       sectionListRef.current?.scrollToLocation({
@@ -128,4 +128,4 @@ function _SelectorBaseList<T extends OnchainItemListOption>({
   )
 }
 
-export const SelectorBaseList = memo(_SelectorBaseList) as typeof _SelectorBaseList
+export const SelectorBaseList = memo(SelectorBaseListInner) as typeof SelectorBaseListInner

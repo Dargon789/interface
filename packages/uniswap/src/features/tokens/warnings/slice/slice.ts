@@ -39,7 +39,7 @@ const slice = createSlice({
 
       const existingWarnings = state.dismissedTokenWarnings[token.chainId]?.[normalizedAddress]?.warnings ?? []
 
-      // biome-ignore lint/style/noNonNullAssertion: array access is safe here
+      // oxlint-disable-next-line typescript/no-non-null-assertion -- array access is safe here
       state.dismissedTokenWarnings[token.chainId]![normalizedAddress] = {
         token,
         // Ensure NonDefault is always included when dismissing a warning
@@ -54,7 +54,7 @@ const slice = createSlice({
       state.dismissedBridgedAssetWarnings[token.chainId] = state.dismissedBridgedAssetWarnings[token.chainId] || {}
       const normalizedAddress = getValidAddress(token)
       if (normalizedAddress) {
-        // biome-ignore lint/style/noNonNullAssertion: array access is safe here
+        // oxlint-disable-next-line typescript/no-non-null-assertion -- array access is safe here
         state.dismissedBridgedAssetWarnings[token.chainId]![normalizedAddress] = token
       }
     },
@@ -67,7 +67,7 @@ const slice = createSlice({
         state.dismissedCompatibleAddressWarnings[token.chainId] || {}
       const normalizedAddress = getValidAddress(token)
       if (normalizedAddress) {
-        // biome-ignore lint/style/noNonNullAssertion: array access is safe here
+        // oxlint-disable-next-line typescript/no-non-null-assertion -- array access is safe here
         state.dismissedCompatibleAddressWarnings[token.chainId]![normalizedAddress] = token
       }
     },

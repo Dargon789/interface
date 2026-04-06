@@ -9,9 +9,9 @@
  * (e.g., FadeIn.duration(300).delay(100)) but ultimately return undefined.
  */
 
-// biome-ignore lint/suspicious/noExplicitAny: complex Reanimated types vary by platform, any allows flexibility
+// oxlint-disable-next-line typescript/no-explicit-any -- complex Reanimated types vary by platform, any allows flexibility
 export type EnteringAnimation = any
-// biome-ignore lint/suspicious/noExplicitAny: complex Reanimated types vary by platform, any allows flexibility
+// oxlint-disable-next-line typescript/no-explicit-any -- complex Reanimated types vary by platform, any allows flexibility
 export type ExitingAnimation = any
 
 /**

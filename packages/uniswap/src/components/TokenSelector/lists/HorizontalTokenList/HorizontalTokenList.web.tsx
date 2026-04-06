@@ -5,7 +5,7 @@ import { HorizontalTokenListProps } from 'uniswap/src/components/TokenSelector/l
 
 const MAX_CARDS_PER_ROW = 5
 
-export const HorizontalTokenList = memo(function _HorizontalTokenList({
+export const HorizontalTokenList = memo(function HorizontalTokenListInner({
   tokens: suggestedTokens,
   onSelectCurrency,
   index,
@@ -24,7 +24,7 @@ export const HorizontalTokenList = memo(function _HorizontalTokenList({
     : suggestedTokens
   const remainingCount = shouldShowExpansion ? suggestedTokens.length - MAX_CARDS_PER_ROW + 1 : 0
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: hack to animate the height of the container when the tokens get expanded
+  // oxlint-disable-next-line react/exhaustive-deps -- hack to animate the height of the container when the tokens get expanded
   useEffect(() => {
     if (containerRef.current) {
       setContainerHeight(containerRef.current.scrollHeight)

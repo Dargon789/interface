@@ -1,5 +1,3 @@
-/** biome-ignore-all assist/source/organizeImports: we want to manually group exports by category */
-
 /**
  * @universe/sessions
  *

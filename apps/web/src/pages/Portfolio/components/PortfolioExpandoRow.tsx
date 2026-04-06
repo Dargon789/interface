@@ -1,6 +1,6 @@
 import { Flex, FlexProps, Text, TextProps, TouchableArea } from 'ui/src'
-import { AnglesDownUp } from 'ui/src/components/icons/AnglesDownUp'
-import { SortVertical } from 'ui/src/components/icons/SortVertical'
+import { ChevronsIn } from 'ui/src/components/icons/ChevronsIn'
+import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
 import { IconSizeTokens } from 'ui/src/theme'
 
 interface PortfolioExpandoRowProps {
@@ -39,9 +39,9 @@ export function PortfolioExpandoRow({
       </Text>
       <Flex justifyContent="center" testID="expando-row-icon">
         {isExpanded ? (
-          <AnglesDownUp color="$neutral2" size={iconSize} />
+          <ChevronsIn color="$neutral2" size={iconSize} />
         ) : (
-          <SortVertical color="$neutral2" size={iconSize} />
+          <ChevronsOut color="$neutral2" size={iconSize} />
         )}
       </Flex>
     </TouchableArea>

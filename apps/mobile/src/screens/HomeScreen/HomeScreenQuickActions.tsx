@@ -189,7 +189,7 @@ export function HomeScreenQuickActions(): JSX.Element {
     ],
   )
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +activeScale
+  // oxlint-disable-next-line react/exhaustive-deps -- +activeScale
   const renderItem = useCallback(
     ({ item: { eventName, name, label, Icon, onPress } }: ListRenderItemInfo<ActionItem>) => (
       <Trace key={name} logPress element={name} eventOnTrigger={eventName}>

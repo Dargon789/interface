@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* oxlint-disable typescript/no-unnecessary-condition */
 
 import { Percent } from '@uniswap/sdk-core'
 import { Pair } from '@uniswap/v2-sdk'

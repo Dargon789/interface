@@ -4,7 +4,8 @@ import { useSelector } from 'react-redux'
 import { AccountType } from 'uniswap/src/features/accounts/types'
 import { DEFAULT_TOAST_HIDE_DELAY } from 'uniswap/src/features/notifications/constants'
 import { useSuccessfulSwapCompleted } from 'uniswap/src/features/transactions/hooks/useSuccessfulSwapCompleted'
-import { TransactionDetails } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { type TransactionDetails } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { logger } from 'utilities/src/logger/logger'
 import { ONE_SECOND_MS } from 'utilities/src/time/time'
 import {
   selectHasDismissedSmartWalletHomeScreenNudge,
@@ -13,7 +14,7 @@ import {
 import { useSmartWalletChains } from 'wallet/src/features/smartWallet/hooks/useSmartWalletChains'
 import { useWalletDelegationContext } from 'wallet/src/features/smartWallet/WalletDelegationProvider'
 import { useActiveAccount, useHasSmartWalletConsent, useSignerAccounts } from 'wallet/src/features/wallet/hooks'
-import { WalletState } from 'wallet/src/state/walletReducer'
+import { type WalletState } from 'wallet/src/state/walletReducer'
 
 export enum SmartWalletDelegationAction {
   ShowConflict = 'Conflict',
@@ -21,13 +22,7 @@ export enum SmartWalletDelegationAction {
   None = 'None',
 }
 
-export function useSmartWalletDelegationStatus({
-  isSmartWalletUpgradeModal = false,
-  overrideAddress,
-}: {
-  isSmartWalletUpgradeModal?: boolean
-  overrideAddress?: string
-}): {
+export function useSmartWalletDelegationStatus({ overrideAddress }: { overrideAddress?: string } = {}): {
   status: SmartWalletDelegationAction
   loading: boolean
 } {
@@ -52,50 +47,52 @@ export function useSmartWalletDelegationStatus({
     activeAccount ? selectHasDismissedSmartWalletHomeScreenNudge(state, activeAccount.address) : false,
   )
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -signerMnemonicAccounts
+  // oxlint-disable-next-line react/exhaustive-deps -- -signerMnemonicAccounts
   useEffect(() => {
     if (!activeAccount) {
       return
     }
 
-    if (hasDismissedSmartWalletHomeScreenNudge && isSmartWalletUpgradeModal) {
-      setStatus(SmartWalletDelegationAction.None)
-      setLoading(false)
-      return
-    }
-
-    let isDelegatedOnlyToUniswapSmartContract = false
-    for (const chain of enabledChains) {
-      const result = getDelegationDetails(activeAccount.address, chain)
-
-      if (result?.currentDelegationAddress && result.isWalletDelegatedToUniswap) {
-        isDelegatedOnlyToUniswapSmartContract = true
-      } else if (result?.currentDelegationAddress && !result.isWalletDelegatedToUniswap) {
-        setStatus(SmartWalletDelegationAction.ShowConflict)
-        setLoading(false)
+    try {
+      if (hasDismissedSmartWalletHomeScreenNudge) {
+        setStatus(SmartWalletDelegationAction.None)
         return
       }
-    }
 
-    if (hasSmartWalletConsent) {
-      setStatus(SmartWalletDelegationAction.None)
+      let hasExistingDelegation = false
+      let hasNonUniswapDelegation = false
+      for (const chain of enabledChains) {
+        const result = getDelegationDetails(activeAccount.address, chain)
+        if (result?.currentDelegationAddress) {
+          hasExistingDelegation = true
+          if (!result.isWalletDelegatedToUniswap) {
+            hasNonUniswapDelegation = true
+          }
+        }
+      }
+
+      if (hasNonUniswapDelegation) {
+        setStatus(SmartWalletDelegationAction.ShowConflict)
+        return
+      }
+
+      if (hasSmartWalletConsent || hasExistingDelegation) {
+        setStatus(SmartWalletDelegationAction.None)
+        return
+      }
+
+      setStatus(SmartWalletDelegationAction.PromptUpgrade)
+    } catch (error) {
+      logger.error(error, {
+        tags: { file: 'useSmartWalletDelegationStatus', function: 'useEffect' },
+      })
+    } finally {
       setLoading(false)
-      return
     }
-
-    if (isDelegatedOnlyToUniswapSmartContract) {
-      setStatus(SmartWalletDelegationAction.None)
-      setLoading(false)
-      return
-    }
-
-    setStatus(SmartWalletDelegationAction.PromptUpgrade)
-    setLoading(false)
   }, [
     enabledChains,
     hasDismissedSmartWalletHomeScreenNudge,
     hasSmartWalletConsent,
-    isSmartWalletUpgradeModal,
     signerMnemonicAccounts,
     getDelegationDetails,
     activeAccount,
@@ -115,7 +112,7 @@ export function useOpenSmartWalletNudgeOnCompletedSwap(
 
   const isSmartWalletEnabled = useFeatureFlag(FeatureFlags.SmartWallet)
   const address = useActiveAccount()?.address
-  const { status: delegationStatus } = useSmartWalletDelegationStatus({})
+  const { status: delegationStatus } = useSmartWalletDelegationStatus()
 
   const canShowPostSwapNudge = useSelector((state: WalletState) =>
     address ? selectShouldShowPostSwapNudge(state, address) : false,

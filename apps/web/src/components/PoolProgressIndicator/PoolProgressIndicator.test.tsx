@@ -23,7 +23,7 @@ describe('PoolProgressIndicator', () => {
     try {
       render(<PoolProgressIndicator steps={[]} />)
     } catch (error) {
-      // eslint-disable-next-line jest/no-conditional-expect
+      // oxlint-disable-next-line jest/no-conditional-expect
       expect(error).toEqual(new Error('PoolProgressIndicator: steps must have at least one step'))
     }
   })

@@ -1,10 +1,11 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { TradingApi } from '@universe/api'
 import ms from 'ms'
 import { call, cancel, delay, fork } from 'typed-redux-saga'
 import { TradingApiSessionClient } from 'uniswap/src/data/apiClients/tradingApi/TradingApiSessionClient'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { AppNotificationType, type PlanTxNotification } from 'uniswap/src/features/notifications/slice/types'
 import { HandledTransactionInterrupt } from 'uniswap/src/features/transactions/errors'
 import { TransactionStepType } from 'uniswap/src/features/transactions/steps/types'
 import { tradeRoutingToFillType } from 'uniswap/src/features/transactions/swap/analytics'
@@ -18,6 +19,7 @@ import {
   isPlanCancelledCheck,
   lockPlanForExecution,
   logHelper,
+  markPlanPriceChangeInterrupted,
   resetActivePlan,
   showPendingOnEarlyModalClose,
   unlockPlanExecution,
@@ -47,6 +49,8 @@ import {
 } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { requireAcceptNewTrade } from 'uniswap/src/features/transactions/swap/utils/trade'
 import { tradingApiToUniverseChainId } from 'uniswap/src/features/transactions/swap/utils/tradingApi'
+import { TransactionStatus, TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { currencyId } from 'uniswap/src/utils/currencyId'
 import { createMonitoredSaga } from 'uniswap/src/utils/saga'
 import { BackoffStrategy, retryWithBackoff } from 'utilities/src/async/retryWithBackoff'
 import { logger } from 'utilities/src/logger/logger'
@@ -62,7 +66,7 @@ import { ONE_SECOND_MS } from 'utilities/src/time/time'
  * to the TAPI to update the plan. As the steps are executed, the plan continues
  * to execute the next step until all last step is confirmed.
  */
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function* plan(params: PlanParams) {
   const {
     address,
@@ -95,6 +99,7 @@ export function* plan(params: PlanParams) {
   let response: TradingApi.PlanResponse | undefined
   let wasPlanResumed = false
   let steps: TransactionAndPlanStep[]
+  // oxlint-disable-next-line prefer-const -- biome-parity: oxlint is stricter here
   let timeToCreatePlan: number | undefined
   let currentStepIndex: number
   let currentStep: TransactionAndPlanStep | undefined
@@ -122,6 +127,7 @@ export function* plan(params: PlanParams) {
     if (response && !wasPlanResumed) {
       const refreshedTrade = buildTradeFromPlanResponse({ originalTrade: trade, planResponse: response, address })
       if (requireAcceptNewTrade(trade, refreshedTrade)) {
+        markPlanPriceChangeInterrupted(planId)
         resetActivePlan()
         throw new PlanPriceChangeInterrupt()
       }
@@ -316,6 +322,7 @@ export function* plan(params: PlanParams) {
           inputChainId,
           address,
           onSuccess,
+          sendToast,
           startTime,
           timeToCreatePlan,
           response,
@@ -374,6 +381,7 @@ export function* plan(params: PlanParams) {
           address,
         })
         if (requireAcceptNewTrade(trade, refreshedTrade)) {
+          markPlanPriceChangeInterrupted(planId)
           throw new PlanPriceChangeInterrupt()
         }
       } else {
@@ -396,8 +404,9 @@ export function* plan(params: PlanParams) {
       resetActivePlan()
     }
 
-    // Clear backgrounded plan on error
+    // Notify and clear backgrounded plan on error
     if (isPlanBackgrounded(planId)) {
+      yield* call(sendToast, buildPlanErrorToast({ planId, chainId: inputChainId, swapTxContext }), planId)
       clearPlan(planId)
     }
 
@@ -429,6 +438,7 @@ interface HandleLastStepCompletionParams {
   inputChainId: UniverseChainId
   address: Address
   onSuccess: () => void
+  sendToast: PlanParams['sendToast']
   startTime: number
   timeToCreatePlan: number | undefined
   response: TradingApi.PlanResponse | undefined
@@ -441,6 +451,7 @@ interface HandleLastStepCompletionParams {
 type WatchLastPlanStepParams = WatchPlanStepParams & {
   stepType: TransactionStepType
   analyticsWithPlanStepContext: PlanSagaAnalytics
+  sendToast: PlanParams['sendToast']
   hash: string | undefined
   chainId: number | undefined
   startTime: number
@@ -448,6 +459,24 @@ type WatchLastPlanStepParams = WatchPlanStepParams & {
   response: TradingApi.PlanResponse | undefined
   steps: TransactionAndPlanStep[]
   swapTxContext: ValidatedChainedSwapTxAndGasInfo
+}
+
+function buildPlanErrorToast(params: {
+  planId: string
+  chainId: UniverseChainId | null
+  swapTxContext: ValidatedChainedSwapTxAndGasInfo
+}): PlanTxNotification {
+  return {
+    type: AppNotificationType.Transaction,
+    txType: TransactionType.Plan,
+    txStatus: TransactionStatus.AwaitingAction,
+    txId: params.planId,
+    chainId: params.chainId as UniverseChainId,
+    inputCurrencyId: currencyId(params.swapTxContext.trade.inputAmount.currency),
+    outputCurrencyId: currencyId(params.swapTxContext.trade.outputAmount.currency),
+    inputCurrencyAmountRaw: params.swapTxContext.trade.inputAmount.quotient.toString(),
+    outputCurrencyAmountRaw: params.swapTxContext.trade.outputAmount.quotient.toString(),
+  }
 }
 
 /**
@@ -463,6 +492,7 @@ function* watchLastPlanStepWithCleanup(params: WatchLastPlanStepParams) {
   const {
     stepType,
     analyticsWithPlanStepContext,
+    sendToast,
     hash,
     chainId,
     startTime,
@@ -502,6 +532,12 @@ function* watchLastPlanStepWithCleanup(params: WatchLastPlanStepParams) {
       swapTxContext,
     })
   } catch (error) {
+    yield* call(
+      sendToast,
+      buildPlanErrorToast({ planId: params.planId, chainId: watchParams.sourceChainId, swapTxContext }),
+      params.planId,
+    )
+
     logPlanStepTradeAnalytics({
       stepType,
       updatedSteps: undefined,
@@ -544,6 +580,7 @@ function* handleLastStepCompletion(params: HandleLastStepCompletionParams) {
     inputChainId,
     address,
     onSuccess,
+    sendToast,
     startTime,
     timeToCreatePlan,
     response,
@@ -572,6 +609,7 @@ function* handleLastStepCompletion(params: HandleLastStepCompletionParams) {
     address,
     stepType: currentStep.type,
     analyticsWithPlanStepContext,
+    sendToast,
     hash,
     chainId: lastStepChainId,
     startTime,

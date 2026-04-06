@@ -1,4 +1,6 @@
-import { memo, useCallback, useState } from 'react'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { memo, useCallback, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Flex, Text, TouchableArea } from 'ui/src'
 import { Check } from 'ui/src/components/icons/Check'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
@@ -9,15 +11,20 @@ import {
 } from 'uniswap/src/components/lists/items/tokens/TokenOptionItemContextMenu'
 import { TokenOption } from 'uniswap/src/components/lists/items/types'
 import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
+import { MultichainAddressSheet } from 'uniswap/src/components/MultichainTokenDetails/MultichainAddressSheet'
+import type { MultichainTokenEntry } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
+import { useOrderedMultichainEntries } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
 import { getWarningIconColors } from 'uniswap/src/components/warnings/utils'
 import WarningIcon from 'uniswap/src/components/warnings/WarningIcon'
+import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { useHapticFeedback } from 'uniswap/src/features/settings/useHapticFeedback/useHapticFeedback'
 import { getTokenWarningSeverity } from 'uniswap/src/features/tokens/warnings/safetyUtils'
 import TokenWarningModal from 'uniswap/src/features/tokens/warnings/TokenWarningModal'
 import { getSymbolDisplayText } from 'uniswap/src/utils/currency'
+import { currencyAddress } from 'uniswap/src/utils/currencyId'
 import { shortenAddress } from 'utilities/src/addresses'
 import { dismissNativeKeyboard } from 'utilities/src/device/keyboard/dismissNativeKeyboard'
-import { isWebApp, isWebPlatform } from 'utilities/src/platform'
+import { isMobileApp, isMobileWeb, isWebApp, isWebPlatform } from 'utilities/src/platform'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 
 export enum TokenContextMenuVariant {
@@ -139,7 +146,7 @@ const LegacyBaseTokenOptionItem = memo(function LegacyBaseTokenOptionItem({
   )
 })
 
-function _LegacyTokenOptionItem(props: LegacyTokenOptionItemProps): JSX.Element {
+function LegacyTokenOptionItemInner(props: LegacyTokenOptionItemProps): JSX.Element {
   const { option, showWarnings, onPress, tokenWarningDismissed, isKeyboardOpen } = props
   const { currencyInfo, isUnsupported } = option
   const { currency } = currencyInfo
@@ -200,7 +207,7 @@ function _LegacyTokenOptionItem(props: LegacyTokenOptionItemProps): JSX.Element 
         }}
       >
         {isWebPlatform ? (
-          // biome-ignore  lint/correctness/noRestrictedElements: needed here
+          // oxlint-disable-next-line react/forbid-elements -- needed here
           <div onContextMenu={openContextMenu}>
             <LegacyBaseTokenOptionItem {...props} />
           </div>
@@ -219,15 +226,24 @@ function _LegacyTokenOptionItem(props: LegacyTokenOptionItemProps): JSX.Element 
   )
 }
 
+export interface MultichainData {
+  tokens: CurrencyInfo[]
+  primaryCurrencyInfo: CurrencyInfo
+}
+
 export interface TokenOptionItemProps {
   option: TokenOption
   onPress: () => void
   showTokenAddress?: boolean
+  networkCount?: number
+  hideNetworkLogo?: boolean
   rightElement?: JSX.Element
   showDisabled?: boolean
   modalInfo?: OptionItemProps['modalInfo']
   focusedRowControl?: FocusedRowControl
   contextMenuVariant: TokenContextMenuVariant
+  /** When provided on native, "Copy address" opens a multichain address bottom sheet. */
+  multichainData?: MultichainData
 }
 
 function isLegacyTokenOptionItemProps(
@@ -236,13 +252,15 @@ function isLegacyTokenOptionItemProps(
   return 'balance' in props
 }
 
-const BaseTokenOptionItem = memo(function _BaseTokenOptionItem(
+const BaseTokenOptionItem = memo(function BaseTokenOptionItemInner(
   props: TokenOptionItemProps & { openContextMenu?: () => void },
 ): JSX.Element {
   const {
     option,
     onPress,
     showTokenAddress,
+    networkCount,
+    hideNetworkLogo,
     rightElement,
     showDisabled,
     modalInfo,
@@ -251,6 +269,10 @@ const BaseTokenOptionItem = memo(function _BaseTokenOptionItem(
   } = props
   const { currencyInfo } = option
   const { currency } = currencyInfo
+  const { t } = useTranslation()
+
+  const isMultichain = networkCount !== undefined && networkCount > 1
+  const isSingleChainMultichainResult = networkCount !== undefined && networkCount === 1
 
   // in lists like token selector & search, we only show the warning icon if token is >=Medium severity
   const severity = getTokenWarningSeverity(currencyInfo)
@@ -264,6 +286,8 @@ const BaseTokenOptionItem = memo(function _BaseTokenOptionItem(
           name={currency.name}
           symbol={currency.symbol}
           url={currencyInfo.logoUrl ?? undefined}
+          hideNetworkLogo={hideNetworkLogo || isMultichain}
+          alwaysShowNetworkLogo={isSingleChainMultichainResult}
         />
       }
       title={currency.name ?? currency.symbol ?? ''}
@@ -272,12 +296,19 @@ const BaseTokenOptionItem = memo(function _BaseTokenOptionItem(
           <Text color="$neutral2" numberOfLines={1} variant="body3">
             {getSymbolDisplayText(currency.symbol)}
           </Text>
-          {!currency.isNative && showTokenAddress && (
-            <Flex shrink>
-              <Text color="$neutral3" numberOfLines={1} variant="body3">
-                {shortenAddress({ address: currency.address })}
-              </Text>
-            </Flex>
+          {isMultichain ? (
+            <Text color="$neutral3" numberOfLines={1} variant="body3">
+              {t('search.results.networks', { count: networkCount })}
+            </Text>
+          ) : (
+            !currency.isNative &&
+            showTokenAddress && (
+              <Flex shrink>
+                <Text color="$neutral3" numberOfLines={1} variant="body3">
+                  {shortenAddress({ address: currency.address })}
+                </Text>
+              </Flex>
+            )
           )}
         </Flex>
       }
@@ -302,37 +333,73 @@ const BaseTokenOptionItem = memo(function _BaseTokenOptionItem(
   )
 })
 
-export const TokenOptionItem = memo(function _TokenOptionItem(
+export const TokenOptionItem = memo(function TokenOptionItemInner(
   props: TokenOptionItemProps | LegacyTokenOptionItemProps,
 ): JSX.Element {
   const { value: isContextMenuOpen, setFalse: closeContextMenu, setTrue: openContextMenu } = useBooleanState(false)
+  const { value: isAddressSheetOpen, setFalse: closeAddressSheet, setTrue: openAddressSheet } = useBooleanState(false)
   const { hapticFeedback } = useHapticFeedback()
+
+  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainData = !isLegacyTokenOptionItemProps(props) && isMultichainTokenUx ? props.multichainData : undefined
+  const rawEntries = useMemo<MultichainTokenEntry[]>(
+    () =>
+      multichainData
+        ? multichainData.tokens.map((ci) => ({
+            chainId: ci.currency.chainId,
+            address: currencyAddress(ci.currency),
+            isNative: ci.currency.isNative,
+          }))
+        : [],
+    [multichainData],
+  )
+  const orderedEntries = useOrderedMultichainEntries(rawEntries)
+  const hasMultipleChains = orderedEntries.length > 1
+  const allNative = orderedEntries.length > 0 && orderedEntries.every((e) => e.isNative)
+
+  const copyAddressOverride = useMemo(() => {
+    if (!(isMobileApp || isMobileWeb) || !hasMultipleChains || allNative) {
+      return undefined
+    }
+    return {
+      onPress: (): void => {
+        closeContextMenu()
+        openAddressSheet()
+      },
+    }
+  }, [hasMultipleChains, allNative, closeContextMenu, openAddressSheet])
 
   if (!isLegacyTokenOptionItemProps(props)) {
     return (
-      <TokenOptionItemContextMenu
-        actions={CONTEXT_MENU_ACTIONS[props.contextMenuVariant]}
-        currency={props.option.currencyInfo.currency}
-        isOpen={isContextMenuOpen}
-        closeMenu={closeContextMenu}
-      >
-        {isWebPlatform ? (
-          // biome-ignore  lint/correctness/noRestrictedElements: needed here
-          <div onContextMenu={openContextMenu}>
-            <BaseTokenOptionItem {...props} />
-          </div>
-        ) : (
-          <BaseTokenOptionItem
-            {...props}
-            openContextMenu={async (): Promise<void> => {
-              await hapticFeedback.success()
-              openContextMenu()
-            }}
-          />
+      <>
+        <TokenOptionItemContextMenu
+          actions={CONTEXT_MENU_ACTIONS[props.contextMenuVariant]}
+          currency={props.option.currencyInfo.currency}
+          isOpen={isContextMenuOpen}
+          closeMenu={closeContextMenu}
+          copyAddressOverride={copyAddressOverride}
+        >
+          {isWebPlatform ? (
+            // oxlint-disable-next-line react/forbid-elements -- needed here
+            <div onContextMenu={openContextMenu}>
+              <BaseTokenOptionItem {...props} />
+            </div>
+          ) : (
+            <BaseTokenOptionItem
+              {...props}
+              openContextMenu={async (): Promise<void> => {
+                await hapticFeedback.success()
+                openContextMenu()
+              }}
+            />
+          )}
+        </TokenOptionItemContextMenu>
+        {(isMobileApp || isMobileWeb) && hasMultipleChains && (
+          <MultichainAddressSheet isOpen={isAddressSheetOpen} chains={orderedEntries} onClose={closeAddressSheet} />
         )}
-      </TokenOptionItemContextMenu>
+      </>
     )
   }
 
-  return <_LegacyTokenOptionItem {...props} />
+  return <LegacyTokenOptionItemInner {...props} />
 })

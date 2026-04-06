@@ -80,7 +80,8 @@ export type FiatOnRampAmountSectionRef = {
 }
 
 export const FiatOnRampAmountSection = forwardRef<FiatOnRampAmountSectionRef, FiatOnRampAmountSectionProps>(
-  function _FiatOnRampAmountSection(
+  // oxlint-disable-next-line complexity -- biome-parity: oxlint is stricter here
+  function FiatOnRampAmountSectionInner(
     {
       disabled,
       value,

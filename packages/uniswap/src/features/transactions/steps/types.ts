@@ -130,8 +130,10 @@ export type HandleApprovalStepParams<TExtra extends object = object> = Omit<
 
 export type HandleOnChainPermit2TransactionStep = Omit<HandleOnChainStepParams<Permit2TransactionStep>, 'info'>
 
-export interface HandleSwapStepParams<TExtra extends object = object>
-  extends Omit<HandleOnChainStepParams<OnChainTransactionStep, TExtra>, 'step' | 'info'> {
+export interface HandleSwapStepParams<TExtra extends object = object> extends Omit<
+  HandleOnChainStepParams<OnChainTransactionStep, TExtra>,
+  'step' | 'info'
+> {
   step: (SwapTransactionStep | SwapTransactionStepAsync) & TExtra
   signature?: string
   trade: ClassicTrade | BridgeTrade | ChainedActionTrade

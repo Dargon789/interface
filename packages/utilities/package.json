@@ -23,11 +23,11 @@
     "@tanstack/react-query": "5.90.20",
     "@uniswap/analytics": "1.7.2",
     "@uniswap/analytics-events": "2.43.0",
-    "@uniswap/sdk-core": "7.10.1",
+    "@uniswap/sdk-core": "7.12.1",
     "dayjs": "1.11.7",
     "expo-clipboard": "7.1.5",
     "expo-localization": "16.1.6",
-    "graphql": "16.6.0",
+    "graphql": "16.10.0",
     "jsbi": "3.2.5",
     "promise": "8.3.0",
     "react": "19.0.3",
@@ -44,10 +44,10 @@
     "@types/node": "22.13.1",
     "@types/react": "19.0.10",
     "@types/uuid": "9.0.1",
-    "@typescript/native-preview": "7.0.0-dev.20260108.1",
+    "@typescript/native-preview": "7.0.0-dev.20260311.1",
     "@uniswap/eslint-config": "workspace:^",
     "@vitest/coverage-v8": "3.2.1",
-    "eslint": "8.57.1",
+    "eslint": "10.0.2",
     "typescript": "5.8.3",
     "vitest": "3.2.1",
     "vitest-presets": "workspace:^"
@@ -58,19 +58,22 @@
     "build": "nx build utilities",
     "check:deps:usage": "nx check:deps:usage utilities",
     "check-promise-version": "nx check-promise-version utilities",
-    "lint:biome": "nx lint:biome utilities",
-    "lint:biome:fix": "nx lint:biome:fix utilities",
     "lint:eslint": "nx lint:eslint utilities",
     "lint:eslint:fix": "nx lint:eslint:fix utilities",
     "lint": "nx lint utilities",
     "lint:fix": "nx lint:fix utilities",
     "test": "nx test utilities",
-    "test:coverage": "nx test:coverage utilities",
     "typecheck": "nx typecheck utilities",
-    "typecheck:tsgo": "nx typecheck:tsgo utilities"
+    "typecheck:tsgo": "nx typecheck:tsgo utilities",
+    "oxlint": "nx oxlint utilities",
+    "oxlint:fix": "nx oxlint:fix utilities",
+    "oxfmt": "nx oxfmt utilities",
+    "oxfmt:fix": "nx oxfmt:fix utilities"
   },
   "nx": {
     "includedScripts": []
   },
-  "sideEffects": ["*.css"]
+  "sideEffects": [
+    "*.css"
+  ]
 }

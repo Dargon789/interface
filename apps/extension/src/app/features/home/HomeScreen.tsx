@@ -61,7 +61,7 @@ const MemoizedVideo = memo(() => (
 
 MemoizedVideo.displayName = 'MemoizedVideo'
 
-export const HomeScreen = memo(function _HomeScreen(): JSX.Element {
+export const HomeScreen = memo(function HomeScreenInner(): JSX.Element {
   const { t } = useTranslation()
   const activeAccount = useActiveAccountWithThrow()
   const [showTabs, setShowTabs] = useState(false)

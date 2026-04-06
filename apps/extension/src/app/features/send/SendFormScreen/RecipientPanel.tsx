@@ -76,6 +76,8 @@ export function RecipientPanel({ chainId }: RecipientPanelProps): JSX.Element {
               value={pattern}
               onChangeText={setPattern}
               onFocus={() => onSetShowRecipientSelector(true)}
+              borderColor="$transparent"
+              borderWidth="$none"
             />
           </Flex>
           {showRecipientSelector && (

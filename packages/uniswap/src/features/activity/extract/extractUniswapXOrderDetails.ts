@@ -1,5 +1,4 @@
 import { GraphQLApi, TradingApi } from '@universe/api'
-
 import { deriveCurrencyAmountFromAssetResponse } from 'uniswap/src/features/activity/utils/remote'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'

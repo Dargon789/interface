@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-syntax */
+/* oxlint-disable no-restricted-syntax */
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { expect, getTest, type Page } from '~/playwright/fixtures'
 import { getVisibleDropdownElementByTestId } from '~/playwright/fixtures/utils'
@@ -52,14 +52,13 @@ test.describe(
       test('changes language', async ({ page }) => {
         await getVisibleDropdownElementByTestId(page, TestID.LanguageSettingsButton).click()
         await page.getByRole('link', { name: 'Spanish (Spain)' }).nth(1).click()
-        await expect(page.getByText('Uniswap está disponible en:')).toBeVisible()
+        await expect(page.getByText('Intercambio').first()).toBeVisible()
         await page.reload()
         await expect(page.url()).toContain('lng=es-ES')
-        await expect(page.getByText('Uniswap está disponible en:')).toBeVisible()
+        await expect(page.getByText('Intercambio').first()).toBeVisible()
       })
 
       test('toggles testnet', async ({ page }) => {
-        await getVisibleDropdownElementByTestId(page, TestID.AdvancedSettingsButton).click()
         await getVisibleDropdownElementByTestId(page, TestID.TestnetsToggle).click()
         await expect(getVisibleDropdownElementByTestId(page, TestID.TestnetsToggle)).toHaveAttribute(
           'aria-checked',

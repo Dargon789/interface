@@ -145,9 +145,14 @@ export function useFormattedTransactionDataForActivity({
   const hasTransactions = transactions && transactions.length > 0
   const hasData = Boolean(formattedTransactions?.length)
 
-  // show loading if no data and fetching, or refetching when there is error (for UX when "retry" is clicked).
+  // show loading if:
+  // 1. Query has never completed and not intentionally skipped — this is synchronously true from render 1
+  // when there is no cached data, ensuring skeletons appear immediately on mount.
+  // 2. No data and loading (redundant when condition 1 is true, but kept as a safety net)
+  // 3. Error with a retry in progress (for UX when "retry" is clicked)
+  // 4. Explicitly showing loading on refetch
   const showLoading =
-    (!hasData && loading) ||
+    (!hasData && (loading || (!skip && networkStatus === NetworkStatus.loading))) ||
     (Boolean(error) && networkStatus === NetworkStatus.loading) ||
     (showLoadingOnRefetch && isFetching && !isFetchingNextPage)
 

@@ -40,7 +40,7 @@ import { isNonTestDev } from 'utilities/src/environment/constants'
 // Module-level cache for config to avoid recomputing on every call
 let cachedConfig: Config | undefined
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export const getConfig = (): Config => {
   // Return cached config if already computed
   if (cachedConfig !== undefined) {
@@ -72,7 +72,7 @@ export const getConfig = (): Config => {
     enableSessionService: process.env.ENABLE_SESSION_SERVICE === 'true' || ENABLE_SESSION_SERVICE === 'true',
     enableSessionUpgradeAuto:
       process.env.ENABLE_SESSION_UPGRADE_AUTO === 'true' || ENABLE_SESSION_UPGRADE_AUTO === 'true',
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     isE2ETest: process.env.IS_E2E_TEST?.toLowerCase() === 'true' || IS_E2E_TEST?.toLowerCase() === 'true',
     forApiUrlOverride: process.env.FOR_API_URL_OVERRIDE || FOR_API_URL_OVERRIDE,
     graphqlUrlOverride: process.env.GRAPHQL_URL_OVERRIDE || GRAPHQL_URL_OVERRIDE,
@@ -114,7 +114,7 @@ export const getConfig = (): Config => {
   }
 
   if (isNonTestDev) {
-    // biome-ignore lint/suspicious/noConsole: Cannot use logger here, causes error from circular dep
+    // oxlint-disable-next-line no-console -- Cannot use logger here, causes error from circular dep
     console.debug('Using app config:', config)
   }
 

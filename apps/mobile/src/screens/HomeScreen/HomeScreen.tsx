@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { useApolloClient } from '@apollo/client'
 import { useIsFocused, useScrollToTop } from '@react-navigation/native'
 import { SharedQueryClient } from '@universe/api'
@@ -20,6 +20,7 @@ import { ActivityContent } from 'src/components/activity/ActivityContent'
 import { HomeExploreTab } from 'src/components/home/HomeExploreTab'
 import { OnboardingIntroCardStack } from 'src/components/home/introCards/OnboardingIntroCardStack'
 import { NftsTab } from 'src/components/home/NftsTab'
+import { PortfolioOverview } from 'src/components/home/PortfolioChart/PortfolioOverview'
 import { TokensTab } from 'src/components/home/TokensTab'
 import { Screen } from 'src/components/layout/Screen'
 import {
@@ -58,9 +59,9 @@ import { getListTransactionsQuery } from 'uniswap/src/data/rest/listTransactions
 import { AccountType } from 'uniswap/src/features/accounts/types'
 import { selectHasDismissedUniswapWrapped2025Banner } from 'uniswap/src/features/behaviorHistory/selectors'
 import { setHasDismissedUniswapWrapped2025Banner } from 'uniswap/src/features/behaviorHistory/slice'
+import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { useSelectAddressHasNotifications } from 'uniswap/src/features/notifications/slice/hooks'
 import { setNotificationStatus } from 'uniswap/src/features/notifications/slice/slice'
-import { PortfolioBalance } from 'uniswap/src/features/portfolio/PortfolioBalance/PortfolioBalance'
 import { ModalName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import { useAppInsets } from 'uniswap/src/hooks/useAppInsets'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
@@ -130,6 +131,7 @@ function HomeScreen({
   const { requiredForTransactions: requiresBiometrics } = useBiometricAppSettings()
 
   const isBottomTabsEnabled = useFeatureFlag(FeatureFlags.BottomTabs)
+  const isPnLEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
   const isWrappedBannerEnabled = useFeatureFlag(FeatureFlags.UniswapWrapped2025)
   const isNotificationServiceEnabledFlag = useFeatureFlag(FeatureFlags.NotificationService)
   const isNotificationServiceEnabled =
@@ -140,6 +142,7 @@ function HomeScreen({
 
   const { showEmptyWalletState, isTabsDataLoaded } = useHomeScreenState()
   const [hasIntroCards, setHasIntroCards] = useState(false)
+  const { chains } = useEnabledChains()
 
   // opens the wallet restore modal if recovery phrase is missing after the app is opened
   useWalletRestore({ openModalImmediately: true })
@@ -268,7 +271,7 @@ function HomeScreen({
   }, [dispatch, activeAccount.address, tabIndex, hasNotifications, isBottomTabsEnabled])
 
   // If accounts are switched, we want to scroll to top and show full header
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to trigger this effect also when activeAccount changes
+  // oxlint-disable-next-line react/exhaustive-deps -- we want to trigger this effect also when activeAccount changes
   useEffect(() => {
     resetScrollState()
   }, [activeAccount, resetScrollState])
@@ -337,7 +340,7 @@ function HomeScreen({
   const promoBanner = useMemo(
     () =>
       isNotificationServiceEnabled ? (
-        <MobileNotificationServiceManager />
+        <MobileNotificationServiceManager isLoading={!isTabsDataLoaded} />
       ) : (
         <OnboardingIntroCardStack
           isLoading={!isTabsDataLoaded}
@@ -372,9 +375,7 @@ function HomeScreen({
           </Flex>
         )}
         <AccountHeader />
-        <Flex py="$spacing20" px={isBottomTabsEnabled ? '$spacing24' : '$spacing12'}>
-          <PortfolioBalance evmOwner={activeAccount.address} />
-        </Flex>
+        <PortfolioOverview evmAddress={activeAccount.address} chainIds={chains} isPnLEnabled={isPnLEnabled} />
         {isSignerAccount ? (
           <HomeScreenQuickActions />
         ) : (
@@ -393,6 +394,8 @@ function HomeScreen({
     hasIntroCards,
     showEmptyWalletState,
     isBottomTabsEnabled,
+    isPnLEnabled,
+    chains,
     shouldShowWrappedBanner,
     handleDismissWrappedBanner,
     handlePressWrappedBanner,

@@ -7,12 +7,12 @@
   "targets": {
     "typecheck": {},
     "typecheck:tsgo": {},
-    "lint:biome": {},
-    "lint:biome:fix": {},
     "lint:eslint": {},
     "lint:eslint:fix": {},
     "lint": {},
     "lint:fix": {},
+    "check": {},
+    "check:fix": {},
     "check:deps:usage": {},
     "test": {
       "command": "vitest run",
@@ -26,17 +26,16 @@
         "cwd": "{projectRoot}"
       }
     },
-    "test:coverage": {
-      "command": "vitest run --coverage",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
-    },
     "test:integration:backend": {
       "command": "vitest run --config vitest.integration.config.ts",
       "options": {
         "cwd": "{projectRoot}"
       }
-    }
+    },
+    "oxfmt": {},
+    "oxfmt:fix": {},
+    "oxlint": {},
+    "oxlint:fix": {},
+    "oxlint:type-aware": {}
   }
 }

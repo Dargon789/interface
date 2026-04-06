@@ -45,6 +45,7 @@ export const getPortfolioHistoricalValueChartQuery = ({
       return result as GetPortfolioChartResponse
     },
     enabled: !!transformedInput && enabled,
+    placeholderData: (prev) => prev,
   }) as QueryOptionsResult<
     GetPortfolioChartResponse | undefined,
     Error,

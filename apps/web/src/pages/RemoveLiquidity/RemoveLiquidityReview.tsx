@@ -302,7 +302,7 @@ export function RemoveLiquidityReview({ onClose }: { onClose: () => void }) {
             <Button
               size="large"
               onPress={onDecreaseLiquidity}
-              icon={needsPasskeySignin ? <Passkey size="$icon.24" /> : undefined}
+              icon={needsPasskeySignin ? <Passkey size="$icon.24" color="$white" /> : undefined}
             >
               {needsPasskeySignin ? t('pool.removeLiquidity') : t('common.confirm')}
             </Button>

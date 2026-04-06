@@ -5,25 +5,24 @@ import { AnimatedPager, Flex } from 'ui/src'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
-import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { ChooseUnitagModal } from '~/components/NavBar/DownloadApp/Modal/ChooseUnitag'
 import { DownloadAppsModal } from '~/components/NavBar/DownloadApp/Modal/DownloadApps'
-import { GetStarted } from '~/components/NavBar/DownloadApp/Modal/GetStarted'
+import { KeyManagementModal } from '~/components/NavBar/DownloadApp/Modal/KeyManagement'
 import { PasskeyGenerationModal } from '~/components/NavBar/DownloadApp/Modal/PasskeyGeneration'
 import { useModalState } from '~/hooks/useModalState'
 
 export enum Page {
-  GetStarted = 0,
-  GetApp = 1,
-  ChooseUnitag = 2,
+  DownloadApp = 0,
+  ChooseUnitag = 1,
+  KeyManagement = 2,
   PasskeyGeneration = 3,
 }
 
-export const downloadAppModalPageAtom = atom<Page>(Page.GetApp)
+export const downloadAppModalPageAtom = atom<Page>(Page.DownloadApp)
 
 export function GetTheAppModal() {
   const isEmbeddedWalletEnabled = useFeatureFlag(FeatureFlags.EmbeddedWallet)
-  const initialPage = isEmbeddedWalletEnabled ? Page.GetStarted : Page.GetApp
+  const initialPage = isEmbeddedWalletEnabled ? Page.ChooseUnitag : Page.DownloadApp
 
   const [page, setPage] = useAtom(downloadAppModalPageAtom)
   const { isOpen, closeModal } = useModalState(ModalName.GetTheApp)
@@ -31,7 +30,6 @@ export function GetTheAppModal() {
     closeModal()
     setTimeout(() => setPage(initialPage), 500)
   }, [closeModal, setPage, initialPage])
-  const accountDrawer = useAccountDrawer()
 
   const [unitag, setUnitag] = useState('')
   useEffect(() => {
@@ -51,27 +49,17 @@ export function GetTheAppModal() {
       <Flex data-testid={TestID.DownloadUniswapModal} position="relative" userSelect="none">
         {/* The Page enum value corresponds to the modal page's index */}
         <AnimatedPager currentIndex={page}>
-          <GetStarted
-            onClose={close}
-            setPage={setPage}
-            toConnectWalletDrawer={() => {
-              close()
-              accountDrawer.open()
-            }}
-          />
-          <DownloadAppsModal
-            goBack={isEmbeddedWalletEnabled ? () => setPage(Page.GetStarted) : undefined}
-            onClose={close}
-          />
+          <DownloadAppsModal onClose={close} />
           <ChooseUnitagModal
             setUnitag={setUnitag}
-            goBack={() => setPage(Page.GetStarted)}
+            goBack={isEmbeddedWalletEnabled ? undefined : () => setPage(Page.DownloadApp)}
             onClose={close}
             setPage={setPage}
           />
+          <KeyManagementModal goBack={() => setPage(Page.ChooseUnitag)} onClose={close} setPage={setPage} />
           <PasskeyGenerationModal
             unitag={unitag}
-            goBack={() => setPage(Page.ChooseUnitag)}
+            goBack={() => setPage(Page.KeyManagement)}
             onClose={close}
             setPage={setPage}
           />

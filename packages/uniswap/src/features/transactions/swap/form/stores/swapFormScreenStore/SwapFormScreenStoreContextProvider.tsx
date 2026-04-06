@@ -18,14 +18,13 @@ import { useTemporaryExactOutputUnavailableWarning } from 'uniswap/src/features/
 import { useUpdateSwapFormOnMountIfExactOutputWillFail } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/hooks/useUpdateSwapFormOnMountIfExactOutputWillFail'
 import { SwapFormScreenStoreContext } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/SwapFormScreenStoreContext'
 import { useSwapFormScreenCallbacks } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/useSwapFormScreenCallbacks'
-
 import {
   useSwapFormStore,
   useSwapFormStoreDerivedSwapInfo,
 } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
 import { getExactOutputWillFail } from 'uniswap/src/features/transactions/swap/utils/getExactOutputWillFail'
 import { CurrencyField } from 'uniswap/src/types/currency'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { formatCurrencyAmount } from 'utilities/src/format/localeBased'
 import { NumberType } from 'utilities/src/format/types'
 import { isMobileApp } from 'utilities/src/platform'
@@ -139,12 +138,13 @@ export const SwapFormScreenStoreContextProvider = ({
   })
 
   // Keep cursor synced when derived value changes while opposite field is focused
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -callbacks.moveCursorToEnd, decimalPadControlledField, exactCurrencyField
+  // oxlint-disable-next-line react/exhaustive-deps -- -callbacks.moveCursorToEnd, decimalPadControlledField, exactCurrencyField
   useEffect(() => {
     if (decimalPadControlledField === exactCurrencyField) {
       return
     }
     callbacks.moveCursorToEnd({ targetInputRef: formattedDerivedValueRef })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [formattedDerivedValue])
 
   const exactValue = isFiatMode ? exactAmountFiat : exactAmountToken
@@ -161,7 +161,7 @@ export const SwapFormScreenStoreContextProvider = ({
   // Always show footer on native mobile; otherwise only when we have tokens & amount & not blocked, or when we have an exact output unavailable warning
   const showFooter = Boolean(
     !hideFooter &&
-      (isMobileApp || (!isBlockedTokens && input && output && exactAmountToken) || showExactOutputUnavailableWarning),
+    (isMobileApp || (!isBlockedTokens && input && output && exactAmountToken) || showExactOutputUnavailableWarning),
   )
 
   // Compose full state object (same shape as SwapFormScreenStoreState)

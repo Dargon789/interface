@@ -127,9 +127,13 @@ function SwapFormDecimalPadContent({
       !!currencyBalances[CurrencyField.INPUT] &&
       !currencyAmounts[CurrencyField.INPUT]?.greaterThan(0) &&
       !currencyAmounts[CurrencyField.OUTPUT]?.greaterThan(0),
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     [
+      // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
       currencyBalances[CurrencyField.INPUT],
+      // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
       currencyAmounts[CurrencyField.INPUT],
+      // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
       currencyAmounts[CurrencyField.OUTPUT],
     ],
   )
@@ -153,8 +157,11 @@ function SwapFormDecimalPadContent({
         onSetPresetValue={handleSetPresetValue}
       />
     ),
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     [
+      // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
       currencyAmounts[CurrencyField.INPUT],
+      // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
       currencyBalances[CurrencyField.INPUT],
       handleSetPresetValue,
       amountInputPresetButtonProps,

@@ -11,7 +11,7 @@ export const CardImageGraphicSizeInfo = {
   height: 624,
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: legacy code requires any for compatibility
+// oxlint-disable-next-line typescript/no-explicit-any -- legacy code requires any for compatibility
 export function CardImage({ uri }: { uri: any }): JSX.Element | null {
   return (
     <Image

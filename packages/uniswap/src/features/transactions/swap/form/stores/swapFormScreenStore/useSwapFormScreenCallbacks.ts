@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { type MutableRefObject } from 'react'
+import { type MutableRefObject, useEffect, useRef } from 'react'
 import type { TextInputProps } from 'react-native'
 import type { PresetPercentage } from 'uniswap/src/components/CurrencyInputPanel/AmountInputPresets/types'
 import { isMaxPercentage } from 'uniswap/src/components/CurrencyInputPanel/AmountInputPresets/utils'
@@ -12,6 +12,7 @@ import { useSwapFormStore } from 'uniswap/src/features/transactions/swap/stores/
 import { maybeLogFirstSwapAction } from 'uniswap/src/features/transactions/swap/utils/maybeLogFirstSwapAction'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { isWebPlatform } from 'utilities/src/platform'
+import { isSafeNumber } from 'utilities/src/primitives/integer'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 
@@ -80,6 +81,12 @@ export function useSwapFormScreenCallbacks({
 
   const decimalPadControlledField = useDecimalPadControlledField()
 
+  const pendingSelectionTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  useEffect(() => {
+    return () => clearTimeout(pendingSelectionTimeoutRef.current)
+  }, [])
+
   const resetSelection = useEvent(
     ({ start, end, currencyField }: { start: number; end?: number; currencyField?: CurrencyField }) => {
       // Update refs first to have the latest selection state available in the DecimalPadInput
@@ -94,7 +101,10 @@ export function useSwapFormScreenCallbacks({
       selectionRef.current = { start, end }
 
       if (!isWebPlatform && inputFieldRef) {
-        setTimeout(() => {
+        // Cancel any pending native selection update to prevent stale cursor positions
+        // when typing fast (the previous timeout would set the cursor to an outdated position).
+        clearTimeout(pendingSelectionTimeoutRef.current)
+        pendingSelectionTimeoutRef.current = setTimeout(() => {
           inputFieldRef.current?.setNativeProps({ selection: { start, end } })
         }, 0)
       }
@@ -164,6 +174,10 @@ export function useSwapFormScreenCallbacks({
   })
 
   const onSetExactAmount = useEvent((currencyField: CurrencyField, amount: string) => {
+    if (!isSafeNumber(amount)) {
+      return
+    }
+
     const currentIsFiatMode = isFiatMode && focusOnCurrencyField === exactCurrencyField
     updateSwapForm({
       exactAmountFiat: currentIsFiatMode ? amount : undefined,

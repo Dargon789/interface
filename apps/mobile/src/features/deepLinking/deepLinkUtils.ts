@@ -3,6 +3,7 @@ import { getScantasticQueryParams } from 'src/components/Requests/ScanSheet/util
 import { UNISWAP_URL_SCHEME_UWU_LINK } from 'src/components/Requests/Uwulink/utils'
 import {
   UNISWAP_URL_SCHEME,
+  UNISWAP_URL_SCHEME_E2E_OVERRIDE_GATES,
   UNISWAP_URL_SCHEME_SCANTASTIC,
   UNISWAP_URL_SCHEME_WALLETCONNECT_AS_PARAM,
   UNISWAP_WALLETCONNECT_URL,
@@ -29,6 +30,7 @@ export enum DeepLinkAction {
   SkipNonWalletConnect = 'skipNonWalletConnect',
   UniversalWalletConnectLink = 'universalWalletConnectLink',
   WalletConnect = 'walletConnect',
+  E2EOverrideGates = 'e2eOverrideGates',
   Error = 'error',
   Unknown = 'unknown',
   TokenDetails = 'tokenDetails',
@@ -99,6 +101,10 @@ export type DeepLinkActionResult =
   | { action: DeepLinkAction.WalletConnect; data: BasePayload & { wcUri: string } }
   | { action: DeepLinkAction.TokenDetails; data: BasePayload & { currencyId: string } }
   | { action: DeepLinkAction.FiatOnRampScreen; data: PayloadWithFiatOnRampParams }
+  | {
+      action: DeepLinkAction.E2EOverrideGates
+      data: BasePayload & { enable: string[] }
+    }
   | { action: DeepLinkAction.Error; data: BasePayload }
   | { action: DeepLinkAction.Unknown; data: BasePayload }
 
@@ -110,7 +116,7 @@ type DeepLinkHandler = (url: URL, data: BasePayload) => DeepLinkActionResult
  *
  * @param urlString - The URL to parse.
  */
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function parseDeepLinkUrl(urlString: string): DeepLinkActionResult {
   const url = new URL(urlString)
   const screen = url.searchParams.get('screen') ?? 'other'
@@ -292,12 +298,17 @@ const handlers: Record<string, DeepLinkHandler> = {
     action: DeepLinkAction.UwuLink,
     data,
   }),
+  [UNISWAP_URL_SCHEME_E2E_OVERRIDE_GATES]: (url, data) => {
+    const enableParam = url.searchParams.get('enable') ?? url.searchParams.get('gates')
+    const enable = enableParam ? enableParam.split(',').filter(Boolean) : []
+    return { action: DeepLinkAction.E2EOverrideGates, data: { ...data, enable } }
+  },
 }
 
 const UNISWAP_EXTERNAL_WEB_LINK_VALID_REGEXES = [
-  // eslint-disable-next-line security/detect-unsafe-regex
+  // oxlint-disable-next-line security/detect-unsafe-regex
   /^https:\/\/([a-zA-Z0-9-]+)\.uniswap\.org(\/.*)?$/,
-  // eslint-disable-next-line security/detect-unsafe-regex
+  // oxlint-disable-next-line security/detect-unsafe-regex
   /^https:\/\/cryptothegame\.com(\/.*)?$/,
 ]
 

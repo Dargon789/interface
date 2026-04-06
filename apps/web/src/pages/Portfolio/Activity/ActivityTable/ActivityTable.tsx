@@ -160,7 +160,7 @@ export function useActivityTableColumns(showLoadingSkeleton: boolean): ColumnDef
   )
 }
 
-function _ActivityTable({ data, loading = false, error = false, rowWrapper }: ActivityTableProps): JSX.Element {
+function ActivityTableInner({ data, loading = false, error = false, rowWrapper }: ActivityTableProps): JSX.Element {
   const showLoadingSkeleton = loading || error
 
   // Initialize address lookup for batch fetching
@@ -185,4 +185,4 @@ function _ActivityTable({ data, loading = false, error = false, rowWrapper }: Ac
   )
 }
 
-export const ActivityTable = memo(_ActivityTable)
+export const ActivityTable = memo(ActivityTableInner)

@@ -1,5 +1,6 @@
 #!/bin/bash
-MAX_SIZE=25.50
+# Bumped 25.50 -> 26.00: security dep audit (elliptic 6.6.1, qs 6.14.2, etc.) added ~4KB via transitive deps
+MAX_SIZE=26.00
 MAX_BUFFER=0.5
 
 # Check OS type and use appropriate stat command

@@ -6,7 +6,7 @@
  *
  * For tests of the full migration chain, see uniswapMigrationTests.ts.
  */
-/* biome-ignore-all lint/suspicious/noExplicitAny: legacy code needs review */
+/* oxlint-disable typescript/no-explicit-any -- legacy code needs review */
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { SearchHistoryResultType } from 'uniswap/src/features/search/SearchHistoryResult'
 import { TokenProtectionWarning } from 'uniswap/src/features/tokens/warnings/types'
@@ -226,7 +226,7 @@ describe('migrateSearchHistory', () => {
       },
       // NFT collection should have new type value (3 → 2)
       {
-        type: SearchHistoryResultType.NFTCollection, // 2
+        type: 2,
         chainId: 1,
         address: '0xbd3531da5cf5857e7cfaa92426877b022e612cf8',
         name: 'Pudgy Penguins',

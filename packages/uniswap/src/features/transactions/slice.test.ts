@@ -1,6 +1,5 @@
 import { createStore, Store } from '@reduxjs/toolkit'
 import { TradingApi } from '@universe/api'
-
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { ValueType } from 'uniswap/src/features/tokens/getCurrencyAmount'
 import {

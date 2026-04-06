@@ -22,6 +22,7 @@ const GROUP_HOVER_STYLE = {
 
 const TOUCHABLE_HOVER_STYLE = { backgroundColor: '$surface3Hovered', scale: WEB_HOVER_SCALE } as const
 
+// oxlint-disable-next-line react/display-name -- biome-parity: oxlint is stricter here
 export const TokenIcon = memo(
   ({
     currencyInfo,

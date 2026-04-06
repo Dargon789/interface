@@ -7,7 +7,7 @@ import { forwardRef } from 'react'
  * On web, the list still works but without the animated scroll physics.
  */
 
-// biome-ignore lint/suspicious/noExplicitAny: Generic FlashList props require any for flexibility
+// oxlint-disable-next-line typescript/no-explicit-any -- Generic FlashList props require any for flexibility
 type AnimatedFlashListProps = FlashListProps<any>
 
 export const AnimatedFlashList = forwardRef(function _AnimatedFlashList(
@@ -25,7 +25,7 @@ export const AnimatedBottomSheetFlashList = forwardRef(function _AnimatedBottomS
     <FlashList
       ref={ref}
       {...props}
-      // biome-ignore lint/suspicious/noExplicitAny: BottomSheetScrollView type compatibility
+      // oxlint-disable-next-line typescript/no-explicit-any -- BottomSheetScrollView type compatibility
       renderScrollComponent={BottomSheetScrollView as any}
     />
   )

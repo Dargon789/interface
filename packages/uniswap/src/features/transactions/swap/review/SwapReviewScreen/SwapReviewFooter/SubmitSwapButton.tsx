@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { ButtonVariant } from 'ui/src'
 import { AnimatePresence, Button, Flex, useIsShortMobileDevice } from 'ui/src'
 import { Passkey } from 'ui/src/components/icons/Passkey'
 import type { AppTFunction } from 'ui/src/i18n/types'
@@ -7,8 +8,6 @@ import type { Warning } from 'uniswap/src/components/modals/WarningModal/types'
 import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
 import type { PasskeyAuthStatus } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
 import { useTransactionModalContext } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
-import { FlashblocksConfirmButton } from 'uniswap/src/features/transactions/swap/components/UnichainInstantBalanceModal/FlashblocksConfirmButton'
-import { useIsUnichainFlashblocksEnabled } from 'uniswap/src/features/transactions/swap/hooks/useIsUnichainFlashblocksEnabled'
 import { useActivePlanStatus } from 'uniswap/src/features/transactions/swap/review/hooks/useActivePlanStatus'
 import { DelayedSubmissionText } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewFooter/DelayedSubmissionText'
 import { PendingSwapButton } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewFooter/PendingSwapButton'
@@ -36,9 +35,6 @@ export function SubmitSwapButton({ disabled, onSubmit, showPendingUI, warning }:
   const { renderBiometricsIcon, passkeyAuthStatus } = useTransactionModalContext()
 
   const isSubmitting = useSwapFormStore((s) => s.isSubmitting)
-  const isConfirmed = useSwapFormStore((s) => s.isConfirmed)
-  const chainId = useSwapFormStoreDerivedSwapInfo((s) => s.chainId)
-  const isFlashblocksEnabled = useIsUnichainFlashblocksEnabled(chainId)
   const {
     wrapType,
     trade: { trade, indicativeTrade },
@@ -74,6 +70,13 @@ export function SubmitSwapButton({ disabled, onSubmit, showPendingUI, warning }:
     return undefined
   }, [renderBiometricsIcon, passkeyAuthStatus?.isSignedInWithPasskey, passkeyAuthStatus?.isSessionAuthenticated])
 
+  const warningVariant: ButtonVariant | undefined =
+    warning?.severity === WarningSeverity.High
+      ? 'critical'
+      : warning?.severity === WarningSeverity.Medium
+        ? 'warning'
+        : undefined
+
   switch (true) {
     case indicative: {
       return (
@@ -92,10 +95,6 @@ export function SubmitSwapButton({ disabled, onSubmit, showPendingUI, warning }:
         </Button>
       )
     }
-    case isConfirmed && isFlashblocksEnabled && !isChainedTrade: {
-      // this has side effects for the balance logic as well
-      return <FlashblocksConfirmButton size={size} />
-    }
     case isWebApp && isSubmitting: {
       return (
         <Button loading shouldAnimateBetweenLoadingStates={false} size={size}>
@@ -103,10 +102,10 @@ export function SubmitSwapButton({ disabled, onSubmit, showPendingUI, warning }:
         </Button>
       )
     }
-    case warning?.severity === WarningSeverity.High: {
+    case Boolean(warningVariant): {
       return (
         <Button
-          variant="critical"
+          variant={warningVariant}
           emphasis="primary"
           isDisabled={disabled}
           icon={icon}
@@ -260,7 +259,8 @@ const getSwapAction = ({
     }
     return SwapAction.ContinuePlan
   }
-  if (warning?.severity === WarningSeverity.High) {
+
+  if (warning?.severity === WarningSeverity.High || warning?.severity === WarningSeverity.Medium) {
     return SwapAction.SwapAnyway
   }
 

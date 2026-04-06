@@ -11,7 +11,7 @@ import {
   TimePeriodDisplay,
 } from '~/components/Explore/constants'
 import { AdvancedPriceChartToggle } from '~/pages/TokenDetails/components/chart/AdvancedPriceChartToggle'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 
 type TokenDetailsChartType = ChartType.PRICE | ChartType.VOLUME | ChartType.TVL
 const TOKEN_DETAILS_CHART_OPTIONS: TokenDetailsChartType[] = [ChartType.PRICE, ChartType.VOLUME, ChartType.TVL]
@@ -25,7 +25,7 @@ export function ChartControls() {
     priceChartType,
     setPriceChartType,
     disableCandlestickUI,
-  } = useTDPContext().chartState
+  } = useTDPStore((s) => s.chartState)
   const refitChartContent = useAtomValue(refitChartContentAtom)
   const media = useMedia()
   const isMediumScreen = media.lg

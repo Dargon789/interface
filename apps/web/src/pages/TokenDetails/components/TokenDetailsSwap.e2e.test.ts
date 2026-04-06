@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-syntax */
+/* oxlint-disable no-restricted-syntax */
 
 import { UNI, USDT } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'

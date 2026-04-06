@@ -4,6 +4,10 @@ import {
   type IncreaseLPPositionRequest,
   type MigrateV3ToV4LPPositionRequest,
 } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
+import {
+  type CreatePositionRequest,
+  type IncreasePositionRequest,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
 import { type Currency, type CurrencyAmount, type Token } from '@uniswap/sdk-core'
 import {
   type PermitTransaction,
@@ -65,20 +69,17 @@ interface BaseLiquidityTxAndGasInfo {
 export interface IncreasePositionTxAndGasInfo extends BaseLiquidityTxAndGasInfo {
   type: LiquidityTransactionType.Increase
   unsigned: boolean
-  increasePositionRequestArgs: IncreaseLPPositionRequest | undefined
-  sqrtRatioX96: string | undefined
+  increasePositionRequestArgs: IncreaseLPPositionRequest | IncreasePositionRequest | undefined
 }
 
 export interface DecreasePositionTxAndGasInfo extends BaseLiquidityTxAndGasInfo {
   type: LiquidityTransactionType.Decrease
-  sqrtRatioX96: string | undefined
 }
 
 export interface CreatePositionTxAndGasInfo extends BaseLiquidityTxAndGasInfo {
   type: LiquidityTransactionType.Create
   unsigned: boolean
-  createPositionRequestArgs: CreateLPPositionRequest | undefined
-  sqrtRatioX96: string | undefined
+  createPositionRequestArgs: CreateLPPositionRequest | CreatePositionRequest | undefined
 }
 
 export interface MigratePositionTxAndGasInfo extends BaseLiquidityTxAndGasInfo {
@@ -104,7 +105,6 @@ export type ValidatedIncreasePositionTxAndGasInfo = Required<IncreasePositionTxA
         unsigned: false
         permit: PermitTransaction | undefined
         txRequest: ValidatedTransactionRequest
-        sqrtRatioX96: string | undefined
       }
   )
 
@@ -123,7 +123,6 @@ export type ValidatedCreatePositionTxAndGasInfo = Required<CreatePositionTxAndGa
         unsigned: false
         permit: PermitTransaction | undefined
         txRequest: ValidatedTransactionRequest
-        sqrtRatioX96: string | undefined
       }
   )
 

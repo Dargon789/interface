@@ -15,7 +15,7 @@ const BRUSH_EXTENT_MARGIN_PX = 2
  * Returns true if every element in `a` maps to the
  * same pixel coordinate as elements in `b`
  */
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 const compare = (a: [number, number], b: [number, number], yScale: ScaleLinear<number, number>): boolean => {
   // normalize pixels to 1 decimals
   const aNorm = a.map((y) => yScale(y).toFixed(1))

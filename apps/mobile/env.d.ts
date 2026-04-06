@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/style/noNamespace: required to define process.env type */
+/* oxlint-disable typescript/no-namespace -- required to define process.env type */
 
 declare global {
   namespace NodeJS {

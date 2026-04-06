@@ -2,8 +2,7 @@ import 'utilities/jest-package-mocks'
 import 'uniswap/jest-package-mocks'
 import 'wallet/jest-package-mocks'
 import 'config/jest-presets/ui/ui-package-mocks'
-import 'react-native-gesture-handler/jestSetup';
-
+import 'react-native-gesture-handler/jestSetup'
 import { chrome } from 'jest-chrome'
 import { AppearanceSettingType } from 'uniswap/src/features/appearance/slice'
 
@@ -13,20 +12,20 @@ const ignoreLogs = {
   error: [
     // We need to use _persist property to ensure that the state is properly
     // rehydrated (https://github.com/Uniswap/universe/pull/7502/files#r1566259088)
-    'Unexpected key "_persist" found in previous state received by the reducer.'
-  ]
+    'Unexpected key "_persist" found in previous state received by the reducer.',
+  ],
 }
 
 // Ignore certain logs that are expected during tests.
 Object.entries(ignoreLogs).forEach(([method, messages]) => {
   const key = method
   const originalMethod = console[key]
-  console[key] = ((...args) => {
+  console[key] = (...args) => {
     if (messages.some((message) => args.some((arg) => typeof arg === 'string' && arg.startsWith(message)))) {
       return
     }
     originalMethod(...args)
-  })
+  }
 })
 
 globalThis.matchMedia =
@@ -51,7 +50,7 @@ global.chrome = {
   ...chrome,
   i18n: {
     ...global.chrome.i18n,
-    getUILanguage: jest.fn().mockReturnValue(MOCK_LANGUAGE)
+    getUILanguage: jest.fn().mockReturnValue(MOCK_LANGUAGE),
   },
   storage: {
     ...chrome.storage,
@@ -83,16 +82,16 @@ global.chrome = {
           callback()
         }
         return Promise.resolve()
-      })
-    }
-  }
+      }),
+    },
+  },
 }
 
 jest.mock('src/app/navigation/utils', () => ({
   useExtensionNavigation: () => ({
     navigateTo: jest.fn(),
     navigateBack: jest.fn(),
-  })
+  }),
 }))
 
 jest.mock('wallet/src/features/focus/useIsFocused', () => {

@@ -1,6 +1,7 @@
-// biome-ignore lint/style/noRestrictedImports: GraphQL fixtures need direct Playwright imports
-import { test as base } from '@playwright/test'
 import path from 'path'
+/* oxlint-disable react-hooks/rules-of-hooks -- Playwright fixtures use `use()` which is not a React hook */
+// oxlint-disable-next-line no-restricted-imports -- GraphQL fixtures need direct Playwright imports
+import { test as base } from '@playwright/test'
 import { Mocks } from '~/playwright/mocks/mocks'
 
 type GraphqlFixture = {
@@ -15,6 +16,7 @@ type GraphqlFixture = {
      * If no variables are provided, all operations with the specified operationName will match and return the mock response.
      * If variables are provided, the request will only match if all variables match (case insensitive).
      */
+    // oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
     intercept: (operationName: string, mockPath: string, variables?: Record<string, unknown>) => Promise<void>
     waitForResponse: (operationName: string) => Promise<void>
   }
@@ -32,7 +34,7 @@ export const test = base.extend<GraphqlFixture>({
   async graphql({ page }, use) {
     interceptConfigs.clear()
 
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     const intercept = async (operationName: string, mockPath: string, variables?: Record<string, unknown>) => {
       interceptConfigs.set(operationName, { mockPath, variables })
     }
@@ -90,7 +92,7 @@ export const test = base.extend<GraphqlFixture>({
   },
   // Intercept long running graphql requests here:
   interceptLongRunning: [
-    // eslint-disable-next-line no-empty-pattern
+    // oxlint-disable-next-line no-empty-pattern
     async ({ graphql }, use) => {
       graphql.intercept('PortfolioBalances', Mocks.PortfolioBalances.test_wallet)
       await use(undefined)

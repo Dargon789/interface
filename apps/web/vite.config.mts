@@ -1,22 +1,23 @@
+import { execSync } from 'child_process'
+import fs from 'fs'
+import { createHash } from 'node:crypto'
+import path from 'path'
+import process from 'process'
+import { fileURLToPath } from 'url'
+/* eslint-disable max-lines */
 import { cloudflare } from '@cloudflare/vite-plugin'
 import { tamaguiPlugin } from '@tamagui/vite-plugin'
 import react from '@vitejs/plugin-react'
-import { execSync } from 'child_process'
 import { config as dotenvConfig } from 'dotenv'
-import fs from 'fs'
-import path from 'path'
-import { createHash } from 'node:crypto'
-import process from 'process'
-import { fileURLToPath } from 'url'
 import { defineConfig, loadEnv, type ViteDevServer } from 'vite'
 import bundlesize from 'vite-plugin-bundlesize'
 import commonjs from 'vite-plugin-commonjs'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import svgr from 'vite-plugin-svgr'
 import tsconfigPaths from 'vite-tsconfig-paths'
+import { createEntryGatewayProxy } from './vite/entry-gateway-proxy'
 import { generateAssetsIgnorePlugin } from './vite/generateAssetsIgnorePlugin.js'
 import { cspMetaTagPlugin } from './vite/vite.plugins.js'
-import {createEntryGatewayProxy} from './vite/entry-gateway-proxy'
 
 // Get current file directory (ESM equivalent of __dirname)
 const __filename = fileURLToPath(import.meta.url)
@@ -125,8 +126,49 @@ const portWarningPlugin = (isProduction: boolean) =>
 // Get git commit hash
 const commitHash = execSync('git rev-parse HEAD').toString().trim()
 
+// Compute next dev version from latest non-RC web/* git tag
+function getNextDevVersion(): string {
+  try {
+    const latestTag = execSync("git tag --list 'web/*' --sort=-version:refname | grep -v '\\-rc\\.' | head -1")
+      .toString()
+      .trim()
+    if (!latestTag) {
+      return ''
+    }
+    const version = latestTag.replace('web/', '')
+    const parts = version.split('.').map(Number)
+    if (parts.length < 3 || parts.some(isNaN)) {
+      return ''
+    }
+    return `${parts[0]}.${parts[1] + 1}.0`
+  } catch {
+    return ''
+  }
+}
+
 export default defineConfig(({ mode }) => {
   let env = loadEnv(mode, __dirname, '')
+
+  // Load root .env.defaults.local as a base layer (app-level env files take precedence)
+  const rootEnvDefaultsLocalPath = path.resolve(__dirname, '../../.env.defaults.local')
+  if (fs.existsSync(rootEnvDefaultsLocalPath)) {
+    try {
+      const result = dotenvConfig({ path: rootEnvDefaultsLocalPath })
+      if (result.parsed) {
+        // Only set values that aren't already defined (lowest priority)
+        for (const [key, value] of Object.entries(result.parsed)) {
+          if (!(key in env)) {
+            env[key] = value
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(
+        `Warning: Failed to read ${rootEnvDefaultsLocalPath}:`,
+        error instanceof Error ? error.message : String(error),
+      )
+    }
+  }
 
   // Force load .env.[mode] files since NX ignores them
   const modeEnvPath = path.resolve(__dirname, `.env.${mode}`)
@@ -141,7 +183,7 @@ export default defineConfig(({ mode }) => {
         console.warn(`Warning: Failed to parse ${modeEnvPath}:`, result.error.message)
       }
     } catch (error) {
-      console.warn(`Warning: Failed to read ${modeEnvPath}:`, error.message)
+      console.warn(`Warning: Failed to read ${modeEnvPath}:`, error instanceof Error ? error.message : String(error))
     }
   }
 
@@ -202,7 +244,11 @@ export default defineConfig(({ mode }) => {
     'process.env.REACT_APP_WEB_BUILD_TYPE': JSON.stringify('vite'),
     // Enable Tamagui's global z-index stacking to fix modal stacking issues
     'process.env.TAMAGUI_STACK_Z_INDEX_GLOBAL': JSON.stringify('true'),
+    // So getConfig().isVercelEnvironment is true in the client on Vercel; enables direct staging WS URL to match EGW
+    ...(isVercelDeploy ? { 'process.env.VERCEL': JSON.stringify(process.env.VERCEL ?? '0') } : {}),
     ...envDefines,
+    // Fallback: compute next version from git tags when not set by CI
+    ...(!env.REACT_APP_VERSION_TAG ? { 'process.env.REACT_APP_VERSION_TAG': JSON.stringify(getNextDevVersion()) } : {}),
   }
 
   const cacheDir = path.resolve(__dirname, 'node_modules/.vite')
@@ -215,7 +261,17 @@ export default defineConfig(({ mode }) => {
 
     resolve: {
       // .web-app file extensions take priority over .web for web app-specific overrides
-      extensions: ['.web-app.tsx', '.web-app.ts', '.web-app.js', '.web.tsx', '.web.ts', '.web.js', '.tsx', '.ts', '.js'],
+      extensions: [
+        '.web-app.tsx',
+        '.web-app.ts',
+        '.web-app.js',
+        '.web.tsx',
+        '.web.ts',
+        '.web.js',
+        '.tsx',
+        '.ts',
+        '.js',
+      ],
       modules: [path.resolve(root, 'node_modules')],
       dedupe: [
         '@uniswap/sdk-core',
@@ -232,10 +288,7 @@ export default defineConfig(({ mode }) => {
         'react',
         'react-dom',
       ],
-      alias: [
-        ...exactAliases,
-        ...Object.entries(overrides).map(([find, replacement]) => ({ find, replacement })),
-      ],
+      alias: [...exactAliases, ...Object.entries(overrides).map(([find, replacement]) => ({ find, replacement }))],
     },
 
     plugins: [
@@ -269,8 +322,8 @@ export default defineConfig(({ mode }) => {
           // Transform JSX in react-native libraries that ship JSX in .js files
           const needsJsxTransform = [
             'node_modules/react-native-reanimated',
-            'node_modules/expo-blur'  // In case it's not fully mocked
-          ].some(path => id.includes(path))
+            'node_modules/expo-blur', // In case it's not fully mocked
+          ].some((path) => id.includes(path))
 
           if (!needsJsxTransform || !id.endsWith('.js')) {
             return null
@@ -435,9 +488,19 @@ export default defineConfig(({ mode }) => {
         '@visx/responsive',
       ],
       // Libraries that shouldn't be pre-bundled
-      exclude: ['expo-clipboard', '@connectrpc/connect'],
+      exclude: ['expo-clipboard', '@connectrpc/connect', '@uniswap/client-liquidity'],
       esbuildOptions: {
-        resolveExtensions: ['.web-app.js', '.web-app.ts', '.web-app.tsx', '.web.js', '.web.ts', '.web.tsx', '.js', '.ts', '.tsx'],
+        resolveExtensions: [
+          '.web-app.js',
+          '.web-app.ts',
+          '.web-app.tsx',
+          '.web.js',
+          '.web.ts',
+          '.web.tsx',
+          '.js',
+          '.ts',
+          '.tsx',
+        ],
         loader: {
           '.js': 'jsx',
           '.ts': 'ts',
@@ -461,7 +524,7 @@ export default defineConfig(({ mode }) => {
 
     build: {
       outDir: 'build',
-      sourcemap: VITE_DISABLE_SOURCEMAP ? false : (isProduction && !isVercelDeploy ? 'hidden' : true),
+      sourcemap: VITE_DISABLE_SOURCEMAP ? false : isProduction && !isVercelDeploy ? 'hidden' : true,
       minify: isProduction && !isVercelDeploy ? 'esbuild' : undefined,
       rollupOptions: {
         external: [

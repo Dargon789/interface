@@ -66,7 +66,7 @@ export function makeSelectAddressTransactions(): AddressTransactionsSelector {
       ...(svmAddressTransactions || {}),
     }
 
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     return unique(flattenObjectOfObjects(combinedTransactions), (tx, _, self) => {
       // Remove dummy local FOR transactions from TransactionList, notification badge, etc.
       // this is what prevents the local transactions from actually appearing in the activity tab.

@@ -1,32 +1,16 @@
-/* eslint-disable max-lines */
-import { PositionStatus, ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
+/* oxlint-disable max-lines */
+import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router'
-import { Flex, FlexProps, Shine, styled, Text, TouchableArea, useIsTouchDevice, useMedia } from 'ui/src'
-import { ArrowRight } from 'ui/src/components/icons/ArrowRight'
+import { Flex, Shine, Text, TouchableArea, useIsTouchDevice, useMedia } from 'ui/src'
 import { ArrowsLeftRight } from 'ui/src/components/icons/ArrowsLeftRight'
-import { Dollar } from 'ui/src/components/icons/Dollar'
-import { Eye } from 'ui/src/components/icons/Eye'
-import { EyeOff } from 'ui/src/components/icons/EyeOff'
-import { Flag } from 'ui/src/components/icons/Flag'
-import { InfoCircleFilled } from 'ui/src/components/icons/InfoCircleFilled'
-import { Minus } from 'ui/src/components/icons/Minus'
-import { MoreHorizontal } from 'ui/src/components/icons/MoreHorizontal'
-import { Plus } from 'ui/src/components/icons/Plus'
 import { zIndexes } from 'ui/src/theme'
-import { MenuOptionItem } from 'uniswap/src/components/menus/ContextMenu'
-import { MenuContent } from 'uniswap/src/components/menus/ContextMenuContent'
 import { PollingInterval } from 'uniswap/src/constants/misc'
-import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
-import { setPositionVisibility } from 'uniswap/src/features/visibility/slice'
 import { buildCurrencyId, currencyAddress } from 'uniswap/src/utils/currencyId'
-import { getPoolDetailsURL } from 'uniswap/src/utils/linking'
 import { NumberType } from 'utilities/src/format/types'
 import {
   CHART_HEIGHT,
@@ -34,9 +18,8 @@ import {
   LiquidityPositionRangeChartLoader,
   WrappedLiquidityPositionRangeChart,
 } from '~/components/Charts/LiquidityPositionRangeChart/LiquidityPositionRangeChart'
-import { AdaptiveDropdown } from '~/components/Dropdowns/AdaptiveDropdown'
 import { useGetRangeDisplay } from '~/components/Liquidity/hooks/useGetRangeDisplay'
-import { useReportPositionHandler } from '~/components/Liquidity/hooks/useReportPositionHandler'
+import { LiquidityPositionDropdownMenu } from '~/components/Liquidity/LiquidityPositionDropdownMenu'
 import {
   LiquidityPositionFeeStats,
   LiquidityPositionFeeStatsLoader,
@@ -46,14 +29,9 @@ import { LiquidityPositionInfo, LiquidityPositionInfoLoader } from '~/components
 import { PositionInfo, PriceOrdering } from '~/components/Liquidity/types'
 import { getBaseAndQuoteCurrencies } from '~/components/Liquidity/utils/currency'
 import { MouseoverTooltip } from '~/components/Tooltip'
-import { useAccount } from '~/hooks/useAccount'
 import useHoverProps from '~/hooks/useHoverProps'
 import { useLpIncentivesFormattedEarnings } from '~/hooks/useLpIncentivesFormattedEarnings'
-import useSelectChain from '~/hooks/useSelectChain'
-import { setOpenModal } from '~/state/application/reducer'
-import { useAppDispatch } from '~/state/hooks'
 import { ClickableTamaguiStyle } from '~/theme/components/styles'
-import { isV4UnsupportedChain } from '~/utils/networkSupportsV4'
 
 export function LiquidityPositionCardLoader() {
   return (
@@ -83,168 +61,20 @@ export function LiquidityPositionCardLoader() {
   )
 }
 
-function useDropdownOptions({
-  liquidityPosition,
-  showVisibilityOption,
-  isVisible,
-}: {
-  liquidityPosition: PositionInfo
-  showVisibilityOption?: boolean
-  isVisible: boolean
-}): MenuOptionItem[] {
-  const { t } = useTranslation()
-  const isOpenLiquidityPosition = liquidityPosition.status !== PositionStatus.CLOSED
-
-  const dispatch = useAppDispatch()
-  const navigate = useNavigate()
-  const account = useAccount()
-  const selectChain = useSelectChain()
-  const reportPositionHandler = useReportPositionHandler({ position: liquidityPosition, isVisible })
-
-  return useMemo(() => {
-    const chainInfo = getChainInfo(liquidityPosition.chainId)
-
-    const options: MenuOptionItem[] = []
-
-    const isV2Position = liquidityPosition.version === ProtocolVersion.V2
-    const isV3Position = liquidityPosition.version === ProtocolVersion.V3
-    const showMigrateV3Option =
-      isV3Position && isOpenLiquidityPosition && !isV4UnsupportedChain(liquidityPosition.chainId)
-
-    if (!isV2Position && isOpenLiquidityPosition) {
-      options.push({
-        onPress: () => {
-          dispatch(
-            setOpenModal({
-              name: ModalName.ClaimFee,
-              initialState: liquidityPosition,
-            }),
-          )
-        },
-        label: t('pool.collectFees'),
-        Icon: Dollar,
-      })
-    }
-
-    // closed v2 positions cannot re-add liquidity since the erc20 liquidity token is permanently burned when closed,
-    // whereas v3 positions can be re-opened
-    if (!isV2Position || isOpenLiquidityPosition) {
-      options.push({
-        onPress: () => {
-          dispatch(setOpenModal({ name: ModalName.AddLiquidity, initialState: liquidityPosition }))
-        },
-        label: t('common.addLiquidity'),
-        Icon: Plus,
-      })
-    }
-
-    if (isOpenLiquidityPosition) {
-      options.push({
-        onPress: () => {
-          dispatch(setOpenModal({ name: ModalName.RemoveLiquidity, initialState: liquidityPosition }))
-        },
-        label: t('pool.removeLiquidity'),
-        Icon: Minus,
-      })
-    }
-
-    // Add migration options if relevant
-
-    if (isV2Position && isOpenLiquidityPosition) {
-      options.push({
-        onPress: async () => {
-          if (liquidityPosition.chainId !== account.chainId) {
-            await selectChain(liquidityPosition.chainId)
-          }
-          navigate(`/migrate/v2/${liquidityPosition.liquidityToken.address}`)
-        },
-        label: t('pool.migrateLiquidity'),
-        Icon: ArrowRight,
-      })
-    }
-
-    if (showMigrateV3Option) {
-      options.push({
-        onPress: () => {
-          navigate(`/migrate/v3/${chainInfo.urlParam}/${liquidityPosition.tokenId}`)
-        },
-        label: t('pool.migrateLiquidity'),
-        Icon: ArrowRight,
-      })
-    }
-
-    options.push({
-      onPress: () => {
-        if (!liquidityPosition.poolId) {
-          return
-        }
-
-        navigate(getPoolDetailsURL(liquidityPosition.poolId, liquidityPosition.chainId))
-      },
-      label: t('pool.info'),
-      Icon: InfoCircleFilled,
-    })
-
-    if (showVisibilityOption) {
-      options.push({
-        onPress: () => {
-          dispatch(
-            setPositionVisibility({
-              poolId: liquidityPosition.poolId,
-              tokenId: liquidityPosition.tokenId,
-              chainId: liquidityPosition.chainId,
-              isVisible: !isVisible,
-            }),
-          )
-        },
-        label: isVisible ? t('common.hide.button') : t('common.unhide'),
-        Icon: isVisible ? EyeOff : Eye,
-        showDivider: true,
-      })
-
-      if (!liquidityPosition.isHidden) {
-        options.push({
-          onPress: reportPositionHandler,
-          label: t('nft.reportSpam'),
-          Icon: Flag,
-          destructive: true,
-        })
-      }
-    }
-
-    return options
-  }, [
-    account.chainId,
-    dispatch,
-    isOpenLiquidityPosition,
-    reportPositionHandler,
-    isVisible,
-    liquidityPosition,
-    navigate,
-    showVisibilityOption,
-    selectChain,
-    t,
-  ])
-}
-
 export function LiquidityPositionCard({
   liquidityPosition,
   isMiniVersion,
   showVisibilityOption,
   showMigrateButton = false,
-  isVisible = true,
   disabled = false,
-  isLast = false,
-  onMenuOpenChange,
+  isVisible = true,
 }: {
   liquidityPosition: PositionInfo
   isMiniVersion?: boolean
   showVisibilityOption?: boolean
   showMigrateButton?: boolean
-  isVisible?: boolean
   disabled?: boolean
-  isLast?: boolean
-  onMenuOpenChange?: (isOpen: boolean) => void
+  isVisible?: boolean
 }) {
   const { convertFiatAmountFormatted } = useLocalizationContext()
   const isTouchDevice = useIsTouchDevice()
@@ -308,12 +138,6 @@ export function LiquidityPositionCard({
   const currency0Info = useCurrencyInfo(currency0Id)
   const currency1Info = useCurrencyInfo(currency1Id)
 
-  const dropdownOptions = useDropdownOptions({
-    liquidityPosition,
-    showVisibilityOption,
-    isVisible,
-  })
-
   const priceOrderingForChart = useMemo(() => {
     if (
       (liquidityPosition.version !== ProtocolVersion.V3 && liquidityPosition.version !== ProtocolVersion.V4) ||
@@ -339,8 +163,8 @@ export function LiquidityPositionCard({
     <>
       {isMiniVersion ? (
         <MiniPositionCard
-          menuOptions={dropdownOptions}
           disabled={disabled}
+          showVisibilityOption={showVisibilityOption}
           positionInfo={liquidityPosition}
           formattedUsdValue={formattedUsdValue}
           formattedUsdFees={formattedFeesValue}
@@ -348,8 +172,7 @@ export function LiquidityPositionCard({
           tickSpacing={liquidityPosition.tickSpacing}
           tickLower={liquidityPosition.tickLower}
           tickUpper={liquidityPosition.tickUpper}
-          isLast={isLast}
-          onMenuOpenChange={onMenuOpenChange}
+          isVisible={isVisible}
         />
       ) : (
         <Flex
@@ -429,7 +252,15 @@ export function LiquidityPositionCard({
                 : undefined
             }
           />
-          {!isTouchDevice && !disabled && <PositionDropdownMoreMenu menuOptions={dropdownOptions} isLast={isLast} />}
+          {!isTouchDevice && !disabled && (
+            <Flex position="absolute" top="$spacing16" right="$spacing16" zIndex={zIndexes.mask}>
+              <LiquidityPositionDropdownMenu
+                showVisibilityOption={showVisibilityOption}
+                liquidityPosition={liquidityPosition}
+                isVisible={isVisible}
+              />
+            </Flex>
+          )}
         </Flex>
       )}
     </>
@@ -438,7 +269,7 @@ export function LiquidityPositionCard({
 
 function MiniPositionCard({
   positionInfo,
-  menuOptions,
+  showVisibilityOption,
   formattedUsdFees,
   formattedUsdValue,
   priceOrdering,
@@ -446,11 +277,10 @@ function MiniPositionCard({
   tickLower,
   tickUpper,
   disabled,
-  isLast = false,
-  onMenuOpenChange,
+  isVisible,
 }: {
   positionInfo: PositionInfo
-  menuOptions: MenuOptionItem[]
+  showVisibilityOption?: boolean
   formattedUsdFees?: string
   formattedUsdValue?: string
   priceOrdering: PriceOrdering
@@ -458,8 +288,7 @@ function MiniPositionCard({
   tickLower?: number
   tickUpper?: number
   disabled?: boolean
-  isLast?: boolean
-  onMenuOpenChange?: (isOpen: boolean) => void
+  isVisible?: boolean
 }) {
   const { t } = useTranslation()
   const [pricesInverted, setPricesInverted] = useState(false)
@@ -527,74 +356,15 @@ function MiniPositionCard({
       ) : (
         <Text variant="body4">{t('common.fullRange')}</Text>
       )}
-      <PositionDropdownMoreMenu menuOptions={menuOptions} isLast={isLast} onOpenChange={onMenuOpenChange} />
-    </Flex>
-  )
-}
-
-const activeStyle: FlexProps = { opacity: 1, pointerEvents: 'auto', backgroundColor: '$scrim' }
-const PositionDetailsMenuButton = styled(Flex, {
-  transition: 'all 0.1s ease-in-out',
-  opacity: 0,
-  borderRadius: '$rounded12',
-  p: '$spacing8',
-  variants: {
-    open: {
-      true: activeStyle,
-    },
-  },
-})
-
-function PositionDropdownMoreMenu({
-  menuOptions,
-  isLast,
-  onOpenChange,
-}: {
-  menuOptions: MenuOptionItem[]
-  isLast: boolean
-  onOpenChange?: (isOpen: boolean) => void
-}) {
-  const [isOpen, setIsOpen] = useState(false)
-
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open)
-    onOpenChange?.(open)
-  }
-
-  const dropdownTrigger = (
-    <Flex
-      zIndex={zIndexes.mask}
-      onPress={(event) => {
-        event.preventDefault()
-        event.stopPropagation()
-        handleOpenChange(!isOpen)
-      }}
-    >
-      <PositionDetailsMenuButton $group-hover={activeStyle} open={isOpen} onPress={() => {}}>
-        <MoreHorizontal size="$icon.16" color="white" />
-      </PositionDetailsMenuButton>
-    </Flex>
-  )
-
-  return (
-    <Flex position="absolute" top="$spacing16" right="$spacing16">
-      <AdaptiveDropdown
-        alignRight
-        positionFixed
-        forceFlipUp={isLast}
-        isOpen={isOpen}
-        toggleOpen={handleOpenChange}
-        trigger={dropdownTrigger}
-        dropdownStyle={{
-          p: 0,
-          backgroundColor: 'transparent',
-          borderRadius: '$rounded20',
-          minWidth: 'max-content',
-          borderWidth: 0,
-        }}
-      >
-        <MenuContent items={menuOptions} handleCloseMenu={() => handleOpenChange(false)} />
-      </AdaptiveDropdown>
+      {!disabled && (
+        <Flex position="absolute" top="$spacing16" right="$spacing16" zIndex={zIndexes.mask}>
+          <LiquidityPositionDropdownMenu
+            showVisibilityOption={showVisibilityOption}
+            liquidityPosition={positionInfo}
+            isVisible={isVisible}
+          />
+        </Flex>
+      )}
     </Flex>
   )
 }

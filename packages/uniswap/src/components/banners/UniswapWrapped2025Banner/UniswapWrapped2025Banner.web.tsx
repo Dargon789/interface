@@ -106,7 +106,7 @@ export function UniswapWrapped2025Banner({
   }
 
   return (
-    // biome-ignore lint/correctness/noRestrictedElements: Web-only mouse tracking for glow effect
+    // oxlint-disable-next-line react/forbid-elements -- Web-only mouse tracking for glow effect
     <div
       style={{ position: 'relative', width: '100%' }}
       onMouseLeave={mouseInteraction?.handleMouseLeave}

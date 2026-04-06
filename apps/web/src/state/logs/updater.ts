@@ -22,7 +22,7 @@ export default function Updater(): null {
     }
 
     const active = state[chainId]
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (!active) {
       return []
     }

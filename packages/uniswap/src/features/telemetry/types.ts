@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { type ApolloError } from '@apollo/client'
 import { type PartialMessage } from '@bufbuild/protobuf'
 import { type TransactionRequest as EthersTransactionRequest } from '@ethersproject/providers'
@@ -394,8 +394,6 @@ export enum OnboardingCardLoggingName {
   RecoveryBackup = 'recovery_backup',
   ClaimUnitag = 'claim_unitag',
   EnablePushNotifications = 'enable_push_notifications',
-  BridgedAsset = 'bridged_asset',
-
   NoAppFeesAnnouncement = 'no_app_fees_announcement',
 
   Unknown = 'unknown',
@@ -842,7 +840,6 @@ export type UniverseEventProperties = {
     createPosition?: boolean
     expectedAmountBaseRaw: string
     expectedAmountQuoteRaw: string
-    price_discrepancy?: string
   } & LiquidityAnalyticsProperties
   [LiquidityEventName.RemoveLiquiditySubmitted]: {
     expectedAmountBaseRaw: string
@@ -852,14 +849,6 @@ export type UniverseEventProperties = {
   [LiquidityEventName.TransactionModifiedInWallet]: {
     expected?: string
     actual: string
-  } & LiquidityAnalyticsProperties
-  [LiquidityEventName.PriceDiscrepancyChecked]: {
-    event_name: LiquidityEventName
-    status: number
-    price_discrepancy: string
-    absolute_price_discrepancy: number
-    sqrt_ratio_x96_before: string
-    sqrt_ratio_x96_after: string
   } & LiquidityAnalyticsProperties
   [AuctionEventName.AuctionWithdrawSubmitted]: AuctionWithdrawAnalyticsProperties
   [AuctionEventName.AuctionBidSubmitted]: AuctionBidAnalyticsProperties
@@ -958,6 +947,9 @@ export type UniverseEventProperties = {
     collection_address?: string
     token_id?: string
     link_type?: string
+    // Covering ElementName.DisconnectWalletButton
+    connector_id?: string
+    svm_connector_id?: string
   }
   [SharedEventName.PAGE_VIEWED]: ITraceContext
   [SharedEventName.ANALYTICS_SWITCH_TOGGLED]: {
@@ -1086,7 +1078,6 @@ export type UniverseEventProperties = {
   [SwapEventName.SwapTokensReversed]: undefined
   [UniswapEventName.TooltipOpened]: ITraceContext & {
     tooltip_name: string
-    is_price_ux_enabled: boolean
   }
   [UniswapEventName.DelegationDetected]: {
     chainId: number
@@ -1119,6 +1110,8 @@ export type UniverseEventProperties = {
         volume?: boolean
         price_chart?: boolean
         token_details?: boolean
+        performance?: boolean
+        performance_text?: string
         something_else?: boolean
       })
     | (TokenReportProperties & {
@@ -1133,6 +1126,13 @@ export type UniverseEventProperties = {
         something_else: boolean
         text?: string
       })
+    | {
+        type: 'portfolio'
+        performance: boolean
+        performance_text?: string
+        something_else: boolean
+        text?: string
+      }
   [UniswapEventName.TokenSelected]:
     | (ITraceContext &
         AssetDetailsBaseProperties &

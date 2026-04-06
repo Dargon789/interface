@@ -4,8 +4,10 @@ import {
   EthAsErc20UniswapXProperties,
   Experiments,
   FeatureFlags,
-  getExperimentValue,
+  getExperimentValueFromLayer,
   getFeatureFlag,
+  Layers,
+  waitForStatsigReady,
 } from '@universe/gating'
 import { config } from 'uniswap/src/config'
 import { tradingApiVersionPrefix, uniswapUrls } from 'uniswap/src/constants/urls'
@@ -47,9 +49,10 @@ export enum TradingApiHeaders {
  * NOTE: Be sure to confirm that adding this header does not cause a CORS issue
  * with the web environments.
  */
-export const getFeatureFlaggedHeaders = (
+export const getFeatureFlaggedHeaders = async (
   tradingApiPath: (typeof TRADING_API_PATHS)[keyof typeof TRADING_API_PATHS],
-): HeadersInit => {
+): Promise<HeadersInit> => {
+  await waitForStatsigReady()
   const headers: Record<string, string> = {
     [TradingApiHeaders.UniversalRouterVersion]: TradingApi.UniversalRouterVersion._2_0,
   }
@@ -60,9 +63,12 @@ export const getFeatureFlaggedHeaders = (
 
   const chainedActionsEnabled = getFeatureFlag(FeatureFlags.ChainedActions)
   const unirouteEnabled = getFeatureFlag(FeatureFlags.UnirouteEnabled)
-  const uniroutePulumiEnabled = getFeatureFlag(FeatureFlags.UniroutePulumiEnabled)
-  const ethAsErc20UniswapXEnabled = getExperimentValue({
-    experiment: Experiments.EthAsErc20UniswapX,
+  const ethAsErc20UniswapXEnabled = getExperimentValueFromLayer<
+    typeof Layers.SwapPage,
+    Experiments.EthAsErc20UniswapX,
+    boolean
+  >({
+    layerName: Layers.SwapPage,
     param: EthAsErc20UniswapXProperties.EthAsErc20UniswapXEnabled,
     defaultValue: false,
   })
@@ -70,7 +76,8 @@ export const getFeatureFlaggedHeaders = (
   switch (tradingApiPath) {
     case TRADING_API_PATHS.quote:
       addHeaderIfEnabled({ headers, key: TradingApiHeaders.UnirouteEnabled, enabled: unirouteEnabled })
-      addHeaderIfEnabled({ headers, key: TradingApiHeaders.UniroutePulumiEnabled, enabled: uniroutePulumiEnabled })
+      // TODO(INFRA-1595): remove once backend is fully migrated to new route
+      headers[TradingApiHeaders.UniroutePulumiEnabled] = 'true'
       addHeaderIfEnabled({ headers, key: TradingApiHeaders.Erc20EthEnabled, enabled: ethAsErc20UniswapXEnabled })
       addHeaderIfEnabled({ headers, key: TradingApiHeaders.ChainedActionsEnabled, enabled: chainedActionsEnabled })
       addHeaderIfEnabled({
@@ -88,23 +95,11 @@ export const getFeatureFlaggedHeaders = (
       break
     case TRADING_API_PATHS.swap7702:
       addHeaderIfEnabled({ headers, key: TradingApiHeaders.UnirouteEnabled, enabled: unirouteEnabled })
-      addHeaderIfEnabled({ headers, key: TradingApiHeaders.UniroutePulumiEnabled, enabled: uniroutePulumiEnabled })
+      // TODO(INFRA-1595): remove once backend is fully migrated to new route
+      headers[TradingApiHeaders.UniroutePulumiEnabled] = 'true'
       addHeaderIfEnabled({ headers, key: TradingApiHeaders.Erc20EthEnabled, enabled: ethAsErc20UniswapXEnabled })
       break
   }
-  return headers
-}
-
-/**
- * NOTE: Be sure to confirm that adding this header does not cause a CORS issue
- * with the web environments
- */
-export const getQuoteHeaders = (): Record<string, string> => {
-  const headers: Record<string, string> = {}
-  const unirouteEnabled = getFeatureFlag(FeatureFlags.UnirouteEnabled)
-  const uniroutePulumiEnabled = getFeatureFlag(FeatureFlags.UniroutePulumiEnabled)
-  addHeaderIfEnabled({ headers, key: 'x-uniroute-enabled', enabled: unirouteEnabled })
-  addHeaderIfEnabled({ headers, key: 'x-uniroute-pulumi-enabled', enabled: uniroutePulumiEnabled })
   return headers
 }
 

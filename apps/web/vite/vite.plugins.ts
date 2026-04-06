@@ -18,13 +18,13 @@ const CSP_DIRECTIVE_MAP: Record<string, string> = {
 }
 
 // This plugin is used in vite.config.mts
-// eslint-disable-next-line import/no-unused-modules
+// oxlint-disable-next-line import/no-unused-modules
 export function cspMetaTagPlugin(mode?: string): Plugin {
   return {
     name: 'inject-csp-meta',
 
     transformIndexHtml(html) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       const env = mode ?? process.env.NODE_ENV ?? 'development'
       const skip = process.env.VITE_SKIP_CSP === 'true'
 
@@ -63,7 +63,7 @@ export function cspMetaTagPlugin(mode?: string): Plugin {
           if (!directive) {
             // Log unknown directives in development only
             if (env === 'development') {
-              // biome-ignore lint/suspicious/noConsole: Required for Vite build debugging
+              // oxlint-disable-next-line no-console -- Required for Vite build debugging
               console.warn(`Unknown CSP directive: ${key}`)
             }
             return null
@@ -119,7 +119,7 @@ const getLocalEnvUrl = (envUrlKey: string) => {
               new URL(value)
               return value
             } catch (_e) {
-              // biome-ignore lint/suspicious/noConsole: Required for Vite build debugging
+              // oxlint-disable-next-line no-console -- Required for Vite build debugging
               console.warn(`Invalid URL found for ${envUrlKey}: ${value}`)
               return null
             }
@@ -129,7 +129,7 @@ const getLocalEnvUrl = (envUrlKey: string) => {
     }
     return null
   } catch (error) {
-    // biome-ignore lint/suspicious/noConsole: Required for Vite build debugging
+    // oxlint-disable-next-line no-console -- Required for Vite build debugging
     console.error(`Error retrieving environment URL for ${envUrlKey}:`, error)
     return null
   }

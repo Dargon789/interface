@@ -86,7 +86,7 @@ export function useListTransactions({
       .flatMap((page) => Array.from(page.transactions))
       // Transactions appear incomplete when the app first loads
       // Type assertion needed because protobuf types assume transaction always exists
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       .filter((transaction) => transaction.transaction !== undefined)
 
     const dedupedTransactions = dedupeTransactions(flattenedTransactions)

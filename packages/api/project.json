@@ -5,12 +5,12 @@
   "projectType": "library",
   "tags": ["scope:api", "type:lib"],
   "targets": {
-    "lint:biome": {},
-    "lint:biome:fix": {},
     "lint:eslint": {},
     "lint:eslint:fix": {},
     "lint": {},
     "lint:fix": {},
+    "check": {},
+    "check:fix": {},
     "typecheck": {},
     "typecheck:tsgo": {},
     "prepare": {
@@ -26,12 +26,6 @@
     "check:deps:usage": {},
     "test": {
       "command": "vitest run",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
-    },
-    "test:coverage": {
-      "command": "vitest run --coverage",
       "options": {
         "cwd": "{projectRoot}"
       }
@@ -71,7 +65,7 @@
       "dependsOn": ["tradingapi:generate:openapi"]
     },
     "graphql:schema": {
-      "command": "get-graphql-schema https://api.uniswap.org/v1/graphql -h Origin=https://app.uniswap.org > ./src/clients/graphql/schema.graphql",
+      "command": "gh auth status >/dev/null 2>&1 || { echo 'Error: gh CLI is not installed or not authenticated. Run `gh auth login` first.' >&2; exit 1; } && SCHEMA=$(gh api repos/Uniswap/data-api-graphql/contents/graphql/schema.graphql --jq '.content') || { echo 'Error: Failed to fetch schema. Ensure you have access to Uniswap/data-api-graphql.' >&2; exit 1; } && echo '# To update this file, run `bun api graphql:schema`' > ./src/clients/graphql/schema.graphql && echo \"$SCHEMA\" | base64 -d | grep -v '^#' >> ./src/clients/graphql/schema.graphql",
       "options": {
         "cwd": "{projectRoot}"
       }
@@ -89,6 +83,11 @@
         "{projectRoot}/scripts/fixGraphQLApiTypes.mts"
       ],
       "outputs": ["{projectRoot}/src/clients/graphql/__generated__"]
-    }
+    },
+    "oxfmt": {},
+    "oxfmt:fix": {},
+    "oxlint": {},
+    "oxlint:fix": {},
+    "oxlint:type-aware": {}
   }
 }

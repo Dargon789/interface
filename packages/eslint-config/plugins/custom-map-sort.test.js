@@ -2,7 +2,7 @@ import { RuleTester } from 'eslint'
 import sortMapKeys from './custom-map-sort'
 
 const ruleTester = new RuleTester({
-  parserOptions: {
+  languageOptions: {
     ecmaVersion: 2020,
     sourceType: 'module',
   },

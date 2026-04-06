@@ -49,12 +49,28 @@ function parseLegacyErrorMessage(
   return options.includeRequestId && title && requestId ? `${title}, id: ${requestId}` : title
 }
 
+function extractErrorNameFromRawMessage(rawMessage: string): string | undefined {
+  // rawMessage format: "ResourceNotFound: BadRequest: FAILED_TO_ESTIMATE_GAS:{...json...}"
+  // Extract the JSON substring and parse the "name" field from it
+  const jsonStart = rawMessage.indexOf('{')
+  if (jsonStart === -1) {
+    return rawMessage
+  }
+  try {
+    const parsed = JSON.parse(rawMessage.slice(jsonStart))
+    return typeof parsed.name === 'string' ? (parsed.name as string) : rawMessage
+  } catch {
+    return undefined
+  }
+}
+
 function parseConnectRpcErrorMessage(
   error: ConnectError,
   options: { defaultTitle?: string; includeRequestId?: boolean },
 ): string | undefined {
   const requestId = error.metadata.get('x-request-id')
-  const title = error.rawMessage || options.defaultTitle
+  const errorName = extractErrorNameFromRawMessage(error.rawMessage)
+  const title = errorName || options.defaultTitle
 
   return options.includeRequestId && title && requestId ? `${title}, id: ${requestId}` : title
 }

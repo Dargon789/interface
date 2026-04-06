@@ -23,7 +23,7 @@ function DefaultSearchInput({ value, onChangeText, placeholder, width }: SearchI
         placeholder={placeholder}
         value={value}
         backgroundColor="$surface2"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderRadius="$rounded12"
         width={width}
         height={40}

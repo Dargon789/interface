@@ -31,8 +31,6 @@ export type SwapFormState = {
   hideSettings?: boolean
   prefilledCurrencies?: TradeableAsset[]
   isPrefilled?: boolean
-  instantOutputAmountRaw?: string
-  instantReceiptFetchTime?: number
 }
 
 type SwapFormMethods = {

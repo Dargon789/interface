@@ -97,7 +97,7 @@ export function RemoveLiquidityModalContextProvider({ children }: PropsWithChild
 export function useRemoveLiquidityModalContext() {
   const removeModalContext = useContext(RemoveLiquidityModalContext)
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (removeModalContext === undefined) {
     throw new Error('`useRemoveLiquidityTxContext` must be used inside of `RemoveLiquidityTxContextProvider`')
   }

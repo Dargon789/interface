@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { Currency, CurrencyAmount, Price, Token } from '@uniswap/sdk-core'
 import { Pair } from '@uniswap/v2-sdk'
@@ -419,13 +419,20 @@ export function getV4PriceRangeInfo({
   })
 
   const poolForPosition = pool ?? mockPool
-  const tickSpaceLimits: [Maybe<number>, Maybe<number>] =
-    initialPosition?.tickLower && initialPosition.tickUpper
-      ? [initialPosition.tickLower, initialPosition.tickUpper]
-      : [
-          poolForPosition ? nearestUsableTick(TickMath.MIN_TICK, poolForPosition.tickSpacing) : undefined,
-          poolForPosition ? nearestUsableTick(TickMath.MAX_TICK, poolForPosition.tickSpacing) : undefined,
-        ]
+  // When migrating from an out of range V3 position to a V4 position the tick space limits are constrained by the tick lower and tick upper of the V3 position. These need to be adjusted to the nearest usable tick for the tick spacing of the V4 pool.
+  const tickSpaceLimits: [Maybe<number>, Maybe<number>] = initialPosition
+    ? [
+        poolForPosition
+          ? nearestUsableTick(initialPosition.tickLower, poolForPosition.tickSpacing)
+          : initialPosition.tickLower,
+        poolForPosition
+          ? nearestUsableTick(initialPosition.tickUpper, poolForPosition.tickSpacing)
+          : initialPosition.tickUpper,
+      ]
+    : [
+        poolForPosition ? nearestUsableTick(TickMath.MIN_TICK, poolForPosition.tickSpacing) : undefined,
+        poolForPosition ? nearestUsableTick(TickMath.MAX_TICK, poolForPosition.tickSpacing) : undefined,
+      ]
 
   const [baseRangeInput, quoteRangeInput] = state.priceInverted
     ? [state.maxTick, state.minTick]

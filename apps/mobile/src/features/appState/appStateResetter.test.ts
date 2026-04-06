@@ -1,24 +1,23 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client'
 import { configureStore } from '@reduxjs/toolkit'
 import { QueryClient } from '@tanstack/react-query'
-import FastImage from 'react-native-fast-image'
+import { Image } from 'expo-image'
 import { type MobileState, mobileReducer } from 'src/app/mobileReducer'
+import { createMobileAppStateResetter } from 'src/features/appState/appStateResetter'
 import { openModal } from 'src/features/modals/modalSlice'
 import { NotifSettingType } from 'src/features/notifications/constants'
 import { updateNotifSettings } from 'src/features/notifications/slice'
+import { ScannerModalState } from 'uniswap/src/components/ReceiveQRCode/constants'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 
-// Mock FastImage
-jest.mock('react-native-fast-image', () => ({
-  clearMemoryCache: jest.fn().mockResolvedValue(undefined),
-  clearDiskCache: jest.fn().mockResolvedValue(undefined),
+jest.mock('expo-image', () => ({
+  Image: {
+    clearDiskCache: jest.fn(() => Promise.resolve()),
+    clearMemoryCache: jest.fn(() => Promise.resolve()),
+  },
 }))
-
-// Import after mock
-import { createMobileAppStateResetter } from 'src/features/appState/appStateResetter'
-import { ScannerModalState } from 'uniswap/src/components/ReceiveQRCode/constants'
 
 const createMockApolloClient = (): ApolloClient<unknown> => {
   const client = new ApolloClient({
@@ -85,14 +84,14 @@ describe('createMobileAppStateResetter', () => {
   })
 
   describe('resetQueryCaches', () => {
-    it('clears Apollo and React Query caches', async () => {
+    it('clears Apollo, React Query, and Expo Image caches', async () => {
       await resetter.resetQueryCaches()
 
       // Verify cache clearing methods were called
       expect(apolloClient.resetStore).toHaveBeenCalledTimes(1)
       expect(queryClient.resetQueries).toHaveBeenCalledTimes(1)
-      expect(FastImage.clearMemoryCache).toHaveBeenCalledTimes(1)
-      expect(FastImage.clearDiskCache).toHaveBeenCalledTimes(1)
+      expect(Image.clearDiskCache).toHaveBeenCalledTimes(1)
+      expect(Image.clearMemoryCache).toHaveBeenCalledTimes(1)
     })
   })
 

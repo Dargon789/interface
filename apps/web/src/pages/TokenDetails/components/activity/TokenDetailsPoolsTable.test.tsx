@@ -1,5 +1,4 @@
 import '~/test-utils/tokens/mocks'
-
 import { ApolloError } from '@apollo/client'
 import { type Currency, Percent, Token } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'

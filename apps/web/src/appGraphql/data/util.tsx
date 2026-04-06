@@ -24,7 +24,7 @@ export enum TimePeriod {
   MAX = 'MAX',
 }
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 export function toHistoryDuration(timePeriod: TimePeriod): GraphQLApi.HistoryDuration {
   switch (timePeriod) {
     case TimePeriod.HOUR:
@@ -60,19 +60,30 @@ export function gqlToCurrency(token: DeepPartial<GraphQLApi.Token | TokenStat>):
     return undefined
   }
   if (token.standard === GraphQLApi.TokenStandard.Native || token.address === NATIVE_CHAIN_ID || !token.address) {
-    return nativeOnChain(chainId)
-  } else {
-    return buildCurrency({
-      ...token,
-      decimals: token.decimals ?? 18,
-      symbol: token.symbol ?? undefined,
-      name: token.name ?? token.project?.name ?? undefined,
-      chainId,
-      bypassChecksum: false,
-      buyFeeBps: token.feeData?.buyFeeBps,
-      sellFeeBps: token.feeData?.sellFeeBps,
-    })
+    // Tempo has no displayable native currency — the virtual "USD" is a placeholder.
+    // When the backend returns Native standard for Tempo with a real address (e.g. pathUSD),
+    // fall through to buildCurrency so the token is constructed normally.
+    // Only return undefined when there's truly no address to build from.
+    if (chainId === UniverseChainId.Tempo) {
+      if (!token.address || token.address === NATIVE_CHAIN_ID) {
+        return undefined
+      }
+      // Fall through to buildCurrency below
+    } else {
+      return nativeOnChain(chainId)
+    }
   }
+
+  return buildCurrency({
+    ...token,
+    decimals: token.decimals ?? 18,
+    symbol: token.symbol ?? undefined,
+    name: token.name ?? token.project?.name ?? undefined,
+    chainId,
+    bypassChecksum: false,
+    buyFeeBps: token.feeData?.buyFeeBps,
+    sellFeeBps: token.feeData?.sellFeeBps,
+  })
 }
 
 export function fiatOnRampToCurrency(forCurrency: FORSupportedToken): Currency | undefined {

@@ -126,7 +126,7 @@ export function isFiatOnRampApiError(error: unknown): error is FORApiError {
     const e = error as FORApiError
     return (
       typeof e.data === 'object' &&
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       e.data !== null &&
       typeof e.data.statusCode === 'number' &&
       typeof e.data.errorName === 'string'

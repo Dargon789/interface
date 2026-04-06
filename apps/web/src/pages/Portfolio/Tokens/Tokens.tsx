@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { Flex, RemoveScroll, Text, useMedia } from 'ui/src'
 import { TokensListEmptyState } from 'uniswap/src/components/tokens/TokensListEmptyState'
+import { useGetWalletTokensProfitLossQuery } from 'uniswap/src/data/rest/getWalletTokensProfitLoss'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { getChainLabel } from 'uniswap/src/features/chains/utils'
 import { PortfolioBalance } from 'uniswap/src/features/portfolio/PortfolioBalance/PortfolioBalance'
@@ -48,7 +49,8 @@ export const PortfolioTokens = memo(function PortfolioTokens() {
   const [search, setSearch] = useState('')
   const { chains: enabledChains } = useEnabledChains()
   const { chainId: urlChainId, isExternalWallet } = usePortfolioRoutes()
-  const isPortfolioTokensAllocationChartEnabled = useFeatureFlag(FeatureFlags.PortfolioTokensAllocationChart)
+  const isMultichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const isProfitLossEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
 
   // Parse search query to extract chain filter and search term
   const { chainFilter, searchTerm } = useMemo(() => {
@@ -57,6 +59,15 @@ export const PortfolioTokens = memo(function PortfolioTokens() {
 
   // Use URL chain ID as primary filter, search chain filter as fallback
   const effectiveChainId = urlChainId || chainFilter
+
+  const { data: tokenProfitLossData, isError: isProfitLossError } = useGetWalletTokensProfitLossQuery({
+    input: {
+      evmAddress: portfolioAddresses.evmAddress,
+      svmAddress: portfolioAddresses.svmAddress,
+      chainIds: effectiveChainId ? [effectiveChainId] : enabledChains,
+    },
+    enabled: isProfitLossEnabled,
+  })
 
   // Get token data filtered by chain at API level
   const {
@@ -68,6 +79,7 @@ export const PortfolioTokens = memo(function PortfolioTokens() {
     error,
   } = useTransformTokenTableData({
     chainIds: effectiveChainId ? [effectiveChainId] : undefined,
+    tokenProfitLossData: isProfitLossError ? undefined : (tokenProfitLossData ?? undefined),
   })
 
   // Filter tokens by search term at client level (chain filtering is handled at API level)
@@ -138,7 +150,7 @@ export const PortfolioTokens = memo(function PortfolioTokens() {
 
           {hasTokens || loading ? (
             <>
-              {isPortfolioTokensAllocationChartEnabled && (
+              {isMultichainTokenUxEnabled && (
                 <Trace section={SectionName.PortfolioTokensTab} element={ElementName.TokensAllocationChart}>
                   <TokensAllocationChart tokenData={tokenData || []} />
                 </Trace>

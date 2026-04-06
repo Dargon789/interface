@@ -49,7 +49,7 @@ export function RecoveryPhraseVerification({
     setSubtitle(t('onboarding.backup.manual.subtitle', { count: nextWordNumber, ordinal: true }))
   }, [nextWordNumber, setSubtitle, t])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Only want to run when verification state changes, not callbacks which are stable
+  // oxlint-disable-next-line react/exhaustive-deps -- Only want to run when verification state changes, not callbacks which are stable
   useEffect(() => {
     if (numberOfVerifiedWords === 0) {
       return
@@ -65,9 +65,10 @@ export function RecoveryPhraseVerification({
     onWordVerified(numberOfVerifiedWords)
 
     // We only want this to run when the `numberOfTests` or `numberOfVerifiedWords` changes.
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [numberOfTests, numberOfVerifiedWords])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: markCurrentWordVerified and setUserWordInput are stable, others are needed for correct behavior timing
+  // oxlint-disable-next-line react/exhaustive-deps -- markCurrentWordVerified and setUserWordInput are stable, others are needed for correct behavior timing
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | undefined
 

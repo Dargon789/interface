@@ -78,7 +78,7 @@ test.describe(
       })
 
       test('Company menu displays complete sections, links, and legal content', async ({ page }) => {
-        await page.goto('/?featureFlagOverride=conversion-tracking')
+        await page.goto('/')
         await page.getByTestId(TestID.NavCompanyMenu).hover()
         const dropdown = page.getByTestId(TestID.NavCompanyDropdown).first()
         await expect(dropdown).toBeVisible()
@@ -126,7 +126,7 @@ test.describe(
       test.beforeEach(async ({ page }) => {
         // Set a mobile viewport
         await page.setViewportSize({ width: 449, height: 900 })
-        await page.goto('/?featureFlagOverride=conversion-tracking')
+        await page.goto('/')
         await page.waitForTimeout(500)
         await page.getByTestId(TestID.NavCompanyMenu).click()
       })

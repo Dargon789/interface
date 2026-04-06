@@ -40,6 +40,7 @@ export function DappRequestQueue(): JSX.Element {
     <Modal
       alignment="top"
       backgroundColor="$transparent"
+      borderWidth={0}
       isModalOpen={requestsExist}
       name={ModalName.DappRequest}
       padding="$none"
@@ -115,8 +116,9 @@ function DappRequestQueueContent(): JSX.Element {
       <Flex
         animation="200ms"
         backgroundColor="$surface1"
+        borderRadius="$rounded16"
         gap="$spacing12"
-        top={totalRequestCount > 1 ? 12 : 0}
+        mt={totalRequestCount > 1 ? '$spacing12' : '$none'}
         width="100%"
         py="$spacing12"
       >
@@ -178,7 +180,7 @@ function DappRequestQueueContent(): JSX.Element {
   )
 }
 
-const DappRequest = memo(function _DappRequest(): JSX.Element | null {
+const DappRequest = memo(function DappRequestInner(): JSX.Element | null {
   const { t } = useTranslation()
   const { request } = useDappRequestQueueContext()
 

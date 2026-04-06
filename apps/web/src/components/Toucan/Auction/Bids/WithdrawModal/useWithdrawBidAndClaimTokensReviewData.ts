@@ -59,7 +59,7 @@ export function useWithdrawBidAndClaimTokensReviewData({
   }, [isOpen])
 
   // Prepare transaction when modal opens
-  // biome-ignore lint/correctness/useExhaustiveDependencies: retryTrigger is intentionally included, submitState excluded
+  // oxlint-disable-next-line react/exhaustive-deps -- retryTrigger is intentionally included, submitState excluded
   useEffect(() => {
     let cancelled = false
 
@@ -74,7 +74,7 @@ export function useWithdrawBidAndClaimTokensReviewData({
     ;(async () => {
       try {
         const result = await submitState.prepareTransaction()
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (!cancelled) {
           if (!result) {
             setPreparedWithdrawBidAndClaimTokens(undefined)
@@ -85,13 +85,13 @@ export function useWithdrawBidAndClaimTokensReviewData({
           }
         }
       } catch (error) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (!cancelled) {
           setPreparedWithdrawBidAndClaimTokens(undefined)
           setPreparationError(error instanceof Error ? error : new Error('Failed to prepare withdraw and claim'))
         }
       } finally {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (!cancelled) {
           setIsPreparing(false)
         }
@@ -101,6 +101,7 @@ export function useWithdrawBidAndClaimTokensReviewData({
     return () => {
       cancelled = true
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [isOpen, retryTrigger])
 
   // Calculate gas fee

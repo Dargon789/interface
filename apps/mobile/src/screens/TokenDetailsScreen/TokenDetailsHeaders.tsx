@@ -23,7 +23,7 @@ import {
   TokenMenuActionType,
   useTokenContextMenuOptions,
 } from 'uniswap/src/features/portfolio/balances/hooks/useTokenContextMenuOptions'
-import { ModalName } from 'uniswap/src/features/telemetry/constants'
+import { ElementName, ModalName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
@@ -99,11 +99,14 @@ export const HeaderRightElement = memo(function HeaderRightElement(): JSX.Elemen
   return (
     <AnimatedFlex row alignItems="center" entering={FadeIn} gap="$spacing12">
       <ContextMenu
+        trackItemClicks
         menuItems={menuActions}
         triggerMode={ContextMenuTriggerMode.Primary}
         isOpen={isOpen}
         openMenu={openMenu}
         closeMenu={closeMenu}
+        elementName={ElementName.TokenDetailsContextMenu}
+        sectionName={SectionName.TokenDetails}
       >
         <Flex
           hitSlop={{ right: 5, left: 20, top: 20, bottom: 20 }}

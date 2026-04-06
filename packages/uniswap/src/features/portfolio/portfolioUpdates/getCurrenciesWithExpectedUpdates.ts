@@ -18,7 +18,7 @@ export function getCurrenciesWithExpectedUpdates(transaction: TransactionDetails
   // All txs besides FOR at least use gas so check for update of gas token
   currenciesWithBalToUpdate.add(buildNativeCurrencyId(txChainId))
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   switch (transaction.typeInfo?.type) {
     case TransactionType.Swap:
     case TransactionType.Bridge:
@@ -26,6 +26,7 @@ export function getCurrenciesWithExpectedUpdates(transaction: TransactionDetails
       currenciesWithBalToUpdate.add(normalizeCurrencyIdForMapLookup(transaction.typeInfo.outputCurrencyId))
       break
     case TransactionType.Plan:
+      // oxlint-disable-next-line no-lone-blocks -- suppressed
       {
         for (const step of transaction.typeInfo.stepDetails) {
           if (isPlanTransactionDetails(step)) {
@@ -54,9 +55,13 @@ export function getCurrenciesWithExpectedUpdates(transaction: TransactionDetails
         buildCurrencyId(txChainId, normalizeTokenAddressForCache(transaction.typeInfo.tokenAddress)),
       )
       break
-    case TransactionType.Wrap:
-      currenciesWithBalToUpdate.add(buildWrappedNativeCurrencyId(txChainId))
+    case TransactionType.Wrap: {
+      const wrappedId = buildWrappedNativeCurrencyId(txChainId)
+      if (wrappedId) {
+        currenciesWithBalToUpdate.add(wrappedId)
+      }
       break
+    }
     case TransactionType.OnRampPurchase:
     case TransactionType.OnRampTransfer:
     case TransactionType.OffRampSale:
@@ -70,7 +75,7 @@ export function getCurrenciesWithExpectedUpdates(transaction: TransactionDetails
         'getCurrenciesWithExpectedUpdates',
         'Unhandled transaction type',
         {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          // oxlint-disable-next-line typescript/no-unnecessary-condition
           type: transaction.typeInfo?.type,
           info: JSON.stringify(transaction.typeInfo),
         },

@@ -31,11 +31,11 @@ export function setupi18n(): undefined {
 
         const fileName = getLocaleTranslationKey(locale)
 
-        // eslint-disable-next-line no-unsanitized/method
+        // oxlint-disable-next-line no-unsanitized/method
         return import(`./locales/translations/${fileName}.json`)
       }),
     )
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     .on('failedLoading', (language, namespace, msg) => {
       logger.error(new Error(`Error loading language ${language} ${namespace}: ${msg}`), {
         tags: {

@@ -6,8 +6,8 @@ import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { fireEvent, render } from 'uniswap/src/test/test-utils'
 
 const TEST_ENTRIES: MultichainTokenEntry[] = [
-  { chainId: UniverseChainId.Mainnet, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
-  { chainId: UniverseChainId.Base, address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
+  { chainId: UniverseChainId.Mainnet, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', isNative: false },
+  { chainId: UniverseChainId.Base, address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', isNative: false },
 ]
 
 describe(MultichainExplorerList, () => {

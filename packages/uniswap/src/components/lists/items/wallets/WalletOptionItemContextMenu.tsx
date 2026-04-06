@@ -16,7 +16,7 @@ interface WalletOptionItemContextMenuProps {
   closeMenu: () => void
 }
 
-function _WalletOptionItemContextMenu({
+function WalletOptionItemContextMenuInner({
   children,
   address,
   isOpen,
@@ -53,4 +53,4 @@ function _WalletOptionItemContextMenu({
   )
 }
 
-export const WalletOptionItemContextMenu = React.memo(_WalletOptionItemContextMenu)
+export const WalletOptionItemContextMenu = React.memo(WalletOptionItemContextMenuInner)

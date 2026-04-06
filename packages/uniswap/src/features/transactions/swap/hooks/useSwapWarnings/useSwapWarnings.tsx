@@ -91,7 +91,6 @@ export function getSwapWarnings({
     t,
     priceImpact,
     formatPercent,
-    currencies: derivedSwapInfo.currencies,
   })
   if (priceImpactWarning) {
     warnings.push(priceImpactWarning)

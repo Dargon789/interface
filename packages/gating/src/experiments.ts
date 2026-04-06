@@ -7,10 +7,8 @@ export enum Experiments {
   EthAsErc20UniswapX = 'eth_as_erc20_uniswapx_experiment',
   ExploreBackendSorting = 'explore_backend_sorting',
   NativeTokenPercentageBuffer = 'lp_native_buffer',
-  PriceUxUpdate = 'price_ux_update',
   PrivateRpc = 'private_rpc',
   SwapConfirmation = 'swap-confirmation',
-  UnichainFlashblocksModal = 'unichain_flashblocks_modal',
 }
 
 export enum Layers {
@@ -51,18 +49,8 @@ export enum ExploreBackendSortingProperties {
 // Swap Layer experiment properties
 
 export enum SwapLayerProperties {
-  UpdatedPriceUX = 'updatedPriceUX',
-  FlashblocksModalEnabled = 'flashblocksModalEnabled',
   EthAsErc20UniswapXEnabled = 'ethAsErc20UniswapXEnabled',
   MinEthErc20USDValueThresholdByChain = 'minEthErc20USDValueThresholdByChain',
-}
-
-export enum PriceUxUpdateProperties {
-  UpdatedPriceUX = SwapLayerProperties.UpdatedPriceUX,
-}
-
-export enum UnichainFlashblocksProperties {
-  FlashblocksModalEnabled = SwapLayerProperties.FlashblocksModalEnabled,
 }
 
 export enum EthAsErc20UniswapXProperties {
@@ -75,10 +63,8 @@ export type ExperimentProperties = {
   [Experiments.EthAsErc20UniswapX]: EthAsErc20UniswapXProperties
   [Experiments.ExploreBackendSorting]: ExploreBackendSortingProperties
   [Experiments.NativeTokenPercentageBuffer]: NativeTokenPercentageBufferProperties
-  [Experiments.PriceUxUpdate]: PriceUxUpdateProperties
   [Experiments.PrivateRpc]: PrivateRpcProperties
   [Experiments.SwapConfirmation]: SwapConfirmationProperties
-  [Experiments.UnichainFlashblocksModal]: UnichainFlashblocksProperties
 }
 
 // will be a spread of all experiment properties in that layer

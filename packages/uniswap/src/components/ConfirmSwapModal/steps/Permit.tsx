@@ -45,6 +45,7 @@ const ContractIcon = (): JSX.Element => (
 )
 
 export function Permit2TransactionStepRow({
+  // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
   step,
   status,
   currentStepIndex,

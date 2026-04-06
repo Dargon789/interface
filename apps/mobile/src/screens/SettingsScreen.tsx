@@ -21,6 +21,7 @@ import {
   SettingsSectionItemComponent,
 } from 'src/components/Settings/SettingsRow'
 import { WalletSettings } from 'src/components/Settings/WalletSettings'
+import { useBiometricsAlert } from 'src/features/biometrics/useBiometricsAlert'
 import { useBiometricsState } from 'src/features/biometrics/useBiometricsState'
 import { useDeviceSupportsBiometricAuth } from 'src/features/biometrics/useDeviceSupportsBiometricAuth'
 import { useBiometricName } from 'src/features/biometricsSettings/hooks'
@@ -83,8 +84,9 @@ export function SettingsScreen(): JSX.Element {
   const colors = useSporeColors()
   const hasCopiedPrivateKeys = useSelector(selectHasCopiedPrivateKeys)
   const shouldShowPrivateKeys = useFeatureFlag(FeatureFlags.EnableExportPrivateKeys)
-  const { deviceSupportsBiometrics } = useBiometricsState()
+  const { isBiometricsDisabledInOSSettings } = useBiometricsState()
   const { t } = useTranslation()
+  const { showBiometricsAlert } = useBiometricsAlert({ t })
   const { onClose } = useReactNavigationModal()
 
   // check if device supports biometric authentication, if not, hide option
@@ -135,6 +137,7 @@ export function SettingsScreen(): JSX.Element {
           navigation={navigation}
           page={item}
           checkIfCanProceed={item.checkIfCanProceed}
+          cantProceedFallback={item.cantProceedFallback}
           testID={item.testID}
         />
       )
@@ -231,22 +234,22 @@ export function SettingsScreen(): JSX.Element {
         subTitle: t('settings.section.privacyAndSecurity'),
         isHidden: noSignerAccountImported,
         data: [
-          ...(deviceSupportsBiometrics
-            ? [
-                {
-                  navigationModal: ModalName.BiometricsModal,
-                  isHidden: !isTouchIdSupported && !isFaceIdSupported,
-                  text: isAndroid ? t('settings.setting.biometrics.title') : biometricsMethod,
-                  icon: isAndroid ? (
-                    <TouchId size="$icon.20" />
-                  ) : isTouchIdSupported ? (
-                    <Fingerprint {...svgProps} />
-                  ) : (
-                    <Faceid {...svgProps} />
-                  ),
-                },
-              ]
-            : []),
+          {
+            navigationModal: ModalName.BiometricsModal,
+            isHidden: !isTouchIdSupported && !isFaceIdSupported,
+            checkIfCanProceed: (): boolean => !isBiometricsDisabledInOSSettings,
+            cantProceedFallback: (): void => {
+              showBiometricsAlert(biometricsMethod)
+            },
+            text: isAndroid ? t('settings.setting.biometrics.title') : biometricsMethod,
+            icon: isAndroid ? (
+              <TouchId size="$icon.20" />
+            ) : isTouchIdSupported ? (
+              <Fingerprint {...svgProps} />
+            ) : (
+              <Faceid {...svgProps} />
+            ),
+          },
           {
             screen: MobileScreens.SettingsViewSeedPhrase,
             text: t('settings.setting.recoveryPhrase.title'),
@@ -393,7 +396,6 @@ export function SettingsScreen(): JSX.Element {
     hapticsEnabled,
     onToggleEnableHaptics,
     noSignerAccountImported,
-    deviceSupportsBiometrics,
     isTouchIdSupported,
     isFaceIdSupported,
     biometricsMethod,
@@ -409,6 +411,8 @@ export function SettingsScreen(): JSX.Element {
     hasCopiedPrivateKeys,
     shouldShowPrivateKeys,
     walletRestoreType,
+    isBiometricsDisabledInOSSettings,
+    showBiometricsAlert,
   ])
 
   return (

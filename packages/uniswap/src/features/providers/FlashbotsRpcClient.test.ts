@@ -1,4 +1,4 @@
-/* eslint-disable no-extra-semi */
+/* oxlint-disable no-extra-semi */
 import { Signer } from '@ethersproject/abstract-signer'
 import { SignerInfo, waitForFlashbotsProtectReceipt } from 'uniswap/src/features/providers/FlashbotsCommon'
 import { createFlashbotsRpcClient } from 'uniswap/src/features/providers/FlashbotsRpcClient'

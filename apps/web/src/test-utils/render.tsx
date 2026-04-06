@@ -121,7 +121,7 @@ const customRenderHook = <Result, Props>(
 }
 
 // Testing utils may export *.
-// eslint-disable-next-line no-restricted-syntax
+// oxlint-disable-next-line no-restricted-syntax
 export * from '@testing-library/react'
 export {
   customRender as render,

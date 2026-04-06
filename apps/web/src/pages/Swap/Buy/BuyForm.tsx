@@ -45,7 +45,6 @@ import {
   NumericalInputSymbolContainer,
   NumericalInputWrapper,
   StyledNumericalInput,
-  useWidthAdjustedDisplayValue,
 } from '~/pages/Swap/common/shared'
 import { getChainUrlParam } from '~/utils/chainParams'
 import { showSwitchNetworkNotification } from '~/utils/showSwitchNetworkNotification'
@@ -109,7 +108,6 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
   const navigate = useNavigate()
 
   const prevQuoteCurrency = usePrevious(quoteCurrency)
-  const postWidthAdjustedDisplayValue = useWidthAdjustedDisplayValue(inputAmount)
   const hiddenObserver = useResizeObserver<HTMLElement>()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -149,7 +147,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
   const DEFAULT_COUNTRY = useMemo(() => getCountryFromLocale(), [])
   const { data: countryResult } = useFiatOnRampAggregatorGetCountryQuery()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +buyFormState.selectedCountry, +selectedCountry
+  // oxlint-disable-next-line react/exhaustive-deps -- +buyFormState.selectedCountry, +selectedCountry
   useEffect(() => {
     if (!selectedCountry) {
       // Use API result if available, otherwise default to locale-based country immediately
@@ -309,7 +307,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
                 </NumericalInputSymbolContainer>
               )}
               <StyledNumericalInput
-                value={postWidthAdjustedDisplayValue}
+                value={inputAmount}
                 disabled={disabled}
                 onUserInput={handleUserInput}
                 placeholder="0"

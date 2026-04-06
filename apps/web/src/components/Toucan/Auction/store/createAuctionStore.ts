@@ -70,6 +70,7 @@ export const createAuctionStore = (auctionAddress?: string, chainId?: EVMUnivers
         pendingWithdrawalBidIds: new Set<string>(),
         awaitingConfirmationBidIds: new Set<string>(),
         withdrawalTxHashes: new Map<string, string>(),
+        chartSelectedBid: null,
 
         // Actions
         actions: {
@@ -222,6 +223,9 @@ export const createAuctionStore = (auctionAddress?: string, chainId?: EVMUnivers
           },
           setPreviousBidsCount: (count) => {
             set({ previousBidsCount: count })
+          },
+          setChartSelectedBid: (bid) => {
+            set({ chartSelectedBid: bid })
           },
           // Per-bid withdrawal state management - create new Set/Map instances for immutability
           addPendingWithdrawalBid: (bidId, txHash) => {

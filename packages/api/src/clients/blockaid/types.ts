@@ -1,5 +1,5 @@
 // The eslint rule is disabled because we want to use the zod schema factory pattern to avoid bundle size bloat
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* oxlint-disable typescript/explicit-function-return-type */
 import { z } from 'zod'
 
 /**

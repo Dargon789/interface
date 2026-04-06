@@ -1,7 +1,7 @@
 import { useSelector } from 'react-redux'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import {
-  // biome-ignore lint/style/noRestrictedImports: expected usage here
+  // oxlint-disable-next-line no-restricted-imports -- expected usage here
   selectIsTestnetModeEnabled,
   selectWalletHideReportedActivitySetting,
   selectWalletHideSmallBalancesSetting,

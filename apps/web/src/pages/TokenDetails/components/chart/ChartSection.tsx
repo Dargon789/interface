@@ -11,10 +11,14 @@ import { ChartType, DataQuality } from '~/components/Charts/utils'
 import { VolumeChart } from '~/components/Charts/VolumeChart'
 import { EXPLORE_CHART_HEIGHT_PX } from '~/components/Explore/constants'
 import { ChartControls } from '~/pages/TokenDetails/components/chart/ChartControls'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 
 export function ChartSection() {
-  const { tokenColor, currency, chartState } = useTDPContext()
+  const { tokenColor, currency, chartState } = useTDPStore((s) => ({
+    tokenColor: s.tokenColor,
+    currency: s.currency!,
+    chartState: s.chartState,
+  }))
   const { activeQuery, timePeriod, priceChartType } = chartState
   const { t } = useTranslation()
 
@@ -39,7 +43,7 @@ export function ChartSection() {
   // Use API's 24hr change for 1d, calculated change for other durations
   const pricePercentChange = timePeriod === TimePeriod.DAY ? priceChange24h : calculatedPriceChange
 
-  // eslint-disable-next-line consistent-return
+  // oxlint-disable-next-line consistent-return
   const getSection = () => {
     if (activeQuery.dataQuality === DataQuality.INVALID) {
       return (

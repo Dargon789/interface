@@ -116,7 +116,7 @@ export function mergeSearchResultsWithBridgingTokens({
 }
 
 export function isTokenOptionArray(option: OnchainItemListOption): option is TokenOption[] {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   return Array.isArray(option) && option.every((item) => item.type === OnchainItemListOptionType.Token)
 }
 

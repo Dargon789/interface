@@ -79,7 +79,7 @@ function getErrorContent({ errorType, trade }: { errorType: PendingModalError; t
   }
 }
 
-// biome-ignore lint/suspicious/noShadowRestrictedNames: Error is appropriate component name here
+// oxlint-disable-next-line no-shadow-restricted-names -- Error is appropriate component name here
 export default function Error({ errorType, trade, showTrade, swapResult, onRetry }: ErrorModalContentProps) {
   const { title, message, supportArticleURL } = getErrorContent({ errorType, trade })
   const { t } = useTranslation()

@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { type Provider } from '@ethersproject/providers'
 import { providerErrors, rpcErrors, serializeError } from '@metamask/rpc-errors'
 import { FeatureFlags, getFeatureFlag } from '@universe/gating'
@@ -105,7 +105,7 @@ const ACCOUNT_INFO_TYPES = [DappRequestType.GetChainId, DappRequestType.GetAccou
  * @param requestParams DappRequest and senderTabInfo (required for sending response)
  * i think remove all the checks from here and push to later.
  */
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 function* handleRequest(requestParams: DappRequestNoDappInfo) {
   if (
     requestParams.dappRequest.type === DappRequestType.SendCalls ||
@@ -385,7 +385,7 @@ export function* handleSendTransaction({
   )
 
   // do not block on this function call since it should happen in parallel
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  // oxlint-disable-next-line typescript/no-floating-promises
   onTransactionSentToChain(transactionHash, provider)
 
   const response: SendTransactionResponse = {

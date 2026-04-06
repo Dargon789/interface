@@ -1,4 +1,4 @@
-/* eslint-disable import/no-unused-modules */
+/* oxlint-disable import/no-unused-modules */
 // TODO(WEB-4448): for multichain, refactored our custom useBlockNumber in favor of wagmi's hook. Remove this provider
 
 import { atom } from 'jotai'

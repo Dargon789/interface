@@ -128,7 +128,7 @@ export function useBidSimulation({
         simulateTransaction: false,
       })
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ref may be set during await
+      // oxlint-disable-next-line typescript/no-unnecessary-condition -- ref may be set during await
       if (isAbortedRef.current) {
         return false
       }
@@ -136,7 +136,7 @@ export function useBidSimulation({
       setIsSimulating(false)
       return true
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ref may be set during await
+      // oxlint-disable-next-line typescript/no-unnecessary-condition -- ref may be set during await
       if (isAbortedRef.current) {
         return false
       }

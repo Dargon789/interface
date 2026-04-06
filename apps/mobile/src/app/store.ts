@@ -56,7 +56,7 @@ const middlewares: Middleware[] = [delegationListenerMiddleware.middleware]
 
 const setupStore = (
   preloadedState?: PreloadedState<MobileState>,
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  // oxlint-disable-next-line typescript/explicit-function-return-type
 ) => {
   return createStore({
     reducer: persistedReducer,

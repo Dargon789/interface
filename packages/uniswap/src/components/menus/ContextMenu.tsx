@@ -1,4 +1,4 @@
-import { PropsWithChildren } from 'react'
+import { PropsWithChildren, ReactNode } from 'react'
 import { DropdownMenuSheetItemProps, GeneratedIcon, IconProps, TextProps } from 'ui/src'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
 import { ElementName, SectionName } from 'uniswap/src/features/telemetry/constants'
@@ -13,6 +13,7 @@ export type MenuOptionItem = {
   onPress: () => void
   actionType?: DropdownMenuSheetItemProps['actionType']
   Icon?: GeneratedIcon | ((props: IconProps) => JSX.Element)
+  trailingIcon?: ReactNode
   showDivider?: boolean
   disabled?: boolean
   destructive?: boolean
@@ -42,6 +43,8 @@ export type MenuOptionItem = {
  */
 export type ContextMenuProps = {
   menuItems: MenuOptionItem[]
+  /** When provided, renders this content instead of the default MenuContent built from menuItems. */
+  contentOverride?: ReactNode
   isPlacementAbove?: boolean
   isPlacementRight?: boolean
   offsetX?: number

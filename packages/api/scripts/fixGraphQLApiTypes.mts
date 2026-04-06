@@ -1,10 +1,10 @@
 #!/usr/bin/env node
+import path from 'path'
 /**
  * Post-processing script to fix imports in generated GraphQL files
  * Uses TypeScript AST to extract exports and add proper re-exports
  */
 import { Project } from 'ts-morph'
-import path from 'path'
 
 const genDir = path.join(process.cwd(), 'src/clients/graphql/__generated__')
 
@@ -43,9 +43,7 @@ function addImport(filePath: string, fromFile: string, exportNames: string[]): v
 
   // Check if import already exists
   const existingImports = sourceFile.getImportDeclarations()
-  const alreadyExists = existingImports.some(
-    imp => imp.getModuleSpecifierValue() === fromFile
-  )
+  const alreadyExists = existingImports.some((imp) => imp.getModuleSpecifierValue() === fromFile)
 
   if (!alreadyExists) {
     // Add import at the top (after any existing imports)
@@ -54,7 +52,7 @@ function addImport(filePath: string, fromFile: string, exportNames: string[]): v
 
     sourceFile.insertImportDeclaration(insertIndex, {
       moduleSpecifier: fromFile,
-      namedImports: exportNames.map(name => ({ name, isTypeOnly: true })),
+      namedImports: exportNames.map((name) => ({ name, isTypeOnly: true })),
     })
 
     sourceFile.saveSync()
@@ -86,6 +84,5 @@ console.log(`Found ${operationsExports.length} exports in operations.ts`)
 const hooksPath = path.join(genDir, 'react-hooks.ts')
 addImport(hooksPath, './operations', operationsExports)
 console.log('✓ Added imports to react-hooks.ts')
-
 
 console.log('\n✓ GraphQL codegen post-processing complete!')

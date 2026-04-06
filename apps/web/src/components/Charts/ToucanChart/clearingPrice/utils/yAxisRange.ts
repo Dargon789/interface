@@ -37,27 +37,6 @@ export function calculateScaleFactor(maxValue: number): number {
 }
 
 /**
- * Result of Y-axis range calculation.
- */
-interface YAxisRange {
-  /** Unscaled minimum value */
-  yMin: number
-  /** Unscaled maximum value */
-  yMax: number
-  /** Scaled minimum value */
-  scaledYMin: number
-  /** Scaled maximum value */
-  scaledYMax: number
-}
-
-interface CalculateNiceYRangeParams {
-  minValue: number
-  maxValue: number
-  scaleFactor: number
-  maxTicks?: number
-}
-
-/**
  * Calculate a nice step size that rounds to 1, 2, or 5 × 10^n.
  */
 function calculateNiceStep(rawStep: number): number {
@@ -75,81 +54,49 @@ function calculateNiceStep(rawStep: number): number {
 }
 
 /**
- * Calculate nice round numbers for Y-axis range based on the data range.
- * This ensures the axis shows readable tick values (e.g., 0.0001, 0.0002, 0.0003).
- *
- * @param minValue
- * @param maxValue
- * @param scaleFactor
- * @param maxTicks - Maximum number of Y-axis ticks allowed (default: 12).
- *                   If the calculated range would produce more ticks, the step size
- *                   is increased to reduce the tick count.
+ * A tick value for the Y-axis overlay.
+ * `value` is in scaled space (matches what the chart series received).
+ * `label` is the formatted display string (unscaled via the formatter).
  */
-export function calculateNiceYRange({
-  minValue,
-  maxValue,
-  scaleFactor,
-  maxTicks = 12,
-}: CalculateNiceYRangeParams): YAxisRange {
-  if (minValue === maxValue) {
-    // All values are the same - add some buffer
-    const buffer = minValue === 0 ? 1 : minValue * 0.2
-    const yMin = Math.max(0, minValue - buffer)
-    const yMax = maxValue + buffer
-    return {
-      yMin,
-      yMax,
-      scaledYMin: yMin * scaleFactor,
-      scaledYMax: yMax * scaleFactor,
-    }
+interface YAxisTick {
+  value: number
+  label: string
+}
+
+/**
+ * Generate nice Y-axis tick values for the custom overlay.
+ *
+ * Accepts either an explicit min/max range or an array of values.
+ * Returns tick values in scaled space (for priceToCoordinate lookups)
+ * with pre-formatted labels (unscaled for display).
+ */
+export function calculateYAxisTicks({
+  min,
+  max,
+  formatter,
+  targetTicks = 15,
+}: {
+  min: number
+  max: number
+  formatter: (value: number) => string
+  targetTicks?: number
+}): YAxisTick[] {
+  if (min === max) {
+    return []
   }
 
-  const range = maxValue - minValue
-  // Add 15% buffer on top and bottom
-  const buffer = range * 0.15
+  const niceStep = calculateNiceStep((max - min) / targetTicks)
+  const tickMin = Math.ceil(min / niceStep) * niceStep
+  const tickMax = Math.floor(max / niceStep) * niceStep
 
-  let yMin = Math.max(0, minValue - buffer)
-  let yMax = maxValue + buffer
-
-  // Find a nice step size for the range
-  const targetTicks = 8 // Target number of Y-axis ticks
-  const rawStep = (yMax - yMin) / targetTicks
-  let niceStep = calculateNiceStep(rawStep)
-
-  // Round yMin down and yMax up to nice step boundaries
-  yMin = Math.floor(yMin / niceStep) * niceStep
-  yMax = Math.ceil(yMax / niceStep) * niceStep
-
-  // Ensure yMin is not negative for price data
-  yMin = Math.max(0, yMin)
-
-  // Check if we have too many ticks and increase step size if needed
-  let numTicks = niceStep > 0 ? Math.round((yMax - yMin) / niceStep) : 0
-  while (numTicks > maxTicks && niceStep > 0) {
-    // Increase step to next nice value (multiply by 2 or 2.5 to jump to next 1/2/5 sequence)
-    const currentMagnitude = Math.pow(10, Math.floor(Math.log10(niceStep)))
-    const currentNormalized = niceStep / currentMagnitude
-    if (currentNormalized < 2) {
-      niceStep = 2 * currentMagnitude
-    } else if (currentNormalized < 5) {
-      niceStep = 5 * currentMagnitude
-    } else {
-      niceStep = 10 * currentMagnitude
-    }
-
-    // Recalculate yMin/yMax with new step
-    yMin = Math.floor(Math.max(0, minValue - buffer) / niceStep) * niceStep
-    yMax = Math.ceil((maxValue + buffer) / niceStep) * niceStep
-    yMin = Math.max(0, yMin)
-    numTicks = Math.round((yMax - yMin) / niceStep)
+  const ticks: YAxisTick[] = []
+  const tickCount = Math.round((tickMax - tickMin) / niceStep)
+  for (let i = 0; i <= tickCount; i++) {
+    const value = tickMin + i * niceStep
+    ticks.push({ value, label: formatter(value) })
   }
 
-  return {
-    yMin,
-    yMax,
-    scaledYMin: yMin * scaleFactor,
-    scaledYMax: yMax * scaleFactor,
-  }
+  return ticks
 }
 
 /**

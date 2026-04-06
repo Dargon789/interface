@@ -15,8 +15,8 @@ import { SmartWalletInsufficientFundsOnNetworkModal } from 'wallet/src/component
 import { SmartWalletUnavailableModal } from 'wallet/src/components/smartWallet/modals/SmartWalletUnavailableModal'
 import { setIsAllSmartWalletNudgesDisabled } from 'wallet/src/features/behaviorHistory/slice'
 import { useNetworkBalances } from 'wallet/src/features/smartWallet/hooks/useNetworkBalances'
-import { SmartWalletStatusModal } from 'wallet/src/features/smartWallet/SmartWalletStatusModal'
 import { removeDelegationActions } from 'wallet/src/features/smartWallet/sagas/removeDelegationSaga'
+import { SmartWalletStatusModal } from 'wallet/src/features/smartWallet/SmartWalletStatusModal'
 import { SmartWalletModalState, type WalletData } from 'wallet/src/features/smartWallet/types'
 import { useWalletDelegationContext } from 'wallet/src/features/smartWallet/WalletDelegationProvider'
 import {

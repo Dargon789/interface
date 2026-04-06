@@ -86,6 +86,7 @@ export function AnimatedArcCircle({
     }, delay)
 
     return () => clearTimeout(timer)
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [delay])
 
   const resolvedStrokeColor = strokeColor ?? colors.surface3.val

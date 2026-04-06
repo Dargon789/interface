@@ -34,7 +34,7 @@ export interface OptionItemProps {
   focusedRowControl?: FocusedRowControl
 }
 
-function _OptionItem({
+function OptionItemInner({
   image,
   title,
   subtitle,
@@ -158,4 +158,4 @@ function _OptionItem({
   )
 }
 
-export const OptionItem = memo(_OptionItem)
+export const OptionItem = memo(OptionItemInner)

@@ -16,7 +16,7 @@ const previousState = {
 }
 
 describe('migration to v25', () => {
-  // eslint-disable-next-line jest/expect-expect
+  // oxlint-disable-next-line jest/expect-expect
   it('should set current currency to USD if it is THB', async () => {
     const thaiState = {
       ...previousState,
@@ -25,7 +25,7 @@ describe('migration to v25', () => {
     testRemoveTHBFromCurrency(migration25, thaiState)
   })
 
-  // eslint-disable-next-line jest/expect-expect
+  // oxlint-disable-next-line jest/expect-expect
   it('should preserve non-THB currency settings if user currency is not set to THB', async () => {
     const japaneseState = {
       ...previousState,

@@ -1470,6 +1470,13 @@ PODS:
     - ExpoModulesCore
   - ExpoHaptics (14.0.1):
     - ExpoModulesCore
+  - ExpoImage (2.4.1):
+    - ExpoModulesCore
+    - libavif/libdav1d
+    - SDWebImage (~> 5.21.0)
+    - SDWebImageAVIFCoder (~> 0.11.0)
+    - SDWebImageSVGCoder (~> 1.7.0)
+    - SDWebImageWebPCoder (~> 0.14.6)
   - ExpoKeepAwake (14.1.4):
     - ExpoModulesCore
   - ExpoLinearGradient (14.1.5):
@@ -1683,6 +1690,11 @@ PODS:
     - hermes-engine/Pre-built (= 0.79.5)
   - hermes-engine/Pre-built (0.79.5)
   - leveldb-library (1.22.6)
+  - libavif/core (1.0.0)
+  - libavif/libdav1d (1.0.0):
+    - libavif/core
+    - libdav1d (>= 0.6.0)
+  - libdav1d (1.2.0)
   - libwebp (1.5.0):
     - libwebp/demux (= 1.5.0)
     - libwebp/mux (= 1.5.0)
@@ -3205,8 +3217,8 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-mmkv (2.10.1):
-    - MMKV (>= 1.2.13)
+  - react-native-mmkv (2.12.0):
+    - MMKV (>= 1.3.3)
     - React-Core
   - react-native-netinfo (11.4.1):
     - React-Core
@@ -3725,10 +3737,6 @@ PODS:
     - React-Core
   - RNDeviceInfo (10.11.0):
     - React-Core
-  - RNFastImage (8.6.3):
-    - React-Core
-    - SDWebImage (~> 5.21.0)
-    - SDWebImageWebPCoder (~> 0.14.6)
   - RNFBApp (21.0.0):
     - Firebase/CoreOnly (= 11.2.0)
     - React-Core
@@ -3948,9 +3956,14 @@ PODS:
     - Yoga
   - RNSVG (15.13.0):
     - React-Core
-  - SDWebImage (5.21.5):
-    - SDWebImage/Core (= 5.21.5)
-  - SDWebImage/Core (5.21.5)
+  - SDWebImage (5.21.6):
+    - SDWebImage/Core (= 5.21.6)
+  - SDWebImage/Core (5.21.6)
+  - SDWebImageAVIFCoder (0.11.1):
+    - libavif/core (>= 0.11.0)
+    - SDWebImage (~> 5.10)
+  - SDWebImageSVGCoder (1.7.0):
+    - SDWebImage/Core (~> 5.6)
   - SDWebImageWebPCoder (0.14.6):
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
@@ -3991,6 +4004,7 @@ DEPENDENCIES:
   - ExpoFileSystem (from `../../../node_modules/expo-file-system/ios`)
   - ExpoFont (from `../../../node_modules/expo-font/ios`)
   - ExpoHaptics (from `../../../node_modules/expo-haptics/ios`)
+  - ExpoImage (from `../../../node_modules/expo-image/ios`)
   - ExpoKeepAwake (from `../../../node_modules/expo-keep-awake/ios`)
   - ExpoLinearGradient (from `../../../node_modules/expo-linear-gradient/ios`)
   - ExpoLinking (from `../../../node_modules/expo-linking/ios`)
@@ -4098,7 +4112,6 @@ DEPENDENCIES:
   - "RNCMaskedView (from `../../../node_modules/@react-native-masked-view/masked-view`)"
   - "RNDateTimePicker (from `../../../node_modules/@react-native-community/datetimepicker`)"
   - RNDeviceInfo (from `../../../node_modules/react-native-device-info`)
-  - RNFastImage (from `../../../node_modules/react-native-fast-image`)
   - "RNFBApp (from `../../../node_modules/@react-native-firebase/app`)"
   - "RNFBAuth (from `../../../node_modules/@react-native-firebase/auth`)"
   - "RNFBFirestore (from `../../../node_modules/@react-native-firebase/firestore`)"
@@ -4144,6 +4157,8 @@ SPEC REPOS:
     - gRPC-Core
     - GTMSessionFetcher
     - leveldb-library
+    - libavif
+    - libdav1d
     - libwebp
     - MMKV
     - MMKVCore
@@ -4153,6 +4168,8 @@ SPEC REPOS:
     - PLCrashReporter
     - RecaptchaInterop
     - SDWebImage
+    - SDWebImageAVIFCoder
+    - SDWebImageSVGCoder
     - SDWebImageWebPCoder
     - SocketRocket
     - UIImageColors
@@ -4199,6 +4216,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/expo-font/ios"
   ExpoHaptics:
     :path: "../../../node_modules/expo-haptics/ios"
+  ExpoImage:
+    :path: "../../../node_modules/expo-image/ios"
   ExpoKeepAwake:
     :path: "../../../node_modules/expo-keep-awake/ios"
   ExpoLinearGradient:
@@ -4408,8 +4427,6 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/@react-native-community/datetimepicker"
   RNDeviceInfo:
     :path: "../../../node_modules/react-native-device-info"
-  RNFastImage:
-    :path: "../../../node_modules/react-native-fast-image"
   RNFBApp:
     :path: "../../../node_modules/@react-native-firebase/app"
   RNFBAuth:
@@ -4472,6 +4489,7 @@ SPEC CHECKSUMS:
   ExpoFileSystem: 9681caebda23fa1b38a12a9c68b2bade7072ce20
   ExpoFont: 091a47eeaa1b30b0b760aa1d0a2e7814e8bf6fe6
   ExpoHaptics: e01cce0741d68c281853118eb0267f88d42c6b7a
+  ExpoImage: b5d08ac8a79f798c8306b53165415c15986f9764
   ExpoKeepAwake: e8dedc115d9f6f24b153ccd2d1d8efcdfd68a527
   ExpoLinearGradient: ce334cff9859da4635c1d8eff6e291b11b04ccbb
   ExpoLinking: 343a89ea864a851831fd4495e8aea01cf0f6a36f
@@ -4503,6 +4521,8 @@ SPEC CHECKSUMS:
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   hermes-engine: f03b0e06d3882d71e67e45b073bb827da1a21aae
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
+  libavif: 5f8e715bea24debec477006f21ef9e95432e254d
+  libdav1d: 23581a4d8ec811ff171ed5e2e05cd27bad64c39f
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   MMKV: c953dbaac0da392c24b005e763c03ce2638b4ed7
   MMKVCore: d078dce7d6586a888b2c2ef5343b6242678e3ee8
@@ -4549,7 +4569,7 @@ SPEC CHECKSUMS:
   react-native-get-random-values: 21325b2244dfa6b58878f51f9aa42821e7ba3d06
   react-native-image-picker: 75cc6db21e264e573456725c71ad21828a82c455
   react-native-keyboard-controller: 8698f5ff79ab0a4a8f0259a40b4c3c7f23cae7fd
-  react-native-mmkv: dea675cf9697ad35940f1687e98e133e1358ef9f
+  react-native-mmkv: d881794b39391fb831de1b6993ecb3c9c57bae51
   react-native-netinfo: f0a9899081c185db1de5bb2fdc1c88c202a059ac
   react-native-onesignal: 33ade92bd91578374c31c5a5a91f45f49c2d6614
   react-native-pager-view: d6f91626b36fcca51d28a9c5ec109a9309242089
@@ -4599,7 +4619,6 @@ SPEC CHECKSUMS:
   RNCMaskedView: 42f3684c136239957b410dbfa81978b25f2c0e18
   RNDateTimePicker: 279bad2682d9ebdd4151cb71d88f3b460f818fc8
   RNDeviceInfo: bf8a32acbcb875f568217285d1793b0e8588c974
-  RNFastImage: 074e3c1a0d65e2971f28299a85d0155c3b2c948e
   RNFBApp: 4122dd41d8d7ff017b6ecf777a6224f5b349ca04
   RNFBAuth: 1632cefd787a43ba952fa52ff016e7b69fe355cb
   RNFBFirestore: 5f110e37b7f7f3d6e03c85044dd4cf3ebacec38b
@@ -4612,7 +4631,9 @@ SPEC CHECKSUMS:
   RNReanimated: ad46062e119fcf93712dfe9dcf72b45ea16892e4
   RNScreens: edd4795b025d94f879e20cc346b844176d938f0c
   RNSVG: 204b068da3a7416d22840cd3233bcf745443a455
-  SDWebImage: e9c98383c7572d713c1a0d7dd2783b10599b9838
+  SDWebImage: 1bb6a1b84b6fe87b972a102bdc77dd589df33477
+  SDWebImageAVIFCoder: afe194a084e851f70228e4be35ef651df0fc5c57
+  SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
   SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   sparkfabrik-react-native-idfa-aaid: 1b72a6264a2175473e309ffa6434db87c58af264
@@ -4620,6 +4641,6 @@ SPEC CHECKSUMS:
   Yoga: bfcce202dba74007f8974ee9c5f903a9a286c445
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
-PODFILE CHECKSUM: 9a816e7213ef1e27594bb84425b559319371f327
+PODFILE CHECKSUM: 407b7412f08ef053b16b402cacac69b31d41ef80
 
 COCOAPODS: 1.16.2

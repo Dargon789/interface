@@ -124,7 +124,7 @@ export function useBidReviewData({
 
   // Prepare transaction when modal opens or inputs change
   // retryTrigger is intentionally included to trigger re-execution when user clicks retry
-  // biome-ignore lint/correctness/useExhaustiveDependencies: retryTrigger is intentionally included, submitState properties excluded
+  // oxlint-disable-next-line react/exhaustive-deps -- retryTrigger is intentionally included, submitState properties excluded
   useEffect(() => {
     let cancelled = false
 
@@ -152,7 +152,7 @@ export function useBidReviewData({
     ;(async () => {
       try {
         const result = await submitState.prepareTransaction()
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (!cancelled) {
           // If result is undefined after passing validation, it means preparation failed
           if (!result) {
@@ -168,15 +168,15 @@ export function useBidReviewData({
           }
         }
       } catch (error) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (!cancelled) {
-          // biome-ignore lint/suspicious/noConsole: intentional error logging for debugging
+          // oxlint-disable-next-line no-console -- intentional error logging for debugging
           console.error('Bid preparation failed:', error)
           setPreparedBid(undefined)
           setPreparationError(error instanceof Error ? error : new Error('Failed to prepare bid'))
         }
       } finally {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (!cancelled) {
           setIsPreparing(false)
         }
@@ -189,6 +189,7 @@ export function useBidReviewData({
     // Note: submitState.isDisabled and submitState.prepareTransaction are intentionally NOT in deps
     // because they can change during the async operation and would cause infinite re-runs
     // Using captured values to prevent re-triggering when live form values change
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [
     auctionAddress,
     capturedBudgetRawAmount,

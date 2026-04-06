@@ -88,7 +88,7 @@ export function withUTCTimestamp<T extends { timestamp: number }>(entry: T): T &
  * Custom time formatter used to customize tick mark labels on the time scale.
  * Follows the function signature of lightweight-charts' TickMarkFormatter.
  */
-// eslint-disable-next-line consistent-return, max-params
+// oxlint-disable-next-line consistent-return, max-params
 export function formatTickMarks(time: UTCTimestamp, tickMarkType: TickMarkType, locale: string): string {
   const date = new Date(time.valueOf() * 1000)
   switch (tickMarkType) {
@@ -121,7 +121,7 @@ export function roundRect({
   radii?: number | DOMPointInit | Iterable<number | DOMPointInit>
 }): void {
   // roundRect might need to polyfilled for older browsers
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (ctx.roundRect) {
     ctx.beginPath()
     ctx.roundRect(x, y, w, h, radii)

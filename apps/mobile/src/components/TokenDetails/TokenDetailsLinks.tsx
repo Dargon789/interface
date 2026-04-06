@@ -11,11 +11,11 @@ import { Flex, Text } from 'ui/src'
 import { BlockExplorer, GlobeFilled, Page, XTwitter } from 'ui/src/components/icons'
 import { spacing } from 'ui/src/theme'
 import { getBlockExplorerIcon } from 'uniswap/src/components/chains/BlockExplorerIcon'
-import { MultichainAddressList } from 'uniswap/src/components/MultichainTokenDetails/MultichainAddressList'
+import { Modal } from 'uniswap/src/components/modals/Modal'
+import { MultichainAddressSheet } from 'uniswap/src/components/MultichainTokenDetails/MultichainAddressSheet'
 import { MultichainExplorerList } from 'uniswap/src/components/MultichainTokenDetails/MultichainExplorerList'
 import type { MultichainTokenEntry } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
 import { useOrderedMultichainEntries } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
-import { Modal } from 'uniswap/src/components/modals/Modal'
 import { useTokenProjectUrlsPartsFragment } from 'uniswap/src/data/graphql/uniswap-data-api/fragments'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
@@ -54,7 +54,7 @@ function useMultichainTokenEntries(currencyId: string): MultichainTokenEntry[] {
     for (const token of tokens) {
       const chainId = fromGraphQLChain(token.chain)
       if (chainId && token.address) {
-        result.push({ chainId, address: token.address })
+        result.push({ chainId, address: token.address, isNative: false })
       }
     }
     return result
@@ -66,7 +66,7 @@ function useMultichainTokenEntries(currencyId: string): MultichainTokenEntry[] {
 export function TokenDetailsLinks(): JSX.Element {
   const { t } = useTranslation()
 
-  const { address, chainId, currencyId, copyAddressToClipboard } = useTokenDetailsContext()
+  const { address, chainId, currencyId } = useTokenDetailsContext()
 
   const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const multichainEntries = useMultichainTokenEntries(currencyId)
@@ -94,76 +94,75 @@ export function TokenDetailsLinks(): JSX.Element {
     setIsExplorerSheetOpen(false)
   }, [])
 
-  const handleCopyAddress = useCallback(
-    async (addr: string) => {
-      await copyAddressToClipboard(addr)
-      setIsAddressSheetOpen(false)
-    },
-    [copyAddressToClipboard],
-  )
-
   const links = useMemo((): LinkButtonProps[] => {
     const showMultichainDropdowns = isMultichainTokenUx && hasMultipleChains
+    const isNativeAddress = isDefaultNativeAddress({ address, platform: chainIdToPlatform(chainId) })
+    const items: LinkButtonProps[] = []
 
-    return [
-      homepageUrl
-        ? {
-            Icon: GlobeFilled,
-            buttonType: LinkButtonType.Link,
-            element: ElementName.TokenLinkWebsite,
-            label: t('token.links.website'),
-            testID: TestID.TokenLinkWebsite,
-            value: homepageUrl,
-          }
-        : null,
-      twitterName
-        ? {
-            Icon: XTwitter,
-            buttonType: LinkButtonType.Link,
-            element: ElementName.TokenLinkTwitter,
-            label: t('token.links.twitter'),
-            testID: TestID.TokenLinkTwitter,
-            value: getTwitterLink(twitterName),
-          }
-        : null,
-      // Explorer: single-chain link or multichain sheet trigger
-      !isNativeCurrency
-        ? showMultichainDropdowns
-          ? {
-              Icon: BlockExplorer,
-              element: ElementName.MultichainExplorer,
-              label: t('common.explorer'),
-              testID: TestID.MultichainExplorerDropdown,
-              onPress: () => setIsExplorerSheetOpen(true),
-            }
-          : {
-              Icon: getBlockExplorerIcon(chainId),
-              buttonType: LinkButtonType.Link,
-              element: ElementName.TokenLinkEtherscan,
-              label: explorerName,
-              testID: TestID.TokenLinkEtherscan,
-              value: explorerLink,
-            }
-        : null,
-      // Copy address: single-chain copy or multichain sheet trigger
-      !isDefaultNativeAddress({ address, platform: chainIdToPlatform(chainId) })
-        ? showMultichainDropdowns
-          ? {
-              Icon: Page,
-              element: ElementName.MultichainAddress,
-              label: t('common.address'),
-              testID: TestID.MultichainAddressDropdown,
-              onPress: () => setIsAddressSheetOpen(true),
-            }
-          : {
-              buttonType: LinkButtonType.Copy,
-              element: ElementName.Copy,
-              label: t('common.text.contract'),
-              testID: TestID.TokenLinkCopy,
-              value: address,
-            }
-        : null,
-    ].filter((item): item is NonNullable<typeof item> => Boolean(item))
+    if (!isNativeAddress) {
+      if (showMultichainDropdowns) {
+        items.push({
+          Icon: Page,
+          element: ElementName.MultichainAddress,
+          label: t('common.address'),
+          testID: TestID.MultichainAddressDropdown,
+          onPress: () => setIsAddressSheetOpen(true),
+        })
+      } else {
+        items.push({
+          buttonType: LinkButtonType.Copy,
+          element: ElementName.Copy,
+          label: t('common.text.contract'),
+          testID: TestID.TokenLinkCopy,
+          value: address,
+        })
+      }
+    }
+
+    if (!isNativeCurrency) {
+      if (showMultichainDropdowns) {
+        items.push({
+          Icon: BlockExplorer,
+          element: ElementName.MultichainExplorer,
+          label: t('common.explorer'),
+          testID: TestID.MultichainExplorerDropdown,
+          onPress: () => setIsExplorerSheetOpen(true),
+        })
+      } else {
+        items.push({
+          Icon: getBlockExplorerIcon(chainId),
+          buttonType: LinkButtonType.Link,
+          element: ElementName.TokenLinkEtherscan,
+          label: explorerName,
+          testID: TestID.TokenLinkEtherscan,
+          value: explorerLink,
+        })
+      }
+    }
+
+    if (homepageUrl) {
+      items.push({
+        Icon: GlobeFilled,
+        buttonType: LinkButtonType.Link,
+        element: ElementName.TokenLinkWebsite,
+        label: t('token.links.website'),
+        testID: TestID.TokenLinkWebsite,
+        value: homepageUrl,
+      })
+    }
+
+    if (twitterName) {
+      items.push({
+        Icon: XTwitter,
+        buttonType: LinkButtonType.Link,
+        element: ElementName.TokenLinkTwitter,
+        label: t('token.links.twitter'),
+        testID: TestID.TokenLinkTwitter,
+        value: getTwitterLink(twitterName),
+      })
+    }
+
+    return items
   }, [
     chainId,
     address,
@@ -207,24 +206,11 @@ export function TokenDetailsLinks(): JSX.Element {
         </Modal>
       )}
 
-      {isAddressSheetOpen && (
-        <Modal
-          fullScreen
-          overrideInnerContainer
-          name={ModalName.MultichainAddressModal}
-          snapPoints={multichainSnapPoints}
-          onClose={() => setIsAddressSheetOpen(false)}
-        >
-          <BottomSheetScrollView contentContainerStyle={SCROLL_CONTENT_STYLE} showsVerticalScrollIndicator={false}>
-            <MultichainAddressList
-              renderedInModal
-              chains={multichainEntries}
-              showInlineFeedback={false}
-              onCopyAddress={handleCopyAddress}
-            />
-          </BottomSheetScrollView>
-        </Modal>
-      )}
+      <MultichainAddressSheet
+        isOpen={isAddressSheetOpen}
+        chains={multichainEntries}
+        onClose={() => setIsAddressSheetOpen(false)}
+      />
     </Flex>
   )
 }

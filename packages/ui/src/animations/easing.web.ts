@@ -49,7 +49,7 @@ export const Easing = {
     const p = bounciness * Math.PI
     return (t) => 1 - Math.pow(Math.cos((t * Math.PI) / 2), 3) * Math.cos(t * p)
   },
-  // eslint-disable-next-line max-params -- matches react-native-reanimated API
+  // oxlint-disable-next-line max-params -- matches react-native-reanimated API
   bezier: (x1: number, y1: number, x2: number, y2: number): EasingFn => {
     // Simple cubic bezier approximation
     return (t) => {

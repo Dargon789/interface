@@ -5,7 +5,7 @@
  * For smooth animations on web, use CSS transitions instead.
  */
 
-// biome-ignore lint/suspicious/noExplicitAny: complex Reanimated config types vary by platform
+// oxlint-disable-next-line typescript/no-explicit-any -- complex Reanimated config types vary by platform
 export type AnimationConfig = any
 
 /**
@@ -39,7 +39,7 @@ export function withSequence<T>(...animations: T[]): T {
 /**
  * Returns the animation value (no repeat on web).
  */
-// eslint-disable-next-line max-params -- matches react-native-reanimated API
+// oxlint-disable-next-line max-params -- matches react-native-reanimated API
 export function withRepeat<T>(animation: T, _numberOfReps?: number, _reverse?: boolean, _callback?: () => void): T {
   return animation
 }

@@ -298,20 +298,24 @@ function createTurnstileSolver(ctx: CreateTurnstileSolverContext): ChallengeSolv
       })
 
       // Report success
-      ctx.onSolveCompleted?.({
+      const data: TurnstileSolveAnalytics = {
         durationMs: ctx.performanceTracker.now() - startTime,
         success: true,
-      })
+      }
+      ctx.onSolveCompleted?.(data)
+      ctx.getLogger?.().info('sessions', 'turnstileSolved', 'Turnstile solve completed', data)
 
       return token
     } catch (error) {
       // Report failure
-      ctx.onSolveCompleted?.({
+      const data: TurnstileSolveAnalytics = {
         durationMs: ctx.performanceTracker.now() - startTime,
         success: false,
         errorType: classifyError(error),
         errorMessage: error instanceof Error ? error.message : String(error),
-      })
+      }
+      ctx.onSolveCompleted?.(data)
+      ctx.getLogger?.().warn('sessions', 'turnstileSolved', 'Turnstile solve failed', data)
 
       ctx.getLogger?.().error(error, {
         tags: {
@@ -330,7 +334,7 @@ function createTurnstileSolver(ctx: CreateTurnstileSolverContext): ChallengeSolv
       // widgetId only exists if turnstile was successfully loaded and rendered
       if (cleanupState.widgetId) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          // oxlint-disable-next-line typescript/no-unnecessary-condition
           if (window.turnstile) {
             window.turnstile.remove(cleanupState.widgetId)
           }

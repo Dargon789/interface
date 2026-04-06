@@ -43,7 +43,7 @@ export function SmartWalletStatusModal({
     setFalse: collapseActiveNetworks,
   } = useBooleanState(false)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -wallet
+  // oxlint-disable-next-line react/exhaustive-deps -- -wallet
   useEffect(() => {
     collapseActiveNetworks()
   }, [collapseActiveNetworks, wallet])
@@ -88,11 +88,9 @@ export function SmartWalletStatusModal({
         <Flex row alignItems="center" gap="$spacing12">
           <AccountIcon address={walletAddress} size={iconSizes.icon40} />
           <Flex>
-            <Text variant="body2" color="$neutral1">
+            <Text variant="body2">{t('settings.setting.smartWallet.action.smartWallet')}</Text>
+            <Text variant="body3" color={isActive ? '$accent1' : '$neutral2'}>
               {getTranslatedStatus(wallet.status)}
-            </Text>
-            <Text variant="body3" color="$neutral2">
-              {t('settings.setting.smartWallet.status.label')}
             </Text>
           </Flex>
         </Flex>

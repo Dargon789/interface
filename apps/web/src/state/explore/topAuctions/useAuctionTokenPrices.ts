@@ -5,13 +5,13 @@ import {
   type PriceMap,
   useTokenMarketPrices,
 } from '~/components/Toucan/hooks/useTokenMarketPrices'
-import type { AuctionWithCurrencyInfo } from '~/state/explore/topAuctions/useTopAuctions'
+import type { EnrichedAuction } from '~/state/explore/topAuctions/useTopAuctions'
 
 /**
  * Fetches USD prices for the auction tokens (the tokens being auctioned).
  * Used to compute FDV from actual market price for completed auctions.
  */
-export function useAuctionTokenPrices(auctions: readonly AuctionWithCurrencyInfo[]): {
+export function useAuctionTokenPrices(auctions: readonly EnrichedAuction[]): {
   priceMap: PriceMap
   loading: boolean
 } {
@@ -23,7 +23,7 @@ export function useAuctionTokenPrices(auctions: readonly AuctionWithCurrencyInfo
     const contractMap = auctions.reduce((acc: { [key: string]: GraphQLApi.ContractInput }, auction) => {
       if (auction.auction?.tokenAddress && auction.auction.chainId) {
         const key = `${auction.auction.chainId}-${auction.auction.tokenAddress}`
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (!acc[key]) {
           acc[key] = buildContractInputForAddress({
             chainId: auction.auction.chainId,

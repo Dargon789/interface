@@ -361,7 +361,7 @@ export function IncreaseLiquidityReview({ onClose }: { onClose: () => void }) {
               variant="branded"
               size="large"
               onPress={onIncreaseLiquidity}
-              icon={needsPasskeySignin ? <Passkey size="$icon.24" /> : undefined}
+              icon={needsPasskeySignin ? <Passkey size="$icon.24" color="$white" /> : undefined}
             >
               {needsPasskeySignin ? t('common.addLiquidity') : t('common.confirm')}
             </Button>

@@ -125,7 +125,7 @@ export function PaymentMethodItem({
         pl="$spacing4"
         backgroundColor={isSelected ? '$surface3' : '$surface1'}
         borderColor="$surface3"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderRadius="$rounded12"
       >
         <Icon size={iconSizes.icon20} color="$neutral1" />

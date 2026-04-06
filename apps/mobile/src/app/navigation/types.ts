@@ -21,11 +21,11 @@ import { ReceiveCryptoModalState } from 'src/screens/ReceiveCryptoModalState'
 import { ViewPrivateKeysScreenState } from 'src/screens/ViewPrivateKeys/ViewPrivateKeysScreenState'
 import { BridgedAssetModalProps } from 'uniswap/src/components/BridgedAsset/BridgedAssetModal'
 import { WormholeModalProps } from 'uniswap/src/components/BridgedAsset/WormholeModal'
+import { ReportPortfolioDataModalProps } from 'uniswap/src/components/reporting/ReportPortfolioDataModal'
 import { ReportTokenDataModalProps } from 'uniswap/src/components/reporting/ReportTokenDataModal'
 import { ReportTokenModalProps } from 'uniswap/src/components/reporting/ReportTokenIssueModal'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { FORServiceProvider } from 'uniswap/src/features/fiatOnRamp/types'
-import { NFTItem } from 'uniswap/src/features/nfts/types'
 import { PasskeyManagementModalState } from 'uniswap/src/features/passkey/PasskeyManagementModal'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TestnetModeModalState } from 'uniswap/src/features/testnets/TestnetModeModal'
@@ -42,14 +42,6 @@ import { SmartWalletAdvancedSettingsModalState } from 'wallet/src/components/sma
 import { SmartWalletEnabledModalState } from 'wallet/src/components/smartWallet/modals/SmartWalletEnabledModal'
 import { SmartWalletNudgeState } from 'wallet/src/components/smartWallet/modals/SmartWalletNudge'
 import { ExploreOrderBy } from 'wallet/src/features/wallet/types'
-
-type NFTItemScreenParams = {
-  owner?: Address
-  address: string
-  tokenId: string
-  isSpam?: boolean
-  fallbackData?: NFTItem
-}
 
 export type ExploreScreenParams = {
   showFavorites?: boolean
@@ -75,8 +67,6 @@ export type ExploreStackParamList = {
   [MobileScreens.ExternalProfile]: {
     address: string
   }
-  [MobileScreens.NFTItem]: NFTItemScreenParams
-  [MobileScreens.NFTCollection]: { collectionAddress: string }
   [MobileScreens.TokenDetails]: {
     currencyId: string
   }
@@ -176,8 +166,6 @@ export type AppStackParamList = {
   [MobileScreens.TokenDetails]: {
     currencyId: string
   }
-  [MobileScreens.NFTItem]: NFTItemScreenParams
-  [MobileScreens.NFTCollection]: { collectionAddress: string }
   [MobileScreens.ExternalProfile]: {
     address: string
   }
@@ -229,6 +217,7 @@ export type AppStackParamList = {
   [ModalName.BridgedAsset]: BridgedAssetModalProps
   [ModalName.Wormhole]: WormholeModalProps
   [ModalName.ReportTokenIssue]: ReportTokenModalProps
+  [ModalName.ReportPortfolioData]: ReportPortfolioDataModalProps
   [ModalName.ReportTokenData]: ReportTokenDataModalProps
 }
 

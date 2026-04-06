@@ -43,7 +43,7 @@ const CURRENCY_CACHE = new Map<string, Token | NativeCurrency | undefined>()
  * @param params.sellFeeBps The sell fee in basis points. This parameter is optional.
  * @returns A new instance of Token or NativeCurrency if the parameters are valid, otherwise returns undefined.
  */
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function buildCurrency(args: BuildCurrencyParams): Token | NativeCurrency | undefined {
   const { chainId, address, decimals, symbol, name, bypassChecksum = true, buyFeeBps, sellFeeBps } = args
 

@@ -141,7 +141,13 @@ export const SystemBannerNotification = memo(function SystemBannerNotification({
             </Text>
           )}
           {learnMoreButton && learnMoreButton.onClick?.onClickLink && (
-            <ExternalLink href={learnMoreButton.onClick.onClickLink} onClick={() => handleButtonClick(0)}>
+            <ExternalLink
+              href={learnMoreButton.onClick.onClickLink}
+              onClick={(e) => {
+                e.preventDefault()
+                handleButtonClick(0)
+              }}
+            >
               <Text variant="body3" color={colors.accent1.val}>
                 {learnMoreButton.text || 'Learn more'}
               </Text>

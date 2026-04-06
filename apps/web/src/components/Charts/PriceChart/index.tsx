@@ -11,7 +11,7 @@ import {
   PriceLineOptions,
   UTCTimestamp,
 } from 'lightweight-charts'
-import { useMemo } from 'react'
+import { ReactNode, useMemo } from 'react'
 import { Trans } from 'react-i18next'
 import { Flex, styled, Text } from 'ui/src'
 import { opacify } from 'ui/src/theme'
@@ -391,6 +391,8 @@ interface PriceChartProps {
   headerTotalValueOverride?: number
   hideYAxis?: boolean
   yAxisFormatter?: (price: number) => string
+  /** Additional content rendered next to the price delta in the chart header */
+  additionalHeaderContent?: ReactNode
 }
 
 const CandlestickTooltipRow = styled(Flex, {
@@ -436,6 +438,7 @@ export function PriceChart({
   headerTotalValueOverride,
   hideYAxis,
   yAxisFormatter,
+  additionalHeaderContent,
 }: PriceChartProps) {
   const startingPrice = data[0]
   const lastPrice = data[data.length - 1]
@@ -468,14 +471,17 @@ export function PriceChart({
           <ChartHeader
             value={headerValue}
             additionalFields={
-              <PriceChartDelta
-                startingPrice={startingPrice.close}
-                endingPrice={(crosshairData ?? lastPrice).close}
-                shouldIncludeFiatDelta
-                shouldTreatAsStablecoin={shouldTreatAsStablecoin}
-                pricePercentChange={pricePercentChange}
-                isHovering={!!crosshairData}
-              />
+              <>
+                <PriceChartDelta
+                  startingPrice={startingPrice.close}
+                  endingPrice={(crosshairData ?? lastPrice).close}
+                  shouldIncludeFiatDelta
+                  shouldTreatAsStablecoin={shouldTreatAsStablecoin}
+                  pricePercentChange={pricePercentChange}
+                  isHovering={!!crosshairData}
+                />
+                {additionalHeaderContent}
+              </>
             }
             valueFormatterType={NumberType.FiatTokenPrice}
             time={crosshairData?.time}

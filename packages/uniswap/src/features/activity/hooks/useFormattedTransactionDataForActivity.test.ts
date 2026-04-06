@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* oxlint-disable typescript/explicit-function-return-type */
 import { NetworkStatus } from '@apollo/client'
 import { TradingApi } from '@universe/api'
 import dayjs from 'dayjs'

@@ -163,14 +163,14 @@ interface VerifySessionResponse {
  * Empty - session identified via cookie or header
  */
 
-// biome-ignore lint/complexity/noBannedTypes: Empty per proto
+// oxlint-disable-next-line typescript/no-restricted-types -- Empty per proto
 type DeleteSessionRequest = {}
 
 /**
  * Response from session deletion
  */
 
-// biome-ignore lint/complexity/noBannedTypes: Empty per proto
+// oxlint-disable-next-line typescript/no-restricted-types -- Empty per proto
 type DeleteSessionResponse = {}
 
 /**

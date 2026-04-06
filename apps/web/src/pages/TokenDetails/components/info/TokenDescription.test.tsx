@@ -5,7 +5,8 @@ import { USDC_MAINNET } from 'uniswap/src/constants/tokens'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { useCurrency } from '~/hooks/Tokens'
 import { TokenDescription } from '~/pages/TokenDetails/components/info/TokenDescription'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import type { TDPState } from '~/pages/TokenDetails/context/createTDPStore'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 import { ETH_MAINNET } from '~/test-utils/constants'
 import { mocked } from '~/test-utils/mocked'
 import { validUSDCCurrency } from '~/test-utils/pools/fixtures'
@@ -14,8 +15,8 @@ import { validTokenProjectResponse } from '~/test-utils/tokens/fixtures'
 
 vi.mock('~/hooks/Tokens')
 
-vi.mock('~/pages/TokenDetails/context/TDPContext', () => ({
-  useTDPContext: vi.fn(),
+vi.mock('~/pages/TokenDetails/context/useTDPStore', () => ({
+  useTDPStore: vi.fn(),
 }))
 
 vi.mock('@universe/gating', async (importOriginal) => {
@@ -41,13 +42,15 @@ describe('TokenDescription', () => {
   })
 
   it('renders token information correctly with defaults', () => {
-    mocked(useTDPContext).mockReturnValue({
+    const mockState = {
       address: USDC_MAINNET.address,
       currency: USDC_MAINNET,
-      currencyChainName: GraphQLApi.Chain.Ethereum,
+      currencyChain: GraphQLApi.Chain.Ethereum,
       tokenQuery: validTokenProjectResponse,
       multiChainMap: SINGLE_CHAIN_MAP,
-    } as any)
+    }
+    mocked(useTDPStore).mockImplementation(((selector: (s: TDPState) => unknown) =>
+      selector(mockState as TDPState)) as typeof useTDPStore)
     const { asFragment } = render(<TokenDescription />)
     expect(asFragment()).toMatchSnapshot()
 
@@ -59,13 +62,15 @@ describe('TokenDescription', () => {
   })
 
   it('truncates description and shows more', async () => {
-    mocked(useTDPContext).mockReturnValue({
+    const mockState = {
       address: USDC_MAINNET.address,
       currency: USDC_MAINNET,
-      currencyChainName: GraphQLApi.Chain.Ethereum,
+      currencyChain: GraphQLApi.Chain.Ethereum,
       tokenQuery: validTokenProjectResponse,
       multiChainMap: SINGLE_CHAIN_MAP,
-    } as any)
+    }
+    mocked(useTDPStore).mockImplementation(((selector: (s: TDPState) => unknown) =>
+      selector(mockState as TDPState)) as typeof useTDPStore)
     const { asFragment } = render(<TokenDescription />)
 
     expect(asFragment()).toMatchSnapshot()
@@ -83,13 +88,15 @@ describe('TokenDescription', () => {
   })
 
   it('no description or social buttons shown when not available', async () => {
-    mocked(useTDPContext).mockReturnValue({
+    const mockState = {
       address: USDC_MAINNET.address,
       currency: USDC_MAINNET,
-      currencyChainName: GraphQLApi.Chain.Ethereum,
+      currencyChain: GraphQLApi.Chain.Ethereum,
       tokenQuery: { data: undefined, loading: false, error: undefined },
       multiChainMap: SINGLE_CHAIN_MAP,
-    } as any)
+    }
+    mocked(useTDPStore).mockImplementation(((selector: (s: TDPState) => unknown) =>
+      selector(mockState as TDPState)) as typeof useTDPStore)
     const { asFragment } = render(<TokenDescription />)
     expect(asFragment()).toMatchSnapshot()
 
@@ -103,13 +110,15 @@ describe('TokenDescription', () => {
   describe('multichain', () => {
     it('renders single-chain pills when flag is off even with multiple chains', () => {
       mocked(useFeatureFlag).mockReturnValue(false)
-      mocked(useTDPContext).mockReturnValue({
+      const mockState = {
         address: USDC_MAINNET.address,
         currency: USDC_MAINNET,
-        currencyChainName: GraphQLApi.Chain.Ethereum,
+        currencyChain: GraphQLApi.Chain.Ethereum,
         tokenQuery: validTokenProjectResponse,
         multiChainMap: MULTI_CHAIN_MAP,
-      } as any)
+      }
+      mocked(useTDPStore).mockImplementation(((selector: (s: TDPState) => unknown) =>
+        selector(mockState as TDPState)) as typeof useTDPStore)
 
       render(<TokenDescription />)
 
@@ -123,13 +132,15 @@ describe('TokenDescription', () => {
 
     it('renders single-chain pills when flag is on but only one chain', () => {
       mocked(useFeatureFlag).mockImplementation((flag) => flag === FeatureFlags.MultichainTokenUx)
-      mocked(useTDPContext).mockReturnValue({
+      const mockState = {
         address: USDC_MAINNET.address,
         currency: USDC_MAINNET,
-        currencyChainName: GraphQLApi.Chain.Ethereum,
+        currencyChain: GraphQLApi.Chain.Ethereum,
         tokenQuery: validTokenProjectResponse,
         multiChainMap: SINGLE_CHAIN_MAP,
-      } as any)
+      }
+      mocked(useTDPStore).mockImplementation(((selector: (s: TDPState) => unknown) =>
+        selector(mockState as TDPState)) as typeof useTDPStore)
 
       render(<TokenDescription />)
 
@@ -142,13 +153,15 @@ describe('TokenDescription', () => {
 
     it('renders multichain dropdown triggers when flag is on and multiple chains exist', () => {
       mocked(useFeatureFlag).mockImplementation((flag) => flag === FeatureFlags.MultichainTokenUx)
-      mocked(useTDPContext).mockReturnValue({
+      const mockState = {
         address: USDC_MAINNET.address,
         currency: USDC_MAINNET,
-        currencyChainName: GraphQLApi.Chain.Ethereum,
+        currencyChain: GraphQLApi.Chain.Ethereum,
         tokenQuery: validTokenProjectResponse,
         multiChainMap: MULTI_CHAIN_MAP,
-      } as any)
+      }
+      mocked(useTDPStore).mockImplementation(((selector: (s: TDPState) => unknown) =>
+        selector(mockState as TDPState)) as typeof useTDPStore)
 
       render(<TokenDescription />)
 
@@ -162,13 +175,15 @@ describe('TokenDescription', () => {
 
     it('hides address pill for native token even with multichain', () => {
       mocked(useFeatureFlag).mockImplementation((flag) => flag === FeatureFlags.MultichainTokenUx)
-      mocked(useTDPContext).mockReturnValue({
+      const mockState = {
         address: ETH_MAINNET.wrapped.address,
         currency: ETH_MAINNET,
-        currencyChainName: GraphQLApi.Chain.Ethereum,
+        currencyChain: GraphQLApi.Chain.Ethereum,
         tokenQuery: validTokenProjectResponse,
         multiChainMap: MULTI_CHAIN_MAP,
-      } as any)
+      }
+      mocked(useTDPStore).mockImplementation(((selector: (s: TDPState) => unknown) =>
+        selector(mockState as TDPState)) as typeof useTDPStore)
 
       render(<TokenDescription />)
 

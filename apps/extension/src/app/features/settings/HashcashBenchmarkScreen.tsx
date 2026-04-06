@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { createHashcashMultiWorkerChannel, createHashcashWorkerChannel } from '@universe/sessions'
 import { findProof as jsFindProof } from '@universe/sessions/src/challenge-solvers/hashcash/core'
 import { memo, useCallback, useEffect, useMemo } from 'react'
@@ -649,7 +649,7 @@ export function HashcashBenchmarkScreen(): JSX.Element {
         if (!acc[result.difficulty]) {
           acc[result.difficulty] = {}
         }
-        // biome-ignore lint/style/noNonNullAssertion: we just initialized this above
+        // oxlint-disable-next-line typescript/no-non-null-assertion -- we just initialized this above
         acc[result.difficulty]![result.implementation] = result
         return acc
       },

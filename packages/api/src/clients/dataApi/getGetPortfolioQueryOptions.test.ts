@@ -12,7 +12,7 @@ describe('getGetPortfolioQueryOptions', () => {
   beforeEach(() => {
     mockClient = {
       getPortfolio: vi.fn().mockResolvedValue(createMockResponse()),
-      listTopTokens: vi.fn(),
+      listTokens: vi.fn(),
       listTopPools: vi.fn(),
     }
   })

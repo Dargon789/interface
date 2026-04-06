@@ -70,7 +70,7 @@ const NetworkPillsRow = memo(function NetworkPillsRow({
     items: chains,
   })
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: need theme dep for foregroundColor to change on theme change
+  // oxlint-disable-next-line react/exhaustive-deps -- need theme dep for foregroundColor to change on theme change
   const renderItemNetworkPills = useCallback(
     ({ item }: { item: UniverseChainId }) => {
       return (
@@ -93,6 +93,7 @@ const NetworkPillsRow = memo(function NetworkPillsRow({
         </TouchableArea>
       )
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     [colors.neutral1.val, onSelectNetwork, selectedNetwork, theme],
   )
 

@@ -18,7 +18,7 @@ interface ActivityAddressCellProps {
   transaction: TransactionDetails
 }
 
-function _ActivityAddressCell({ transaction }: ActivityAddressCellProps) {
+function ActivityAddressCellInner({ transaction }: ActivityAddressCellProps) {
   const { t } = useTranslation()
   const { counterparty, protocolInfo } = buildActivityRowFragments(transaction)
   const transactionType = transaction.typeInfo.type
@@ -53,51 +53,57 @@ function _ActivityAddressCell({ transaction }: ActivityAddressCellProps) {
     return undefined
   }, [transactionType, showProtocol, t])
 
+  const addressContent = showAddress ? <AddressWithAvatar address={otherPartyAddress} /> : null
   const chainInfo = getChainInfo(transaction.chainId)
 
-  let prioritizedContent: JSX.Element | null = null
-  if (showProtocol) {
-    prioritizedContent = (
-      <Flex row alignItems="center" gap="$spacing6">
-        {protocolInfo.logoUrl && (
-          <img
-            src={protocolInfo.logoUrl}
-            alt={protocolInfo.name}
-            width={iconSizes.icon18}
-            height={iconSizes.icon18}
-            style={{ borderRadius: '4px' }}
-          />
-        )}
+  const PrioritizedContent = () => {
+    if (showProtocol) {
+      return (
+        <Flex row alignItems="center" gap="$spacing6">
+          {protocolInfo.logoUrl && (
+            <img
+              src={protocolInfo.logoUrl}
+              alt={protocolInfo.name}
+              width={iconSizes.icon18}
+              height={iconSizes.icon18}
+              style={{ borderRadius: '4px' }}
+            />
+          )}
+          <Text variant="body3" color="$neutral1">
+            {protocolInfo.name}
+          </Text>
+        </Flex>
+      )
+    } else if (showTransactionActions) {
+      if (!isPlanTransactionInfo(transaction.typeInfo)) {
+        return null
+      }
+      return (
         <Text variant="body3" color="$neutral1">
-          {protocolInfo.name}
+          {t('transaction.details.transactions.actions', {
+            actionCount: transaction.typeInfo.stepDetails.length,
+          })}
         </Text>
-      </Flex>
-    )
-  } else if (showTransactionActions && isPlanTransactionInfo(transaction.typeInfo)) {
-    prioritizedContent = (
-      <Text variant="body3" color="$neutral1">
-        {t('transaction.details.transactions.actions', {
-          actionCount: transaction.typeInfo.stepDetails.length,
-        })}
-      </Text>
-    )
-  } else if (showTransactionHash) {
-    prioritizedContent = (
-      <Text variant="body3" color="$neutral1">
-        {shortenHash(transaction.hash)}
-      </Text>
-    )
-  } else if (showAddress) {
-    prioritizedContent = (
-      <AddressHoverCard address={otherPartyAddress} platform={chainInfo.platform}>
-        <InternalLink
-          to={buildPortfolioUrl({ externalAddress: otherPartyAddress! })}
-          hoverStyle={ClickableTamaguiStyle.hoverStyle}
-        >
-          <AddressWithAvatar address={otherPartyAddress} />
-        </InternalLink>
-      </AddressHoverCard>
-    )
+      )
+    } else if (showTransactionHash) {
+      return (
+        <Text variant="body3" color="$neutral1">
+          {shortenHash(transaction.hash)}
+        </Text>
+      )
+    } else if (showAddress) {
+      return (
+        <AddressHoverCard address={otherPartyAddress} platform={chainInfo.platform}>
+          <InternalLink
+            to={buildPortfolioUrl({ externalAddress: otherPartyAddress! })}
+            hoverStyle={ClickableTamaguiStyle.hoverStyle}
+          >
+            {addressContent}
+          </InternalLink>
+        </AddressHoverCard>
+      )
+    }
+    return null
   }
 
   return (
@@ -108,10 +114,10 @@ function _ActivityAddressCell({ transaction }: ActivityAddressCellProps) {
             {label}
           </Text>
         )}
-        {prioritizedContent}
+        <PrioritizedContent />
       </Flex>
     </Flex>
   )
 }
 
-export const ActivityAddressCell = memo(_ActivityAddressCell)
+export const ActivityAddressCell = memo(ActivityAddressCellInner)

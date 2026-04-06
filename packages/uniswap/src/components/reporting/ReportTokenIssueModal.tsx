@@ -42,7 +42,13 @@ export function ReportTokenIssueModal({
   const dispatch = useDispatch()
 
   const submitReport = useEvent(
-    async ({ checkedItems, reportText }: { checkedItems: Set<TokenReportOption>; reportText: string }) => {
+    async ({
+      checkedItems,
+      reportTexts,
+    }: {
+      checkedItems: Set<TokenReportOption>
+      reportTexts: Map<TokenReportOption, string>
+    }) => {
       if (!currency) {
         return
       }
@@ -60,7 +66,7 @@ export function ReportTokenIssueModal({
         tokenName: currency.name,
         isMarkedSpam,
         reportOptions: Array.from(checkedItems),
-        reportText,
+        reportTexts,
       })
 
       if (!currency.isNative && isProdEnv()) {
@@ -112,6 +118,7 @@ export function ReportTokenIssueModal({
       {
         title: t('reporting.token.options.other.title'),
         value: TokenReportOption.Other,
+        additionalTextInput: true,
       },
     ],
     [t],
@@ -123,7 +130,6 @@ export function ReportTokenIssueModal({
       modalTitle={t('reporting.token.report.title.withSymbol', { symbol: currency?.symbol ?? '' })}
       icon={Flag}
       reportOptions={reportOptions}
-      textOptionValue={TokenReportOption.Other}
       isOpen={isOpen}
       submitReport={submitReport}
       onClose={onClose}

@@ -130,7 +130,7 @@ function getSendTypeInfo(params: SendTokenParams): SendTokenTransactionInfo {
 
   if (assetType === AssetType.ERC721 || assetType === AssetType.ERC1155) {
     typeInfo.tokenId = params.tokenId
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
   } else if (assetType === AssetType.Currency) {
     typeInfo.currencyAmountRaw = params.amountInWei
   }

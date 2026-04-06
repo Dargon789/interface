@@ -92,6 +92,14 @@ exports[`Routes > router definition should match snapshot 1`] = `
     "getElement": [Function],
     "getTitle": [Function],
     "nestedPaths": [],
+    "path": "/liquidity/launch-auction/x/callback",
+  },
+  {
+    "enabled": [Function],
+    "getDescription": [Function],
+    "getElement": [Function],
+    "getTitle": [Function],
+    "nestedPaths": [],
     "path": "/vote/*",
   },
   {
@@ -361,6 +369,14 @@ exports[`Routes > router definition should match snapshot 1`] = `
     "getTitle": [Function],
     "nestedPaths": [],
     "path": "/wrapped",
+  },
+  {
+    "enabled": [Function],
+    "getDescription": [Function],
+    "getElement": [Function],
+    "getTitle": [Function],
+    "nestedPaths": [],
+    "path": "/preview",
   },
   {
     "enabled": [Function],

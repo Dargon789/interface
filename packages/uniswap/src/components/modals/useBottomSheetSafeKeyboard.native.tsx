@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { EmitterSubscription, Keyboard } from 'react-native'
 import { KeyboardInfo } from 'uniswap/src/components/modals/useBottomSheetSafeKeyboard'
 import { isIOS } from 'utilities/src/platform'

@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Flex, useMedia, useSporeColors } from 'ui/src'
@@ -171,7 +171,6 @@ function BidDistributionChartRendererComponent({
     incrementChartHoverResetKey,
     clearChartZoomCommand,
     setCustomBidTick,
-    setActiveBidFormTab,
   } = useAuctionStoreActions()
 
   const {
@@ -260,7 +259,7 @@ function BidDistributionChartRendererComponent({
     return calculateRangePaddingUnits({ priceScaleFactor })
   }, [priceScaleFactor])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: chartHoverResetKey and isPlacingBid are included to force canvas redraws
+  // oxlint-disable-next-line react/exhaustive-deps -- chartHoverResetKey and isPlacingBid are included to force canvas redraws
   const histogramData = useMemo((): ToucanChartData[] => {
     // lightweight-charts uses `time` as the X axis. We encode ticks as integer "time" values by multiplying
     // by `priceScaleFactor` (to avoid collisions) and rounding. The bar height (`value`) is the Y axis.
@@ -293,6 +292,7 @@ function BidDistributionChartRendererComponent({
     }
 
     return Array.from(timeToData.values())
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [chartData.bars, groupTicksEnabled, groupedBars, priceScaleFactor, chartHoverResetKey, isPlacingBid])
 
   const totalBidVolume = chartData.totalBidVolume
@@ -369,10 +369,6 @@ function BidDistributionChartRendererComponent({
   const handleSelectedTickPrice = useEvent((tickPriceDecimalString: string) => {
     if (!isAuctionEnded) {
       setSelectedTickPrice(tickPriceDecimalString)
-      // Auto-switch to PLACE_A_BID tab when clicking chart
-      if (activeBidFormTab !== BidInfoTab.PLACE_A_BID) {
-        setActiveBidFormTab(BidInfoTab.PLACE_A_BID)
-      }
     }
   })
   const handleZoomStateChange = useEvent<[Parameters<typeof setChartZoomState>[1]], void>((state) => {

@@ -1,4 +1,4 @@
-query TokenWeb($chain: Chain!, $address: String = null) {
+query TokenWeb($chain: Chain!, $address: String = null, $multichain: Boolean = false) {
   token(chain: $chain, address: $address) {
     id
     decimals
@@ -7,7 +7,7 @@ query TokenWeb($chain: Chain!, $address: String = null) {
     address
     symbol
     standard
-    market(currency: USD) {
+    market(currency: USD, multichain: $multichain) {
       id
       totalValueLocked {
         id
@@ -19,7 +19,7 @@ query TokenWeb($chain: Chain!, $address: String = null) {
         value
         currency
       }
-      volume24H: volume(duration: DAY) {
+      volume24H: volume(duration: DAY, multichain: $multichain) {
         id
         value
         currency
@@ -45,6 +45,24 @@ query TokenWeb($chain: Chain!, $address: String = null) {
         id
         chain
         address
+        market(currency: USD) {
+          id
+          totalValueLocked {
+            id
+            value
+            currency
+          }
+          price {
+            id
+            value
+            currency
+          }
+          volume24H: volume(duration: DAY) {
+            id
+            value
+            currency
+          }
+        }
       }
       markets(currencies: [USD]) {
         id

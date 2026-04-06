@@ -26,9 +26,12 @@ export function useUSDCValue(
   return useTokenPriceHooks().useUSDCValue(currencyAmount, pollInterval)
 }
 
-export function useUSDCValueWithStatus(currencyAmount: CurrencyAmount<Currency> | undefined | null): {
+export function useUSDCValueWithStatus(
+  currencyAmount: CurrencyAmount<Currency> | undefined | null,
+  pollInterval: PollingInterval = PollingInterval.Fast,
+): {
   value: CurrencyAmount<Currency> | null
   isLoading: boolean
 } {
-  return useTokenPriceHooks().useUSDCValueWithStatus(currencyAmount)
+  return useTokenPriceHooks().useUSDCValueWithStatus(currencyAmount, pollInterval)
 }

@@ -1,4 +1,4 @@
-/* eslint-disable import/no-unused-modules */
+/* oxlint-disable import/no-unused-modules */
 
 import { PropsWithChildren, useEffect, useState } from 'react'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
@@ -72,9 +72,9 @@ function UniswapAccountsStoreDevToolLogger() {
       fontWeightStrings.push('font-weight: bold;', '')
     }
 
-    // biome-ignore lint/suspicious/noConsole: console logging required for devtools functionality
+    // oxlint-disable-next-line no-console -- console logging required for devtools functionality
     console.clear()
-    // biome-ignore lint/suspicious/noConsole: console logging required for devtools functionality
+    // oxlint-disable-next-line no-console -- console logging required for devtools functionality
     console.log(
       `
       %cAccountsStore 🦄%c

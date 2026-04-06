@@ -1,3 +1,4 @@
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
@@ -10,17 +11,51 @@ import { getTokenDetailsURL } from '~/appGraphql/data/util'
 import { PortfolioExpandoRow } from '~/pages/Portfolio/components/PortfolioExpandoRow'
 import { Balance } from '~/pages/TokenDetails/components/balances/Balance'
 import { BridgedAssetWithdrawButton } from '~/pages/TokenDetails/components/balances/BridgedAssetWithdrawButton'
-import { useTDPContext } from '~/pages/TokenDetails/context/TDPContext'
+import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
+
+function getDisplayBalance({
+  isMultichainUxEnabled,
+  isMultichainBalance,
+  allBalances,
+  pageChainBalance,
+}: {
+  isMultichainUxEnabled: boolean
+  isMultichainBalance: boolean
+  allBalances: readonly PortfolioBalance[]
+  pageChainBalance: PortfolioBalance | undefined
+}): PortfolioBalance | undefined {
+  if (isMultichainUxEnabled && isMultichainBalance && allBalances.length > 0) {
+    return {
+      id: 'total',
+      cacheId: 'total',
+      quantity: allBalances.reduce((sum, b) => sum + Number(b.quantity), 0),
+      balanceUSD:
+        allBalances.reduce((sum, b) => sum + (typeof b.balanceUSD === 'number' ? b.balanceUSD : 0), 0) || undefined,
+      currencyInfo: pageChainBalance?.currencyInfo ?? allBalances[0].currencyInfo,
+      relativeChange24: undefined,
+      isHidden: undefined,
+    }
+  }
+  return pageChainBalance
+}
 
 export function BalanceSummary(): JSX.Element | null {
   const { isDisconnected } = useConnectionStatus()
-  const { currencyChain, multiChainMap } = useTDPContext()
+  const isMultichainUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const { currencyChain, multiChainMap } = useTDPStore((s) => ({
+    currencyChain: s.currencyChain,
+    multiChainMap: s.multiChainMap,
+  }))
 
   const pageChainBalance = multiChainMap[currencyChain]?.balance
   const otherChainBalances: PortfolioBalance[] = []
+  const allBalances: PortfolioBalance[] = []
   for (const [key, value] of Object.entries(multiChainMap)) {
-    if (key !== currencyChain && value.balance !== undefined) {
-      otherChainBalances.push(value.balance)
+    if (value.balance !== undefined) {
+      allBalances.push(value.balance)
+      if (key !== currencyChain) {
+        otherChainBalances.push(value.balance)
+      }
     }
   }
   otherChainBalances.sort((a, b) => {
@@ -28,7 +63,15 @@ export function BalanceSummary(): JSX.Element | null {
     const bQty = Number(b.quantity)
     return bQty - aQty
   })
-  const hasBalances = pageChainBalance || Boolean(otherChainBalances.length)
+
+  const isMultichainBalance = otherChainBalances.length > 0
+  const displayBalance = getDisplayBalance({
+    isMultichainUxEnabled,
+    isMultichainBalance,
+    allBalances,
+    pageChainBalance,
+  })
+  const hasBalances = Boolean(displayBalance || isMultichainBalance)
 
   if (isDisconnected || !hasBalances) {
     return null
@@ -36,8 +79,17 @@ export function BalanceSummary(): JSX.Element | null {
   return (
     <Flex gap="$gap24" height="fit-content" width="100%">
       <Flex gap="$gap16">
-        <PageChainBalanceSummary pageChainBalance={pageChainBalance} />
-        <OtherChainsBalanceSummary otherChainBalances={otherChainBalances} hasPageChainBalance={!!pageChainBalance} />
+        <PageChainBalanceSummary
+          pageChainBalance={displayBalance}
+          isMultichainBalance={isMultichainUxEnabled && isMultichainBalance}
+        />
+        {isMultichainBalance && (
+          <OtherChainsBalanceSummary
+            otherChainBalances={otherChainBalances}
+            pageChainBalance={pageChainBalance}
+            hasPageChainBalance={!!pageChainBalance}
+          />
+        )}
       </Flex>
       <BridgedAssetWithdrawButton />
     </Flex>
@@ -46,8 +98,10 @@ export function BalanceSummary(): JSX.Element | null {
 
 export function PageChainBalanceSummary({
   pageChainBalance,
+  isMultichainBalance = false,
 }: {
   pageChainBalance?: PortfolioBalance
+  isMultichainBalance?: boolean
 }): JSX.Element | null {
   const { t } = useTranslation()
   if (!pageChainBalance) {
@@ -59,28 +113,49 @@ export function PageChainBalanceSummary({
       <Text variant="subheading2" color="$neutral2">
         {t('tdp.balanceSummary.title')}
       </Text>
-      <Balance currency={currency} chainId={currency.chainId} fetchedBalance={pageChainBalance} isAggregate />
+      <Balance
+        currency={currency}
+        chainId={currency.chainId}
+        fetchedBalance={pageChainBalance}
+        isAggregate={isMultichainBalance}
+        isMultichainBalance={isMultichainBalance}
+      />
     </Flex>
   )
 }
 
 function OtherChainsBalanceSummary({
   otherChainBalances,
+  pageChainBalance,
   hasPageChainBalance,
 }: {
   otherChainBalances: readonly PortfolioBalance[]
+  pageChainBalance?: PortfolioBalance
   hasPageChainBalance: boolean
 }): JSX.Element | null {
   const { t } = useTranslation()
+  const isMultichainUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const navigate = useNavigate()
   const { defaultChainId } = useEnabledChains()
   const [isExpanded, setIsExpanded] = useState(true)
 
-  if (!otherChainBalances.length) {
+  const displayBalances = isMultichainUxEnabled
+    ? [...(pageChainBalance ? [pageChainBalance] : []), ...otherChainBalances].sort((a, b) => {
+        const aQty = Number(a.quantity)
+        const bQty = Number(b.quantity)
+        return bQty - aQty
+      })
+    : otherChainBalances
+
+  if (!displayBalances.length) {
     return null
   }
 
   const isCollapsible = hasPageChainBalance
+
+  const collapseLabel = isMultichainUxEnabled
+    ? t('tdp.balanceSummary.breakdown')
+    : t('tdp.balanceSummary.otherNetworks')
 
   return (
     <Flex>
@@ -89,7 +164,7 @@ function OtherChainsBalanceSummary({
         <Flex pb="$spacing8">
           <PortfolioExpandoRow
             isExpanded={isExpanded}
-            label={t('tdp.balanceSummary.breakdown')}
+            label={collapseLabel}
             onPress={() => setIsExpanded(!isExpanded)}
             iconAlignRight
             textVariant="body3"
@@ -99,12 +174,12 @@ function OtherChainsBalanceSummary({
         </Flex>
       ) : (
         <Text variant="subheading1" color="$neutral1">
-          {t('tdp.balanceSummary.breakdown')}
+          {collapseLabel}
         </Text>
       )}
       <HeightAnimator open={!isCollapsible || isExpanded}>
         {(!isCollapsible || isExpanded) &&
-          otherChainBalances.map((balance) => {
+          displayBalances.map((balance) => {
             const currency = balance.currencyInfo.currency
             const chainId = currency.chainId || defaultChainId
             return (

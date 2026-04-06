@@ -271,7 +271,7 @@ describe(isHttpUri, () => {
     })
 
     it('returns false for javascript URI', () => {
-      // eslint-disable-next-line no-script-url
+      // oxlint-disable-next-line no-script-url
       expect(isHttpUri('javascript:alert(1)')).toBe(false)
     })
 
@@ -336,7 +336,7 @@ describe(sanitizeAvatarUrl, () => {
   it('returns null for non-HTTP URLs', () => {
     expect(sanitizeAvatarUrl('ipfs://QmHash123')).toBeNull()
     expect(sanitizeAvatarUrl('data:image/png;base64,iVBORw0KGgo=')).toBeNull()
-    // eslint-disable-next-line no-script-url
+    // oxlint-disable-next-line no-script-url
     expect(sanitizeAvatarUrl('javascript:alert(1)')).toBeNull()
     expect(sanitizeAvatarUrl('eip155:1/erc721:0xabc/123')).toBeNull()
   })

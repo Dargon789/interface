@@ -9,7 +9,7 @@ import { TradeableAsset } from 'uniswap/src/entities/assets'
 import type { AddressGroup } from 'uniswap/src/features/accounts/store/types/AccountsState'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 
-function _TokenSelectorSearchResultsList({
+function TokenSelectorSearchResultsListInner({
   onSelectCurrency: parentOnSelectCurrency,
   addresses,
   chainFilter,
@@ -47,7 +47,7 @@ function _TokenSelectorSearchResultsList({
     input,
   })
 
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   const onSelectCurrency: OnSelectCurrency = (currencyInfo, section, index) => {
     parentOnSelectCurrency(currencyInfo, section, index)
     registerSearchTokenCurrencyInfo(currencyInfo)
@@ -76,4 +76,4 @@ function _TokenSelectorSearchResultsList({
   )
 }
 
-export const TokenSelectorSearchResultsList = memo(_TokenSelectorSearchResultsList)
+export const TokenSelectorSearchResultsList = memo(TokenSelectorSearchResultsListInner)

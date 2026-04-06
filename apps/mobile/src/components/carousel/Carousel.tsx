@@ -35,6 +35,7 @@ export function Carousel({ slides, ...flatListProps }: CarouselProps): JSX.Eleme
     myRef.current?._listRef._scrollRef.scrollTo({
       x: Math.ceil(scroll.value / fullWidth + 0.5) * fullWidth,
     })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [fullWidth])
 
   const goToPrev = useCallback(() => {
@@ -42,6 +43,7 @@ export function Carousel({ slides, ...flatListProps }: CarouselProps): JSX.Eleme
     myRef.current?._listRef._scrollRef.scrollTo({
       x: Math.floor(scroll.value / fullWidth - 0.5) * fullWidth,
     })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [fullWidth])
 
   return (
@@ -49,12 +51,12 @@ export function Carousel({ slides, ...flatListProps }: CarouselProps): JSX.Eleme
       <Flex grow gap="$spacing16" mb="$spacing24">
         <AnimatedIndicator scroll={scroll} stepCount={slides.length} />
         <AnimatedFlatList
+          ref={myRef}
           horizontal
           pagingEnabled
           data={slides}
           keyExtractor={key}
           {...flatListProps}
-          ref={myRef}
           renderItem={({ item }: ListRenderItemInfo<ReactNode>): JSX.Element => (
             <Flex centered grow p="$spacing24" pt="$none" width={fullWidth}>
               {item}

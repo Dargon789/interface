@@ -21,7 +21,7 @@ interface ActivityFiltersProps {
   onTimePeriodChange: (value: string) => void
 }
 
-function _ActivityFilters({
+function ActivityFiltersInner({
   selectedTransactionType,
   onTransactionTypeChange,
   selectedTimePeriod,
@@ -82,4 +82,4 @@ function _ActivityFilters({
   )
 }
 
-export const ActivityFilters = memo(_ActivityFilters)
+export const ActivityFilters = memo(ActivityFiltersInner)

@@ -1,7 +1,7 @@
 import type { Animated } from 'react-native'
 import { Flex, GetThemeValueForKey, Separator, Text, TouchableArea, useLayoutAnimationOnChange } from 'ui/src'
-import { AnglesDownUp } from 'ui/src/components/icons/AnglesDownUp'
-import { SortVertical } from 'ui/src/components/icons/SortVertical'
+import { ChevronsIn } from 'ui/src/components/icons/ChevronsIn'
+import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
 
 export type ExpandoRowProps = {
   isExpanded: boolean
@@ -26,9 +26,9 @@ export function ExpandoRow({ label, isExpanded, onPress, mx }: ExpandoRowProps):
 
             <Flex centered justifyContent="center" testID="expando-row-icon">
               {isExpanded ? (
-                <AnglesDownUp color="$neutral3" size="$icon.16" />
+                <ChevronsIn color="$neutral3" size="$icon.16" />
               ) : (
-                <SortVertical color="$neutral3" size="$icon.16" />
+                <ChevronsOut color="$neutral3" size="$icon.16" />
               )}
             </Flex>
           </Flex>

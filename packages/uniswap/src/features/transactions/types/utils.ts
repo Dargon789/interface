@@ -17,7 +17,7 @@ import {
 export function isConfirmedSwapTypeInfo(typeInfo: TransactionTypeInfo): typeInfo is ConfirmedSwapTransactionInfo {
   return Boolean(
     (typeInfo as ConfirmedSwapTransactionInfo).inputCurrencyAmountRaw &&
-      (typeInfo as ConfirmedSwapTransactionInfo).outputCurrencyAmountRaw,
+    (typeInfo as ConfirmedSwapTransactionInfo).outputCurrencyAmountRaw,
   )
 }
 

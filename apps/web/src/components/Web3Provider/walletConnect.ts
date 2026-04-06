@@ -1,6 +1,6 @@
 import { zIndexes } from 'ui/src/theme'
 import { isWebAndroid, isWebIOS } from 'utilities/src/platform'
-import { createConnector } from 'wagmi'
+import { type CreateConnectorFn, createConnector } from 'wagmi'
 import { walletConnect } from 'wagmi/connectors'
 
 if (process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID === undefined) {
@@ -47,7 +47,7 @@ export const WC_PARAMS = {
   },
 }
 
-export function uniswapWalletConnect() {
+export function uniswapWalletConnect(): CreateConnectorFn {
   return createConnector((config) => {
     const wc = walletConnect({
       ...WC_PARAMS,

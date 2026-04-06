@@ -21,7 +21,7 @@ export function TransactionDetailsContent({
 }): JSX.Element | null {
   const { typeInfo } = transactionDetails
 
-  // eslint-disable-next-line complexity
+  // oxlint-disable-next-line complexity
   const getContentComponent = (): JSX.Element | null => {
     switch (typeInfo.type) {
       case TransactionType.Approve:
@@ -32,7 +32,7 @@ export function TransactionDetailsContent({
       case TransactionType.NFTApprove:
       case TransactionType.NFTMint:
       case TransactionType.NFTTrade:
-        return <NftTransactionDetails transactionDetails={transactionDetails} typeInfo={typeInfo} onClose={onClose} />
+        return <NftTransactionDetails typeInfo={typeInfo} />
       case TransactionType.Receive:
       case TransactionType.Send:
         return (

@@ -12,7 +12,7 @@ import { getCurrencyDisplayText, getFormattedCurrencyAmount, getSymbolDisplayTex
 import { currencyIdToAddress } from 'uniswap/src/utils/currencyId'
 import { shortenAddress } from 'utilities/src/addresses'
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 export const formWCNotificationTitle = (appNotification: WalletConnectNotification): string => {
   const { event, dappName, chainId } = appNotification
 
@@ -72,6 +72,8 @@ export const formBridgeNotificationTitle = (txStatus: TransactionStatus): string
       return i18n.t('transaction.status.swap.success')
     case TransactionStatus.Canceled:
       return i18n.t('transaction.status.swap.canceled')
+    case TransactionStatus.AwaitingAction:
+      return i18n.t('transaction.status.plan.interrupted')
     default:
       return i18n.t('transaction.status.swap.failed')
   }

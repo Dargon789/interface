@@ -13,7 +13,11 @@ interface GenericCompactLayoutProps {
   labelOverride?: string
 }
 
-function _GenericCompactLayout({ transaction, protocolInfo, labelOverride }: GenericCompactLayoutProps): JSX.Element {
+function GenericCompactLayoutInner({
+  transaction,
+  protocolInfo,
+  labelOverride,
+}: GenericCompactLayoutProps): JSX.Element {
   const { t } = useTranslation()
 
   return (
@@ -50,4 +54,4 @@ function _GenericCompactLayout({ transaction, protocolInfo, labelOverride }: Gen
   )
 }
 
-export const GenericCompactLayout = memo(_GenericCompactLayout)
+export const GenericCompactLayout = memo(GenericCompactLayoutInner)

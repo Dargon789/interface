@@ -1,5 +1,5 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: Migration functions handle arbitrary state shapes from different versions */
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* oxlint-disable typescript/no-explicit-any -- Migration functions handle arbitrary state shapes from different versions */
+/* oxlint-disable typescript/explicit-function-return-type */
 
 import {
   migratePendingDappRequestsToRecord,

@@ -94,6 +94,8 @@ export function NetworkFilter({
   size = DropdownSizeVariants.Medium,
   transition,
   networks,
+  customTrigger,
+  isTriggerStyled = true,
 }: {
   showMultichainOption?: boolean
   showDisplayName?: boolean
@@ -103,6 +105,8 @@ export function NetworkFilter({
   currentChainId: UniverseChainId | undefined
   transition?: FlexProps['transition']
   networks?: UniverseChainId[]
+  customTrigger?: JSX.Element | string
+  isTriggerStyled?: boolean
 }) {
   const { t } = useTranslation()
   const [isMenuOpen, toggleMenu] = useState(false)
@@ -140,24 +144,27 @@ export function NetworkFilter({
           isOpen={isMenuOpen}
           toggleOpen={toggleMenu}
           menuLabel={
-            <NetworkLabel testID={TestID.TokensNetworkFilterTrigger}>
-              {(!currentChainId || !isSupportedChainCallback(currentChainId)) && showMultichainOption ? (
-                <NetworkLogo size={NetworkLogoSizes[size]} chainId={null} transition={transition} />
-              ) : (
-                <ChainLogo
-                  chainId={currentChainId ?? UniverseChainId.Mainnet}
-                  size={NetworkLogoSizes[size]}
-                  testId={TestID.TokensNetworkFilterSelected}
-                  transition={transition}
-                />
-              )}
-              {showDisplayName && (
-                <Text variant={NetworkLabelTextVariants[size]} transition={transition}>
-                  {isAllNetworks ? t('transaction.network.all') : chainInfo.label}
-                </Text>
-              )}
-            </NetworkLabel>
+            customTrigger ?? (
+              <NetworkLabel testID={TestID.TokensNetworkFilterTrigger}>
+                {(!currentChainId || !isSupportedChainCallback(currentChainId)) && showMultichainOption ? (
+                  <NetworkLogo size={NetworkLogoSizes[size]} chainId={null} transition={transition} />
+                ) : (
+                  <ChainLogo
+                    chainId={currentChainId ?? UniverseChainId.Mainnet}
+                    size={NetworkLogoSizes[size]}
+                    testId={TestID.TokensNetworkFilterSelected}
+                    transition={transition}
+                  />
+                )}
+                {showDisplayName && (
+                  <Text variant={NetworkLabelTextVariants[size]} transition={transition}>
+                    {isAllNetworks ? t('transaction.network.all') : chainInfo.label}
+                  </Text>
+                )}
+              </NetworkLabel>
+            )
           }
+          isTriggerStyled={isTriggerStyled}
           buttonStyle={ButtonStyles[size]}
           dropdownStyle={StyledDropdown}
           adaptToSheet

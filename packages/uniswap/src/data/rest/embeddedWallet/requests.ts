@@ -15,7 +15,6 @@ function createEmbeddedWalletTransport(): Transport {
       'x-request-source': REQUEST_SOURCE,
       'x-app-version': getVersionHeader(),
     }),
-    options: { credentials: 'include' },
   })
 }
 
@@ -64,7 +63,14 @@ export const EmbeddedWalletApiClient: EmbeddedWalletApiClientType = {
   fetchSecuredChallengeRequest: (...args) => getApiClient().then((c) => c.fetchSecuredChallengeRequest(...args)),
   fetchExportSeedPhraseRequest: (...args) => getApiClient().then((c) => c.fetchExportSeedPhraseRequest(...args)),
   fetchListAuthenticatorsRequest: (...args) => getApiClient().then((c) => c.fetchListAuthenticatorsRequest(...args)),
-  fetchRegisterNewAuthenticatorRequest: (...args) =>
-    getApiClient().then((c) => c.fetchRegisterNewAuthenticatorRequest(...args)),
+  fetchStartAuthenticatedSessionRequest: (...args) =>
+    getApiClient().then((c) => c.fetchStartAuthenticatedSessionRequest(...args)),
+  fetchAddAuthenticatorRequest: (...args) => getApiClient().then((c) => c.fetchAddAuthenticatorRequest(...args)),
   fetchDeleteAuthenticatorRequest: (...args) => getApiClient().then((c) => c.fetchDeleteAuthenticatorRequest(...args)),
+  fetchOprfEvaluate: (...args) => getApiClient().then((c) => c.fetchOprfEvaluate(...args)),
+  fetchSetupRecovery: (...args) => getApiClient().then((c) => c.fetchSetupRecovery(...args)),
+  fetchExecuteRecovery: (...args) => getApiClient().then((c) => c.fetchExecuteRecovery(...args)),
+  fetchReportDecryptionResult: (...args) => getApiClient().then((c) => c.fetchReportDecryptionResult(...args)),
+  fetchGetRecoveryConfig: (...args) => getApiClient().then((c) => c.fetchGetRecoveryConfig(...args)),
+  fetchDeleteRecovery: (...args) => getApiClient().then((c) => c.fetchDeleteRecovery(...args)),
 }

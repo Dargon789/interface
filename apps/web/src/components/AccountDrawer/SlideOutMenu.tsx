@@ -35,16 +35,18 @@ export const SlideOutMenu = ({
         style={updatedScrollbarStyles}
         mt="$spacing4"
         py="$padding12"
-        px="$padding16"
+        px="$padding12"
         {...flexProps}
       >
         <Flex grow justifyContent="space-between">
           <Flex grow>
-            <Flex row mb="$spacing20" justifyContent="space-between" width="100%" alignItems="center">
+            <Flex row mb="$spacing24" justifyContent="space-between" width="100%" alignItems="center">
               <TouchableArea width="15%" data-testid="wallet-back" onPress={onClose}>
                 <ArrowLeft color="$neutral2" size="$icon.24" />
               </TouchableArea>
-              <Text color="$neutral1">{title}</Text>
+              <Text color="$neutral1" variant="subheading1">
+                {title}
+              </Text>
               <Flex width="15%">{rightIcon}</Flex>
             </Flex>
             {children}

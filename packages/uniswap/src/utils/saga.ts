@@ -87,7 +87,7 @@ interface MonitoredSagaOptions {
   parallel?: boolean
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: Generic saga state interface needs flexible typing
+// oxlint-disable-next-line typescript/no-explicit-any -- Generic saga state interface needs flexible typing
 export interface MonitoredSaga<SagaParams = any> {
   name: string
   wrappedSaga: () => Generator
@@ -218,7 +218,7 @@ export function getMonitoredSagaReducers(monitoredSagas: Record<string, Monitore
   return combineReducers(
     Object.keys(monitoredSagas).reduce((acc: { [name: string]: Reducer<SagaState> }, sagaName: string) => {
       // Safe non-null assertion because key `sagaName` comes from `Object.keys(monitoredSagas)`
-      // biome-ignore lint/style/noNonNullAssertion: Safe assertion in test or migration context
+      // oxlint-disable-next-line typescript/no-non-null-assertion -- Safe assertion in test or migration context
       acc[sagaName] = monitoredSagas[sagaName]!.reducer
       return acc
     }, {}),

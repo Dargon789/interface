@@ -1,13 +1,16 @@
 import { Currency } from '@uniswap/sdk-core'
-import { useMemo } from 'react'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { useTranslation } from 'react-i18next'
 import { Flex, Text, TouchableArea } from 'ui/src'
+import { iconSizes } from 'ui/src/theme'
+import { CurrencyLogo } from 'uniswap/src/components/CurrencyLogo/CurrencyLogo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { getChainLabel } from 'uniswap/src/features/chains/utils'
 import { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
-import { PortfolioLogo } from '~/components/AccountDrawer/MiniPortfolio/PortfolioLogo'
 import { ChainLogo } from '~/components/Logo/ChainLogo'
-import { ClickableTamaguiStyle } from '~/theme/components/styles'
+import { MouseoverTooltip, TooltipSize } from '~/components/Tooltip'
 
 export function Balance({
   currency,
@@ -16,6 +19,7 @@ export function Balance({
   onClick,
   showChainLogoOnly = false,
   isAggregate = false,
+  isMultichainBalance = false,
 }: {
   currency?: Currency
   chainId?: UniverseChainId
@@ -23,9 +27,11 @@ export function Balance({
   onClick?: () => void
   showChainLogoOnly?: boolean
   isAggregate?: boolean
+  isMultichainBalance?: boolean
 }): JSX.Element {
+  const { t } = useTranslation()
+  const isMultichainUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { convertFiatAmountFormatted, formatNumberOrString } = useLocalizationContext()
-  const currencies = useMemo(() => (currency ? [currency] : []), [currency])
 
   const formattedBalance = formatNumberOrString({
     value: fetchedBalance?.quantity,
@@ -38,17 +44,21 @@ export function Balance({
   if (isAggregate) {
     return (
       <Flex row alignItems="center">
-        <PortfolioLogo
-          currencies={currencies}
-          chainId={chainId}
-          images={fetchedBalance?.currencyInfo.logoUrl ? [fetchedBalance.currencyInfo.logoUrl] : undefined}
-          size={32}
+        <CurrencyLogo
+          currencyInfo={fetchedBalance?.currencyInfo}
+          size={iconSizes.icon32}
+          hideNetworkLogo={isMultichainUxEnabled && isMultichainBalance}
         />
         <Flex shrink row width="100%" justifyContent="space-between" alignItems="center" ml="$spacing12">
           <Flex>
             <Text variant="body2" color="$neutral1">
               {tokenName}
             </Text>
+            {isMultichainUxEnabled && (
+              <Text variant="body3" color="$neutral2">
+                {t('transaction.network.all')}
+              </Text>
+            )}
           </Flex>
           <Flex alignItems="flex-end">
             <Text variant="body2" color="$neutral1">
@@ -63,17 +73,25 @@ export function Balance({
     )
   }
 
+  const chainName = getChainLabel(chainId)
+
   return (
-    <TouchableArea onPress={onClick} {...(onClick ? ClickableTamaguiStyle : {})}>
+    <TouchableArea disabled={!onClick} onPress={onClick} opacity={1}>
       <Flex my="$spacing8" row alignItems="center">
         {showChainLogoOnly ? (
-          <ChainLogo chainId={chainId} size={24} borderRadius={6} />
+          <MouseoverTooltip
+            placement="left"
+            size={TooltipSize.Max}
+            text={<Text variant="body3">{chainName}</Text>}
+            offsetX={0}
+          >
+            <ChainLogo chainId={chainId} size={24} borderRadius={6} />
+          </MouseoverTooltip>
         ) : (
-          <PortfolioLogo
-            currencies={currencies}
-            chainId={chainId}
-            images={fetchedBalance?.currencyInfo.logoUrl ? [fetchedBalance.currencyInfo.logoUrl] : undefined}
-            size={32}
+          <CurrencyLogo
+            currencyInfo={fetchedBalance?.currencyInfo}
+            size={iconSizes.icon32}
+            hideNetworkLogo={isMultichainUxEnabled && isMultichainBalance}
           />
         )}
         <Flex shrink row width="100%" justifyContent="space-between" alignItems="center" ml="$spacing12">

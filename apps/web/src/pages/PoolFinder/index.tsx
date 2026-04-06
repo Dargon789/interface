@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex, Text } from 'ui/src'
 import { ArrowLeft } from 'ui/src/components/icons/ArrowLeft'
+import { TokenSelectorFlow } from 'uniswap/src/components/TokenSelector/types'
 import { nativeOnChain } from 'uniswap/src/constants/tokens'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { InterfacePageName } from 'uniswap/src/features/telemetry/constants'
@@ -53,7 +54,7 @@ export default function PoolFinder() {
   const hasPosition = Boolean(position && JSBI.greaterThan(position.quotient, JSBI.BigInt(0)))
 
   const userPoolBalance = useTokenBalance(account.address, pair?.liquidityToken)
-  const totalPoolTokens = useTotalSupply(pair?.liquidityToken)
+  const { totalSupply: totalPoolTokens } = useTotalSupply(pair?.liquidityToken)
 
   const [token0Deposited, token1Deposited] =
     !!pair &&
@@ -187,6 +188,7 @@ export default function PoolFinder() {
           isOpen={currencySearchInputState !== undefined}
           onDismiss={() => setCurrencySearchInputState(undefined)}
           switchNetworkAction={SwitchNetworkAction.PoolFinder}
+          flow={TokenSelectorFlow.Liquidity}
           onCurrencySelect={(currency) => {
             if (currencySearchInputState === PositionField.TOKEN0) {
               setCurrency0(currency)

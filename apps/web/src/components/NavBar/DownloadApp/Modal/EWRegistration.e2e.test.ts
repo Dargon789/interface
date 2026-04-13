@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-syntax */
 import { FeatureFlags, getFeatureFlagName } from '@universe/gating'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { expect, getTest } from '~/playwright/fixtures'

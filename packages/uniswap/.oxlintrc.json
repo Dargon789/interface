@@ -1,7 +1,15 @@
 {
   "extends": ["../../.oxlintrc.json"],
-  "ignorePatterns": ["src/data/**/__generated__/**", "src/abis/types/**", "vite/**"],
+  "ignorePatterns": [
+    "src/data/**/__generated__/**",
+    "src/abis/types/**",
+    "vite/**",
+    "vitest*.ts",
+    "jest*.js",
+    "babel*.js"
+  ],
   "rules": {
+    "universe-custom/enum-member-naming": "error",
     "universe-custom/no-relative-import-paths": [
       "error",
       {

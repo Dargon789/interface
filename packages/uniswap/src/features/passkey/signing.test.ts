@@ -1,6 +1,6 @@
 import { EmbeddedWalletApiClient } from 'uniswap/src/data/rest/embeddedWallet/requests'
 import { clearDeviceSession, generateDeviceKeyPair, setDeviceSession } from 'uniswap/src/features/passkey/deviceSession'
-import { authenticateWithPasskey, loadPrivyPbModule } from 'uniswap/src/features/passkey/embeddedWallet'
+import { authenticateWithPasskey } from 'uniswap/src/features/passkey/embeddedWallet'
 import {
   exportEncryptedSeedPhrase,
   signMessageWithPasskey,
@@ -20,11 +20,28 @@ vi.mock('uniswap/src/data/rest/embeddedWallet/requests', () => ({
 }))
 
 vi.mock('uniswap/src/features/passkey/embeddedWallet', () => ({
-  loadPrivyPbModule: vi.fn(),
   authenticateWithPasskey: vi.fn(),
 }))
 
-const mockLoadPrivyPbModule = loadPrivyPbModule as MockedFunction<typeof loadPrivyPbModule>
+vi.mock('@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb', () => ({
+  Action: {
+    SIGN_MESSAGE: 1,
+    SIGN_TRANSACTION: 2,
+    SIGN_TYPED_DATA: 3,
+    EXPORT_SEED_PHRASE: 4,
+  },
+  AuthenticationTypes: {
+    PASSKEY_AUTHENTICATION: 1,
+  },
+}))
+
+const MOCK_ACTION = {
+  SIGN_MESSAGE: 1,
+  SIGN_TRANSACTION: 2,
+  SIGN_TYPED_DATA: 3,
+  EXPORT_SEED_PHRASE: 4,
+} as const
+
 const mockAuthenticateWithPasskey = authenticateWithPasskey as MockedFunction<typeof authenticateWithPasskey>
 const mockFetchChallengeRequest = EmbeddedWalletApiClient.fetchChallengeRequest as MockedFunction<
   typeof EmbeddedWalletApiClient.fetchChallengeRequest
@@ -42,13 +59,6 @@ const mockFetchExportSeedPhraseRequest = EmbeddedWalletApiClient.fetchExportSeed
   typeof EmbeddedWalletApiClient.fetchExportSeedPhraseRequest
 >
 
-const MOCK_ACTION = {
-  SIGN_MESSAGE: 1,
-  SIGN_TRANSACTION: 2,
-  SIGN_TYPED_DATA: 3,
-  EXPORT_SEED_PHRASE: 4,
-} as const
-
 const MOCK_AUTH_TYPES = {
   PASSKEY_AUTHENTICATION: 1,
 } as const
@@ -57,10 +67,6 @@ describe('signing', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     clearDeviceSession()
-    mockLoadPrivyPbModule.mockResolvedValue({
-      Action: MOCK_ACTION,
-      AuthenticationTypes: MOCK_AUTH_TYPES,
-    } as unknown as Awaited<ReturnType<typeof loadPrivyPbModule>>)
   })
 
   afterEach(() => {

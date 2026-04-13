@@ -3,17 +3,14 @@ import { GraphQLApi } from '@universe/api'
 import { OnchainItemListOptionType } from 'uniswap/src/components/lists/items/types'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { CurrencyInfo, TokenList } from 'uniswap/src/features/dataApi/types'
-import { SAMPLE_SEED_ADDRESS_1 } from 'uniswap/src/test/fixtures'
 import { renderHook, waitFor } from 'uniswap/src/test/test-utils'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 
 // Create mock functions before vi.mock runs
-const { mockUseAllCommonBaseCurrencies, mockUseCurrencyInfosWithLoading, mockUsePortfolioBalancesForAddressById } =
-  vi.hoisted(() => ({
-    mockUseAllCommonBaseCurrencies: vi.fn(),
-    mockUseCurrencyInfosWithLoading: vi.fn(),
-    mockUsePortfolioBalancesForAddressById: vi.fn(),
-  }))
+const { mockUseAllCommonBaseCurrencies, mockUseCurrencyInfosWithLoading } = vi.hoisted(() => ({
+  mockUseAllCommonBaseCurrencies: vi.fn(),
+  mockUseCurrencyInfosWithLoading: vi.fn(),
+}))
 
 vi.mock('uniswap/src/components/TokenSelector/hooks/useAllCommonBaseCurrencies', () => ({
   useAllCommonBaseCurrencies: mockUseAllCommonBaseCurrencies,
@@ -21,10 +18,6 @@ vi.mock('uniswap/src/components/TokenSelector/hooks/useAllCommonBaseCurrencies',
 
 vi.mock('uniswap/src/features/tokens/useCurrencyInfo', () => ({
   useCurrencyInfosWithLoading: mockUseCurrencyInfosWithLoading,
-}))
-
-vi.mock('uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById', () => ({
-  usePortfolioBalancesForAddressById: mockUsePortfolioBalancesForAddressById,
 }))
 
 // --- Test data helpers ---
@@ -155,6 +148,23 @@ const defaultGqlResult = {
 
 const skippedResult = { data: undefined, ...defaultGqlResult }
 
+function makePortfolioData({
+  portfolioError,
+  portfolioLoading = false,
+}: { portfolioError?: Error; portfolioLoading?: boolean } = {}): {
+  data: Record<string, never> | undefined
+  error: Error | undefined
+  loading: boolean
+  refetch: ReturnType<typeof vi.fn>
+} {
+  return {
+    data: portfolioError ? undefined : {},
+    error: portfolioError,
+    loading: portfolioLoading,
+    refetch: vi.fn(),
+  }
+}
+
 function setupDefaultMocks({
   chainFilter,
   commonBase,
@@ -166,8 +176,6 @@ function setupDefaultMocks({
   xLayerData = xLayerCurrencies,
   xLayerError,
   xLayerLoading = false,
-  portfolioError,
-  portfolioLoading = false,
 }: {
   chainFilter: UniverseChainId | null
   commonBase?: CurrencyInfo[] | null
@@ -179,20 +187,11 @@ function setupDefaultMocks({
   xLayerData?: CurrencyInfo[]
   xLayerError?: Error
   xLayerLoading?: boolean
-  portfolioError?: Error
-  portfolioLoading?: boolean
 }): void {
   mockUseAllCommonBaseCurrencies.mockReturnValue({
     data: commonBase === null ? undefined : (commonBase ?? allCommonBaseCurrencies),
     error: commonBaseError,
     loading: commonBaseLoading,
-    refetch: vi.fn(),
-  })
-
-  mockUsePortfolioBalancesForAddressById.mockReturnValue({
-    data: portfolioError ? undefined : {},
-    error: portfolioError,
-    loading: portfolioLoading,
     refetch: vi.fn(),
   })
 
@@ -226,7 +225,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: UniverseChainId.Linea,
         }),
       )
@@ -248,7 +247,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: UniverseChainId.XLayer,
         }),
       )
@@ -268,7 +267,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: UniverseChainId.Mainnet,
         }),
       )
@@ -290,7 +289,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: null,
         }),
       )
@@ -308,7 +307,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: null,
         }),
       )
@@ -326,7 +325,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: null,
         }),
       )
@@ -344,7 +343,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: null,
         }),
       )
@@ -367,7 +366,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: null,
         }),
       )
@@ -384,7 +383,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: UniverseChainId.Linea,
         }),
       )
@@ -400,11 +399,11 @@ describe(useCommonTokensOptions, () => {
   describe('error handling', () => {
     it('returns portfolio error when portfolio fetch fails', async () => {
       const portfolioError = new Error('Portfolio fetch failed')
-      setupDefaultMocks({ chainFilter: null, portfolioError })
+      setupDefaultMocks({ chainFilter: null })
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData({ portfolioError }),
           chainFilter: null,
         }),
       )
@@ -422,7 +421,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: null,
         }),
       )
@@ -440,7 +439,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: UniverseChainId.Linea,
         }),
       )
@@ -459,7 +458,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: null,
         }),
       )
@@ -468,11 +467,11 @@ describe(useCommonTokensOptions, () => {
     })
 
     it('is loading when portfolio is loading', async () => {
-      setupDefaultMocks({ chainFilter: null, portfolioLoading: true })
+      setupDefaultMocks({ chainFilter: null })
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData({ portfolioLoading: true }),
           chainFilter: null,
         }),
       )
@@ -485,7 +484,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: UniverseChainId.Linea,
         }),
       )
@@ -498,7 +497,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: UniverseChainId.XLayer,
         }),
       )
@@ -513,7 +512,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: UniverseChainId.Linea,
         }),
       )
@@ -534,7 +533,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: UniverseChainId.Linea,
         }),
       )
@@ -557,7 +556,7 @@ describe(useCommonTokensOptions, () => {
 
       const { result } = renderHook(() =>
         useCommonTokensOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1 },
+          portfolioData: makePortfolioData(),
           chainFilter: null,
         }),
       )

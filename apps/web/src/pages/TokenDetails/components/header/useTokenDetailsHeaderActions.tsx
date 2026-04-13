@@ -1,4 +1,5 @@
 import { Currency } from '@uniswap/sdk-core'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChartBarCrossed } from 'ui/src/components/icons/ChartBarCrossed'
@@ -16,10 +17,10 @@ import {
   type HeaderActionSection,
 } from '~/components/Explore/stickyHeader/HeaderActions/types'
 import { useShareAction } from '~/components/Explore/stickyHeader/HeaderActions/useShareAction'
+import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 
 type TokenDetailsHeaderActionsParams = {
   currency: Currency
-  address: string
   project?: { homepageUrl?: string; twitterName?: string } | null
   openReportTokenModal: () => void
   openReportDataIssueModal: () => void
@@ -28,7 +29,6 @@ type TokenDetailsHeaderActionsParams = {
 
 export function useTokenDetailsHeaderActions({
   currency,
-  address,
   project,
   openReportTokenModal,
   openReportDataIssueModal,
@@ -38,6 +38,7 @@ export function useTokenDetailsHeaderActions({
   mobileHeaderActionSections: HeaderActionSection[]
 } {
   const { t } = useTranslation()
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const twitterShareName =
     currency.name && currency.symbol ? `${currency.name} (${currency.symbol})` : currency.name || currency.symbol || ''
@@ -49,7 +50,7 @@ export function useTokenDetailsHeaderActions({
 
   const explorerUrl = getExplorerLink({
     chainId: currency.chainId,
-    data: address,
+    data: currency.isNative ? NATIVE_CHAIN_ID : currency.address,
     type: currency.isNative ? ExplorerDataType.NATIVE : ExplorerDataType.TOKEN,
   })
   const BlockExplorerIcon = getBlockExplorerIcon(currency.chainId)
@@ -82,20 +83,24 @@ export function useTokenDetailsHeaderActions({
       {
         title: t('common.details'),
         actions: [
-          {
-            title: explorerName,
-            icon: <BlockExplorerIcon size="$icon.18" color="$neutral2" />,
-            href: explorerUrl,
-            onPress: () => {},
-            show: !!explorerUrl,
-          },
-          {
-            title: t('common.website'),
-            icon: <GlobeFilled size="$icon.18" color="$neutral2" />,
-            href: homepageUrl,
-            onPress: () => {},
-            show: !!homepageUrl,
-          },
+          ...(!multichainTokenUxEnabled
+            ? [
+                {
+                  title: explorerName,
+                  icon: <BlockExplorerIcon size="$icon.18" color="$neutral2" />,
+                  href: explorerUrl,
+                  onPress: () => {},
+                  show: !!explorerUrl,
+                },
+                {
+                  title: t('common.website'),
+                  icon: <GlobeFilled size="$icon.18" color="$neutral2" />,
+                  href: homepageUrl,
+                  onPress: () => {},
+                  show: !!homepageUrl,
+                },
+              ]
+            : []),
           {
             title: t('common.twitter'),
             icon: <XTwitter size="$icon.18" color="$neutral2" />,
@@ -121,7 +126,17 @@ export function useTokenDetailsHeaderActions({
         ],
       },
     ],
-    [t, shareAction, explorerName, BlockExplorerIcon, explorerUrl, homepageUrl, twitterUrl, reportActions],
+    [
+      t,
+      shareAction,
+      explorerName,
+      BlockExplorerIcon,
+      explorerUrl,
+      homepageUrl,
+      twitterUrl,
+      reportActions,
+      multichainTokenUxEnabled,
+    ],
   )
 
   return useMemo(() => deriveFromSections(sections), [sections])

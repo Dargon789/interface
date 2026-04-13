@@ -91,6 +91,7 @@ export function SettingsScreen(): JSX.Element {
 
   const onPressLockWallet = async (): Promise<void> => {
     navigateBack()
+    // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
     await dispatch(authActions.trigger({ type: AuthActionType.Lock }))
   }
 
@@ -107,6 +108,7 @@ export function SettingsScreen(): JSX.Element {
     // trigger before toggling on (ie disabling analytics)
     if (isChecked) {
       // doesn't fire on time without await and i have no idea why
+      // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
       await fireAnalytic()
     }
 

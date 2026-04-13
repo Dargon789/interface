@@ -1,4 +1,3 @@
-// oxlint-disable-next-line check-file/no-index -- biome-parity: oxlint is stricter here
 import { ExploreStatsResponse } from '@uniswap/client-explore/dist/uniswap/explore/v1/service_pb'
 import { ALL_NETWORKS_ARG } from '@universe/api'
 import { createContext, useContext, useMemo } from 'react'

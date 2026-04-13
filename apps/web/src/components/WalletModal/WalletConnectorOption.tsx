@@ -166,7 +166,6 @@ export function WalletConnectorOption({
   const themeColors = useSporeColors()
   const icon = getIcon({ wallet, isEmbeddedWalletEnabled, themeColors })
   const text = getConnectorText({ wallet, t })
-  // Porto is set as injected, but we don't want to show it in the wallet modal as a detected wallet
   const isDetected = useIsInjectedWallet(wallet.id)
   // TODO(WEB-4173): Remove isIFrame check when we can update wagmi to version >= 2.9.4
   const isDisabled = Boolean(isPendingConnection && !isIFramed())

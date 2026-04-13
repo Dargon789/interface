@@ -6,13 +6,17 @@
   "tags": ["scope:sessions", "type:lib"],
   "targets": {
     "typecheck": {},
+    "typecheck:tsc": {},
     "typecheck:tsgo": {},
-    "lint:eslint": {},
-    "lint:eslint:fix": {},
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
     "lint": {},
     "lint:fix": {},
     "check": {},
-    "check:fix": {},
+    "check:fast": {},
     "check:deps:usage": {},
     "test": {
       "command": "vitest run",
@@ -31,11 +35,6 @@
       "options": {
         "cwd": "{projectRoot}"
       }
-    },
-    "oxfmt": {},
-    "oxfmt:fix": {},
-    "oxlint": {},
-    "oxlint:fix": {},
-    "oxlint:type-aware": {}
+    }
   }
 }

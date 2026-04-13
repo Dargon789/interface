@@ -37,6 +37,7 @@ const allowedErc20BalanceAddresses = [
 
 // Helper to check if error is a timeout
 const isTimeoutError = (error: any): boolean => {
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   return (
     error?.message?.includes('timeout') ||
     error?.message?.includes('took too long') ||

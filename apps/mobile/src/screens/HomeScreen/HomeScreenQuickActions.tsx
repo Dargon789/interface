@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-duplicate-type-constituents
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -59,7 +60,7 @@ export function HomeScreenQuickActions(): JSX.Element {
   const { isTestnetModeEnabled, defaultChainId } = useEnabledChains()
   const disableForKorea = useFeatureFlag(FeatureFlags.DisableFiatOnRampKorea)
   const isBottomTabsEnabled = useFeatureFlag(FeatureFlags.BottomTabs)
-  const isMultichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const isPortfolioZero = useIsPortfolioZero()
 
   const activeAccountAddress = useActiveAccountAddressWithThrow()
@@ -106,7 +107,7 @@ export function HomeScreenQuickActions(): JSX.Element {
       // When multichain UX is enabled, show the interstitial sheet unless
       // the user has zero balance (in which case go straight to FOR).
       // Korea check is handled inside the modal and below for the direct path.
-      if (isMultichainTokenUxEnabled && !isPortfolioZero) {
+      if (multichainTokenUxEnabled && !isPortfolioZero) {
         navigate(ModalName.FiatOnRampAction, { entry })
         return
       }
@@ -121,7 +122,7 @@ export function HomeScreenQuickActions(): JSX.Element {
         }),
       )
     },
-    [triggerHaptics, isTestnetModeEnabled, disableForKorea, isMultichainTokenUxEnabled, isPortfolioZero, dispatch, t],
+    [triggerHaptics, isTestnetModeEnabled, disableForKorea, multichainTokenUxEnabled, isPortfolioZero, dispatch, t],
   )
 
   // PR #4621 Necessary to declare these as direct dependencies due to race
@@ -144,9 +145,9 @@ export function HomeScreenQuickActions(): JSX.Element {
           ]
         : []),
       {
-        Icon: isMultichainTokenUxEnabled ? PlusCircle : Bank,
+        Icon: multichainTokenUxEnabled ? PlusCircle : Bank,
         eventName: MobileEventName.FiatOnRampQuickActionButtonPressed,
-        label: isMultichainTokenUxEnabled ? buyLabel : forLabel,
+        label: multichainTokenUxEnabled ? buyLabel : forLabel,
         name: ElementName.Buy,
         onPress: () => onPressFORAction('onramp'),
       },
@@ -162,7 +163,7 @@ export function HomeScreenQuickActions(): JSX.Element {
         name: ElementName.Receive,
         onPress: onPressReceive,
       },
-      ...(isMultichainTokenUxEnabled
+      ...(multichainTokenUxEnabled
         ? [
             {
               Icon: MinusCircle,
@@ -177,7 +178,7 @@ export function HomeScreenQuickActions(): JSX.Element {
     [
       isBottomTabsEnabled,
       onPressSwap,
-      isMultichainTokenUxEnabled,
+      multichainTokenUxEnabled,
       buyLabel,
       forLabel,
       onPressFORAction,

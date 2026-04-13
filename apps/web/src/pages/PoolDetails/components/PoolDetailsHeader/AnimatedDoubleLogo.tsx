@@ -17,7 +17,7 @@ export function AnimatedDoubleLogo({
   isCompact: boolean
 }): JSX.Element {
   const media = useMedia()
-  const logoSize = getHeaderLogoSize({ isCompact, isMobile: media.md })
+  const logoSize = getHeaderLogoSize({ isCompact, media })
   const currencies = useMemo(
     () => (token0 && token1 ? [gqlToCurrency(token0), gqlToCurrency(token1)] : []),
     [token0, token1],

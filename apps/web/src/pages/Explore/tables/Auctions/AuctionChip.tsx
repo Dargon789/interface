@@ -12,9 +12,9 @@ import { formatCompactFromRaw } from '~/components/Toucan/Auction/utils/fixedPoi
 import { getAuctionMetadata } from '~/components/Toucan/Config/config'
 import { computeProjectedFdvTableValue } from '~/components/Toucan/utils/computeProjectedFdv'
 import { createDottedBackgroundStyles } from '~/components/Toucan/utils/createDottedBackgroundStyles'
+import { getChainUrlParam } from '~/features/params/chainParams'
 import { useSrcColor } from '~/hooks/useColor'
 import type { EnrichedAuction } from '~/state/explore/topAuctions/useTopAuctions'
-import { getChainUrlParam } from '~/utils/chainParams'
 
 const DOT_OPACITY = 10
 const TOKEN_BACKGROUND_OPACITY = 8

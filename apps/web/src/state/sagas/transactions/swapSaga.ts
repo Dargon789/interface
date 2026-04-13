@@ -337,6 +337,7 @@ export function useSwapCallback(): SwapCallback {
   const getActiveAccount = useGetActiveAccount()
 
   const caip25Info = useAccountsStore((state) => {
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     return state.getActiveConnector(Platform.EVM)?.session?.caip25Info
   })
 

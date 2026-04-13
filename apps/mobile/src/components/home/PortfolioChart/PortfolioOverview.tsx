@@ -88,17 +88,9 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
   })
 
   const canShowChart = isPnLEnabled && chartData.length > 0
+  const isAllTimePeriod = chartPeriod === ChartPeriod.MAX
 
   useLayoutAnimationOnChange(isChartExpanded)
-
-  useEffect(() => {
-    // Only collapse when we definitively have no data (not during a loading/refetch transition).
-    // Without this guard, changing the chart period triggers a refetch that temporarily empties
-    // chartData, which would incorrectly collapse the expanded chart.
-    if (!canShowChart && !chartLoading) {
-      setIsChartExpanded(false)
-    }
-  }, [canShowChart, chartLoading])
 
   // Prefetch all chart periods when expanded so switching is instant
   useEffect(() => {
@@ -123,15 +115,21 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
     sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
       element: ElementName.PortfolioChart,
     })
+    // When collapsing from a period that has no data (e.g. "All"),
+    // reset to DAY so the collapsed view shows chart data and the
+    // toggle remains usable.
+    if (isChartExpanded && !canShowChart) {
+      setChartPeriod(ChartPeriod.DAY)
+    }
     setIsChartExpanded((prev) => !prev)
-  }, [])
+  }, [isChartExpanded, canShowChart])
 
   const openReportModal = useCallback(() => {
     navigate(ModalName.ReportPortfolioData, {})
   }, [])
 
   const chartToggleIcon = useMemo((): JSX.Element | undefined => {
-    if (!canShowChart) {
+    if (!canShowChart && !isChartExpanded) {
       return undefined
     }
     const Icon = isChartExpanded ? AnglesMinimize : AnglesMaximize
@@ -145,7 +143,7 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
   return (
     <>
       <TouchableArea
-        disabled={!canShowChart}
+        disabled={!canShowChart && !isChartExpanded}
         testID={TestID.PortfolioChartToggle}
         activeOpacity={1}
         onPress={toggleChartExpanded}
@@ -161,6 +159,7 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
                   overrideBalanceUSD={chartScrubFiatValue}
                   overridePercentChange={chartPercentChange?.percentChange}
                   overrideAbsoluteChangeUSD={chartPercentChange?.absoluteChangeUSD}
+                  hidePercentChange={isAllTimePeriod}
                 />
               </Flex>
               <PortfolioChart
@@ -181,12 +180,13 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
               overrideBalanceUSD={chartScrubFiatValue}
               overridePercentChange={canShowChart ? chartPercentChange?.percentChange : undefined}
               overrideAbsoluteChangeUSD={canShowChart ? chartPercentChange?.absoluteChangeUSD : undefined}
+              hidePercentChange={isAllTimePeriod}
             />
           )}
         </Flex>
       </TouchableArea>
-      {canShowChart && isChartExpanded && (
-        <Flex px="$spacing24">
+      {isChartExpanded && (
+        <Flex pointerEvents="box-none" px="$spacing24">
           <PortfolioChart
             data={chartData}
             loading={chartLoading}
@@ -197,7 +197,7 @@ export function PortfolioOverview({ evmAddress, chainIds, isPnLEnabled }: Portfo
             onChartPeriodChange={setChartPeriod}
             onScrub={handleScrub}
           />
-          <Flex pt="$spacing4" pb="$spacing32">
+          <Flex pointerEvents="box-none" pt="$spacing4" pb="$spacing32">
             <PortfolioPerformance evmAddress={evmAddress} chainIds={chainIds} onReport={openReportModal} />
           </Flex>
         </Flex>

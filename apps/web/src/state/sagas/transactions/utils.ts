@@ -112,6 +112,7 @@ export function* handleSignatureStep({ setCurrentStep, step, ignoreInterrupt, ad
 
   addTransactionBreadcrumb({ step, data: { signature }, status: TransactionBreadcrumbStatus.Complete })
 
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   return signature
 }
 
@@ -309,6 +310,7 @@ function* submitTransactionAsync(params: HandleOnChainStepParams): SagaGenerator
     return response
   } catch (error) {
     if (error && typeof error === 'object' && 'transactionHash' in error && isValidHexString(error.transactionHash)) {
+      // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
       return error.transactionHash
     }
 

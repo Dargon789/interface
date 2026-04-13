@@ -1,6 +1,5 @@
 import { Fragment, PropsWithChildren, useRef, useState } from 'react'
 import { AdaptiveWebPopoverContent, Popover, RemoveScroll, useMedia } from 'ui/src'
-import { zIndexes } from 'ui/src/theme'
 import { ContextMenuProps } from 'uniswap/src/components/menus/ContextMenu'
 import { MenuContent } from 'uniswap/src/components/menus/ContextMenuContent'
 import { useContextMenuTracking } from 'uniswap/src/components/menus/hooks/useContextMenuTracking'
@@ -25,7 +24,6 @@ export function ContextMenu({
   sectionName,
   trackItemClicks,
   adaptToSheet = true,
-  zIndex,
 }: PropsWithChildren<ContextMenuProps>): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerContainerRef = useRef<HTMLDivElement>(null)
@@ -151,7 +149,6 @@ export function ContextMenu({
         backgroundColor="transparent"
         p="$none"
         py="$spacing8"
-        zIndex={zIndex ?? zIndexes.popover}
         isOpen={isOpen}
         isSheet={isSheet}
         webBottomSheetProps={{ onClose: handleCloseMenu }}

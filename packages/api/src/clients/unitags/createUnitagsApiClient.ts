@@ -38,7 +38,7 @@ export type UnitagsApiClientType = {
   fetchClaimEligibility: (params: UnitagClaimEligibilityRequest) => Promise<UnitagClaimEligibilityResponse>
   claimUnitag: (params: SignedRequestParams<UnitagClaimUsernameRequestBody>) => Promise<UnitagResponse>
   updateUnitagMetadata: (
-    params: { username: string } & SignedRequestParams<UnitagUpdateMetadataRequestBody>,
+    params: SignedRequestParams<UnitagUpdateMetadataRequestBody>,
   ) => Promise<UnitagUpdateMetadataResponse>
   changeUnitag: (params: SignedRequestParams<UnitagChangeUsernameRequestBody>) => Promise<UnitagResponse>
   deleteUnitag: (params: SignedRequestParams<UnitagDeleteUsernameRequestBody>) => Promise<UnitagResponse>
@@ -102,7 +102,7 @@ export function createUnitagsApiClient(ctx: UnitagsApiClientFetchersContext): Un
     },
   })
   const updateUnitagMetadata = createFetcher<
-    { username: string } & SignedRequestParams<UnitagUpdateMetadataRequestBody>,
+    SignedRequestParams<UnitagUpdateMetadataRequestBody>,
     UnitagUpdateMetadataResponse
   >({
     client,
@@ -116,7 +116,7 @@ export function createUnitagsApiClient(ctx: UnitagsApiClientFetchersContext): Un
         signMessage,
       })
       return {
-        url: request.url.replace(':username', request.params.username),
+        url: request.url.replace(':username', data.username),
         params: requestBody,
         headers: {
           [UNI_SIG_HEADER_KEY]: signature,

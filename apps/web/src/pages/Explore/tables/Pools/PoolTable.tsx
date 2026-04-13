@@ -37,6 +37,7 @@ import { EllipsisText, TableText } from '~/components/Table/shared/TableText'
 import { HeaderCell } from '~/components/Table/styled'
 import { MouseoverTooltip, TooltipSize } from '~/components/Tooltip'
 import { MAX_WIDTH_MEDIA_BREAKPOINT } from '~/constants/breakpoints'
+import { getChainUrlParam, useChainIdFromUrlParam } from '~/features/params/chainParams'
 import useSimplePagination from '~/hooks/useSimplePagination'
 import { useExploreTablesFilterStore } from '~/pages/Explore/exploreTablesFilterStore'
 import {
@@ -47,7 +48,6 @@ import {
 import { TABLE_PAGE_SIZE } from '~/state/explore'
 import { useTopPools } from '~/state/explore/topPools/useTopPools'
 import { PoolStat } from '~/state/explore/types'
-import { getChainUrlParam, useChainIdFromUrlParam } from '~/utils/chainParams'
 
 const TableWrapper = styled(Flex, {
   m: '0 auto',
@@ -243,7 +243,7 @@ export function PoolsTable({
 }) {
   const { t } = useTranslation()
   const isLPIncentivesEnabled = useFeatureFlag(FeatureFlags.LpIncentives)
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const { formatPercent, formatNumberOrString, convertFiatAmountFormatted } = useLocalizationContext()
   const { sortMethod, sortAscending } = usePoolTableStore((s) => ({
@@ -283,7 +283,7 @@ export function PoolsTable({
               token0={unwrapToken(chainId, pool.token0) as TokenStats | Token | undefined}
               token1={unwrapToken(chainId, pool.token1) as TokenStats | Token | undefined}
               chainId={chainId}
-              showMainnetNetworkLogo={isMultichainTokenUx}
+              showMainnetNetworkLogo={multichainTokenUxEnabled}
             />
           ),
           protocolVersion: pool.protocolVersion?.toLowerCase(),
@@ -314,7 +314,7 @@ export function PoolsTable({
           },
         }
       }) ?? [],
-    [convertFiatAmountFormatted, defaultChainId, filterString, isMultichainTokenUx, pools],
+    [convertFiatAmountFormatted, defaultChainId, filterString, multichainTokenUxEnabled, pools],
   )
 
   const showLoadingSkeleton = loading || !!error
@@ -553,7 +553,7 @@ export function PoolsTable({
       data={poolTableValues}
       loading={loading}
       error={error}
-      v2={isMultichainTokenUx}
+      v2={multichainTokenUxEnabled}
       loadMore={loadMore}
       maxWidth={maxWidth}
       maxHeight={maxHeight}

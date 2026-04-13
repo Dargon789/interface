@@ -1,7 +1,11 @@
 import { Key } from 'react'
 import { ButtonProps, Flex, FlexProps } from 'ui/src'
-import { get200MsAnimationDelayFromIndex } from 'ui/src/theme/animations/delay200ms'
 import { AmountInputPresetsProps } from 'uniswap/src/components/CurrencyInputPanel/AmountInputPresets/types'
+import {
+  getStaggeredGroupHoverStyle,
+  HOVER_REVEAL_EXIT_TRANSITION,
+  HOVER_REVEAL_TRANSFORM,
+} from 'uniswap/src/components/CurrencyInputPanel/hoverStyles'
 import { isHoverable } from 'utilities/src/platform'
 
 export const PRESET_BUTTON_PROPS: ButtonProps = { variant: 'default', py: '$spacing4' }
@@ -19,33 +23,32 @@ export function AmountInputPresets<T extends Key>({
       {...(isHoverable
         ? {
             opacity: 0,
-            transform: [{ translateY: -4 }],
-            '$group-hover': { opacity: 1, transform: [{ translateY: 0 }] },
+
+            transition: HOVER_REVEAL_EXIT_TRANSITION,
+            '$group-hover': {
+              opacity: 1,
+
+              transition: 'opacity 100ms ease-in-out, transform 100ms ease-in-out',
+            },
           }
         : {})}
-      animation="100ms"
       {...rest}
     >
-      {presets.map((preset, index) => (
-        <Flex
-          key={preset}
-          grow
-          {...(isHoverable
-            ? {
-                opacity: 0,
-                transform: [{ translateY: -4 }, { scale: 0.95 }],
-                '$group-hover': {
-                  opacity: 1,
-                  transform: [{ translateY: 0 }],
-                  scale: 1,
-                },
-                animation: get200MsAnimationDelayFromIndex(hoverLtr ? index : presets.length - index - 1),
-              }
-            : {})}
-        >
-          {renderPreset(preset)}
-        </Flex>
-      ))}
+      {presets.map((preset, index) => {
+        const staggerIndex = hoverLtr ? index : presets.length - index - 1
+        return (
+          <Flex
+            key={preset}
+            grow
+            $group-hover={isHoverable ? getStaggeredGroupHoverStyle(staggerIndex) : undefined}
+            opacity={isHoverable ? 0 : undefined}
+            transform={isHoverable ? HOVER_REVEAL_TRANSFORM : undefined}
+            transition={isHoverable ? HOVER_REVEAL_EXIT_TRANSITION : undefined}
+          >
+            {renderPreset(preset)}
+          </Flex>
+        )
+      })}
     </Flex>
   )
 }

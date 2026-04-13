@@ -1,9 +1,11 @@
 import * as d3 from 'd3'
+import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityChartShared/constants'
 import type {
   ChartState,
   Renderer,
   RenderingContext,
 } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/types'
+import { getCurrentTickDotY } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/utils/tickToY'
 
 export function createPriceLineRenderer({
   g,
@@ -20,8 +22,22 @@ export function createPriceLineRenderer({
     // Clear previous price line elements
     priceLineGroup.selectAll('*').remove()
 
-    const { colors, dimensions, priceData, priceToY, tickToY } = context
-    const { minTick, maxTick } = getState()
+    const {
+      chartId,
+      colors,
+      dimensions,
+      priceData,
+      priceToY,
+      tickToY,
+      currentTick,
+      token0Color,
+      token1Color,
+      tickScale,
+    } = context
+    const { minTick, maxTick, renderedBuckets } = getState()
+    const neutralColor = colors.neutral2.val
+
+    const chartHeight = dimensions.height || CHART_DIMENSIONS.LIQUIDITY_CHART_HEIGHT
 
     // Map price data for D3
     const priceDataMapped = priceData.map((d) => ({
@@ -48,55 +64,92 @@ export function createPriceLineRenderer({
       .y((d) => priceToY({ price: d.value }))
       .curve(d3.curveMonotoneX)
 
-    // Generate the complete line path data
+    const dotY = getCurrentTickDotY({ currentTick, renderedBuckets, tickScale })
+
+    // Range boundary Y positions
+    const maxY = minTick !== undefined && maxTick !== undefined ? tickToY({ tick: Math.max(minTick, maxTick) }) : 0
+    const minY =
+      minTick !== undefined && maxTick !== undefined ? tickToY({ tick: Math.min(minTick, maxTick) }) : chartHeight
+
+    // Generate path data
     const linePathData = line(priceDataMapped)
 
-    // Draw price line with conditional coloring
-    if (minTick !== undefined && maxTick !== undefined) {
-      // Create mask for active range only
-      const maskId = 'price-line-active-mask'
-      const defs = priceLineGroup.append('defs')
+    // Define clip paths and gradients
+    const defs = priceLineGroup.append('defs')
 
-      const minPriceY = tickToY({ tick: minTick })
-      const maxPriceY = tickToY({ tick: maxTick })
+    // Clip: in-range + above dotY (token0 zone)
+    defs
+      .append('clipPath')
+      .attr('id', `${chartId}-clip-in-range-above`)
+      .append('rect')
+      .attr('x', 0)
+      .attr('y', maxY)
+      .attr('width', dimensions.width)
+      .attr('height', Math.max(0, dotY - maxY))
 
-      // Active range mask
-      defs
-        .append('mask')
-        .attr('id', maskId)
-        .append('rect')
-        .attr('x', 0)
-        .attr('y', maxPriceY)
-        .attr('width', dimensions.width)
-        .attr('height', minPriceY - maxPriceY)
-        .attr('fill', 'white')
+    // Clip: in-range + below dotY (token1 zone)
+    defs
+      .append('clipPath')
+      .attr('id', `${chartId}-clip-in-range-below`)
+      .append('rect')
+      .attr('x', 0)
+      .attr('y', dotY)
+      .attr('width', dimensions.width)
+      .attr('height', Math.max(0, minY - dotY))
 
-      // Draw full grey line (base layer)
-      priceLineGroup
-        .append('path')
-        .attr('d', linePathData)
-        .attr('fill', 'none')
-        .attr('stroke', colors.neutral2.val)
-        .attr('stroke-width', 2)
+    // Clip: out-of-range above maxTick
+    defs
+      .append('clipPath')
+      .attr('id', `${chartId}-clip-out-above`)
+      .append('rect')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', dimensions.width)
+      .attr('height', Math.max(0, maxY))
 
-      // Draw active pink line on top (masked)
-      priceLineGroup
-        .append('path')
-        .attr('d', linePathData)
-        .attr('fill', 'none')
-        .attr('stroke', colors.accent1.val)
-        .attr('stroke-width', 2)
-        .attr('mask', `url(#${maskId})`)
-    } else {
-      // Draw single grey line when no range is selected
-      priceLineGroup
-        .append('path')
-        .attr('d', linePathData)
-        .attr('fill', 'none')
-        .attr('stroke', colors.neutral2.val)
-        .attr('stroke-width', 2)
-        .attr('class', 'price-line')
-    }
+    // Clip: out-of-range below minTick
+    defs
+      .append('clipPath')
+      .attr('id', `${chartId}-clip-out-below`)
+      .append('rect')
+      .attr('x', 0)
+      .attr('y', minY)
+      .attr('width', dimensions.width)
+      .attr('height', Math.max(0, chartHeight - minY))
+
+    // Draw token-colored price line (within range)
+    priceLineGroup
+      .append('path')
+      .attr('d', linePathData)
+      .attr('fill', 'none')
+      .attr('stroke', token0Color)
+      .attr('stroke-width', 2)
+      .attr('clip-path', `url(#${chartId}-clip-in-range-above)`)
+
+    priceLineGroup
+      .append('path')
+      .attr('d', linePathData)
+      .attr('fill', 'none')
+      .attr('stroke', token1Color)
+      .attr('stroke-width', 2)
+      .attr('clip-path', `url(#${chartId}-clip-in-range-below)`)
+
+    // Draw neutral price line (outside range)
+    priceLineGroup
+      .append('path')
+      .attr('d', linePathData)
+      .attr('fill', 'none')
+      .attr('stroke', neutralColor)
+      .attr('stroke-width', 2)
+      .attr('clip-path', `url(#${chartId}-clip-out-above)`)
+
+    priceLineGroup
+      .append('path')
+      .attr('d', linePathData)
+      .attr('fill', 'none')
+      .attr('stroke', neutralColor)
+      .attr('stroke-width', 2)
+      .attr('clip-path', `url(#${chartId}-clip-out-below)`)
   }
 
   return { draw }

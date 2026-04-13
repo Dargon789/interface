@@ -20,7 +20,7 @@ vi.mock('@universe/api', async () => {
   return {
     ...actual,
     GraphQLApi: {
-      ...(actual.GraphQLApi || {}),
+      ...(actual.GraphQLApi as Record<string, unknown>),
       useV4PoolQuery: mockV4Query,
       useV3PoolQuery: mockV3Query,
       useV2PairQuery: mockV2Query,

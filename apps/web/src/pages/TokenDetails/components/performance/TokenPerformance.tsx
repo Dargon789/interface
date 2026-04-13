@@ -1,19 +1,34 @@
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Flex, Text } from 'ui/src'
 import { TokenProfitLoss } from 'uniswap/src/components/TokenProfitLoss/TokenProfitLoss'
 import { useGetWalletTokenProfitLossQuery } from 'uniswap/src/data/rest/getWalletTokenProfitLoss'
 import { useConnectionStatus } from 'uniswap/src/features/accounts/store/hooks'
+import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { DEFAULT_NATIVE_ADDRESS } from 'uniswap/src/features/chains/evm/rpc'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { fromGraphQLChain, isStablecoinAddress } from 'uniswap/src/features/chains/utils'
+import { useRestPortfolioValueModifier } from 'uniswap/src/features/dataApi/balances/balancesRest'
+import { UniswapEventName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
+import { ChainLogo } from '~/components/Logo/ChainLogo'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 import { useActiveAddresses } from '~/features/accounts/store/hooks'
 import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 
 export function TokenPerformance(): JSX.Element | null {
+  const { t } = useTranslation()
   const isProfitLossEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { isDisconnected } = useConnectionStatus()
-  const { address, currencyChain } = useTDPStore((s) => ({ address: s.address, currencyChain: s.currencyChain }))
+  const { address, currencyChain, multiChainMap } = useTDPStore((s) => ({
+    address: s.address,
+    currencyChain: s.currencyChain,
+    multiChainMap: s.multiChainMap,
+  }))
   const { evmAddress, svmAddress } = useActiveAddresses()
+  const modifier = useRestPortfolioValueModifier(evmAddress ?? svmAddress)
 
   const chainId = fromGraphQLChain(currencyChain) ?? UniverseChainId.Mainnet
   const tokenAddress = address === NATIVE_CHAIN_ID ? DEFAULT_NATIVE_ADDRESS : address
@@ -25,25 +40,58 @@ export function TokenPerformance(): JSX.Element | null {
       svmAddress,
       chainId,
       tokenAddress,
+      modifier,
+      multichain: multichainTokenUxEnabled || undefined,
     },
     enabled: isProfitLossEnabled && !isDisconnected && !isStablecoin,
   })
 
   const profitLoss = data?.profitLoss
+  const hasOtherChainBalances = Object.entries(multiChainMap).some(
+    ([key, value]) => key !== currencyChain && value.balance !== undefined,
+  )
+
+  useEffect(() => {
+    if (!profitLoss) {
+      return
+    }
+
+    sendAnalyticsEvent(UniswapEventName.PnlTokenReport, {
+      average_cost_usd: profitLoss.averageCostUsd,
+      unrealized_return_usd: profitLoss.unrealizedReturnUsd,
+      unrealized_return_percent: profitLoss.unrealizedReturnPercent,
+      realized_return_usd: profitLoss.realizedReturnUsd,
+      realized_return_percent: profitLoss.realizedReturnPercent,
+      token_address: tokenAddress,
+      chain_id: chainId,
+    })
+  }, [profitLoss, tokenAddress, chainId])
 
   if (!isProfitLossEnabled || isDisconnected || !profitLoss || isStablecoin || isError) {
     return null
   }
 
+  const chainLabel = getChainInfo(chainId).label
+
   return (
     <TokenProfitLoss
+      title={t('pnl.title.allTime')}
       averageCost={profitLoss.averageCostUsd}
-      oneDayReturn={profitLoss.oneDayReturnUsd}
-      oneDayReturnPercent={profitLoss.oneDayReturnPercent}
       unrealizedReturn={profitLoss.unrealizedReturnUsd}
       unrealizedReturnPercent={profitLoss.unrealizedReturnPercent}
       realizedReturn={profitLoss.realizedReturnUsd}
       realizedReturnPercent={profitLoss.realizedReturnPercent}
+      totalReturn={profitLoss.unrealizedReturnUsd + profitLoss.realizedReturnUsd}
+      headerRight={
+        !multichainTokenUxEnabled && hasOtherChainBalances ? (
+          <Flex row gap="$spacing6" alignItems="center">
+            <ChainLogo chainId={chainId} size={16} borderRadius={6} />
+            <Text variant="body3" color="$neutral2">
+              {chainLabel}
+            </Text>
+          </Flex>
+        ) : undefined
+      }
     />
   )
 }

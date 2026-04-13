@@ -11,7 +11,7 @@ import { useUpdateTokenColor } from '~/components/Toucan/Auction/hooks/useUpdate
 import { AuctionStoreContext } from '~/components/Toucan/Auction/store/AuctionStoreContext'
 import { createAuctionStore } from '~/components/Toucan/Auction/store/createAuctionStore'
 import { useAuctionStore } from '~/components/Toucan/Auction/store/useAuctionStore'
-import { getChainIdFromChainUrlParam } from '~/utils/chainParams'
+import { getChainIdFromChainUrlParam } from '~/features/params/chainParams'
 
 /**
  * Inner provider component that manages all auction data loading

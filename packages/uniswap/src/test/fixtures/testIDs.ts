@@ -181,6 +181,7 @@ export const TestID = {
   PortfolioActivityTableHeaderTime: 'portfolio-activity-table-header-time',
   PortfolioActivityTableHeaderType: 'portfolio-activity-table-header-type',
   PortfolioActivityTableRowPrefix: 'portfolio-activity-table-row-',
+  PortfolioActivitySearchInput: 'portfolio-activity-search-input',
   PortfolioActivityTransactionTypeFilter: 'portfolio-activity-transaction-type-filter',
   PortfolioRelativeChange: 'portfolio-relative-change',
   PortfolioShareButton: 'portfolio-share-button',

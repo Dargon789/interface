@@ -14,16 +14,30 @@ export const PROFIT_LOSS_PERIODS: ProfitLossPeriod[] = [
   ProfitLossPeriod.ALL,
 ]
 
-export function getProfitLossPeriodLabel(period: ProfitLossPeriod, t: (key: string) => string): string {
+export function getProfitLossPeriodLabel({
+  period,
+  t,
+  verbose = false,
+}: {
+  period: ProfitLossPeriod
+  t: (key: string) => string
+  verbose?: boolean
+}): string {
   switch (period) {
     case ProfitLossPeriod.DAY:
-      return t('token.priceExplorer.timeRangeLabel.day')
+      return verbose ? t('token.priceExplorer.timeRangeLabel.day.verbose') : t('token.priceExplorer.timeRangeLabel.day')
     case ProfitLossPeriod.WEEK:
-      return t('token.priceExplorer.timeRangeLabel.week')
+      return verbose
+        ? t('token.priceExplorer.timeRangeLabel.week.verbose')
+        : t('token.priceExplorer.timeRangeLabel.week')
     case ProfitLossPeriod.MONTH:
-      return t('token.priceExplorer.timeRangeLabel.month')
+      return verbose
+        ? t('token.priceExplorer.timeRangeLabel.month.verbose')
+        : t('token.priceExplorer.timeRangeLabel.month')
     case ProfitLossPeriod.YEAR:
-      return t('token.priceExplorer.timeRangeLabel.year')
+      return verbose
+        ? t('token.priceExplorer.timeRangeLabel.year.verbose')
+        : t('token.priceExplorer.timeRangeLabel.year')
     case ProfitLossPeriod.ALL:
       return t('common.all')
     default:

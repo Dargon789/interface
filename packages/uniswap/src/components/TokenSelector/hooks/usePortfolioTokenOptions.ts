@@ -2,8 +2,7 @@ import { GqlResult } from '@universe/api'
 import { useMemo } from 'react'
 import { OnchainItemListOptionType, TokenOption } from 'uniswap/src/components/lists/items/types'
 import { filter } from 'uniswap/src/components/TokenSelector/filter'
-import { usePortfolioBalancesForAddressById } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
-import type { AddressGroup } from 'uniswap/src/features/accounts/store/types/AccountsState'
+import { type PortfolioBalancesResult } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import {
@@ -12,17 +11,17 @@ import {
 } from 'uniswap/src/features/dataApi/balances/balances'
 
 export function usePortfolioTokenOptions({
-  addresses,
   chainFilter,
   searchFilter,
   includeHidden = false,
+  portfolioData,
 }: {
-  addresses: AddressGroup
   chainFilter: UniverseChainId | null
   searchFilter?: string
   includeHidden?: boolean
+  portfolioData: PortfolioBalancesResult
 }): GqlResult<TokenOption[] | undefined> & { hiddenTokens?: TokenOption[] } {
-  const { data: portfolioBalancesById, error, refetch, loading } = usePortfolioBalancesForAddressById(addresses)
+  const { data: portfolioBalancesById, error, refetch, loading } = portfolioData
   const { isTestnetModeEnabled } = useEnabledChains()
 
   const { shownTokens, hiddenTokens } = useTokenBalancesGroupedByVisibility({

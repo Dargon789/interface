@@ -399,6 +399,7 @@ export function parseRestPosition(position?: RestPosition): PositionInfo | undef
         function: 'parseRestPosition',
       },
       extra: {
+        // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
         ...position,
       },
     })

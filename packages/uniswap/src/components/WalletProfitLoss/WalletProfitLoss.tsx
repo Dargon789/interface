@@ -24,14 +24,14 @@ export function WalletProfitLoss({
   const { t } = useTranslation()
 
   return (
-    <Flex gap="$gap16" width="100%">
-      <Flex row justifyContent="space-between" alignItems="center" width="100%">
-        <Text variant="subheading1" color="$neutral1">
+    <Flex gap="$gap16" width="100%" pointerEvents="box-none">
+      <Flex row justifyContent="space-between" alignItems="center" width="100%" pointerEvents="box-none">
+        <Text variant="subheading1" color="$neutral1" pointerEvents="none">
           {t('pnl.title')}
         </Text>
         {periodSelector}
       </Flex>
-      <Flex gap="$gap12">
+      <Flex gap="$gap12" pointerEvents="box-none">
         <ProfitLossRow
           showArrow
           labelColor="$neutral2"
@@ -56,7 +56,7 @@ export function WalletProfitLoss({
         />
       </Flex>
       {disclaimer && (
-        <Text variant="body4" color="$neutral3">
+        <Text variant="body4" color="$neutral3" pointerEvents="none">
           {disclaimer}
         </Text>
       )}

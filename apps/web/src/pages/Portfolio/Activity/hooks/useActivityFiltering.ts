@@ -53,6 +53,7 @@ interface UseActivityFilteringParams {
   chainId: UniverseChainId | undefined
   selectedTransactionType: string
   selectedTimePeriod: string
+  searchText?: string
 }
 
 interface UseActivityFilteringResult {
@@ -86,6 +87,7 @@ export function useActivityFiltering({
   chainId,
   selectedTransactionType,
   selectedTimePeriod,
+  searchText,
 }: UseActivityFilteringParams): UseActivityFilteringResult {
   // Determine if we can use server-side filtering (EVM-only wallet)
   // Server-side filtering only works for EVM and will filter out all Solana transactions
@@ -106,6 +108,7 @@ export function useActivityFiltering({
     fiatOnRampParams: undefined,
     chainIds: chainId ? [chainId] : undefined,
     filterTransactionTypes: serverFilterTypes,
+    searchText,
   })
 
   // Track chainId changes to show loading skeleton when switching networks
@@ -126,6 +129,12 @@ export function useActivityFiltering({
     prevServerFilterTypesRef.current = serverFilterTypes
   }
 
+  const prevSearchTextRef = useRef(searchText)
+  const searchTextChanged = prevSearchTextRef.current !== searchText
+  if (searchTextChanged && !isFetching) {
+    prevSearchTextRef.current = searchText
+  }
+
   // Show loading skeleton when:
   // 1. Initial load (isLoading is true, no cached data)
   // 2. Fetching with no data to display yet (e.g. cache cleared or empty cached result being refetched)
@@ -135,7 +144,8 @@ export function useActivityFiltering({
     isLoading ||
     (isFetching && !sectionData?.length) ||
     (chainIdChanged && isFetching) ||
-    (serverFilterChanged && isFetching)
+    (serverFilterChanged && isFetching) ||
+    (searchTextChanged && isFetching)
 
   const { sentinelRef } = useInfiniteScroll({
     onLoadMore: fetchNextPage,

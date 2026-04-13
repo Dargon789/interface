@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, TouchableArea } from 'ui/src'
 import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
@@ -12,6 +12,9 @@ import {
 } from 'uniswap/src/components/WalletProfitLoss/utils'
 import { WalletProfitLoss } from 'uniswap/src/components/WalletProfitLoss/WalletProfitLoss'
 import { useGetWalletProfitLossQuery } from 'uniswap/src/data/rest/getWalletProfitLoss'
+import { useRestPortfolioValueModifier } from 'uniswap/src/features/dataApi/balances/balancesRest'
+import { UniswapEventName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 
 interface PortfolioPerformanceProps {
@@ -24,9 +27,10 @@ export const PortfolioPerformance = memo(function PortfolioPerformance({
   evmAddress,
   chainIds,
   onReport,
-}: PortfolioPerformanceProps): JSX.Element | null {
+}: PortfolioPerformanceProps): JSX.Element {
   const { t } = useTranslation()
   const [selectedPeriod, setSelectedPeriod] = useState<ProfitLossPeriod>(ProfitLossPeriod.ALL)
+  const modifier = useRestPortfolioValueModifier(evmAddress)
 
   const since = useMemo(() => getProfitLossSince(selectedPeriod), [selectedPeriod])
 
@@ -35,10 +39,25 @@ export const PortfolioPerformance = memo(function PortfolioPerformance({
       evmAddress,
       chainIds,
       since,
+      modifier,
     },
   })
 
   const profitLoss = isError ? undefined : data?.profitLoss
+
+  useEffect(() => {
+    if (!profitLoss) {
+      return
+    }
+
+    sendAnalyticsEvent(UniswapEventName.PnlPortfolioReport, {
+      unrealized_return_usd: profitLoss.unrealizedReturnUsd,
+      unrealized_return_percent: profitLoss.unrealizedReturnPercent,
+      realized_return_usd: profitLoss.realizedReturnUsd,
+      total_return_usd: profitLoss.totalReturnUsd,
+      period: selectedPeriod,
+    })
+  }, [profitLoss, selectedPeriod])
 
   const options = useMemo<MenuItemProp[]>(
     () =>
@@ -48,7 +67,7 @@ export const PortfolioPerformance = memo(function PortfolioPerformance({
         render: () => (
           <Flex row alignItems="center" py="$spacing8" px="$spacing4">
             <Text variant="body2" color={period === selectedPeriod ? '$accent1' : '$neutral1'}>
-              {getProfitLossPeriodLabel(period, t)}
+              {getProfitLossPeriodLabel({ period, t, verbose: true })}
             </Text>
           </Flex>
         ),
@@ -71,7 +90,7 @@ export const PortfolioPerformance = memo(function PortfolioPerformance({
           py="$spacing6"
         >
           <Text variant="buttonLabel4" color="$neutral1">
-            {getProfitLossPeriodLabel(selectedPeriod, t)}
+            {getProfitLossPeriodLabel({ period: selectedPeriod, t, verbose: true })}
           </Text>
           <RotatableChevron color="$neutral2" direction="down" size="$icon.16" />
         </Flex>
@@ -80,20 +99,14 @@ export const PortfolioPerformance = memo(function PortfolioPerformance({
     [options, selectedPeriod, t],
   )
 
-  // Hide on error or when initial load returns no data.
-  // Don't hide during refetch (period change) — show loading state instead.
-  if (isError || (!profitLoss && !isPending)) {
-    return null
-  }
-
   return (
-    <Flex testID={TestID.PortfolioPerformance} pb="$spacing16">
+    <Flex testID={TestID.PortfolioPerformance} pointerEvents="box-none" pb="$spacing16">
       <WalletProfitLoss
         unrealizedReturn={profitLoss?.unrealizedReturnUsd}
         unrealizedReturnPercent={profitLoss?.unrealizedReturnPercent}
         realizedReturn={profitLoss?.realizedReturnUsd}
         totalReturn={profitLoss?.totalReturnUsd}
-        isLoading={isPending || !profitLoss}
+        isLoading={isPending}
         periodSelector={periodSelector}
       />
       {onReport && (

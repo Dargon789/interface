@@ -2,24 +2,23 @@ import { GqlResult } from '@universe/api'
 import { useCallback } from 'react'
 import { TokenOption } from 'uniswap/src/components/lists/items/types'
 import { useCurrencyInfosToTokenOptions } from 'uniswap/src/components/TokenSelector/hooks/useCurrencyInfosToTokenOptions'
-import { usePortfolioBalancesForAddressById } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
+import { type PortfolioBalancesResult } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
 import { useTrendingTokensCurrencyInfos } from 'uniswap/src/components/TokenSelector/hooks/useTrendingTokensCurrencyInfos'
-import type { AddressGroup } from 'uniswap/src/features/accounts/store/types/AccountsState'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 
 export function useTrendingTokensOptions({
-  addresses,
   chainFilter,
+  portfolioData,
 }: {
-  addresses: AddressGroup
   chainFilter: Maybe<UniverseChainId>
+  portfolioData: PortfolioBalancesResult
 }): GqlResult<TokenOption[] | undefined> {
   const {
     data: portfolioBalancesById,
     error: portfolioBalancesByIdError,
     refetch: portfolioBalancesByIdRefetch,
     loading: loadingPortfolioBalancesById,
-  } = usePortfolioBalancesForAddressById(addresses)
+  } = portfolioData
 
   const {
     data: tokens,

@@ -5,9 +5,10 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { PlatformAddress } from 'uniswap/src/features/platforms/types/PlatformSpecificAddress'
 import { getPlatformAddress } from 'uniswap/src/features/platforms/utils/addresses'
 import { useActiveAddresses } from '~/features/accounts/store/hooks'
+import { getChainFilterFromSearchParams } from '~/features/params/chainQueryParam'
+import { PageType } from '~/hooks/useIsPage'
 import { isPortfolioTab, PortfolioTab } from '~/pages/Portfolio/types'
 import { buildPortfolioUrl, pathToPortfolioTab } from '~/pages/Portfolio/utils/portfolioUrls'
-import { getChainIdFromChainUrlParam, isChainUrlParam } from '~/utils/chainParams'
 
 /**
  * Parses portfolio URL segments to extract wallet address and tab
@@ -75,10 +76,14 @@ export function usePortfolioRoutes(): {
     return PortfolioTab.Overview
   }, [tabSegment, potentialAddress, pathname])
 
-  // Get chainName from query parameters
-  const chainNameParam = searchParams.get('chain')
-  const chainName = chainNameParam && isChainUrlParam(chainNameParam) ? chainNameParam : undefined
-  const chainId = chainName ? getChainIdFromChainUrlParam(chainName) : undefined
+  const isPortfolioPath = pathname.startsWith(PageType.PORTFOLIO)
+
+  const { chainUrlParam: chainName, chainId } = useMemo(() => {
+    if (!isPortfolioPath) {
+      return { chainUrlParam: undefined, chainId: undefined }
+    }
+    return getChainFilterFromSearchParams(searchParams)
+  }, [isPortfolioPath, searchParams])
 
   useEffect(() => {
     // Redirect to /portfolio if URL contains an invalid address

@@ -41,6 +41,7 @@ export function useIncreasePositionDependentAmountFallback({
 
     if (queryParams instanceof V2IncreasePositionRequest) {
       return new V2IncreasePositionRequest({
+        // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
         ...queryParams,
         simulateTransaction: false,
       })
@@ -49,15 +50,18 @@ export function useIncreasePositionDependentAmountFallback({
     const { increaseLpPosition } = queryParams
     const updatedIncreaseLpPosition =
       increaseLpPosition.case === 'v4IncreaseLpPosition'
-        ? { case: 'v4IncreaseLpPosition' as const, value: { ...increaseLpPosition.value, simulateTransaction: false } }
+        ? // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+          { case: 'v4IncreaseLpPosition' as const, value: { ...increaseLpPosition.value, simulateTransaction: false } }
         : increaseLpPosition.case === 'v3IncreaseLpPosition'
           ? {
               case: 'v3IncreaseLpPosition' as const,
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
               value: { ...increaseLpPosition.value, simulateTransaction: false },
             }
           : increaseLpPosition.case === 'v2IncreaseLpPosition'
             ? {
                 case: 'v2IncreaseLpPosition' as const,
+                // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
                 value: { ...increaseLpPosition.value, simulateTransaction: false },
               }
             : increaseLpPosition
@@ -104,6 +108,7 @@ export function useCreatePositionDependentAmountFallback({
 
     if (queryParams instanceof CreatePositionRequest) {
       return new CreatePositionRequest({
+        // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
         ...queryParams,
         simulateTransaction: false,
       })
@@ -117,6 +122,7 @@ export function useCreatePositionDependentAmountFallback({
           createLpPosition: {
             case: 'v4CreateLpPosition',
             value: new V4CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
               ...createLpPosition.value,
               simulateTransaction: false,
             }),
@@ -129,6 +135,7 @@ export function useCreatePositionDependentAmountFallback({
           createLpPosition: {
             case: 'v3CreateLpPosition',
             value: new V3CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
               ...createLpPosition.value,
               simulateTransaction: false,
             }),
@@ -141,6 +148,7 @@ export function useCreatePositionDependentAmountFallback({
           createLpPosition: {
             case: 'v2CreateLpPosition',
             value: new V2CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
               ...createLpPosition.value,
               simulateTransaction: false,
             }),
@@ -152,6 +160,7 @@ export function useCreatePositionDependentAmountFallback({
     }
 
     return new CreateClassicPositionRequest({
+      // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
       ...queryParams,
       simulateTransaction: false,
     })

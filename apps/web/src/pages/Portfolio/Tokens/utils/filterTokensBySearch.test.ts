@@ -1,5 +1,8 @@
-import type { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import type { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
+import {
+  createMockTokenTableCurrencyInfo,
+  createMockTokenTableRowCurrencyOnly,
+} from '~/pages/Portfolio/Tokens/test-utils/mockTokenTableData'
 import { filterTokensBySearch } from '~/pages/Portfolio/Tokens/utils/filterTokensBySearch'
 import { TEST_TOKEN_1 } from '~/test-utils/constants'
 
@@ -12,21 +15,6 @@ import { doesTokenMatchSearchTerm } from 'uniswap/src/utils/search/doesTokenMatc
 
 const mockDoesTokenMatchSearchTerm = vi.mocked(doesTokenMatchSearchTerm)
 
-const createMockCurrencyInfo = (overrides: Partial<CurrencyInfo> = {}): CurrencyInfo => ({
-  currencyId: 'TEST',
-  currency: TEST_TOKEN_1,
-  logoUrl: undefined,
-  ...overrides,
-})
-
-/** Creates a token that satisfies Pick<TokenData, 'currencyInfo'> for filterTokensBySearch. */
-const createMockTokenWithInfo = (
-  overrides: Partial<Pick<TokenData, 'currencyInfo'>> = {},
-): Pick<TokenData, 'currencyInfo'> => ({
-  currencyInfo: createMockCurrencyInfo(),
-  ...overrides,
-})
-
 describe('filterTokensBySearch', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -34,7 +22,7 @@ describe('filterTokensBySearch', () => {
 
   describe('when searchTerm is empty or undefined', () => {
     it('should return all tokens when searchTerm is undefined', () => {
-      const tokens = [createMockTokenWithInfo(), createMockTokenWithInfo()]
+      const tokens = [createMockTokenTableRowCurrencyOnly(), createMockTokenTableRowCurrencyOnly()]
 
       const result = filterTokensBySearch({
         tokens,
@@ -46,7 +34,7 @@ describe('filterTokensBySearch', () => {
     })
 
     it('should return all tokens when searchTerm is null', () => {
-      const tokens = [createMockTokenWithInfo(), createMockTokenWithInfo()]
+      const tokens = [createMockTokenTableRowCurrencyOnly(), createMockTokenTableRowCurrencyOnly()]
 
       const result = filterTokensBySearch({
         tokens,
@@ -58,7 +46,7 @@ describe('filterTokensBySearch', () => {
     })
 
     it('should return all tokens when searchTerm is empty string', () => {
-      const tokens = [createMockTokenWithInfo(), createMockTokenWithInfo()]
+      const tokens = [createMockTokenTableRowCurrencyOnly(), createMockTokenTableRowCurrencyOnly()]
 
       const result = filterTokensBySearch({
         tokens,
@@ -70,7 +58,7 @@ describe('filterTokensBySearch', () => {
     })
 
     it('should return all tokens when searchTerm is only whitespace', () => {
-      const tokens = [createMockTokenWithInfo(), createMockTokenWithInfo()]
+      const tokens = [createMockTokenTableRowCurrencyOnly(), createMockTokenTableRowCurrencyOnly()]
 
       const result = filterTokensBySearch({
         tokens,
@@ -108,9 +96,9 @@ describe('filterTokensBySearch', () => {
 
   describe('when filtering with valid search term', () => {
     it('should filter tokens based on doesTokenMatchSearchTerm results', () => {
-      const token1 = createMockTokenWithInfo()
-      const token2 = createMockTokenWithInfo()
-      const token3 = createMockTokenWithInfo()
+      const token1 = createMockTokenTableRowCurrencyOnly()
+      const token2 = createMockTokenTableRowCurrencyOnly()
+      const token3 = createMockTokenTableRowCurrencyOnly()
       const tokens = [token1, token2, token3]
 
       // Mock the search function to return different results for each token
@@ -132,8 +120,8 @@ describe('filterTokensBySearch', () => {
     })
 
     it('should return empty array when no tokens match', () => {
-      const token1 = createMockTokenWithInfo()
-      const token2 = createMockTokenWithInfo()
+      const token1 = createMockTokenTableRowCurrencyOnly()
+      const token2 = createMockTokenTableRowCurrencyOnly()
       const tokens = [token1, token2]
 
       mockDoesTokenMatchSearchTerm.mockReturnValueOnce(false).mockReturnValueOnce(false)
@@ -148,8 +136,8 @@ describe('filterTokensBySearch', () => {
     })
 
     it('should return all tokens when all tokens match', () => {
-      const token1 = createMockTokenWithInfo()
-      const token2 = createMockTokenWithInfo()
+      const token1 = createMockTokenTableRowCurrencyOnly()
+      const token2 = createMockTokenTableRowCurrencyOnly()
       const tokens = [token1, token2]
 
       mockDoesTokenMatchSearchTerm.mockReturnValueOnce(true).mockReturnValueOnce(true)
@@ -166,8 +154,8 @@ describe('filterTokensBySearch', () => {
 
   describe('with different token types', () => {
     it('should work with tokens that have currencyInfo', () => {
-      const token = createMockTokenWithInfo({
-        currencyInfo: createMockCurrencyInfo({
+      const token = createMockTokenTableRowCurrencyOnly({
+        currencyInfo: createMockTokenTableCurrencyInfo({
           currencyId: 'ABC',
           currency: TEST_TOKEN_1,
         }),
@@ -187,7 +175,7 @@ describe('filterTokensBySearch', () => {
 
   describe('edge cases', () => {
     it('should handle single token array', () => {
-      const token = createMockTokenWithInfo()
+      const token = createMockTokenTableRowCurrencyOnly()
       mockDoesTokenMatchSearchTerm.mockReturnValue(true)
 
       const result = filterTokensBySearch({
@@ -200,7 +188,7 @@ describe('filterTokensBySearch', () => {
     })
 
     it('should preserve original array reference when no filtering occurs', () => {
-      const tokens = [createMockTokenWithInfo()]
+      const tokens = [createMockTokenTableRowCurrencyOnly()]
 
       const result = filterTokensBySearch({
         tokens,
@@ -211,7 +199,7 @@ describe('filterTokensBySearch', () => {
     })
 
     it('should handle search term with special characters', () => {
-      const token = createMockTokenWithInfo()
+      const token = createMockTokenTableRowCurrencyOnly()
       mockDoesTokenMatchSearchTerm.mockReturnValue(true)
 
       const result = filterTokensBySearch({
@@ -224,7 +212,7 @@ describe('filterTokensBySearch', () => {
     })
 
     it('should handle very long search terms', () => {
-      const token = createMockTokenWithInfo()
+      const token = createMockTokenTableRowCurrencyOnly()
       const longSearchTerm = 'a'.repeat(1000)
       mockDoesTokenMatchSearchTerm.mockReturnValue(false)
 
@@ -243,7 +231,7 @@ describe('filterTokensBySearch', () => {
       type ExtendedToken = Pick<TokenData, 'currencyInfo'> & { customProperty: string }
 
       const extendedToken: ExtendedToken = {
-        ...createMockTokenWithInfo(),
+        ...createMockTokenTableRowCurrencyOnly(),
         customProperty: 'test',
       }
 

@@ -2,7 +2,6 @@ import { LiquidityService } from '@uniswap/client-liquidity/dist/uniswap/liquidi
 import { PERMIT2_ADDRESS } from '@uniswap/permit2-sdk'
 import { V2_FACTORY_ADDRESSES } from '@uniswap/sdk-core'
 import { computePairAddress } from '@uniswap/v2-sdk'
-import { FeatureFlags, getFeatureFlagName } from '@universe/gating'
 import { USDT } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { WETH } from 'uniswap/src/test/fixtures/lib/sdk'
@@ -130,7 +129,6 @@ test.describe(
         await page.goto('/positions/create')
         await page.getByRole('button', { name: 'Choose token' }).click()
         await page.getByTestId(TestID.ExploreSearchInput).fill(USDT.address)
-        // eslint-disable-next-line
         await page.getByTestId('token-option-1-USDT').first().click()
         await page.getByRole('button', { name: 'Continue' }).click()
         await graphql.waitForResponse('PoolPriceHistory')
@@ -167,7 +165,6 @@ test.describe(
         await page.goto('/positions/create')
         await page.getByRole('button', { name: 'Choose token' }).click()
         await page.getByTestId(TestID.ExploreSearchInput).fill(USDT.address)
-        // eslint-disable-next-line
         await page.getByTestId('token-option-1-USDT').first().click()
         await page.getByRole('button', { name: 'Continue' }).click()
         await graphql.waitForResponse('PoolPriceHistory')

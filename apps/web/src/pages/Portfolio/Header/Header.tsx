@@ -6,6 +6,7 @@ import { ElementName, InterfacePageName, UniswapEventName } from 'uniswap/src/fe
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { useEvent } from 'utilities/src/react/hooks'
+import { HEADER_TRANSITION } from '~/components/Explore/stickyHeader/constants'
 import { NetworkFilter } from '~/components/NetworkFilter/NetworkFilter'
 import { useActiveAddresses } from '~/features/accounts/store/hooks'
 import { useAppHeaderHeight } from '~/hooks/useAppHeaderHeight'
@@ -18,8 +19,6 @@ import { PortfolioTabs } from '~/pages/Portfolio/Header/Tabs'
 import { useShowDemoView } from '~/pages/Portfolio/hooks/useShowDemoView'
 import { PortfolioTab } from '~/pages/Portfolio/types'
 import { buildPortfolioUrl } from '~/pages/Portfolio/utils/portfolioUrls'
-
-const HEADER_TRANSITION = 'all 0.2s ease'
 
 function getPageNameFromTab(tab: PortfolioTab | undefined): InterfacePageName {
   switch (tab) {

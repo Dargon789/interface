@@ -1022,7 +1022,7 @@ export const migrateDappRequestInfoTypes = createSafeMigration({
               typeInfo: {
                 ...details.typeInfo,
                 externalDappInfo: {
-                  ...(details.typeInfo.externalDappInfo ?? {}),
+                  ...details.typeInfo.externalDappInfo,
                   requestType: DappRequestType.UwULink,
                 },
               },
@@ -1035,7 +1035,7 @@ export const migrateDappRequestInfoTypes = createSafeMigration({
               typeInfo: {
                 ...details.typeInfo,
                 externalDappInfo: {
-                  ...(details.typeInfo.externalDappInfo ?? {}),
+                  ...details.typeInfo.externalDappInfo,
                   requestType: DappRequestType.WalletConnectSessionRequest,
                 },
               },
@@ -1044,7 +1044,7 @@ export const migrateDappRequestInfoTypes = createSafeMigration({
 
           if (details.typeInfo?.type === TransactionType.WCConfirm && details.typeInfo?.dapp) {
             newDetails.typeInfo.dappRequestInfo = {
-              ...(details.typeInfo.dapp ?? {}),
+              ...details.typeInfo.dapp,
             }
           }
 
@@ -1106,7 +1106,7 @@ export const setWalletDeviceLanguage = createSafeMigration({
   onError: (state: any) => ({
     ...state,
     userSettings: {
-      ...(state?.userSettings ?? {}),
+      ...state?.userSettings,
       currentLanguage: Language.English,
     },
   }),

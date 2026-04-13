@@ -64,7 +64,7 @@ export function transformPlanResponse(response: PlanResponse): FetchAndTransform
   return { planId: response.planId, steps, inputChainId, currentStepIndex, currentStep }
 }
 
-interface InitializePlanResult extends FetchAndTransformPlanResult {
+export interface InitializePlanResult extends FetchAndTransformPlanResult {
   response?: TradingApi.PlanResponse
   wasPlanResumed: boolean
 }
@@ -201,7 +201,7 @@ export function logHelper(params: {
       stepLogArray,
       wasPlanResumed,
       failurePhase,
-      ...(args ?? {}),
+      ...args,
     }
     if (!isProdEnv()) {
       content['quote'] = JSON.stringify(swapTxContext.trade.quote.quote)

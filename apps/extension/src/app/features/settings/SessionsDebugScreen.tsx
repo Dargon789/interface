@@ -244,6 +244,7 @@ export function SessionsDebugScreen(): JSX.Element {
         uniswapIdentifier: uniswapIdentifier || null,
       })
     }
+    // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
     loadInitialState()
   }, [setSession])
 

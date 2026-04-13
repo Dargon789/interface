@@ -13,6 +13,7 @@ import { PortfolioExpandoRow } from '~/pages/Portfolio/components/PortfolioExpan
 import { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
 import { TokenColumns } from '~/pages/Portfolio/Tokens/Table/columns/useTokenColumns'
 import { TokensTableInner } from '~/pages/Portfolio/Tokens/Table/TokensTableInner'
+import { flattenTokenDataToSingleChainRows } from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
 
 const TOKENS_TABLE_MAX_HEIGHT = 700
 
@@ -39,6 +40,8 @@ export function TokensTable({ visible, hidden, loading, refetching, error }: Tok
     return [TokenColumns.AvgCost, TokenColumns.UnrealizedPnl]
   }, [isProfitLossEnabled])
 
+  const flattenedHiddenTokens = useMemo(() => flattenTokenDataToSingleChainRows(hidden), [hidden])
+
   const handleToggleHiddenTokens = useCallback(() => {
     const newIsOpen = !isOpen
     setIsOpen(newIsOpen)
@@ -64,18 +67,18 @@ export function TokensTable({ visible, hidden, loading, refetching, error }: Tok
           hiddenColumns={hiddenColumns}
           maxHeight={TOKENS_TABLE_MAX_HEIGHT}
         />
-        {hidden.length > 0 && (
+        {flattenedHiddenTokens.length > 0 && (
           <>
             <PortfolioExpandoRow
               isExpanded={isOpen}
-              label={t('hidden.tokens.info.text.button', { numHidden: hidden.length })}
+              label={t('hidden.tokens.info.text.button', { numHidden: flattenedHiddenTokens.length })}
               onPress={handleToggleHiddenTokens}
               dataTestId={TestID.ShowHiddenTokens}
             />
             {isOpen && (
               <TokensTableInner
                 showHiddenTokensBanner
-                tokenData={hidden}
+                tokenData={flattenedHiddenTokens}
                 hideHeader
                 loading={tableLoading}
                 error={error}

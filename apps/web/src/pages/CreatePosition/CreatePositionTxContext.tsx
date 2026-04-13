@@ -112,6 +112,7 @@ export function generateCreatePositionTxRequest({
   if (createCalldataQueryParams instanceof CreatePositionRequest) {
     updatedCreateCalldataQueryParams = validatedPermitRequest
       ? new CreatePositionRequest({
+          // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
           ...createCalldataQueryParams,
           batchPermitData: validatedPermitRequest,
         })
@@ -121,6 +122,7 @@ export function generateCreatePositionTxRequest({
       createLpPosition: {
         case: 'v4CreateLpPosition',
         value: new V4CreateLPPosition({
+          // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
           ...createCalldataQueryParams.createLpPosition.value,
           batchPermitData,
         }),
@@ -378,6 +380,7 @@ export function CreatePositionTxContextProvider({ children }: PropsWithChildren)
     if (createCalldataQueryParams) {
       sendAnalyticsEvent(InterfaceEventName.CreatePositionFailed, {
         message,
+        // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
         ...createCalldataQueryParams,
       })
     }

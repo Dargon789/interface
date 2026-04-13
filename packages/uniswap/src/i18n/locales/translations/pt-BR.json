@@ -24,7 +24,6 @@
   "account.cloud.password.recoveryPhrase": "Digite a frase de recuperação",
   "account.cloud.password.subtitle": "Esta senha é necessária para recuperar a frase de recuperação salva no {{cloudProviderName}}.",
   "account.cloud.password.title": "Digite a senha de backup",
-  "account.drawer.gitVersion": "Versão: ",
   "account.drawer.modal.body": "Armazene e troque tokens com segurança com o aplicativo Uniswap. Disponível para iOS e Android.",
   "account.drawer.modal.dont": "Não tem uma Carteira Uniswap?",
   "account.drawer.modal.scan": "Leia com a Carteira Uniswap",

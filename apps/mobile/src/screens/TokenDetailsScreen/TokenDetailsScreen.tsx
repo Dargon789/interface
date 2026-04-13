@@ -1,6 +1,7 @@
 import { useApolloClient } from '@apollo/client'
 import { ReactNavigationPerformanceView } from '@shopify/react-native-performance-navigation'
 import { GQLQueries, GraphQLApi } from '@universe/api'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React, { memo, useEffect, useMemo } from 'react'
 import { FadeInDown, FadeOutDown } from 'react-native-reanimated'
 import type { AppStackScreenProp } from 'src/app/navigation/types'
@@ -72,9 +73,13 @@ function TokenDetailsWrapper(): JSX.Element {
 
 const TokenDetailsQuery = memo(function TokenDetailsQueryInner(): JSX.Element {
   const { currencyId, setError } = useTokenDetailsContext()
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const { error } = GraphQLApi.useTokenDetailsScreenQuery({
-    variables: currencyIdToContractInput(currencyId),
+    variables: {
+      ...currencyIdToContractInput(currencyId),
+      multichain: multichainTokenUxEnabled,
+    },
     pollInterval: PollingInterval.Normal,
     notifyOnNetworkStatusChange: true,
     returnPartialData: true,
@@ -89,6 +94,7 @@ const TokenDetails = memo(function TokenDetailsInner(): JSX.Element {
   const centerElement = useMemo(() => <HeaderTitleElement />, [])
   const rightElement = useMemo(() => <HeaderRightElement />, [])
   const { isContentHidden } = useDelayedRender(CONTEXT_MENU_RENDER_DELAY_MS)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const inModal = useIsInModal(MobileScreens.Explore, true)
 
@@ -116,7 +122,7 @@ const TokenDetails = memo(function TokenDetailsInner(): JSX.Element {
 
             <TokenDetailsBridgedAssetSection />
 
-            <Separator />
+            {!multichainTokenUxEnabled && <Separator />}
           </Flex>
           <Flex gap="$spacing24">
             <TokenPerformance />

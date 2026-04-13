@@ -82,6 +82,7 @@ function sortPools(sortState: PoolTableSortState, pools?: PoolStat[]) {
 
 function convertPoolStatsToPoolStat(poolStats: PoolStats): PoolStat {
   return {
+    // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
     ...poolStats,
     apr: calculateApr({
       volume24h: giveExploreStatDefaultValue(poolStats.volume1Day?.value),

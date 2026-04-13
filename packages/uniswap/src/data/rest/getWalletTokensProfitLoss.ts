@@ -1,6 +1,6 @@
 import { PartialMessage } from '@bufbuild/protobuf'
 import { createPromiseClient } from '@connectrpc/connect'
-import { UseQueryResult, useQuery } from '@tanstack/react-query'
+import { useQuery, UseQueryResult } from '@tanstack/react-query'
 import { DataApiService } from '@uniswap/client-data-api/dist/data/v1/api_connect'
 import {
   GetWalletTokensProfitLossRequest,
@@ -28,7 +28,13 @@ export function useGetWalletTokensProfitLossQuery(
   const address = transformedInput ? transformedInput.walletAccount.platformAddresses[0]?.address : undefined
 
   return useQuery({
-    queryKey: [ReactQueryCacheKey.GetWalletTokensProfitLoss, address, input?.chainIds] as const,
+    queryKey: [
+      ReactQueryCacheKey.GetWalletTokensProfitLoss,
+      address,
+      input?.chainIds,
+      input?.multichain,
+      input?.modifier,
+    ] as const,
     queryFn: () =>
       transformedInput ? profitLossClient.getWalletTokensProfitLoss(transformedInput) : Promise.resolve(undefined),
     enabled: !!address && enabled !== false,

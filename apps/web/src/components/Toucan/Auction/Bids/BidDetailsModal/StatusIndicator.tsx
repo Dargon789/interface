@@ -9,6 +9,7 @@ interface StatusIndicatorProps {
   displayState: BidDisplayState
 }
 
+// oxlint-disable-next-line typescript/consistent-return -- biome-parity: oxlint is stricter here
 export function StatusIndicator({ displayState }: StatusIndicatorProps): JSX.Element | null {
   const { t } = useTranslation()
   const { inRangeColor, outOfRangeColor } = useBidStatusColors()

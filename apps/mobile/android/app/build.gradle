@@ -202,7 +202,7 @@ android {
     sourceSets {
         main {
           jniLibs {
-            srcDir '../../../../node_modules/@uniswap/ethers-rs-mobile/android/jniLibs'
+            srcDir '../jniLibs'
           }
         }
     }
@@ -251,7 +251,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:$compose")
 
     implementation "androidx.security:security-crypto:1.0.0"
-    implementation 'com.lambdapioneer.argon2kt:argon2kt:1.3.0'
+    implementation 'com.lambdapioneer.argon2kt:argon2kt:1.6.0'
 
     implementation "com.google.accompanist:accompanist-flowlayout:$flowlayout"
 

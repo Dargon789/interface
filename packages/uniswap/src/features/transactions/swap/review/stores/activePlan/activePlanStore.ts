@@ -146,7 +146,7 @@ export const activePlanStore = createStore<ActivePlanState>()(
           },
           clearCancelledPlan(planId: string): void {
             const { cancelledPlanIds } = get()
-            const newSet = new Set([...cancelledPlanIds])
+            const newSet = new Set(cancelledPlanIds)
             newSet.delete(planId)
             set({ cancelledPlanIds: newSet })
           },
@@ -156,7 +156,7 @@ export const activePlanStore = createStore<ActivePlanState>()(
           },
           clearPriceChangeInterrupted(planId: string): void {
             const { priceChangeInterruptedPlanIds } = get()
-            const newSet = new Set([...priceChangeInterruptedPlanIds])
+            const newSet = new Set(priceChangeInterruptedPlanIds)
             newSet.delete(planId)
             set({ priceChangeInterruptedPlanIds: newSet })
           },

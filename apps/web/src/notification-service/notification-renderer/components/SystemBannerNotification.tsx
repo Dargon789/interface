@@ -101,7 +101,7 @@ export const SystemBannerNotification = memo(function SystemBannerNotification({
         position: 'fixed',
         bottom: 40,
         right: 20,
-        ...(shadowProps['$platform-web'] || {}),
+        ...shadowProps['$platform-web'],
       }}
       $lg={{
         bottom: 62,

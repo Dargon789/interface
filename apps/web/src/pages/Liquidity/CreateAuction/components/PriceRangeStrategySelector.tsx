@@ -37,6 +37,7 @@ function getConcentratedHeights(count: number): number[] {
       heights[idx] = CONCENTRATED_BUMP_HEIGHTS[i]
     }
   }
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   return heights
 }
 
@@ -79,6 +80,7 @@ function PriceHistogram({ strategy, barColor }: PriceHistogramProps) {
     if (strategy === PriceRangeStrategy.CONCENTRATED_FULL_RANGE) {
       return getConcentratedHeights(barCount)
     }
+    // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
     return Array(barCount).fill(0.5)
   }, [strategy, barCount])
 

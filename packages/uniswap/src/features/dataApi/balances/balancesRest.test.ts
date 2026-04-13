@@ -155,7 +155,7 @@ describe(formatPortfolioResponseToMap, () => {
     })
   })
 
-  it('with useMultichainFormat true and empty multichainBalances returns undefined', () => {
+  it('with useMultichainFormat true and empty multichainBalances returns empty object', () => {
     const portfolioData = {
       portfolio: {
         balances: [],
@@ -166,7 +166,7 @@ describe(formatPortfolioResponseToMap, () => {
 
     const result = formatPortfolioResponseToMap({ portfolioData, ownerAddress: owner, useMultichainFormat: true })
 
-    expect(result).toBeUndefined()
+    expect(result).toEqual({})
   })
 })
 

@@ -8,23 +8,18 @@
   "devDependencies": {
     "@types/node": "22.13.1",
     "@typescript/native-preview": "7.0.0-dev.20260311.1",
-    "@uniswap/eslint-config": "workspace:^",
     "depcheck": "1.4.7",
-    "eslint": "10.0.2",
     "typescript": "5.8.3"
   },
   "scripts": {
     "typecheck": "nx typecheck config",
-    "typecheck:tsgo": "nx typecheck:tsgo config",
-    "lint": "nx lint config",
-    "lint:fix": "nx lint:fix config",
-    "lint:eslint": "nx lint:eslint config",
-    "lint:eslint:fix": "nx lint:eslint:fix config",
+    "check": "nx check config",
+    "check:fast": "nx check:fast config",
     "check:deps:usage": "nx check:deps:usage config",
-    "oxlint": "nx oxlint config",
-    "oxlint:fix": "nx oxlint:fix config",
-    "oxfmt": "nx oxfmt config",
-    "oxfmt:fix": "nx oxfmt:fix config"
+    "format": "nx format config",
+    "format:check": "nx format:check config",
+    "lint": "nx lint config",
+    "lint:fix": "nx lint:fix config"
   },
   "nx": {
     "includedScripts": []

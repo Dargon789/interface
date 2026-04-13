@@ -54,7 +54,7 @@ import {
   selectActiveAccountAddress,
   selectSignerMnemonicAccounts,
 } from 'wallet/src/features/wallet/selectors'
-import { setAccountAsActive } from 'wallet/src/features/wallet/slice'
+import { removeAccounts as removeAccountsAction, setAccountAsActive } from 'wallet/src/features/wallet/slice'
 
 const WC_SUPPORTED_METHODS = [
   EthMethod.EthSign,
@@ -499,13 +499,47 @@ function* handleSessionDelete(event: WalletKitTypes.SessionDelete) {
   yield* put(removeSession({ sessionId: topic }))
 }
 
-function* populateActiveSessions() {
+function* disconnectSessionWithReason({
+  topic,
+  caller,
+  reason,
+}: {
+  topic: string
+  caller: string
+  reason: string
+}): Generator {
+  try {
+    yield* call([wcWeb3Wallet, wcWeb3Wallet.disconnectSession], {
+      topic,
+      reason: getSdkError('USER_DISCONNECTED'),
+    })
+    logger.debug('WalletConnectSaga', caller, `Disconnected session ${topic}: ${reason}`)
+  } catch (e) {
+    logger.error(e, {
+      tags: { file: 'walletConnect/saga', function: caller },
+      extra: { topic, reason },
+    })
+  }
+}
+
+export function* populateActiveSessions() {
   // Fetch all active sessions and add to store
   const sessions = wcWeb3Wallet.getActiveSessions()
 
   const accounts = yield* select(selectAccounts)
+  const nowSeconds = Math.floor(Date.now() / 1000)
 
   for (const session of Object.values(sessions)) {
+    // Disconnect expired sessions from the relay instead of restoring them
+    if (session.expiry && session.expiry < nowSeconds) {
+      yield* call(disconnectSessionWithReason, {
+        topic: session.topic,
+        caller: 'populateActiveSessions',
+        reason: 'expired',
+      })
+      continue
+    }
+
     // Get account address connected to the session from first namespace
     const namespaces = Object.values(session.namespaces)
     const eip155Account = namespaces[0]?.accounts[0]
@@ -519,11 +553,19 @@ function* populateActiveSessions() {
       continue
     }
 
-    // Verify account address for session exists in wallet's accounts
-    const matchingAccount = Object.values(accounts).find(
-      (account) => account.address.toLowerCase() === accountAddress.toLowerCase(),
+    // Disconnect orphaned sessions whose accounts no longer exist in the wallet
+    const matchingAccount = Object.values(accounts).find((account) =>
+      areAddressesEqual({
+        addressInput1: { address: account.address, platform: Platform.EVM },
+        addressInput2: { address: accountAddress, platform: Platform.EVM },
+      }),
     )
     if (!matchingAccount) {
+      yield* call(disconnectSessionWithReason, {
+        topic: session.topic,
+        caller: 'populateActiveSessions',
+        reason: 'orphaned',
+      })
       continue
     }
 
@@ -621,6 +663,40 @@ function* monitorAccountChanges() {
   }
 }
 
+/**
+ * Disconnect WalletConnect sessions associated with removed accounts to prevent
+ * orphaned relay subscriptions that consume capacity indefinitely.
+ */
+export function* disconnectSessionsForRemovedAccounts() {
+  while (true) {
+    const action = yield* take(removeAccountsAction)
+    const removedAddresses = action.payload
+
+    const allSessions = yield* select(selectAllSessions)
+
+    for (const session of Object.values(allSessions)) {
+      const isOrphaned = removedAddresses.some(
+        (removed) =>
+          session.activeAccount &&
+          areAddressesEqual({
+            addressInput1: { address: session.activeAccount, platform: Platform.EVM },
+            addressInput2: { address: removed, platform: Platform.EVM },
+          }),
+      )
+
+      if (isOrphaned) {
+        yield* call(disconnectSessionWithReason, {
+          topic: session.id,
+          caller: 'disconnectSessionsForRemovedAccounts',
+          reason: 'orphaned',
+        })
+        // Always clean up local state — the account is gone regardless of relay success
+        yield* put(removeSession({ sessionId: session.id }))
+      }
+    }
+  }
+}
+
 export function* walletConnectSaga() {
   yield* call(initializeWeb3Wallet)
   yield* call(populateActiveSessions)
@@ -628,4 +704,5 @@ export function* walletConnectSaga() {
   yield* fork(fetchPendingSessionRequests)
   yield* fork(watchWalletConnectEvents)
   yield* fork(monitorAccountChanges)
+  yield* fork(disconnectSessionsForRemovedAccounts)
 }

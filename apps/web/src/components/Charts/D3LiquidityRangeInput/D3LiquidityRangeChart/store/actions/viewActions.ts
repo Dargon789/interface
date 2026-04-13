@@ -1,4 +1,4 @@
-import { CHART_BEHAVIOR } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/constants'
+import { CHART_BEHAVIOR } from '~/components/Charts/D3LiquidityChartShared/constants'
 import {
   type ChartStoreState,
   DefaultPriceStrategy,

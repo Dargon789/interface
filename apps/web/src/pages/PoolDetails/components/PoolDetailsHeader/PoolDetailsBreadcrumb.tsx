@@ -22,6 +22,7 @@ export function PoolDetailsBreadcrumb({ poolAddress, token0, token1, loading }: 
       pt="$spacing48"
       mb="$spacing8"
       $lg={{ px: '$padding20' }}
+      $md={{ pt: '$none' }}
     >
       <BreadcrumbNavLink to="/explore/pools">
         {t('common.pools')} <RotatableChevron direction="right" size="$icon.16" />

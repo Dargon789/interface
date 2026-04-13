@@ -11,6 +11,7 @@ import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { WalletConnectionResult } from 'uniswap/src/features/telemetry/types'
 import { useClaimUnitag } from 'uniswap/src/features/unitags/hooks/useClaimUnitag'
 import { logger } from 'utilities/src/logger/logger'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { useWagmiConnectorWithId } from '~/components/WalletModal/useWagmiConnectorWithId'
 import { wagmiConfig } from '~/components/Web3Provider/wagmiConfig'
 import { walletTypeToAmplitudeWalletType } from '~/components/Web3Provider/walletConnect'
@@ -51,6 +52,7 @@ export function useSignInWithPasskey({
   })
   const claimUnitag = useClaimUnitag()
   const dispatch = useDispatch()
+  const accountDrawer = useAccountDrawer()
 
   const {
     mutate: signInWithPasskey,
@@ -116,9 +118,10 @@ export function useSignInWithPasskey({
         setWalletAddress(walletAddress)
         setWalletId(walletId)
         setIsConnected(true)
-        connect(wagmiConfig, { connector })
+        await connect(wagmiConfig, { connector })
         if (createNewWallet) {
           sendAnalyticsEvent(InterfaceEventName.EmbeddedWalletCreated)
+          accountDrawer.open()
         } else {
           sendAnalyticsEvent(InterfaceEventName.WalletConnected, {
             result: WalletConnectionResult.Succeeded,

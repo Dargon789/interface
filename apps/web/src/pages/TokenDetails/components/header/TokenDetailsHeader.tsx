@@ -1,6 +1,6 @@
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useAtom } from 'jotai'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, useMedia } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
@@ -20,11 +20,14 @@ import { MobileHeaderActions } from '~/components/Explore/stickyHeader/HeaderAct
 import { POPUP_MEDIUM_DISMISS_MS } from '~/components/Popups/constants'
 import { popupRegistry } from '~/components/Popups/registry'
 import { PopupType } from '~/components/Popups/types'
+import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 import { useModalState } from '~/hooks/useModalState'
 import { TokenDetailsNetworkFilter } from '~/pages/TokenDetails/components/header/TokenDetailsNetworkFilter'
 import { useTokenDetailsHeaderActions } from '~/pages/TokenDetails/components/header/useTokenDetailsHeaderActions'
+import { useTDPSelectedMultichainChain } from '~/pages/TokenDetails/context/useTDPSelectedMultichainChain'
 import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
 import { useMultichainTokenEntries } from '~/pages/TokenDetails/hooks/useMultichainTokenEntries'
+import { useTDPEffectiveCurrency } from '~/pages/TokenDetails/hooks/useTDPEffectiveCurrency'
 import { CopyHelper } from '~/theme/components/CopyHelper'
 import { EllipsisTamaguiStyle } from '~/theme/components/styles'
 
@@ -33,34 +36,29 @@ interface TokenDetailsHeaderProps {
 }
 
 function getShowAddressCopy({
-  isMultichainTokenUx,
+  multichainTokenUxEnabled,
   isNative,
   isMultiChainAsset,
   selectedChainId,
 }: {
-  isMultichainTokenUx: boolean
+  multichainTokenUxEnabled: boolean
   isNative: boolean
   isMultiChainAsset: boolean
   selectedChainId: UniverseChainId | undefined
 }): boolean {
-  if (!isMultichainTokenUx) {
+  if (!multichainTokenUxEnabled || !isMultiChainAsset) {
     return !isNative
   }
-  if (!isMultiChainAsset) {
-    return !isNative
-  }
-  return !!selectedChainId
+  return !!selectedChainId && !isNative
 }
 
 export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
   const { t } = useTranslation()
   const media = useMedia()
-  const [selectedChainId, setSelectedChainId] = useState<UniverseChainId | undefined>(undefined)
   const isMobileScreen = media.md
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
-  const { address, currency, tokenQuery, multiChainMap } = useTDPStore((s) => ({
-    address: s.address,
+  const { currency, tokenQuery, multiChainMap } = useTDPStore((s) => ({
     currency: s.currency!,
     tokenQuery: s.tokenQuery,
     multiChainMap: s.multiChainMap,
@@ -68,9 +66,16 @@ export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
   const multichainEntries = useMultichainTokenEntries(multiChainMap)
   const isMultiChainAsset = multichainEntries.length > 1
   const multichainChainIds = useMemo(() => multichainEntries.map((entry) => entry.chainId), [multichainEntries])
-  const isNative = Boolean(currency.isNative)
+
+  const { selectedMultichainChainId: selectedChainId, setSelectedMultichainChainId: onSelectedChainChange } =
+    useTDPSelectedMultichainChain()
+
+  const effectiveCurrency = useTDPEffectiveCurrency()
+
+  const displayAddress = effectiveCurrency.isNative ? NATIVE_CHAIN_ID : effectiveCurrency.address
+  const isNative = effectiveCurrency.isNative
   const tokenLogoUrl = tokenQuery.data?.token?.project?.logoUrl
-  const tokenLogoSize = getHeaderLogoSize({ isCompact, isMobile: media.md })
+  const tokenLogoSize = getHeaderLogoSize({ isCompact, media })
 
   const { openModal } = useModalState(ModalName.ReportTokenIssue)
   const [, setModalProps] = useAtom(ReportTokenIssueModalPropsAtom)
@@ -94,16 +99,15 @@ export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
   } = useBooleanState(false)
 
   const { desktopHeaderActions, mobileHeaderActionSections } = useTokenDetailsHeaderActions({
-    currency,
-    address,
+    currency: effectiveCurrency,
     project: tokenQuery.data?.token?.project,
     openReportTokenModal,
     openReportDataIssueModal,
     isMobileScreen,
   })
 
-  const tokenSymbolName = currency.symbol ?? t('tdp.symbolNotFound')
-  const showAddressCopy = getShowAddressCopy({ isMultichainTokenUx, isNative, isMultiChainAsset, selectedChainId })
+  const tokenSymbolName = effectiveCurrency.symbol ?? t('tdp.symbolNotFound')
+  const showAddressCopy = getShowAddressCopy({ multichainTokenUxEnabled, isNative, isMultiChainAsset, selectedChainId })
 
   return (
     <Flex
@@ -116,22 +120,22 @@ export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
       <Flex row flex={1} alignItems="center" gap="$gap12">
         <TokenLogo
           url={tokenLogoUrl}
-          symbol={currency.symbol ?? undefined}
-          name={currency.name ?? undefined}
-          chainId={!isMultichainTokenUx ? currency.chainId : null}
+          symbol={effectiveCurrency.symbol ?? undefined}
+          name={effectiveCurrency.name ?? undefined}
+          chainId={!multichainTokenUxEnabled ? effectiveCurrency.chainId : null}
           size={tokenLogoSize}
           transition={HEADER_TRANSITION}
-          showMainnetNetworkLogo={isMultichainTokenUx && selectedChainId === UniverseChainId.Mainnet}
+          showMainnetNetworkLogo={multichainTokenUxEnabled && selectedChainId === UniverseChainId.Mainnet}
         />
         <Flex gap={isCompact ? '$gap4' : '$gap8'} $md={{ gap: '$none' }} transition={HEADER_TRANSITION}>
           <Flex row flex={1} alignItems="flex-end" gap="$gap8" $sm={{ width: '100%' }}>
             <Text
               tag="h1"
-              variant={getHeaderTitleVariant({ isCompact, isMobile: media.md })}
+              variant={getHeaderTitleVariant({ isCompact, media })}
               transition={HEADER_TRANSITION}
               {...EllipsisTamaguiStyle}
             >
-              {currency.name ?? t('tdp.nameNotFound')}
+              {effectiveCurrency.name ?? t('tdp.nameNotFound')}
             </Text>
             {!isCompact && !media.md && (
               <Text
@@ -146,35 +150,50 @@ export function TokenDetailsHeader({ isCompact }: TokenDetailsHeaderProps) {
               </Text>
             )}
           </Flex>
-          <Flex row alignItems="stretch" gap="$spacing6">
-            <TokenDetailsNetworkFilter
-              chainIds={multichainChainIds}
-              selectedChainId={selectedChainId}
-              setSelectedChainId={setSelectedChainId}
-              showAddressCopy={showAddressCopy}
-            />
-            {showAddressCopy && (
-              <Flex alignSelf="center">
-                <CopyHelper
-                  toCopy={address}
-                  iconPosition="right"
-                  iconSize={iconSizes.icon16}
-                  iconColor="$neutral2"
-                  color="$neutral2"
-                  dataTestId={TestID.BreadcrumbHoverCopy}
-                >
-                  <Text color="$neutral2">{shortenAddress({ address })}</Text>
-                </CopyHelper>
-              </Flex>
-            )}
-          </Flex>
+          {!media.sm && (
+            <Flex row alignItems="stretch" gap="$spacing6">
+              <TokenDetailsNetworkFilter
+                chainIds={multichainChainIds}
+                selectedChainId={selectedChainId}
+                setSelectedChainId={onSelectedChainChange}
+                showAddressCopy={showAddressCopy}
+              />
+              {showAddressCopy && (
+                <Flex alignSelf="center">
+                  <CopyHelper
+                    toCopy={displayAddress}
+                    iconPosition="right"
+                    iconSize={iconSizes.icon16}
+                    iconColor="$neutral2"
+                    color="$neutral2"
+                    dataTestId={TestID.BreadcrumbHoverCopy}
+                  >
+                    <Text color="$neutral2">{shortenAddress({ address: displayAddress })}</Text>
+                  </CopyHelper>
+                </Flex>
+              )}
+            </Flex>
+          )}
         </Flex>
       </Flex>
-      {isMobileScreen ? (
-        <MobileHeaderActions actionSections={mobileHeaderActionSections} />
-      ) : (
-        <DesktopHeaderActions actions={desktopHeaderActions} />
-      )}
+      <Flex row gap="$gap8" alignItems="center" justifyContent="center">
+        {isMobileScreen ? (
+          <MobileHeaderActions actionSections={mobileHeaderActionSections} />
+        ) : (
+          <DesktopHeaderActions actions={desktopHeaderActions} />
+        )}
+        {media.sm && (
+          <TokenDetailsNetworkFilter
+            chainIds={multichainChainIds}
+            selectedChainId={selectedChainId}
+            setSelectedChainId={onSelectedChainChange}
+            showAddressCopy={false}
+            showNetworkName={false}
+            position="right"
+          />
+        )}
+      </Flex>
+
       <ReportTokenDataModal
         currency={currency}
         isMarkedSpam={tokenQuery.data?.token?.project?.isSpam}

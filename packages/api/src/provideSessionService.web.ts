@@ -1,7 +1,7 @@
 import { provideDeviceIdService } from '@universe/api/src/provideDeviceIdService'
 import { provideSessionStorage } from '@universe/api/src/provideSessionStorage'
 import { provideUniswapIdentifierService } from '@universe/api/src/provideUniswapIdentifierService'
-import { getTransport } from '@universe/api/src/transport'
+import { getTransport, type Interceptors } from '@universe/api/src/transport'
 import {
   createNoopSessionService,
   createSessionClient,
@@ -20,6 +20,8 @@ function provideSessionService(ctx: {
   getLogger?: () => Logger
   /** Optional custom UniswapIdentifierService. If not provided, uses default localStorage-based service. */
   uniswapIdentifierService?: UniswapIdentifierService
+  /** Optional ConnectRPC interceptors for the session transport */
+  interceptors?: Interceptors
 }): SessionService {
   if (!ctx.getIsSessionServiceEnabled()) {
     return createNoopSessionService()
@@ -41,11 +43,13 @@ function getWebAppSessionService(ctx: {
   getBaseUrl: () => string
   getLogger?: () => Logger
   uniswapIdentifierService?: UniswapIdentifierService
+  interceptors?: Interceptors
 }): SessionService {
   const sessionClient = createSessionClient({
     transport: getTransport({
       getBaseUrl: ctx.getBaseUrl,
       getHeaders: () => ({ 'x-request-source': REQUEST_SOURCE }),
+      interceptors: ctx.interceptors,
       options: {
         credentials: 'include',
       },

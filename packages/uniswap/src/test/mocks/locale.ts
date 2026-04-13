@@ -34,6 +34,7 @@ export function mockLocalizedFormatter(locale: Locale): LocalizationContextState
         locale,
       })
     },
+    // oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
     convertFiatAmount(_?: number | undefined): { amount: number; currency: FiatCurrency } {
       throw new Error('Function not implemented.')
     },

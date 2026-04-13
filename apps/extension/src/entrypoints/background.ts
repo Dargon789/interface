@@ -108,6 +108,7 @@ function makeBackground(): void {
           }
 
           // Schedule alarm
+          // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
           chrome.alarms.create(AUTO_LOCK_ALARM_NAME, { delayInMinutes })
           logger.debug('background', 'port.onDisconnect', `Scheduled auto-lock alarm for ${delayInMinutes} minutes`)
         } catch (error) {

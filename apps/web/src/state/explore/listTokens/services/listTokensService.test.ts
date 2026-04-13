@@ -10,12 +10,12 @@ import { TokensOrderBy } from '@universe/api'
 import { describe, expect, it, vi } from 'vitest'
 import { TimePeriod } from '~/appGraphql/data/util'
 import { TokenSortMethod } from '~/components/Tokens/constants'
+import { getChainIdFromChainUrlParam } from '~/features/params/chainParams'
 import { createListTokensService } from '~/state/explore/listTokens/services/listTokensService'
 import { getEffectiveListTokensOptions } from '~/state/explore/listTokens/types'
 import type { TokenStat } from '~/state/explore/types'
-import { getChainIdFromChainUrlParam } from '~/utils/chainParams'
 
-vi.mock('~/utils/chainParams', () => ({
+vi.mock('~/features/params/chainParams', () => ({
   getChainIdFromChainUrlParam: vi.fn(),
 }))
 

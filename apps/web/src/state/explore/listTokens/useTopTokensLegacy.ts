@@ -45,6 +45,7 @@ function convertTokenStatsToTokenStat(tokenStats: TokenStats, duration: TimePeri
       priceHistory = convertPriceHistoryToPricePoints(tokenStats.priceHistoryDay)
   }
   return {
+    // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
     ...tokenStats,
     priceHistory,
     volume,

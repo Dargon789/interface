@@ -87,7 +87,6 @@ const createMockAccountsState = (wallets: ExternalWallet[]) => {
           platform: Platform.EVM,
           access:
             wallet.id === CONNECTION_PROVIDER_IDS.METAMASK_RDNS ||
-            wallet.id === CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID ||
             wallet.id === CONNECTION_PROVIDER_IDS.BINANCE_WALLET_RDNS ||
             wallet.id === CONNECTION_PROVIDER_IDS.COINBASE_RDNS ||
             wallet.id === CONNECTION_PROVIDER_IDS.UNISWAP_EXTENSION_RDNS
@@ -151,14 +150,6 @@ const DEFAULT_WALLETS: ExternalWallet[] = [
     },
     analyticsWalletType: 'binance',
   }),
-  createExternalWallet({
-    id: CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
-    name: 'Porto',
-    connectorIds: {
-      [Platform.EVM]: `WagmiConnector_${CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID}`,
-    },
-    analyticsWalletType: 'Porto',
-  }),
   createEmbeddedWallet({
     name: 'Embedded Wallet',
     analyticsWalletType: 'Passkey',
@@ -179,9 +170,6 @@ describe('useOrderedWallets', () => {
       if (flag === FeatureFlags.Solana) {
         return false
       }
-      if (flag === FeatureFlags.PortoWalletConnector) {
-        return true
-      }
       return false
     })
     mocked(useRecentConnectorId).mockReturnValue(undefined)
@@ -196,7 +184,6 @@ describe('useOrderedWallets', () => {
       CONNECTION_PROVIDER_IDS.WALLET_CONNECT_CONNECTOR_ID,
       CONNECTION_PROVIDER_IDS.COINBASE_SDK_CONNECTOR_ID,
       CONNECTION_PROVIDER_IDS.BINANCE_WALLET_CONNECTOR_ID,
-      CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
     ]
 
     result.current.forEach((wallet, index) => {
@@ -214,7 +201,6 @@ describe('useOrderedWallets', () => {
       CONNECTION_PROVIDER_IDS.METAMASK_RDNS, // Injected wallet
       CONNECTION_PROVIDER_IDS.COINBASE_SDK_CONNECTOR_ID,
       CONNECTION_PROVIDER_IDS.BINANCE_WALLET_CONNECTOR_ID,
-      CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
     ]
 
     result.current.forEach((wallet, index) => {
@@ -293,14 +279,6 @@ describe('useOrderedWallets', () => {
         },
         analyticsWalletType: 'binance',
       }),
-      createExternalWallet({
-        id: CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
-        name: 'Porto',
-        connectorIds: {
-          [Platform.EVM]: `WagmiConnector_${CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID}`,
-        },
-        analyticsWalletType: 'Porto',
-      }),
     ]
     mocked(useAccountsStore).mockImplementation((selector) => {
       const mockState = createMockAccountsState(binanceWallets)
@@ -362,14 +340,6 @@ describe('useOrderedWallets', () => {
           [Platform.EVM]: `WagmiConnector_${CONNECTION_PROVIDER_IDS.BINANCE_WALLET_RDNS}`,
         },
         analyticsWalletType: 'binance',
-      }),
-      createExternalWallet({
-        id: CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
-        name: 'Porto',
-        connectorIds: {
-          [Platform.EVM]: `WagmiConnector_${CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID}`,
-        },
-        analyticsWalletType: 'Porto',
       }),
     ]
     mocked(useAccountsStore).mockImplementation((selector) => {
@@ -436,14 +406,6 @@ describe('useOrderedWallets', () => {
         },
         analyticsWalletType: 'binance',
       }),
-      createExternalWallet({
-        id: CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
-        name: 'Porto',
-        connectorIds: {
-          [Platform.EVM]: `WagmiConnector_${CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID}`,
-        },
-        analyticsWalletType: 'Porto',
-      }),
     ]
     mocked(useAccountsStore).mockImplementation((selector) => {
       const mockState = createMockAccountsState(binanceWallets)
@@ -456,7 +418,6 @@ describe('useOrderedWallets', () => {
     const expectedWalletIds = [
       CONNECTION_PROVIDER_IDS.WALLET_CONNECT_CONNECTOR_ID,
       CONNECTION_PROVIDER_IDS.COINBASE_SDK_CONNECTOR_ID,
-      CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
     ]
 
     expectedWalletIds.forEach((expectedId, index) => {
@@ -489,7 +450,6 @@ describe('useOrderedWallets', () => {
       CONNECTION_PROVIDER_IDS.WALLET_CONNECT_CONNECTOR_ID,
       CONNECTION_PROVIDER_IDS.COINBASE_SDK_CONNECTOR_ID,
       CONNECTION_PROVIDER_IDS.BINANCE_WALLET_CONNECTOR_ID,
-      CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
     ]
 
     result.current.forEach((wallet, index) => {
@@ -502,9 +462,6 @@ describe('useOrderedWallets', () => {
     beforeEach(() => {
       mocked(useFeatureFlag).mockImplementation((flag) => {
         if (flag === FeatureFlags.EmbeddedWallet) {
-          return true
-        }
-        if (flag === FeatureFlags.PortoWalletConnector) {
           return true
         }
         if (flag === FeatureFlags.Solana) {
@@ -551,9 +508,6 @@ describe('useOrderedWallets', () => {
         if (flag === FeatureFlags.EmbeddedWallet) {
           return true
         }
-        if (flag === FeatureFlags.PortoWalletConnector) {
-          return true
-        }
         if (flag === FeatureFlags.Solana) {
           return false
         }
@@ -568,7 +522,6 @@ describe('useOrderedWallets', () => {
       const expectedWalletIds = [
         CONNECTION_PROVIDER_IDS.COINBASE_SDK_CONNECTOR_ID,
         CONNECTION_PROVIDER_IDS.BINANCE_WALLET_CONNECTOR_ID,
-        CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
       ]
 
       result.current.forEach((wallet, index) => {
@@ -584,7 +537,6 @@ describe('useOrderedWallets', () => {
         CONNECTION_PROVIDER_IDS.WALLET_CONNECT_CONNECTOR_ID,
         CONNECTION_PROVIDER_IDS.COINBASE_SDK_CONNECTOR_ID,
         CONNECTION_PROVIDER_IDS.BINANCE_WALLET_CONNECTOR_ID,
-        CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
       ]
 
       result.current.forEach((wallet, index) => {
@@ -624,14 +576,6 @@ describe('useOrderedWallets', () => {
           },
           analyticsWalletType: 'binance',
         }),
-        createExternalWallet({
-          id: CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
-          name: 'Porto',
-          connectorIds: {
-            [Platform.EVM]: `WagmiConnector_${CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID}`,
-          },
-          analyticsWalletType: 'Porto',
-        }),
       ]
       mocked(useAccountsStore).mockImplementation((selector) => {
         const mockState = createMockAccountsState(mobileWallets)
@@ -643,7 +587,6 @@ describe('useOrderedWallets', () => {
         CONNECTION_PROVIDER_IDS.WALLET_CONNECT_CONNECTOR_ID,
         CONNECTION_PROVIDER_IDS.COINBASE_SDK_CONNECTOR_ID,
         CONNECTION_PROVIDER_IDS.BINANCE_WALLET_CONNECTOR_ID,
-        CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID,
       ]
 
       result.current.forEach((wallet, index) => {

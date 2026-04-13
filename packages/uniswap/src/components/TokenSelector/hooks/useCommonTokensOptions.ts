@@ -4,9 +4,8 @@ import { TokenOption } from 'uniswap/src/components/lists/items/types'
 import { filter } from 'uniswap/src/components/TokenSelector/filter'
 import { useAllCommonBaseCurrencies } from 'uniswap/src/components/TokenSelector/hooks/useAllCommonBaseCurrencies'
 import { useCurrencyInfosToTokenOptions } from 'uniswap/src/components/TokenSelector/hooks/useCurrencyInfosToTokenOptions'
-import { usePortfolioBalancesForAddressById } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
+import { type PortfolioBalancesResult } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
 import { USDC_LINEA, USDT_LINEA, USDT0_XLAYER } from 'uniswap/src/constants/tokens'
-import type { AddressGroup } from 'uniswap/src/features/accounts/store/types/AccountsState'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useCurrencyInfosWithLoading } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
@@ -30,18 +29,18 @@ const LINEA_CURRENCY_IDS = [
 ]
 
 export function useCommonTokensOptions({
-  addresses,
   chainFilter,
+  portfolioData,
 }: {
-  addresses: AddressGroup
   chainFilter: UniverseChainId | null
+  portfolioData: PortfolioBalancesResult
 }): GqlResult<TokenOption[] | undefined> {
   const {
     data: portfolioBalancesById,
     error: portfolioBalancesByIdError,
     refetch: portfolioBalancesByIdRefetch,
     loading: loadingPorfolioBalancesById,
-  } = usePortfolioBalancesForAddressById(addresses)
+  } = portfolioData
 
   const {
     data: commonBaseCurrencies,

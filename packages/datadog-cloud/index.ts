@@ -1,4 +1,5 @@
 import * as pulumi from '@pulumi/pulumi'
+import { settings } from './config'
 import { createMonitors } from './factory'
 import {
   devPortalLatencyMonitors,
@@ -8,7 +9,6 @@ import {
   devPortalGatewayMonitors,
   devPortalLogMonitors,
 } from './monitors'
-import { settings } from './config'
 import { MonitorDefinition } from './types'
 
 // Log configuration

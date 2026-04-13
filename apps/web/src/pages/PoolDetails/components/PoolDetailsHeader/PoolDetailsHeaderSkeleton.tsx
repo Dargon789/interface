@@ -16,8 +16,8 @@ interface PoolDetailsHeaderSkeletonProps {
 
 export function PoolDetailsHeaderSkeleton({ isCompact = false }: PoolDetailsHeaderSkeletonProps = {}) {
   const media = useMedia()
-  const logoSize = getHeaderLogoSize({ isCompact, isMobile: media.md })
-  const titleLineHeight = getHeaderTitleLineHeight({ isCompact, isMobile: media.md })
+  const logoSize = getHeaderLogoSize({ isCompact, media })
+  const titleLineHeight = getHeaderTitleLineHeight({ isCompact, media })
 
   return (
     <Flex

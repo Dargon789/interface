@@ -267,6 +267,7 @@ const currencyFormatMap = {
   'zh-Hant': 'pre',
 }
 
+// oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
 export type Language = keyof typeof currencyFormatMap | keyof typeof transformForLocale
 
 const currencySymbols: { [key: string]: string } = {

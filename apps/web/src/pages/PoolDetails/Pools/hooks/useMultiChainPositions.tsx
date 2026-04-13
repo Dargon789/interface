@@ -122,6 +122,7 @@ export default function useMultiChainPositions(account: string): UseMultiChainPo
     return (await pm.callStatic.multicall(callData)).map(
       (positionBytes, index) =>
         ({
+          // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
           ...pm.interface.decodeFunctionResult('positions', positionBytes),
           tokenId: positionIds[index],
         }) as unknown as PositionDetails,

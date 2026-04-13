@@ -11,6 +11,7 @@ export function useBiometricUnlockDisableMutation(): UseMutationResult<void, Err
       await BiometricUnlockStorage.remove()
     },
     onSettled: () => {
+      // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
       queryClient.invalidateQueries(biometricUnlockCredentialQuery())
     },
     onError: (error) => {

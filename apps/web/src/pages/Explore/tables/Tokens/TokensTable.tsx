@@ -24,6 +24,7 @@ import { Cell } from '~/components/Table/Cell'
 import { EllipsisText, TableText } from '~/components/Table/shared/TableText'
 import { HeaderCell } from '~/components/Table/styled'
 import { TokenSortMethod } from '~/components/Tokens/constants'
+import { getChainIdFromChainUrlParam } from '~/features/params/chainParams'
 import { useExploreTablesFilterStore } from '~/pages/Explore/exploreTablesFilterStore'
 import { useExploreParams } from '~/pages/Explore/redirects'
 import { getTokenDescriptionColumnSize, TokenDescription } from '~/pages/Explore/tables/Tokens/TokenDescription'
@@ -33,7 +34,6 @@ import { VolumeByNetworkPopover } from '~/pages/Explore/tables/Tokens/VolumeByNe
 import { multichainTokenToDisplayToken } from '~/state/explore/listTokens/utils/multichainTokenToDisplayToken'
 import { getChainIdsByVolume } from '~/state/explore/listTokens/utils/multichainVolume'
 import { TokenStat } from '~/state/explore/types'
-import { getChainIdFromChainUrlParam } from '~/utils/chainParams'
 
 interface TokenTableValue {
   index: number
@@ -78,7 +78,7 @@ export function TokenTable({
   loadMore?: ({ onComplete }: { onComplete?: () => void }) => void
 }) {
   const { t } = useTranslation()
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { convertFiatAmountFormatted, formatPercent } = useLocalizationContext()
   const { defaultChainId } = useEnabledChains()
   const { sortMethod, sortAscending } = useTokenTableSortStore((s) => ({
@@ -91,11 +91,12 @@ export function TokenTable({
     timePeriod: s.timePeriod,
   }))
   const chainFilter = useExploreParams().chainName
+  const exploreChainId = chainFilter ? getChainIdFromChainUrlParam(chainFilter) : undefined
 
   const tokenTableValues: TokenTableValue[] | undefined = useMemo(
     () =>
       tokens?.flatMap((mcToken, i) => {
-        const token = multichainTokenToDisplayToken(mcToken, timePeriod)
+        const token = multichainTokenToDisplayToken({ mcToken, filterTimePeriod: timePeriod, exploreChainId })
         if (!token) {
           return []
         }
@@ -150,6 +151,7 @@ export function TokenTable({
             link: getTokenDetailsURL({
               address: unwrappedToken.address,
               chain: toGraphQLChain(chainId ?? defaultChainId),
+              chainUrlParam: chainFilter,
             }),
             analytics: {
               elementName: ElementName.TokensTableRow,
@@ -170,6 +172,7 @@ export function TokenTable({
       }) ?? [],
     [
       chainFilter,
+      exploreChainId,
       convertFiatAmountFormatted,
       defaultChainId,
       filterString,
@@ -183,7 +186,7 @@ export function TokenTable({
 
   const showLoadingSkeleton = loading || !!error
 
-  const rowHeight = useMemo(() => (isMultichainTokenUx ? 64 : undefined), [isMultichainTokenUx])
+  const rowHeight = useMemo(() => (multichainTokenUxEnabled ? 64 : undefined), [multichainTokenUxEnabled])
 
   const media = useMedia()
   const columns = useMemo(() => {
@@ -209,7 +212,7 @@ export function TokenTable({
         : null,
       columnHelper.accessor((row) => row.tokenDescription, {
         id: 'tokenDescription',
-        size: getTokenDescriptionColumnSize(media.lg, isMultichainTokenUx),
+        size: getTokenDescriptionColumnSize(media.lg, multichainTokenUxEnabled),
         header: () => (
           <HeaderCell justifyContent="flex-start">
             <Text variant="body3" color="$neutral2" fontWeight="500">
@@ -338,7 +341,7 @@ export function TokenTable({
     ]
 
     return filteredColumns.filter((column): column is NonNullable<(typeof filteredColumns)[number]> => Boolean(column))
-  }, [orderDirection, isMultichainTokenUx, showLoadingSkeleton, sortMethod, media, t, timePeriod])
+  }, [orderDirection, multichainTokenUxEnabled, showLoadingSkeleton, sortMethod, media, t, timePeriod])
 
   return (
     <Table
@@ -346,7 +349,7 @@ export function TokenTable({
       data={tokenTableValues}
       loading={loading}
       error={error}
-      v2={isMultichainTokenUx}
+      v2={multichainTokenUxEnabled}
       rowHeight={rowHeight}
       compactRowHeight={rowHeight}
       loadMore={loadMore}

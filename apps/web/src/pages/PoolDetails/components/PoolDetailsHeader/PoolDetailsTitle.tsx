@@ -43,7 +43,7 @@ export function PoolDetailsTitle({
   const media = useMedia()
   const { defaultChainId } = useEnabledChains()
   const graphQLChain = toGraphQLChain(chainId ?? defaultChainId)
-  const titleVariant = getHeaderTitleVariant({ isCompact, isMobile: media.md })
+  const titleVariant = getHeaderTitleVariant({ isCompact, media })
   return (
     <Flex row gap="$spacing12" alignItems="center" width="max-content">
       <Flex row>

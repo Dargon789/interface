@@ -92,6 +92,7 @@ export async function signTypedData({
   const message = JSON.stringify(_TypedDataEncoder.getPayload(populated.domain, normalizedTypes, populated.value))
 
   try {
+    // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
     return await signer.provider.send(method, [address, message])
   } catch (error) {
     // If eth_signTypedData is unimplemented, fall back to eth_sign.
@@ -108,6 +109,7 @@ export async function signTypedData({
         error,
       )
       const hash = _TypedDataEncoder.hash(populated.domain, normalizedTypes, populated.value)
+      // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
       return await signer.provider.send('eth_sign', [address, hash])
     }
     throw error

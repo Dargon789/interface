@@ -12,6 +12,7 @@ import { NFTItem } from 'uniswap/src/features/nfts/types'
 import { ElementName, InterfacePageName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { isMobileWeb } from 'utilities/src/platform'
 import { PortfolioExpandoRow } from '~/pages/Portfolio/components/PortfolioExpandoRow'
 import { SearchInput } from '~/pages/Portfolio/components/SearchInput'
 import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
@@ -20,7 +21,7 @@ import { NFTCard, setOpenNftPopoverId } from '~/pages/Portfolio/NFTs/NFTCard'
 import { NFTCardSkeleton } from '~/pages/Portfolio/NFTs/NFTCardSkeleton'
 import { assume0xAddress } from '~/utils/wagmi'
 
-const LOADING_SKELETON_COUNT = 10
+const LOADING_SKELETON_COUNT = isMobileWeb ? 4 : 10
 
 // Memoized wrapper component to avoid recreating Flex structure on every render
 const NFTItemWrapper = memo(function NFTItemWrapper({ item, owner }: { item: NFTItem; owner: Address }): JSX.Element {

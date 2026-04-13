@@ -19,7 +19,7 @@ export const TOKEN_CARD_WIDTH = 168
 export const CARD_SPACING = 12
 
 export function TokenCarouselCard({ token, sparklines }: { token: MultichainToken; sparklines: SparklineMap }) {
-  const displayToken = multichainTokenToDisplayToken(token)
+  const displayToken = multichainTokenToDisplayToken({ mcToken: token })
   if (!displayToken) {
     return null
   }

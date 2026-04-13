@@ -243,7 +243,7 @@ const ActionSheetBackdropWithContent = memo(function ActionSheetBackdropWithCont
         : zIndexes.popover
 
   return (
-    <Portal zIndex={zIndex}>
+    <Portal stackZIndex={zIndex}>
       <AnimatePresence custom={isSheetOpenMemo}>
         {toggleMeasurements && (
           <>

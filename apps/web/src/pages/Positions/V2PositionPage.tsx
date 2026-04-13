@@ -23,13 +23,13 @@ import { TextLoader } from '~/components/Liquidity/Loader'
 import { PositionPageActionButtons } from '~/components/Liquidity/PositionPageActionButtons'
 import { parseRestPosition } from '~/components/Liquidity/utils/parseFromRest'
 import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
+import { useChainIdFromUrlParam } from '~/features/params/chainParams'
 import { useAccount } from '~/hooks/useAccount'
 import { usePositionOwnerV2 } from '~/hooks/usePositionOwnerV2'
 import { useDynamicMetatags } from '~/pages/metatags'
 import NotFound from '~/pages/NotFound'
 import { MultichainContextProvider } from '~/state/multichain/MultichainContext'
 import { usePendingLPTransactionsChangeListener } from '~/state/transactions/hooks'
-import { useChainIdFromUrlParam } from '~/utils/chainParams'
 
 const BodyWrapper = styled(Main, {
   backgroundColor: '$surface1',
@@ -123,6 +123,7 @@ function V2PositionPage() {
   const token0USDValue = useUSDCValue(currency0Amount)
   const token1USDValue = useUSDCValue(currency1Amount)
   const poolTokenPercentage = useGetPoolTokenPercentage(positionInfo)
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
   const liquidityTokenAddress = positionInfo?.liquidityToken?.isToken ? positionInfo.liquidityToken.address : undefined
   const isOwner = usePositionOwnerV2({
     account: account.address,

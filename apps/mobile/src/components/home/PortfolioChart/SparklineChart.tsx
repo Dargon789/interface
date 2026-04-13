@@ -190,7 +190,7 @@ export const SparklineChart = memo(function SparklineChart({
     <Svg width={width} height={height}>
       <Defs>
         <SvgLinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={color} stopOpacity={0.4} />
+          <Stop offset="0" stopColor={color} stopOpacity={0.16} />
           <Stop offset="1" stopColor={color} stopOpacity={0} />
         </SvgLinearGradient>
         {interactive && (

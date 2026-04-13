@@ -35,6 +35,7 @@ export type UseActivityDataProps = {
   chainIds?: UniverseChainId[]
   showLoadingOnRefetch?: boolean
   filterTransactionTypes?: TransactionTypeFilter[]
+  searchText?: string
 }
 
 export type ActivityRenderData = PaginationControls & {
@@ -61,6 +62,7 @@ export function useActivityData({
   isExternalProfile = false,
   showLoadingOnRefetch = false,
   filterTransactionTypes,
+  searchText,
 }: UseActivityDataProps): ActivityRenderData {
   const { t } = useTranslation()
 
@@ -97,6 +99,7 @@ export function useActivityData({
     chainIds,
     showLoadingOnRefetch,
     filterTransactionTypes,
+    searchText,
   })
 
   const sectionDataWithExtra: ActivityItem[] | undefined = useMemo(() => {

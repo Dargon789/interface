@@ -19,10 +19,10 @@ import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
 import { LoadingBubble } from '~/components/Tokens/loading'
 import { MouseoverTooltip, TooltipSize } from '~/components/Tooltip'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { getChainUrlParam } from '~/features/params/chainParams'
 import useCopyClipboard from '~/hooks/useCopyClipboard'
 import { ExternalLink } from '~/theme/components/Links'
 import { ClickableTamaguiStyle, EllipsisTamaguiStyle } from '~/theme/components/styles'
-import { getChainUrlParam } from '~/utils/chainParams'
 
 const TokenName = styled(Text, {
   display: 'none',

@@ -76,15 +76,17 @@ export const PendingConnectionModal = ({ pendingSession, onClose }: Props): JSX.
 
   // Sort the active account to the front of the list in the UI
   const orderedAllAccountAddresses = useMemo(() => {
-    return [...signerAccounts.map((account) => account.address)].sort((a, b) => {
-      if (a === activeAddress) {
-        return -1
-      }
-      if (b === activeAddress) {
-        return 1
-      }
-      return 0
-    })
+    return signerAccounts
+      .map((account) => account.address)
+      .sort((a, b) => {
+        if (a === activeAddress) {
+          return -1
+        }
+        if (b === activeAddress) {
+          return 1
+        }
+        return 0
+      })
   }, [signerAccounts, activeAddress])
 
   // Sort the active account to the front of the list, so that when we construct namespaces, the active account is first,

@@ -40,6 +40,7 @@ export function useBiometricUnlockSetupMutation(options?: {
     },
     retry: false,
     onSettled: () => {
+      // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
       queryClient.invalidateQueries(biometricUnlockCredentialQuery())
     },
     onSuccess: options?.onSuccess,

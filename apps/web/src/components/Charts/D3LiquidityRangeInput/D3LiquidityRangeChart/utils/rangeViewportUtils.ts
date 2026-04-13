@@ -1,8 +1,5 @@
 import { nearestUsableTick, TickMath } from '@uniswap/v3-sdk'
-import {
-  CHART_BEHAVIOR,
-  CHART_DIMENSIONS,
-} from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/constants'
+import { CHART_BEHAVIOR, CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityChartShared/constants'
 
 /**
  * Calculate the maximum zoom level where liquidity bars stay within MAX_BAR_HEIGHT.

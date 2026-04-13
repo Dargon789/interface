@@ -1,6 +1,6 @@
-import { UnitagGetAvatarUploadUrlResponse } from '@universe/api'
+import { AvatarUploadResponse } from '@universe/api'
 import { useEffect, useState } from 'react'
-import { UnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
+import { useUnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
 import { AVATAR_UPLOAD_CREDS_EXPIRY_SECONDS } from 'uniswap/src/features/unitags/constants'
 import { logger } from 'utilities/src/logger/logger'
 import { ONE_SECOND_MS } from 'utilities/src/time/time'
@@ -18,22 +18,23 @@ export const useAvatarUploadCredsWithRefresh = ({
   signerManager: SignerManager
 }): {
   avatarUploadUrlLoading: boolean
-  avatarUploadUrlResponse?: UnitagGetAvatarUploadUrlResponse
+  avatarUploadUrlResponse?: AvatarUploadResponse
 } => {
+  const unitagsApiClient = useUnitagsApiClient()
   const [avatarUploadUrlLoading, setAvatarUploadUrlLoading] = useState(false)
-  const [avatarUploadUrlResponse, setAvatarUploadUrlResponse] = useState<UnitagGetAvatarUploadUrlResponse>()
+  const [avatarUploadUrlResponse, setAvatarUploadUrlResponse] = useState<AvatarUploadResponse>()
 
   // Re-fetch the avatar upload pre-signed URL every 110 seconds to ensure it's always fresh
   useEffect(() => {
     const fetchAvatarUploadUrl = async (): Promise<void> => {
       try {
         setAvatarUploadUrlLoading(true)
-        const data = await UnitagsApiClient.getUnitagAvatarUploadUrl({
+        const data = await unitagsApiClient.getUnitagAvatarUploadUrl({
           data: { username: unitag }, // Assuming unitag is the username you're working with
           address: account.address,
           signMessage: generateSignerFunc(account, signerManager),
         })
-        setAvatarUploadUrlResponse(data)
+        setAvatarUploadUrlResponse(new AvatarUploadResponse(data))
       } catch (e) {
         logger.error(e, {
           tags: { file: 'EditUnitagProfileScreen', function: 'fetchAvatarUploadUrl' },
@@ -55,7 +56,7 @@ export const useAvatarUploadCredsWithRefresh = ({
 
     // Clear the interval on component unmount
     return () => clearInterval(intervalId)
-  }, [unitag, account, signerManager])
+  }, [unitag, account, signerManager, unitagsApiClient])
 
   return { avatarUploadUrlLoading, avatarUploadUrlResponse }
 }

@@ -59,6 +59,7 @@ const RollNumber = ({
   const fontColor = useSharedValue(
     nextColor || (shouldFadeDecimals && index > decimalSeparatorIndex ? colors.neutral3.val : colors.neutral1.val),
   )
+  // oxlint-disable-next-line typescript/no-unsafe-unary-minus -- biome-parity: oxlint is stricter here
   const yOffset = useSharedValue(digit && Number(digit) >= 0 ? DIGIT_HEIGHT * -digit : 0)
 
   const margin = {
@@ -118,6 +119,7 @@ const RollNumber = ({
 
   useEffect(() => {
     if (digit && Number(digit) >= 0) {
+      // oxlint-disable-next-line typescript/no-unsafe-unary-minus -- biome-parity: oxlint is stricter here
       const newOffset = DIGIT_HEIGHT * -digit
       yOffset.value = newOffset
     }

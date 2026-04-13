@@ -37,8 +37,8 @@ import {
 } from '~/pages/Explore/tables/Auctions/TopAuctionsTableCells'
 import { TABLE_PAGE_SIZE } from '~/state/explore'
 import { useAuctionTokenPrices } from '~/state/explore/topAuctions/useAuctionTokenPrices'
-import type { EnrichedAuction } from '~/state/explore/topAuctions/useTopAuctions'
 import { auctionCommittedVolumeComparator, useTopAuctions } from '~/state/explore/topAuctions/useTopAuctions'
+import type { EnrichedAuction } from '~/state/explore/topAuctions/useTopAuctions'
 
 /**
  * Comparator functions for client-side auction sorting.
@@ -263,7 +263,7 @@ function ToucanTableComponent({
   loadMore?: ({ onComplete }: { onComplete?: () => void }) => void
 }) {
   const { t } = useTranslation()
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { priceMap: auctionTokenPriceMap } = useAuctionTokenPrices(auctions ?? [])
 
   const { convertFiatAmountFormatted } = useLocalizationContext()
@@ -527,7 +527,7 @@ function ToucanTableComponent({
         data={sortedVisibleAuctionTableValues}
         loading={loading}
         error={error}
-        v2={isMultichainTokenUx}
+        v2={multichainTokenUxEnabled}
         loadMore={loadMore}
         maxWidth={1200}
         defaultPinnedColumns={['index', 'tokenName']}

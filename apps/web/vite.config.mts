@@ -4,7 +4,6 @@ import { createHash } from 'node:crypto'
 import path from 'path'
 import process from 'process'
 import { fileURLToPath } from 'url'
-/* eslint-disable max-lines */
 import { cloudflare } from '@cloudflare/vite-plugin'
 import { tamaguiPlugin } from '@tamagui/vite-plugin'
 import react from '@vitejs/plugin-react'
@@ -23,13 +22,6 @@ import { cspMetaTagPlugin } from './vite/vite.plugins.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// When the private embedded wallet package is not installed,
-// externalize it so Rollup doesn't fail to resolve dynamic imports at build time.
-// At runtime, the dynamic import will fail and the try/catch in loadPrivyPbModule() provides
-// a clear error message: "Embedded Wallet requires @uniswap/client-privy-embedded-wallet".
-const privyPackageInstalled = fs.existsSync(
-  path.resolve(__dirname, '../../node_modules/@uniswap/client-privy-embedded-wallet'),
-)
 const ENABLE_REACT_COMPILER = process.env.ENABLE_REACT_COMPILER === 'true'
 const ReactCompilerConfig = {
   target: '18', // '17' | '18' | '19'
@@ -386,7 +378,6 @@ export default defineConfig(({ mode }) => {
         transform(code: string) {
           const regex = /import\s+([a-zA-Z0-9_$]+)\s+from\s+['"]([^'"]+\.svg)['"]/g
 
-          // eslint-disable-next-line max-params
           const transformed = code.replace(regex, (match, varName, path) => {
             // Don't touch named imports like { ReactComponent }
             if (match.includes('{')) return match
@@ -527,14 +518,7 @@ export default defineConfig(({ mode }) => {
       sourcemap: VITE_DISABLE_SOURCEMAP ? false : isProduction && !isVercelDeploy ? 'hidden' : true,
       minify: isProduction && !isVercelDeploy ? 'esbuild' : undefined,
       rollupOptions: {
-        external: [
-          /\.stories\.[tj]sx?$/,
-          /\.mdx$/,
-          /expo-clipboard\/build\/ClipboardPasteButton\.js/,
-          // When the private package is not installed, externalize it so Rollup doesn't error.
-          // Dynamic imports of this module will fail at runtime (caught by loadPrivyPbModule's try/catch).
-          ...(!privyPackageInstalled ? [/^@uniswap\/client-privy-embedded-wallet/] : []),
-        ],
+        external: [/\.stories\.[tj]sx?$/, /\.mdx$/, /expo-clipboard\/build\/ClipboardPasteButton\.js/],
         output: {
           // Ensure consistent file naming for better caching
           entryFileNames: 'assets/[name]-[hash].js',

@@ -47,7 +47,7 @@ export function TokenBalanceListContextProvider({
   isExternalProfile: boolean
   onPressToken?: (currencyId: CurrencyId) => void
 }>): JSX.Element {
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const {
     data: sortedData,
@@ -59,7 +59,7 @@ export function TokenBalanceListContextProvider({
     evmAddress: evmOwner,
     svmAddress: svmOwner,
     pollInterval: PollingInterval.KindaFast,
-    requestMultichainFromBackend: isMultichainTokenUx,
+    requestMultichainFromBackend: multichainTokenUxEnabled,
   })
 
   const hiddenTokensCount = sortedData?.hiddenBalances.length ?? 0

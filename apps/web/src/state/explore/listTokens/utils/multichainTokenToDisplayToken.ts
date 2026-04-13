@@ -1,5 +1,6 @@
 import type { MultichainToken } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { Amount, Image, TokenProject } from '@uniswap/client-explore/dist/uniswap/explore/v1/service_pb'
+import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { getRestTokenSafetyInfo } from 'uniswap/src/features/dataApi/utils/getCurrencySafetyInfo'
 import { TimePeriod } from '~/appGraphql/data/util'
@@ -36,9 +37,23 @@ function getVolumeForTimePeriod(stats: StatsWithVolume | undefined, timePeriod: 
   }
 }
 
+function pickPrimaryChainToken(
+  chainTokens: MultichainToken['chainTokens'],
+  exploreChainId: UniverseChainId | undefined,
+): (typeof chainTokens)[number] | undefined {
+  if (chainTokens.length === 0) {
+    return undefined
+  }
+  if (exploreChainId === undefined) {
+    return chainTokens[0]
+  }
+  return chainTokens.find((ct) => ct.chainId === exploreChainId) ?? chainTokens[0]
+}
+
 /**
  * Converts a MultichainToken to a TokenStat-like object for display in tables/carousels.
- * Uses the first chainToken as the primary chain for links and price lookup.
+ * Uses the first chainToken as the primary chain for links and price lookup, or the deployment
+ * matching `exploreChainId` when set (e.g. explore page network filter) so TDP opens on that network.
  * Returns undefined when chainTokens is empty.
  *
  * When filterTimePeriod is provided, the volume shown matches the selected period (backend returns multiple volume fields).
@@ -46,13 +61,19 @@ function getVolumeForTimePeriod(stats: StatsWithVolume | undefined, timePeriod: 
  *
  * Safety level: data-api enum is mapped to GraphQL SafetyLevel via getRestTokenSafetyInfo (revisit before GA if enum contract changes).
  */
-export function multichainTokenToDisplayToken(
-  mcToken: MultichainToken,
-  filterTimePeriod: TimePeriod = TimePeriod.DAY,
-): TokenStat | undefined {
-  const primary = mcToken.chainTokens[0]
+export function multichainTokenToDisplayToken({
+  mcToken,
+  filterTimePeriod = TimePeriod.DAY,
+  exploreChainId,
+}: {
+  mcToken: MultichainToken
+  filterTimePeriod?: TimePeriod
+  exploreChainId?: UniverseChainId
+}): TokenStat | undefined {
+  const primary = pickPrimaryChainToken(mcToken.chainTokens, exploreChainId)
   // Guard empty chainTokens, should never happen but protobuf default can be empty array
 
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
   if (!primary) {
     return undefined
   }

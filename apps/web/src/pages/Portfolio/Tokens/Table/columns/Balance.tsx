@@ -15,7 +15,7 @@ export const Balance = memo(function Balance({
   balance: Pick<TokenData, 'quantity' | 'symbol'>
   color?: TextProps['color']
 }) {
-  const isMultichainUX = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { formatNumberOrString } = useLocalizationContext()
 
   const formattedBalance = useMemo(() => {
@@ -30,7 +30,7 @@ export const Balance = memo(function Balance({
 
   return (
     <EllipsisText textAlign="right" variant="body3" color={textColor}>
-      {isMultichainUX ? (
+      {multichainTokenUxEnabled ? (
         <Text variant="body3" color={textColor}>
           {formattedBalance}
         </Text>

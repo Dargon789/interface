@@ -35,7 +35,8 @@ export function RelativeChange(props: RelativeChangeProps): JSX.Element {
   const { formatNumberOrString, formatPercent } = useLocalizationContext()
   const currency = useAppFiatCurrencyInfo()
 
-  const isPositiveChange = change !== undefined ? change >= 0 : undefined
+  const directionValue = change ?? absoluteChange
+  const isPositiveChange = directionValue !== undefined ? directionValue >= 0 : undefined
   const arrowColor = isPositiveChange ? positiveChangeColor : negativeChangeColor
 
   const formattedChange = formatPercent(change !== undefined ? Math.abs(change) : change)
@@ -55,7 +56,9 @@ export function RelativeChange(props: RelativeChangeProps): JSX.Element {
       justifyContent={alignRight ? 'flex-end' : 'flex-start'}
       testID="relative-change"
     >
-      {change !== undefined && <Caret color={arrowColor} direction={isPositiveChange ? 'n' : 's'} size={arrowSize} />}
+      {directionValue !== undefined && (
+        <Caret color={arrowColor} direction={isPositiveChange ? 'n' : 's'} size={arrowSize} />
+      )}
       <Flex>
         <Text
           color={semanticColor ? (isPositiveChange ? '$statusSuccess' : '$statusCritical') : color}
@@ -64,7 +67,11 @@ export function RelativeChange(props: RelativeChangeProps): JSX.Element {
           testID={TestID.PortfolioRelativeChange}
           variant={variant}
         >
-          {absoluteChange ? `${formattedAbsChange} (${formattedChange})` : formattedChange}
+          {absoluteChange
+            ? change !== undefined
+              ? `${formattedAbsChange} (${formattedChange})`
+              : formattedAbsChange
+            : formattedChange}
         </Text>
       </Flex>
     </Flex>

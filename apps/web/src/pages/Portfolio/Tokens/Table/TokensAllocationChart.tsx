@@ -27,14 +27,12 @@ function useExtractedTokenColors(tokenData: TokenData[]): string[] {
   )
 
   // Snapshot with value-based deps so reference is stable when colors/loading unchanged
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally depend on primitive key so snapshot is stable for downstream memo
   /* oxlint-disable react/exhaustive-deps -- intentional value-based deps for stable snapshots */
   const resultsSnapshot = useMemo(
     () => results.map((r) => ({ tokenColor: r.tokenColor, tokenColorLoading: r.tokenColorLoading })),
     [gray, results.map((r) => `${r.tokenColor ?? ''}-${r.tokenColorLoading}`).join('|')],
   )
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: value-based deps (length + snapshot) so returned array is stable and portfolioBreakdown memo can cache
   return useMemo(
     () =>
       tokenData.map((_, i) => {

@@ -63,5 +63,6 @@ export default async function resolveENSContentHash(ensName: string, provider: P
   const ensRegistrarContract = new Contract(REGISTRAR_ADDRESS, REGISTRAR_ABI, provider)
   const hash = safeNamehash(ensName)
   const resolverAddress = await ensRegistrarContract.resolver(hash)
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   return resolverContract(resolverAddress, provider).contenthash(hash)
 }

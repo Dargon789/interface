@@ -38,6 +38,7 @@ export function BackupRecoveryPhraseScreen(): JSX.Element {
   )
 }
 
+// oxlint-disable-next-line typescript/consistent-return -- biome-parity: oxlint is stricter here
 function BackupRecoveryPhraseScreenSteps(): JSX.Element {
   const { t } = useTranslation()
   const dispatch = useDispatch()

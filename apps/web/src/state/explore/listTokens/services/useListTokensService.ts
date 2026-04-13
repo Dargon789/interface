@@ -31,7 +31,7 @@ export function useListTokensService(
   const effectiveOptions = getEffectiveListTokensOptions(options)
   const { chains: enabledChainIds } = useEnabledChains()
   const backendSorting = useExploreBackendSortingEnabled()
-  const multichainUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const chainIds = useMemo(() => (chainId !== undefined ? [chainId] : enabledChainIds), [chainId, enabledChainIds])
 
@@ -52,8 +52,8 @@ export function useListTokensService(
     ],
   )
   const listTokensQueryKey = useMemo(
-    () => ['topTokens', chainIds, ...optionsKeySegment, backendSorting, multichainUx] as const,
-    [chainIds, optionsKeySegment, backendSorting, multichainUx],
+    () => ['topTokens', chainIds, ...optionsKeySegment, backendSorting, multichainTokenUxEnabled] as const,
+    [chainIds, optionsKeySegment, backendSorting, multichainTokenUxEnabled],
   )
   const legacyQueryKey = useMemo(
     () => ['topTokens', 'legacy', chainIds, ...optionsKeySegment] as const,
@@ -70,7 +70,7 @@ export function useListTokensService(
     if (!backendSorting) {
       return 'legacy' as const
     }
-    return multichainUx ? ('backend_sorted_multichain' as const) : ('backend_sorted_legacy' as const)
+    return multichainTokenUxEnabled ? ('backend_sorted_multichain' as const) : ('backend_sorted_legacy' as const)
   })
 
   const listTokens = useEvent((params: ListTokensParams) => dataApiServiceClient.listTokens(params))
@@ -128,9 +128,9 @@ export function useListTokensService(
       : (legacyData?.multichainTokens ?? [])
     return processMultichainTokensForDisplay(flat, {
       ...effectiveOptions,
-      chainId: multichainUx && chainId !== undefined ? chainId : undefined,
+      chainId: multichainTokenUxEnabled && chainId !== undefined ? chainId : undefined,
     })
-  }, [backendSorting, chainId, data?.pages, effectiveOptions, legacyData?.multichainTokens, multichainUx])
+  }, [backendSorting, chainId, data?.pages, effectiveOptions, legacyData?.multichainTokens, multichainTokenUxEnabled])
 
   const loadMore = useInfiniteLoadMore({
     fetchNextPage,

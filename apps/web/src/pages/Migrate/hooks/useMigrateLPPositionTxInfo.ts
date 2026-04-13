@@ -192,6 +192,7 @@ export function useMigrateLPPositionTxInfo({
 
     sendAnalyticsEvent(InterfaceEventName.MigrateLiquidityFailed, {
       message,
+      // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
       ...migratePositionRequestArgs,
     })
   }

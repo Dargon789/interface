@@ -28,6 +28,7 @@ import { SwitchNetworkAction } from '~/components/Popups/types'
 import { PAGE_WRAPPER_MAX_WIDTH } from '~/components/swap/styled'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 import { useActiveAddresses } from '~/features/accounts/store/hooks'
+import { getChainUrlParam } from '~/features/params/chainParams'
 import { useAccount } from '~/hooks/useAccount'
 import { BuyFormButton } from '~/pages/Swap/Buy/BuyFormButton'
 import { BuyFormContextProvider, useBuyFormContext } from '~/pages/Swap/Buy/BuyFormContext'
@@ -46,7 +47,6 @@ import {
   NumericalInputWrapper,
   StyledNumericalInput,
 } from '~/pages/Swap/common/shared'
-import { getChainUrlParam } from '~/utils/chainParams'
 import { showSwitchNetworkNotification } from '~/utils/showSwitchNetworkNotification'
 
 const InputWrapper = styled(Flex, {

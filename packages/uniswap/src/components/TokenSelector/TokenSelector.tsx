@@ -7,6 +7,7 @@ import { Flex, ModalCloseIcon, Text, useMedia, useScrollbarStyles, useSporeColor
 import { InfoCircleFilled } from 'ui/src/components/icons/InfoCircleFilled'
 import { spacing, zIndexes } from 'ui/src/theme'
 import PasteButton from 'uniswap/src/components/buttons/PasteButton'
+import { SelectorBaseListSkeleton } from 'uniswap/src/components/lists/SelectorBaseList'
 import { useBottomSheetContext } from 'uniswap/src/components/modals/BottomSheetContext'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { NetworkFilter } from 'uniswap/src/components/network/NetworkFilter'
@@ -16,7 +17,7 @@ import { useNetworkSelectorOptions } from 'uniswap/src/components/network/Networ
 import { CrosschainSwapsPromoBanner } from 'uniswap/src/components/TokenSelector/CrosschainSwapsPromoBanner'
 import { useClipboardCheck } from 'uniswap/src/components/TokenSelector/hooks/useClipboardCheck'
 import { useTokenSelectionHandler } from 'uniswap/src/components/TokenSelector/hooks/useTokenSelectionHandler'
-import { useTokenSelectorList } from 'uniswap/src/components/TokenSelector/hooks/useTokenSelectorList'
+import { TokenSelectorListSwitch } from 'uniswap/src/components/TokenSelector/TokenSelectorListSwitch'
 import { TokenSelectorFlow, TokenSelectorVariation } from 'uniswap/src/components/TokenSelector/types'
 import { UnsupportedChainedActionsBanner } from 'uniswap/src/components/TokenSelector/UnsupportedChainedActionsBanner'
 import { flowToModalName } from 'uniswap/src/components/TokenSelector/utils'
@@ -172,23 +173,6 @@ export function TokenSelectorContent({
     [flow, chainFilter],
   )
 
-  const tokenSelector = useTokenSelectorList({
-    searchInFocus,
-    searchFilter,
-    isTestnetModeEnabled,
-    variation,
-    addresses,
-    chainFilter,
-    input,
-    output,
-    renderedInModal,
-    onSelectCurrency: onSelectCurrencyCallback,
-    onSendEmptyActionPress,
-    debouncedParsedSearchFilter,
-    debouncedSearchFilter,
-    parsedChainFilter,
-  })
-
   return (
     <Trace
       logImpression={isWebApp} // TODO(WEB-5161): Deduplicate shared vs interface-only trace event
@@ -247,13 +231,32 @@ export function TokenSelectorContent({
             </Flex>
           )}
 
-          {isSurfaceReady && (
-            <Flex grow>
-              {shouldShowCrosschainPromoBanner && <CrosschainSwapsPromoBanner />}
-              <UnsupportedChainedActionsBanner oppositeToken={oppositeToken} chainFilter={chainFilter ?? undefined} />
-              {tokenSelector}
-            </Flex>
-          )}
+          <Flex grow>
+            {isSurfaceReady ? (
+              <>
+                {shouldShowCrosschainPromoBanner && <CrosschainSwapsPromoBanner />}
+                <UnsupportedChainedActionsBanner oppositeToken={oppositeToken} chainFilter={chainFilter ?? undefined} />
+                <TokenSelectorListSwitch
+                  searchInFocus={searchInFocus}
+                  searchFilter={searchFilter}
+                  isTestnetModeEnabled={isTestnetModeEnabled}
+                  variation={variation}
+                  addresses={addresses}
+                  chainFilter={chainFilter}
+                  input={input}
+                  output={output}
+                  renderedInModal={renderedInModal}
+                  debouncedParsedSearchFilter={debouncedParsedSearchFilter}
+                  debouncedSearchFilter={debouncedSearchFilter}
+                  parsedChainFilter={parsedChainFilter}
+                  onSelectCurrency={onSelectCurrencyCallback}
+                  onSendEmptyActionPress={onSendEmptyActionPress}
+                />
+              </>
+            ) : (
+              <SelectorBaseListSkeleton />
+            )}
+          </Flex>
         </Flex>
       </Trace>
     </Trace>

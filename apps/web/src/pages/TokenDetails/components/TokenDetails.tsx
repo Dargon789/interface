@@ -11,7 +11,7 @@ import { DetailsHeaderContainer } from '~/components/Explore/stickyHeader/Detail
 import { MobileBottomBar, TDPActionTabs } from '~/components/NavBar/MobileBottomBar'
 import { ScrollDirection, useScroll } from '~/hooks/useScroll'
 import { ActivitySection } from '~/pages/TokenDetails/components/activity/ActivitySection'
-import { BalanceSummary, PageChainBalanceSummary } from '~/pages/TokenDetails/components/balances/BalanceSummary'
+import { BalanceSummary } from '~/pages/TokenDetails/components/balances/BalanceSummary'
 import { ChartSection } from '~/pages/TokenDetails/components/chart/ChartSection'
 import { TDPBreadcrumb } from '~/pages/TokenDetails/components/header/TDPBreadcrumb'
 import { TokenDetailsHeader } from '~/pages/TokenDetails/components/header/TokenDetailsHeader'
@@ -74,7 +74,7 @@ export function TokenDetailsContent({ isCompact }: { isCompact: boolean }) {
 
           {!showBalanceInfo && (
             <Flex gap="$gap24">
-              {!!pageChainBalance && <PageChainBalanceSummary pageChainBalance={pageChainBalance} />}
+              {!!pageChainBalance && <BalanceSummary />}
               <BridgedAssetSection
                 tokenQueryData={tokenQueryData}
                 currencyInfo={currencyInfo}

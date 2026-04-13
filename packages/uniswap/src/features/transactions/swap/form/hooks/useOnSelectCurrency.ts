@@ -126,7 +126,7 @@ export function useOnSelectCurrency({
       }
 
       if (!isBridgePair) {
-        const newFilteredChainIds = { ...(filteredChainIds ?? {}) }
+        const newFilteredChainIds = { ...filteredChainIds }
 
         newFilteredChainIds[CurrencyField.INPUT] = currency.chainId
         newFilteredChainIds[CurrencyField.OUTPUT] = currency.chainId

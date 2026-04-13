@@ -403,7 +403,7 @@ export class ToucanBidDistributionChartController {
 
     series.applyOptions({
       ...(baseOptions as ToucanChartSeriesOptions),
-      ...(next.seriesOptionsPatch ?? {}),
+      ...next.seriesOptionsPatch,
     })
 
     // Data + min/max time tracking

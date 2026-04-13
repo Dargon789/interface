@@ -12,18 +12,17 @@
       }
     },
     "typecheck": {},
+    "typecheck:tsc": {},
     "typecheck:tsgo": {},
-    "lint:eslint": {},
-    "lint:eslint:fix": {},
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
     "lint": {},
     "lint:fix": {},
     "check": {},
-    "check:fix": {},
-    "check:deps:usage": {},
-    "oxfmt": {},
-    "oxfmt:fix": {},
-    "oxlint": {},
-    "oxlint:fix": {},
-    "oxlint:type-aware": {}
+    "check:fast": {},
+    "check:deps:usage": {}
   }
 }

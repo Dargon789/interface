@@ -1,6 +1,6 @@
 {
   "extends": ["../../.oxlintrc.json"],
-  "ignorePatterns": [".maestro/**", "dev/**", "webpack*.js", "webpack-plugins/**"],
+  "ignorePatterns": [".maestro/**", "dev/**", "webpack*.js", "webpack-plugins/**", "jest*.js"],
   "rules": {
     "no-restricted-imports": [
       "error",

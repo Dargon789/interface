@@ -57,6 +57,7 @@ export function usePrepareSwap(ctx: { warningService: WarningService }): () => v
   const isViewOnlyWallet = getIsViewOnlyWallet(activeAccount)
 
   const caip25Info = useAccountsStore((state) => {
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     return state.getActiveConnector(Platform.EVM)?.session?.caip25Info
   })
   const walletExecutionContext = useMemo(() => getWalletExecutionContext(caip25Info), [caip25Info])

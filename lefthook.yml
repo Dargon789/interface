@@ -13,7 +13,8 @@ pre-commit:
       env:
         CI: "true"
         FORCE_COLOR: "0"
-      run: TERM=dumb bun g:pre-commit-checks
+      run: TERM=dumb bun g:check:fast
+      stage_fixed: true
 
     git-secrets:
       run: |
@@ -35,4 +36,17 @@ pre-commit:
           echo "trufflehog not installed, skipping..."
         fi
 
-post-checkout: {}
+post-checkout:
+  commands:
+    check-deps-sync:
+      run: ./scripts/check-deps-sync.sh
+
+post-merge:
+  commands:
+    check-deps-sync:
+      run: ./scripts/check-deps-sync.sh
+
+post-rewrite:
+  commands:
+    check-deps-sync:
+      run: ./scripts/check-deps-sync.sh

@@ -1,5 +1,8 @@
 {
   "extends": ["../../.oxlintrc.json"],
+  "rules": {
+    "typescript/no-floating-promises": "off"
+  },
   "ignorePatterns": [
     "playwright/**",
     "cypress/**",
@@ -10,6 +13,8 @@
     "twist-configs/**",
     "test-results/**",
     ".storybook/**",
+    "setupTests.ts",
+    "**/test-utils/**/*",
     "**/*.config.*",
     "**/*.d.ts"
   ],

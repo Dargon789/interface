@@ -61,7 +61,7 @@ function useValidatedSearchedAddress(
     // TODO(WALL-7065): Update to support Solana validation
     // Check for a valid unitag, ENS address, or literal address
     const unitagValidatedAddress = getValidAddress({
-      address: unitag?.address?.address,
+      address: unitag?.address,
       platform: Platform.EVM,
       withEVMChecksum: true,
       log: false,

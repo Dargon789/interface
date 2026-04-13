@@ -18,12 +18,10 @@ const NEW_LIST_STATE: ListState = {
 
 export const initialState: ListsState = {
   lastInitializedDefaultListOfLists: DEFAULT_INACTIVE_LIST_URLS,
-  byUrl: {
-    ...DEFAULT_INACTIVE_LIST_URLS.reduce<Mutable<ListsState['byUrl']>>((memo, listUrl) => {
-      memo[listUrl] = NEW_LIST_STATE
-      return memo
-    }, {}),
-  },
+  byUrl: DEFAULT_INACTIVE_LIST_URLS.reduce<Mutable<ListsState['byUrl']>>((memo, listUrl) => {
+    memo[listUrl] = NEW_LIST_STATE
+    return memo
+  }, {}),
 }
 
 export default createReducer(initialState, (builder) =>

@@ -2,6 +2,7 @@ import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex, getTokenValue, Text, VerticalDottedLineSeparator } from 'ui/src'
 import { ArrowRight, ArrowRightDashed } from 'ui/src/components/icons'
+import { getVisiblePlanSteps } from 'uniswap/src/components/activity/details/plan/getVisiblePlanSteps'
 import { PLAN_STEP_ITEM_WIDTH, PlanStepItem } from 'uniswap/src/components/activity/details/plan/PlanStepItem'
 import { ResumePlanButton } from 'uniswap/src/components/activity/details/plan/ResumePlanButton'
 import { CurrencyLogo } from 'uniswap/src/components/CurrencyLogo/CurrencyLogo'
@@ -151,10 +152,7 @@ function PlanDetailsStatus({ typeInfo, status }: Pick<PlanDetailsViewProps, 'typ
 }
 
 function PlanDetailsSteps({ typeInfo }: { typeInfo: PlanTransactionInfo }): JSX.Element {
-  const visibleSteps = useMemo(
-    () => typeInfo.stepDetails.filter((step) => step.typeInfo.type !== TransactionType.Permit2Approve),
-    [typeInfo.stepDetails],
-  )
+  const visibleSteps = useMemo(() => getVisiblePlanSteps(typeInfo.stepDetails), [typeInfo.stepDetails])
   const stepItemWidth = getTokenValue(PLAN_STEP_ITEM_WIDTH)
   const strokeWidth = 2
   const dividerMargin = stepItemWidth / 2 - strokeWidth / 2

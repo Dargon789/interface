@@ -54,8 +54,11 @@ export class ProviderDirectMethodHandler extends BaseMethodHandler<WindowEthereu
       [ProviderDirectMethods.eth_getTransactionByHash]: (provider, params) => provider.getTransaction(params[0]),
       [ProviderDirectMethods.eth_getTransactionReceipt]: (provider, params) =>
         provider.getTransactionReceipt(params[0]),
+      // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
       [ProviderDirectMethods.net_version]: async (provider, params) => provider.send('net_version', params),
+      // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
       [ProviderDirectMethods.web3_clientVersion]: async (provider, params) =>
+        // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
         provider.send('web3_clientVersion', params),
     }
   }
@@ -72,6 +75,7 @@ export class ProviderDirectMethodHandler extends BaseMethodHandler<WindowEthereu
       this.handleResponse({ response, source, requestId: request.requestId })
     } else {
       // We shouldn't end up here because injected.ts checks that the method is supported before calling this function
+      // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
       logContentScriptError({
         errorMessage: 'Unexpected method requested',
         fileName: 'ProviderDirectMethodHandler.ts',

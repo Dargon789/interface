@@ -222,7 +222,9 @@ export function useClaimCallback(address: string | null | undefined): {
 
     const args = [claimData.index, address, claimData.amount, claimData.proof]
 
+    // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
     return distributorContract.estimateGas.claim(...args, {}).then((estimatedGasLimit) => {
+      // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
       return distributorContract
         .claim(...args, { value: null, gasLimit: calculateGasMargin(estimatedGasLimit) })
         .then((response: TransactionResponse) => {

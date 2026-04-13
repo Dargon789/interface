@@ -203,6 +203,7 @@ export function AccountCardItem({
     <ContextMenu
       actions={menuActions}
       onPress={async (e): Promise<void> => {
+        // oxlint-disable-next-line typescript/await-thenable, typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
         await menuActions[e.nativeEvent.index]?.onPress?.()
       }}
     >

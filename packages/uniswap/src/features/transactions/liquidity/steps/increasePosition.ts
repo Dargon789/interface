@@ -63,6 +63,7 @@ export function createCreatePositionAsyncStep(
       try {
         if (createPositionRequestArgs instanceof CreatePositionRequest) {
           const updatedRequest = new CreatePositionRequest({
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
             ...createPositionRequestArgs,
             signature,
             simulateTransaction: true,
@@ -78,6 +79,7 @@ export function createCreatePositionAsyncStep(
           updatedCreateLpPosition = {
             case: 'v4CreateLpPosition' as const,
             value: new V4CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
               ...createLpPosition.value,
               signature,
               simulateTransaction: true,
@@ -87,6 +89,7 @@ export function createCreatePositionAsyncStep(
           updatedCreateLpPosition = {
             case: 'v3CreateLpPosition' as const,
             value: new V3CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
               ...createLpPosition.value,
               signature,
               simulateTransaction: true,
@@ -97,6 +100,7 @@ export function createCreatePositionAsyncStep(
           updatedCreateLpPosition = {
             case: 'v2CreateLpPosition' as const,
             value: new V2CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
               ...createLpPosition.value,
               simulateTransaction: true,
             }),
@@ -129,6 +133,7 @@ export function createCreatePositionAsyncStep(
 
           sendAnalyticsEvent(InterfaceEventName.CreatePositionFailed, {
             message,
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
             ...createPositionRequestArgs,
           })
         }
@@ -153,6 +158,7 @@ export function createIncreasePositionAsyncStep(
       try {
         if (increasePositionRequestArgs instanceof IncreasePositionRequest) {
           const updatedRequest = new IncreasePositionRequest({
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
             ...increasePositionRequestArgs,
             signature,
             simulateTransaction: true,
@@ -166,11 +172,13 @@ export function createIncreasePositionAsyncStep(
           increaseLpPosition.case === 'v4IncreaseLpPosition'
             ? {
                 case: 'v4IncreaseLpPosition' as const,
+                // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
                 value: { ...increaseLpPosition.value, signature, simulateTransaction: true },
               }
             : increaseLpPosition.case === 'v3IncreaseLpPosition'
               ? {
                   case: 'v3IncreaseLpPosition' as const,
+                  // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
                   value: { ...increaseLpPosition.value, signature, simulateTransaction: true },
                 }
               : increaseLpPosition
@@ -197,6 +205,7 @@ export function createIncreasePositionAsyncStep(
           })
           sendAnalyticsEvent(InterfaceEventName.IncreaseLiquidityFailed, {
             message,
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
             ...increasePositionRequestArgs,
           })
         }

@@ -63,6 +63,7 @@ import { parseRestPosition } from '~/components/Liquidity/utils/parseFromRest'
 import { LoadingFullscreen, LoadingRows } from '~/components/Loader/styled'
 import { LP_INCENTIVES_REWARD_TOKEN } from '~/components/LpIncentives/constants'
 import { MouseoverTooltip } from '~/components/Tooltip'
+import { useChainIdFromUrlParam } from '~/features/params/chainParams'
 import { useCurrencyInfo } from '~/hooks/Tokens'
 import { useAccount } from '~/hooks/useAccount'
 import { useSrcColor } from '~/hooks/useColor'
@@ -73,7 +74,6 @@ import NotFound from '~/pages/NotFound'
 import { MultichainContextProvider } from '~/state/multichain/MultichainContext'
 import { usePendingLPTransactionsChangeListener } from '~/state/transactions/hooks'
 import { ClickableTamaguiStyle } from '~/theme/components/styles'
-import { useChainIdFromUrlParam } from '~/utils/chainParams'
 
 const BodyWrapper = styled(Main, {
   backgroundColor: '$surface1',

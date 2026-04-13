@@ -3,18 +3,15 @@
   "version": "0.0.0",
   "scripts": {
     "typecheck": "nx typecheck sessions",
-    "typecheck:tsgo": "nx typecheck:tsgo sessions",
-    "lint": "nx lint sessions",
-    "lint:fix": "nx lint:fix sessions",
-    "lint:eslint": "nx lint:eslint sessions",
-    "lint:eslint:fix": "nx lint:eslint:fix sessions",
+    "check": "nx check sessions",
+    "check:fast": "nx check:fast sessions",
     "check:deps:usage": "nx check:deps:usage sessions",
     "test": "nx test sessions",
     "test:integration:backend": "nx test:integration:backend sessions",
-    "oxlint": "nx oxlint sessions",
-    "oxlint:fix": "nx oxlint:fix sessions",
-    "oxfmt": "nx oxfmt sessions",
-    "oxfmt:fix": "nx oxfmt:fix sessions"
+    "format": "nx format sessions",
+    "format:check": "nx format:check sessions",
+    "lint": "nx lint sessions",
+    "lint:fix": "nx lint:fix sessions"
   },
   "nx": {
     "includedScripts": []
@@ -36,12 +33,9 @@
     "@types/node": "22.13.1",
     "@types/react": "19.0.10",
     "@typescript/native-preview": "7.0.0-dev.20260311.1",
-    "@uniswap/eslint-config": "workspace:^",
     "@vitest/coverage-v8": "3.2.1",
     "depcheck": "1.4.7",
-    "eslint": "10.0.2",
     "happy-dom": "20.0.10",
-    "ts-morph": "23.0.0",
     "typescript": "5.8.3",
     "vitest": "3.2.1"
   },

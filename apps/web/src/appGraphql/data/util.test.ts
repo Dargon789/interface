@@ -1,8 +1,10 @@
 import { GraphQLApi } from '@universe/api'
+import { getNativeAddress } from 'uniswap/src/constants/addresses'
 import { DAI, WRAPPED_NATIVE_CURRENCY } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { gqlToCurrency, unwrapToken } from '~/appGraphql/data/util'
+import { gqlToCurrency, getTokenDetailsURL, unwrapToken } from '~/appGraphql/data/util'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { CHAIN_SEARCH_PARAM } from '~/features/params/chainQueryParam'
 
 const PATHUSD_ADDRESS = '0x20c0000000000000000000000000000000000000'
 
@@ -88,6 +90,65 @@ describe('gqlToCurrency', () => {
       })
       expect(result).toBeUndefined()
     })
+  })
+})
+
+describe('getTokenDetailsURL', () => {
+  it('defaults to ethereum and NATIVE when no chain or address is provided', () => {
+    expect(getTokenDetailsURL({})).toBe(`/explore/tokens/ethereum/${NATIVE_CHAIN_ID}`)
+  })
+
+  it('uses chainUrlParam for the path when provided', () => {
+    expect(
+      getTokenDetailsURL({
+        chainUrlParam: 'arbitrum',
+        chain: GraphQLApi.Chain.Ethereum,
+        address: '0x0000000000000000000000000000000000000001',
+      }),
+    ).toBe('/explore/tokens/arbitrum/0x0000000000000000000000000000000000000001')
+  })
+
+  it('uses chain enum lowercased for the path when chainUrlParam is omitted', () => {
+    expect(
+      getTokenDetailsURL({
+        chain: GraphQLApi.Chain.Ethereum,
+        address: DAI.address,
+      }),
+    ).toBe(`/explore/tokens/ethereum/${DAI.address}`)
+  })
+
+  it('maps native token address to NATIVE path segment when chain resolves to a universe chain id', () => {
+    const nativeEthAddress = getNativeAddress(UniverseChainId.Mainnet)
+    expect(
+      getTokenDetailsURL({
+        chain: GraphQLApi.Chain.Ethereum,
+        address: nativeEthAddress,
+      }),
+    ).toBe(`/explore/tokens/ethereum/${NATIVE_CHAIN_ID}`)
+  })
+
+  it('treats null and undefined address as NATIVE', () => {
+    expect(getTokenDetailsURL({ chain: GraphQLApi.Chain.Ethereum, address: null })).toBe(
+      `/explore/tokens/ethereum/${NATIVE_CHAIN_ID}`,
+    )
+    expect(getTokenDetailsURL({ chain: GraphQLApi.Chain.Ethereum, address: undefined })).toBe(
+      `/explore/tokens/ethereum/${NATIVE_CHAIN_ID}`,
+    )
+  })
+
+  it('appends swap query params and chain search param when provided', () => {
+    const url = getTokenDetailsURL({
+      chain: GraphQLApi.Chain.Ethereum,
+      address: DAI.address,
+      inputAddress: '0x1111111111111111111111111111111111111111',
+      outputAddress: '0x2222222222222222222222222222222222222222',
+      chainQueryParam: 'optimism',
+    })
+    const parsed = new URL(url, 'https://example.com')
+    expect(parsed.pathname).toBe(`/explore/tokens/ethereum/${DAI.address}`)
+    expect(parsed.searchParams.get('inputCurrency')).toBe('0x1111111111111111111111111111111111111111')
+    expect(parsed.searchParams.get('outputCurrency')).toBe('0x2222222222222222222222222222222222222222')
+    expect(parsed.searchParams.get(CHAIN_SEARCH_PARAM)).toBe('optimism')
   })
 })
 

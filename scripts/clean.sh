@@ -93,11 +93,11 @@ fi
 if [ "$NODE_MODULES" = true ]; then
   echo "Removing node_modules..."
   # Recursively remove all node_modules directories
-  bun run g:rm:nodemodules
+  bun run clean:nodemodules
 else
   echo "Removing local packages..."
   # Remove only the symlinks for the local packages
-  bun run g:rm:local-packages
+  bun run clean:local-packages
 fi
 
 # Install dependencies (with NX daemon disabled to avoid conflicts)

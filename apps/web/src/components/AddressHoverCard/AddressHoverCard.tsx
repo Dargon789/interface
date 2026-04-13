@@ -115,7 +115,7 @@ export function AddressHoverCard({ address, platform, children }: AddressHoverCa
       </Popover.Trigger>
       <Popover.Content
         animation="quick"
-        backgroundColor="$surface4"
+        backgroundColor="$surface1"
         borderColor="$surface3"
         borderRadius="$rounded20"
         borderWidth="$spacing1"
@@ -123,10 +123,7 @@ export function AddressHoverCard({ address, platform, children }: AddressHoverCa
         zIndex={zIndexes.popover}
         enterStyle={{ opacity: 0, y: -4 }}
         exitStyle={{ opacity: 0, y: -4 }}
-        $platform-web={{
-          ...shadowProps['$platform-web'],
-          backdropFilter: 'blur(12px)',
-        }}
+        {...shadowProps}
         {...stopPressEventPropagation}
       >
         <Flex gap="$spacing16" minWidth={320}>

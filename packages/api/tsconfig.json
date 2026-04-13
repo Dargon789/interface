@@ -14,11 +14,7 @@
     "emitDeclarationOnly": true,
     "noEmit": false,
     "paths": {
-      "@universe/api/*": ["./src/*"],
-      "@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb": [
-        "../../node_modules/@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb",
-        "./stubs/privy-service-pb"
-      ]
+      "@universe/api/*": ["./src/*"]
     },
     "types": ["chrome", "node"]
   },

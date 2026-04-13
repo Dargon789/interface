@@ -25,6 +25,7 @@ type RequestArgs = {
 const safeJSONStringify = (param: any): any => {
   return JSON.stringify(
     param,
+    // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
     (_, value) => (typeof value === 'bigint' ? value.toString() : value), // return everything else unchanged
   )
 }

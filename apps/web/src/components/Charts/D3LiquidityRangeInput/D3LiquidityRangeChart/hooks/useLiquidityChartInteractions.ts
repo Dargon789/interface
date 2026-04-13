@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { CHART_BEHAVIOR } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/constants'
+import { CHART_BEHAVIOR } from '~/components/Charts/D3LiquidityChartShared/constants'
 import { useChartPriceState } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/selectors/priceSelectors'
 import { ChartState } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/types'
 import { boundPanY } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/utils/boundPanY'

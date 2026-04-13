@@ -5,7 +5,7 @@ import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { RelativeChange } from 'uniswap/src/components/RelativeChange/RelativeChange'
 import { useRestTokenBalanceMainParts, useRestTokenBalanceQuantityParts } from 'uniswap/src/data/rest/getPortfolio'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
-import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
+import { CurrencyInfo, PortfolioMultichainBalance } from 'uniswap/src/features/dataApi/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { useTokenBalanceListContext } from 'uniswap/src/features/portfolio/TokenBalanceListContext'
 import { CurrencyId } from 'uniswap/src/types/currency'
@@ -19,6 +19,7 @@ import { isWebPlatform } from 'utilities/src/platform'
 
 interface TokenBalanceItemProps {
   currencyInfo: CurrencyInfo
+  portfolioBalance?: PortfolioMultichainBalance
   isLoading?: boolean
   padded?: boolean
   isHidden: boolean
@@ -30,6 +31,7 @@ interface TokenBalanceItemProps {
  */
 export const TokenBalanceItem = memo(function TokenBalanceItemInner({
   currencyInfo,
+  portfolioBalance,
   isLoading,
   padded,
   isHidden,
@@ -40,7 +42,13 @@ export const TokenBalanceItem = memo(function TokenBalanceItemInner({
   // Ensure items rerender when theme is switched
   useIsDarkMode()
 
-  const shortenedSymbol = getSymbolDisplayText(currency.symbol)
+  const name = portfolioBalance?.name ?? currency.name
+  const symbol = portfolioBalance?.symbol ?? currency.symbol
+  const logoUrl = portfolioBalance?.logoUrl ?? currencyInfo.logoUrl
+  const shortenedSymbol = getSymbolDisplayText(symbol)
+  const isSpam = portfolioBalance
+    ? portfolioBalance.tokens.length > 0 && portfolioBalance.tokens.every((t) => t.currencyInfo.isSpam === true)
+    : currencyInfo.isSpam
 
   return (
     <Flex
@@ -52,18 +60,19 @@ export const TokenBalanceItem = memo(function TokenBalanceItemInner({
       hoverStyle={{ backgroundColor: '$surface2' }}
       px={padded ? '$spacing24' : '$spacing8'}
       py="$spacing8"
-      testID={`TokenBalanceItem_${currency.symbol}`}
+      testID={`TokenBalanceItem_${symbol}`}
     >
       <Flex row shrink alignItems="center" gap="$spacing12" overflow="hidden">
         <TokenLogo
           chainId={currency.chainId}
-          name={currency.name}
-          symbol={currency.symbol}
-          url={currencyInfo.logoUrl ?? undefined}
+          name={name}
+          symbol={symbol}
+          url={logoUrl ?? undefined}
+          networkCount={portfolioBalance?.tokens.length}
         />
         <Flex shrink alignItems="flex-start">
           <Text ellipsizeMode="tail" numberOfLines={1} variant={isWebPlatform ? 'body2' : 'body1'}>
-            {currency.name ?? shortenedSymbol}
+            {name ?? shortenedSymbol}
           </Text>
           <Flex row alignItems="center" gap="$spacing8" minHeight={20}>
             <TokenBalanceQuantity
@@ -71,17 +80,19 @@ export const TokenBalanceItem = memo(function TokenBalanceItemInner({
               currencyId={currencyInfo.currencyId}
               evmAddress={evmOwner}
               svmAddress={svmOwner}
+              portfolioBalance={portfolioBalance}
             />
           </Flex>
         </Flex>
       </Flex>
 
-      {currencyInfo.isSpam === true && isHidden ? undefined : (
+      {isSpam === true && isHidden ? null : (
         <TokenBalanceRightSideColumn
           isLoading={isLoading}
           currencyId={currencyInfo.currencyId}
           evmAddress={evmOwner}
           svmAddress={svmOwner}
+          portfolioBalance={portfolioBalance}
         />
       )}
     </Flex>
@@ -93,11 +104,13 @@ function TokenBalanceQuantity({
   currencyId,
   evmAddress,
   svmAddress,
+  portfolioBalance,
 }: {
   shortenedSymbol: Maybe<string>
   currencyId: CurrencyId
   evmAddress?: string
   svmAddress?: string
+  portfolioBalance?: PortfolioMultichainBalance
 }): JSX.Element {
   const { formatNumberOrString } = useLocalizationContext()
 
@@ -108,11 +121,11 @@ function TokenBalanceQuantity({
     svmAddress,
   })
 
-  const tokenBalance = restTokenBalance.data
+  const quantity = portfolioBalance?.totalAmount ?? restTokenBalance.data?.quantity
 
   return (
     <Text color="$neutral2" numberOfLines={1} variant={isWebPlatform ? 'body3' : 'body2'}>
-      {`${formatNumberOrString({ value: tokenBalance?.quantity })}`} {shortenedSymbol}
+      {formatNumberOrString({ value: quantity })} {shortenedSymbol}
     </Text>
   )
 }
@@ -122,11 +135,13 @@ function TokenBalanceRightSideColumn({
   currencyId,
   evmAddress,
   svmAddress,
+  portfolioBalance,
 }: {
   isLoading?: boolean
   currencyId: CurrencyId
   evmAddress?: string
   svmAddress?: string
+  portfolioBalance?: PortfolioMultichainBalance
 }): JSX.Element {
   const { t } = useTranslation()
   const { isTestnetModeEnabled } = useEnabledChains()
@@ -140,10 +155,12 @@ function TokenBalanceRightSideColumn({
   })
   const tokenBalance = restTokenBalance.data
 
-  const balanceUSD = tokenBalance?.denominatedValue?.value
-  const relativeChange24 = tokenBalance?.tokenProjectMarket?.relativeChange24?.value
+  const balanceUSD = portfolioBalance ? portfolioBalance.totalValueUsd : tokenBalance?.denominatedValue?.value
+  const relativeChange24 = portfolioBalance
+    ? portfolioBalance.pricePercentChange1d
+    : tokenBalance?.tokenProjectMarket?.relativeChange24?.value
 
-  const balance = convertFiatAmountFormatted(balanceUSD, NumberType.FiatTokenQuantity)
+  const balanceFormatted = convertFiatAmountFormatted(balanceUSD, NumberType.FiatTokenQuantity)
 
   const isTestnetModeWithNoBalance = isTestnetModeEnabled && !balanceUSD
 
@@ -159,11 +176,11 @@ function TokenBalanceRightSideColumn({
         ) : (
           <Flex alignItems="flex-end" pl="$spacing8">
             <Text color="$neutral1" numberOfLines={1} variant={isWebPlatform ? 'body2' : 'body1'}>
-              {balance}
+              {balanceFormatted}
             </Text>
             <RelativeChange
               alignRight
-              change={relativeChange24}
+              change={relativeChange24 ?? undefined}
               negativeChangeColor="$statusCritical"
               positiveChangeColor="$statusSuccess"
               variant={isWebPlatform ? 'body3' : 'body2'}

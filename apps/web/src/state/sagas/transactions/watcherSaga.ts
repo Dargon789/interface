@@ -25,7 +25,7 @@ function* watchTransactions(params: WatchTransactionsCallbackParams) {
   const info = pendingDiff[0].typeInfo
   const transaction = createUniverseTransaction({ info, chainId, address })
 
-  yield call(refetchQueries, { transaction, apolloClient, activeAddress: address })
+  yield* call(refetchQueries, { transaction, apolloClient, activeAddress: address })
 }
 
 export const watchTransactionsSaga = createSaga(watchTransactions, 'watchTransactions')

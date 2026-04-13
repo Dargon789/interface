@@ -131,10 +131,10 @@ exports[`TDP Skeleton > should render correctly 1`] = `
       </div>
     </div>
     <div
-      class="_pr-_lg_t-space-pad1331704900 _pl-_lg_t-space-pad1331704900 _position-_platformweb_sticky _top-_platformweb_72px _display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _width-10037 _pr-t-space-spa1360333989 _pl-t-space-spa1360333989 _backgroundColor-surface1 _zIndex-t-zIndex-he2989072 _alignSelf-center"
+      class="_pr-_lg_t-space-pad1331704900 _pl-_lg_t-space-pad1331704900 _position-_platformweb_sticky _top-_platformweb_72px _display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _width-10037 _pr-t-space-spa1360333989 _pl-t-space-spa1360333989 _backgroundColor-surface1 _transition-opacity0--2se948550981 _zIndex-t-zIndex-he2989072 _alignSelf-center"
     >
       <div
-        class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _width-10037 _borderBottomWidth-1px _borderBottomColor-surface3 _pt-t-space-spa1360334051 _pb-t-space-spa1360334051 _transition-all0--2sease1024 _borderBottomStyle-solid"
+        class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _width-10037 _borderBottomWidth-1px _borderBottomColor-surface3 _pt-t-space-spa1360334051 _pb-t-space-spa1360334051 _transition-opacity0--2se948550981 _borderBottomStyle-solid"
       >
         <div
           style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: row; justify-content: space-between; align-items: center; width: 100%; z-index: var(--t-zIndex-default); transition: all 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);"
@@ -917,7 +917,7 @@ exports[`TDP Skeleton > should render correctly 1`] = `
         </div>
       </div>
       <div
-        class="_width-_xl_10037 _maxWidth-_xl_780px _display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _gap-40px _width-360px"
+        class="_width-_xl_10037 _maxWidth-_xl_780px _pt-_xl_40px _pb-_xl_40px _display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _gap-40px _width-360px"
       >
         <div
           class="c2"

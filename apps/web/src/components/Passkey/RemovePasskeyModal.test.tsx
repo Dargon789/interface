@@ -3,7 +3,6 @@ import {
   authenticateWithPasskey,
   deleteAuthenticator,
   disconnectWallet,
-  getPrivyEnums,
 } from 'uniswap/src/features/passkey/embeddedWallet'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
@@ -19,7 +18,6 @@ vi.mock('uniswap/src/features/passkey/embeddedWallet', () => ({
   authenticateWithPasskey: vi.fn(),
   deleteAuthenticator: vi.fn(),
   disconnectWallet: vi.fn(),
-  getPrivyEnums: vi.fn(),
 }))
 
 vi.mock('~/hooks/usePasskeyAuthWithHelpModal', () => ({

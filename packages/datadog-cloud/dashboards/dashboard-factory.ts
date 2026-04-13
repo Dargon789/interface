@@ -1,11 +1,11 @@
 import * as datadog from '@pulumi/datadog'
+import { settings } from './config'
 import {
   DashboardDefinition,
   DashboardWidgetDefinition,
   GroupWidgetDefinition,
   PresetDefinition,
 } from './dashboard-types'
-import { settings } from './config'
 
 /**
  * Default service definitions for universe presets.
@@ -109,7 +109,7 @@ export function createDashboard(def: DashboardDefinition): datadog.Dashboard {
     description: def.description,
     layoutType: def.layoutType,
     reflowType: def.reflowType,
-    tags: tags,
+    tags,
 
     templateVariables: def.templateVariables.map((tv) => ({
       name: tv.name,

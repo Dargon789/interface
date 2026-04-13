@@ -66,6 +66,7 @@ export function useConditionalPreSignDelay(options: {
 
     // Set up execution with conditional delay
     timeoutRef.current = setTimeout(() => {
+      // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
       executeCallback()
     }, delayMs)
 

@@ -28,7 +28,14 @@ export function useGetWalletTokenProfitLossQuery(
   const address = transformedInput ? transformedInput.walletAccount.platformAddresses[0]?.address : undefined
 
   return useQuery({
-    queryKey: [ReactQueryCacheKey.GetWalletTokenProfitLoss, address, input?.tokenAddress, input?.chainId] as const,
+    queryKey: [
+      ReactQueryCacheKey.GetWalletTokenProfitLoss,
+      address,
+      input?.tokenAddress,
+      input?.chainId,
+      input?.multichain,
+      input?.modifier,
+    ] as const,
     queryFn: () =>
       transformedInput ? profitLossClient.getWalletTokenProfitLoss(transformedInput) : Promise.resolve(undefined),
     enabled: !!input?.tokenAddress && !!address && enabled !== false,

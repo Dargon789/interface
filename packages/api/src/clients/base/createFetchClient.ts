@@ -37,7 +37,9 @@ export function createFetchClient({
         const additionalHeaders = getHeaders?.() ?? {}
 
         const headers = new Headers({
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
           ...additionalHeaders,
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
           ...options?.headers,
         })
         if (sessionState?.sessionId) {
@@ -91,7 +93,8 @@ export function createFetchClient({
 
         _options.headers = {
           'Content-Type': 'application/json',
-          ...(options.headers ?? {}),
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
+          ...options.headers,
         }
 
         return (await this.get(path, { ..._options, method: 'POST' })) as T
@@ -104,7 +107,8 @@ export function createFetchClient({
 
         _options.headers = {
           'Content-Type': 'application/json',
-          ...(options.headers ?? {}),
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
+          ...options.headers,
         }
 
         return (await this.get(path, { ..._options, method: 'PUT' })) as T
@@ -123,7 +127,8 @@ export function createFetchClient({
 
         _options.headers = {
           'Content-Type': 'application/json',
-          ...(options.headers ?? {}),
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
+          ...options.headers,
         }
 
         return await this.get(path, { ..._options, method: 'PATCH' })

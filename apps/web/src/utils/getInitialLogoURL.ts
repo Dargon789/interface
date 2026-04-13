@@ -25,6 +25,7 @@ export function getInitialLogoUrl({
   })
 
   if (chainId === UniverseChainId.Celo && address === nativeOnChain(chainId).wrapped.address) {
+    // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
     return CELO_LOGO
   }
 

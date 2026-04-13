@@ -29,8 +29,8 @@ import { TableText } from '~/components/Table/shared/TableText'
 import { TimestampCell } from '~/components/Table/shared/TimestampCell'
 import { FilterHeaderRow } from '~/components/Table/styled'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { useChainIdFromUrlParam } from '~/features/params/chainParams'
 import { ExternalLink } from '~/theme/components/Links'
-import { useChainIdFromUrlParam } from '~/utils/chainParams'
 
 const StyledExternalLink = styled(ExternalLink, {
   color: '$neutral2',
@@ -90,7 +90,7 @@ export function PoolDetailsTransactionsTable({
   protocolVersion?: GraphQLApi.ProtocolVersion
 }) {
   const { t } = useTranslation()
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const chainId = useChainIdFromUrlParam() ?? UniverseChainId.Mainnet
   const activeLocalCurrency = useAppFiatCurrency()
   const { convertFiatAmountFormatted, formatNumberOrString } = useLocalizationContext()
@@ -300,7 +300,7 @@ export function PoolDetailsTransactionsTable({
         data={transactions}
         loading={loading}
         error={error}
-        v2={isMultichainTokenUx}
+        v2={multichainTokenUxEnabled}
         loadMore={loadMore}
         maxHeight={600}
         defaultPinnedColumns={['timestamp', 'swap-type']}

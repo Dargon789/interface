@@ -1,3 +1,4 @@
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React, { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FadeIn } from 'react-native-reanimated'
@@ -33,8 +34,10 @@ export const HeaderTitleElement = memo(function HeaderTitleElement(): JSX.Elemen
 
   const { currencyId } = useTokenDetailsContext()
 
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const token = useTokenBasicInfoPartsFragment({ currencyId }).data
   const project = useTokenBasicProjectPartsFragment({ currencyId }).data.project
+  const isMultichainToken = multichainTokenUxEnabled && (project?.tokens?.length ?? 0) > 1
 
   const logo = project?.logoUrl ?? undefined
   const symbol = token.symbol
@@ -46,6 +49,7 @@ export const HeaderTitleElement = memo(function HeaderTitleElement(): JSX.Elemen
       <Flex centered row gap="$spacing4">
         <TokenLogo
           chainId={fromGraphQLChain(chain) ?? undefined}
+          hideNetworkLogo={isMultichainToken}
           name={name}
           size={iconSizes.icon16}
           symbol={symbol ?? undefined}

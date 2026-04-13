@@ -1,7 +1,7 @@
 import isEqual from 'lodash/isEqual'
-import { Fragment, PropsWithChildren, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, PropsWithChildren, useEffect, useMemo, useRef, useState } from 'react'
 import { NativeSyntheticEvent, View } from 'react-native'
-import { AnimatePresence, Flex, Portal, Separator, TouchableArea, useWindowDimensions } from 'ui/src'
+import { Flex, Portal, Separator, TouchableArea, useWindowDimensions } from 'ui/src'
 import { DropdownMenuSheetItem } from 'ui/src/components/dropdownMenuSheet/DropdownMenuSheetItem'
 import { spacing, zIndexes } from 'ui/src/theme'
 import { ContextMenuProps } from 'uniswap/src/components/menus/ContextMenu'
@@ -19,9 +19,8 @@ const MIN_CONTEXT_MENU_WIDTH = 205
 // used for positioning
 const MIN_MENU_PADDING = spacing.spacing16
 
-// used for animation
+// used for enter animation
 const ANIMATION_START_POINT = 10
-const ANIMATION_TIME = 200
 
 /**
  * A controlled styled context menu component.
@@ -71,14 +70,11 @@ export function ContextMenu({
     sectionName,
   })
 
-  const handleMenuClose = useCallback(() => {
-    // used to delay unmount of the menu until the animation is done
+  const handleMenuClose = useEvent(() => {
     trackedCloseMenu()
-    setTimeout(() => {
-      setIsMenuVisible(false)
-      setMeasuredMenuDimensions(null) // Reset dimensions for next open
-    }, ANIMATION_TIME)
-  }, [trackedCloseMenu])
+    setIsMenuVisible(false)
+    setMeasuredMenuDimensions(null) // Reset dimensions for next open
+  })
 
   const [position, setPosition] = useState<{
     left: number | undefined
@@ -91,7 +87,7 @@ export function ContextMenu({
     setMeasuredMenuDimensions({ width, height })
   })
 
-  const recalculateMenuPosition = useCallback((): void => {
+  const recalculateMenuPosition = useEvent((): void => {
     if (isOpen && triggerRef.current && measuredMenuDimensions) {
       // oxlint-disable-next-line max-params
       triggerRef.current.measure((_fx, _fy, triggerWidth, triggerHeight, triggerX, triggerY) => {
@@ -144,24 +140,12 @@ export function ContextMenu({
           return updated
         })
 
-        // Show menu after position is calculated
-        setTimeout(() => {
-          setIsMenuVisible(true)
-        }, 0)
+        setIsMenuVisible(true)
       })
     }
-  }, [
-    isOpen,
-    isPlacementRight,
-    offsetX,
-    maxUsableWidth,
-    offsetY,
-    screenHeight,
-    isPlacementAbove,
-    measuredMenuDimensions,
-  ])
+  })
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (measuredMenuDimensions) {
       recalculateMenuPosition()
     }
@@ -194,20 +178,16 @@ export function ContextMenu({
             height={height ?? spacing.spacing40}
             disabled={itemDisabled}
             destructive={destructive}
-            closeDelay={(closeDelay ?? 0) + ANIMATION_TIME}
+            closeDelay={closeDelay ?? 0}
             handleCloseMenu={handleMenuClose}
             onPress={() => {
-              // close the menu first to allow the closing animation to trigger asap
               setIsMenuVisible(false)
               closeMenu()
-              // pushes the main action (problematic navigation action) to the end of the event loop
-              // to allow the menu to close properly before
+              // Defer the action to the next tick so the Portal unmounts first
               setTimeout(() => {
                 try {
-                  // run both actions; `onPressAny` will not run if `onPressAction` throws
                   onPressAction()
                   onPressAny?.({ name: label, index, indexPath: [index] })
-                  // Track analytics if enabled
                   if (trackItemClicks && elementName && sectionName) {
                     sendAnalyticsEvent(UniswapEventName.ContextMenuItemClicked, {
                       element: elementName,
@@ -222,7 +202,7 @@ export function ContextMenu({
                     tags: { file: 'ContextMenu.tsx', function: 'createPressHandler' },
                   })
                 }
-              }, ANIMATION_TIME)
+              }, 0)
             }}
             {...otherProps}
           />
@@ -232,7 +212,7 @@ export function ContextMenu({
   }, [handleMenuClose, menuItems, onPressAny, trackItemClicks, elementName, sectionName, trace, closeMenu])
 
   // Render the menu content component
-  const MenuContent = useCallback(
+  const MenuContent = useEvent(
     // oxlint-disable-next-line universe-custom/no-nested-component-definitions -- memoized render callback
     () =>
       contentOverride ? (
@@ -254,40 +234,52 @@ export function ContextMenu({
           {menuSheetItems}
         </Flex>
       ),
-    [contentOverride, maxMenuWidth, menuSheetItems],
   )
+
+  const onPress = useEvent(() => {
+    if (!openMenu) {
+      return
+    }
+
+    if (isLongPress) {
+      // oxlint-disable-next-line typescript/no-floating-promises
+      hapticFeedback.success()
+    }
+
+    openMenu()
+  })
 
   // the idea is that we cover the whole screen with a transparent area that closes the menu when pressed
   // and we have a child on top of that that is the actual menu
   // since only one of them can be pressed at a time, we don't have to worry about the event being propagated
   return (
     <>
-      <Portal>
-        <Flex
-          pointerEvents={!isOpen ? 'none' : 'auto'}
-          height="100%"
-          width="100%"
-          top={0}
-          left={0}
-          backgroundColor="transparent"
-          zIndex={zIndexes.overlay}
-          onPress={handleMenuClose}
-        >
-          {/* Hidden pre-render for measurement */}
-          {!measuredMenuDimensions && (
-            <Flex
-              position="absolute"
-              top={-9999} // Render off-screen
-              left={-9999}
-              opacity={0}
-              onLayout={handleMenuLayout}
-            >
-              <MenuContent />
-            </Flex>
-          )}
+      {(isOpen || isMenuVisible) && (
+        <Portal>
+          <Flex
+            pointerEvents={!isOpen ? 'none' : 'auto'}
+            height="100%"
+            width="100%"
+            top={0}
+            left={0}
+            backgroundColor="transparent"
+            zIndex={zIndexes.overlay}
+            onPress={handleMenuClose}
+          >
+            {/* Hidden pre-render for measurement */}
+            {!measuredMenuDimensions && (
+              <Flex
+                position="absolute"
+                top={-9999} // Render off-screen
+                left={-9999}
+                opacity={0}
+                onLayout={handleMenuLayout}
+              >
+                <MenuContent />
+              </Flex>
+            )}
 
-          {/* Visible menu */}
-          <AnimatePresence>
+            {/* Visible menu */}
             {isMenuVisible && measuredMenuDimensions && (
               <Flex
                 justifyContent="flex-start"
@@ -297,11 +289,8 @@ export function ContextMenu({
                 left={position.left}
                 position="absolute"
                 animation="200ms"
+                // We only animate on enter. No animation needed on exit because we immediately unmount the Portal.
                 enterStyle={{
-                  opacity: 0,
-                  y: isAboveTrigger ? ANIMATION_START_POINT : -ANIMATION_START_POINT,
-                }}
-                exitStyle={{
                   opacity: 0,
                   y: isAboveTrigger ? ANIMATION_START_POINT : -ANIMATION_START_POINT,
                 }}
@@ -309,23 +298,16 @@ export function ContextMenu({
                 <MenuContent />
               </Flex>
             )}
-          </AnimatePresence>
-        </Flex>
-      </Portal>
+          </Flex>
+        </Portal>
+      )}
 
       <Flex>
         {openMenu ? (
           <TouchableArea
             disabled={disabled}
-            onPress={isLongPress ? undefined : openMenu}
-            onLongPress={
-              isLongPress
-                ? async (): Promise<void> => {
-                    await hapticFeedback.success()
-                    openMenu()
-                  }
-                : undefined
-            }
+            onPress={isLongPress ? undefined : onPress}
+            onLongPress={isLongPress ? onPress : undefined}
           >
             <Flex ref={triggerRef} onLayout={recalculateMenuPosition}>
               {children}

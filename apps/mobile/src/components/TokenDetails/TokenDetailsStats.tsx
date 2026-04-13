@@ -1,4 +1,5 @@
 import { GraphQLApi } from '@universe/api'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React, { memo, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
@@ -56,12 +57,30 @@ const TokenDetailsMarketData = memo(function TokenDetailsMarketDataInner(): JSX.
   const colors = useSporeColors()
   const defaultTokenColor = colors.neutral3.get()
   const { convertFiatAmountFormatted } = useLocalizationContext()
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const { currencyId, chainId, tokenColor } = useTokenDetailsContext()
   const [showVolumeInfo, setShowVolumeInfo] = useState(false)
 
-  // Use shared hook for unified data fetching (CoinGecko-first strategy)
-  const { marketCap, fdv, volume, high52w, low52w } = useTokenMarketStats(currencyId)
+  const { data: screenData } = GraphQLApi.useTokenDetailsScreenQuery({
+    variables: {
+      ...currencyIdToContractInput(currencyId),
+      multichain: multichainTokenUxEnabled,
+    },
+    fetchPolicy: 'cache-only',
+  })
+
+  const aggregatedData = useMemo(() => {
+    if (!multichainTokenUxEnabled || !screenData?.token?.multichainMarket) {
+      return undefined
+    }
+    return {
+      market: screenData.token.multichainMarket,
+      project: { markets: screenData.token.project?.markets },
+    }
+  }, [multichainTokenUxEnabled, screenData?.token?.multichainMarket, screenData?.token?.project?.markets])
+
+  const { marketCap, fdv, volume, high52w, low52w } = useTokenMarketStats(currencyId, { aggregatedData })
 
   const hasLimitedVolumeData = chainId === UniverseChainId.Tempo
 

@@ -16,6 +16,7 @@ interface UseActivityEmptyStateParams {
   chainId: UniverseChainId | undefined
   selectedTransactionType: string
   selectedTimePeriod: string
+  searchText: string
   sectionData: ActivityItem[] | undefined
   isExternalWallet: boolean
   showLoading: boolean
@@ -42,6 +43,7 @@ export function useActivityEmptyState({
   chainId,
   selectedTransactionType,
   selectedTimePeriod,
+  searchText,
   sectionData,
   isExternalWallet,
   showLoading,
@@ -57,7 +59,8 @@ export function useActivityEmptyState({
   }, [navigate])
 
   // Check if any filters (type or time) are applied
-  const hasFiltersApplied = selectedTransactionType !== ActivityFilterType.All || selectedTimePeriod !== TimePeriod.All
+  const hasFiltersApplied =
+    selectedTransactionType !== ActivityFilterType.All || selectedTimePeriod !== TimePeriod.All || searchText.length > 0
 
   // Check if there's any raw transaction data before filtering (to distinguish between "no activity" vs "no matching results")
   const hasAnyTransactions = useMemo(() => {
@@ -107,8 +110,9 @@ export function useActivityEmptyState({
       return chainFilterEmptyState
     }
 
-    // Type/time filters are hiding existing transactions - show filter empty state
-    if (hasFiltersApplied && hasAnyTransactions) {
+    // Search returned no results, or type/time filters are hiding existing transactions - show filter empty state
+    // For search, sectionData is already server-filtered so hasAnyTransactions would be false — we check searchText directly
+    if (hasFiltersApplied && (hasAnyTransactions || searchText.length > 0)) {
       return filterEmptyState
     }
 
@@ -125,6 +129,7 @@ export function useActivityEmptyState({
     chainFilterEmptyState,
     hasFiltersApplied,
     hasAnyTransactions,
+    searchText.length,
     filterEmptyState,
     isExternalWallet,
     t,

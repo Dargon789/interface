@@ -2,7 +2,6 @@ import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React, { PropsWithChildren, useCallback, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router'
-import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
 import { UniswapProvider } from 'uniswap/src/contexts/UniswapContext'
 import { useOnchainDisplayName } from 'uniswap/src/features/accounts/useOnchainDisplayName'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
@@ -31,6 +30,7 @@ import { useAccountsStoreContext } from '~/features/accounts/store/provider'
 import { useAccount } from '~/hooks/useAccount'
 import { useEthersProvider } from '~/hooks/useEthersProvider'
 import { useEthersSigner } from '~/hooks/useEthersSigner'
+import { PageType } from '~/hooks/useIsPage'
 import { useModalState } from '~/hooks/useModalState'
 import { buildPortfolioUrl } from '~/pages/Portfolio/utils/portfolioUrls'
 import { useOneClickSwapSetting } from '~/pages/Swap/settings/OneClickSwap'
@@ -55,12 +55,6 @@ export function WebUniswapProvider({ children }: PropsWithChildren): JSX.Element
 
 // Abstracts web-specific transaction flow objects for usage in cross-platform flows in the `uniswap` package.
 function WebUniswapProviderInner({ children }: PropsWithChildren) {
-  const account = useAccount()
-
-  // Check if current wallet can pay gas fees in any token (e.g., Porto wallet)
-  const getCanPayGasInAnyToken = useCallback(() => {
-    return account.connector?.id === CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID
-  }, [account.connector?.id])
   const signer = useEthersSigner()
   const location = useLocation()
   const accountDrawer = useAccountDrawer()
@@ -133,7 +127,7 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
 
       // When we are in portfolio, we want to keep the previous state of selected network.
       // Thus, we keep the state of the `chain` parameter and append it to the new URL.
-      const openingInPortfolio = location.pathname.includes('/portfolio')
+      const openingInPortfolio = location.pathname.includes(PageType.PORTFOLIO)
       const retainedNetworkParam = openingInPortfolio && params.has('chain') ? `chain=${params.get('chain')}&` : ''
 
       const newPathname = location.pathname === '/' ? '/send' : location.pathname
@@ -196,6 +190,7 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
   const isAtomicBatchingSupportedByChain = useIsAtomicBatchingSupportedByChainIdCallback()
 
   const { enabled: isOneClickSwapSettingEnabled } = useOneClickSwapSetting()
+  // oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
   const getCanBatchTransactions = useEvent((chainId?: UniverseChainId | undefined) => {
     return Boolean(
       isBatchedSwapsFlagEnabled && isOneClickSwapSettingEnabled && chainId && isAtomicBatchingSupportedByChain(chainId),
@@ -265,7 +260,6 @@ function WebUniswapProviderInner({ children }: PropsWithChildren) {
       handleOnPressUniswapXUnsupported={handleOpenUniswapXUnsupportedModal}
       getCanBatchTransactions={getCanBatchTransactions}
       useAccountsStoreContextHook={useAccountsStoreContext}
-      getCanPayGasInAnyToken={getCanPayGasInAnyToken}
     >
       {children}
     </UniswapProvider>

@@ -1,6 +1,6 @@
-import { DashboardDefinition } from '../../dashboard-types'
-import { getDefaultServicePresets } from '../../dashboard-factory'
 import { settings } from '../../config'
+import { getDefaultServicePresets } from '../../dashboard-factory'
+import { DashboardDefinition } from '../../dashboard-types'
 
 // ALB metrics — these have data immediately via AWS integration (no APM required)
 const albFilter = `name:dev-portal-lb,unienv:${settings.environment}`

@@ -8,7 +8,7 @@ afterAll(() => {
 
 import { fireEvent, waitFor } from '@testing-library/react'
 import type { PropsWithChildren, ReactNode } from 'react'
-import { getPrivyEnums, listAuthenticators } from 'uniswap/src/features/passkey/embeddedWallet'
+import { listAuthenticators } from 'uniswap/src/features/passkey/embeddedWallet'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import PasskeyMenu from '~/components/AccountDrawer/PasskeyMenu/PasskeyMenu'
@@ -18,7 +18,13 @@ import { render, screen } from '~/test-utils/render'
 vi.mock('uniswap/src/features/passkey/embeddedWallet', () => ({
   listAuthenticators: vi.fn(),
   authenticateWithPasskey: vi.fn(),
-  getPrivyEnums: vi.fn(),
+  AuthenticatorNameType: {
+    ICLOUD_KEYCHAIN: 15,
+    ICLOUD_KEYCHAIN_MANAGED: 4,
+    CHROME_MAC: 2,
+    GOOGLE_PASSWORD_MANAGER: 1,
+    WINDOWS_HELLO: 3,
+  },
 }))
 
 vi.mock('~/state/embeddedWallet/store', async (importOriginal) => ({
@@ -79,9 +85,6 @@ const mockRecoveryMethods = [
 
 // Sets up mocks so listAuthenticators resolves with data
 function setupLoadedMock(recoveryMethods: typeof mockRecoveryMethods = []): void {
-  vi.mocked(getPrivyEnums).mockResolvedValue({
-    AuthenticatorNameType: MOCK_AUTHENTICATOR_NAME_TYPE,
-  } as unknown as Awaited<ReturnType<typeof getPrivyEnums>>)
   vi.mocked(listAuthenticators).mockResolvedValue({
     authenticators: mockAuthenticatorsDisplay.map(({ credentialId, providerName, createdAt, aaguid }) => ({
       credentialId,
@@ -106,7 +109,6 @@ describe('PasskeyMenu', () => {
     } as ReturnType<typeof useEmbeddedWalletState>)
     // Never resolves so the component stays in loading state
     vi.mocked(listAuthenticators).mockReturnValue(new Promise(() => {}) as never)
-    vi.mocked(getPrivyEnums).mockReturnValue(new Promise(() => {}) as never)
 
     render(<PasskeyMenu onClose={vi.fn()} />)
 

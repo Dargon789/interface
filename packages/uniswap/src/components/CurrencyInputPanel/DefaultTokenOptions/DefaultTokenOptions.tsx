@@ -18,11 +18,13 @@ function DefaultTokenOptionsInner({ currencyField }: { currencyField: CurrencyFi
         {...(isHoverable
           ? {
               opacity: 0,
-              transform: [{ translateY: -4 }],
-              '$group-hover': { opacity: 1, transform: [{ translateY: 0 }] },
+              transition: 'opacity 100ms ease-in-out, transform 100ms ease-in-out',
+              '$group-hover': {
+                opacity: 1,
+                transition: 'opacity 100ms ease-in-out, transform 100ms ease-in-out',
+              },
             }
           : {})}
-        animation="100ms"
       >
         <TokenOptions currencyField={currencyField} />
       </Flex>

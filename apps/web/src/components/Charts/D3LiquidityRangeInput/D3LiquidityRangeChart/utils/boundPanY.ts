@@ -1,4 +1,4 @@
-import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/constants'
+import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityChartShared/constants'
 
 /**
  * Calculates bounded panY to prevent scrolling beyond the tick range.

@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/constants'
+import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityChartShared/constants'
 import type {
   Renderer,
   RenderingContext,

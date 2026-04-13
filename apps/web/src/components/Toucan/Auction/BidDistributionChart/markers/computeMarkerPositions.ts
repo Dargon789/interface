@@ -54,6 +54,7 @@ export function computeMarkerPositions({
   for (const entry of bidEntries) {
     const lastGroup = groups[groups.length - 1]
 
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     if (lastGroup && Math.abs(entry.y - lastGroup.y) < PROXIMITY_THRESHOLD_PX) {
       lastGroup.bids.push(entry.bid)
       // Use weighted average Y for the group center

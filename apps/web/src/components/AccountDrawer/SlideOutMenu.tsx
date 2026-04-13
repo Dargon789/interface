@@ -6,17 +6,9 @@ type SlideOutMenuProps = {
   onClose: () => void
   title: React.ReactNode
   rightIcon?: React.ReactNode
-  versionComponent?: React.ReactNode
 } & FlexProps
 
-export const SlideOutMenu = ({
-  children,
-  onClose,
-  title,
-  rightIcon,
-  versionComponent,
-  ...flexProps
-}: SlideOutMenuProps) => {
+export const SlideOutMenu = ({ children, onClose, title, rightIcon, ...flexProps }: SlideOutMenuProps) => {
   const scrollbarStyles = useScrollbarStyles()
 
   const updatedScrollbarStyles = {
@@ -52,7 +44,6 @@ export const SlideOutMenu = ({
             {children}
           </Flex>
         </Flex>
-        {versionComponent}
       </Flex>
     </>
   )

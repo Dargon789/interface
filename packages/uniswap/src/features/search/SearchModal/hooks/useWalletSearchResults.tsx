@@ -85,10 +85,10 @@ export function useWalletSearchResults(
 
   // Prioritize unitags
 
-  if (unitagByName?.address?.address && unitagByName.username) {
+  if (unitagByName?.address && unitagByName.username) {
     results.push({
       type: OnchainItemListOptionType.Unitag,
-      address: unitagByName.address.address,
+      address: unitagByName.address,
       unitag: unitagByName.username,
     })
   }
@@ -103,7 +103,7 @@ export function useWalletSearchResults(
   const nameMatch = unitagByAddress?.username && query.startsWith(unitagByAddress.username)
   const addressOrNameMatch = addressMatch || (nameMatch && showUnitagOverEns)
   const showUnitagByAddress =
-    !unitagByName?.address?.address && unitagByAddress?.address && unitagByAddress.username && addressOrNameMatch
+    !unitagByName?.address && unitagByAddress?.address && unitagByAddress.username && addressOrNameMatch
   if (showUnitagByAddress) {
     results.push({
       type: OnchainItemListOptionType.Unitag,
@@ -129,7 +129,7 @@ export function useWalletSearchResults(
   if (
     !validAddress &&
     hasENSResult &&
-    dotEthAddress !== unitagByName?.address?.address &&
+    dotEthAddress !== unitagByName?.address &&
     differentFromUnitagByAddress &&
     dotEthAddress !== ensAddress
   ) {

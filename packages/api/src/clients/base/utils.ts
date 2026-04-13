@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-misused-spread
 import { type CustomOptions, type FetchClient } from '@universe/api/src/clients/base/types'
 
 type TransformRequestResult = {

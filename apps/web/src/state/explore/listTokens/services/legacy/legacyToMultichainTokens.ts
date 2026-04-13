@@ -8,8 +8,8 @@ import {
   TokenStats,
   TokenType,
 } from '@uniswap/client-data-api/dist/data/v1/types_pb'
+import { getChainIdFromChainUrlParam } from '~/features/params/chainParams'
 import { TokenStat } from '~/state/explore/types'
-import { getChainIdFromChainUrlParam } from '~/utils/chainParams'
 
 const STANDARD_TO_TOKEN_TYPE: Partial<Record<string, TokenType>> = {
   UNKNOWN: TokenType.UNKNOWN,

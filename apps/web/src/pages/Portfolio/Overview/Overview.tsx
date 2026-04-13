@@ -1,8 +1,12 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { ChartPeriod } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { memo, useMemo, useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { Flex, Separator, styled, useMedia } from 'ui/src'
-import { useGetPortfolioHistoricalValueChartQuery } from 'uniswap/src/data/rest/getPortfolioChart'
+import {
+  getPortfolioHistoricalValueChartQuery,
+  useGetPortfolioHistoricalValueChartQuery,
+} from 'uniswap/src/data/rest/getPortfolioChart'
 import { useActivityData } from 'uniswap/src/features/activity/hooks/useActivityData'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { usePortfolioTotalValue } from 'uniswap/src/features/dataApi/balances/balancesRest'
@@ -45,6 +49,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   const { chains: allChainIds } = useEnabledChains()
 
   const isPortfolioZero = useIsPortfolioZero()
+  const queryClient = useQueryClient()
 
   const [selectedPeriod, setSelectedPeriod] = useState<ChartPeriod>(ChartPeriod.DAY)
 
@@ -85,6 +90,32 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
     portfolioTotalBalanceUSD: portfolioData?.balanceUSD,
   })
 
+  // Prefetch chart data for a timeframe on hover so it's ready when the user clicks
+  const handleHoverPeriod = useCallback(
+    (period: ChartPeriod) => {
+      if (!portfolioAddresses.evmAddress && !portfolioAddresses.svmAddress) {
+        return
+      }
+      if (period === selectedPeriod) {
+        return
+      }
+      const periodQuery = getPortfolioHistoricalValueChartQuery({
+        input: {
+          evmAddress: portfolioAddresses.evmAddress,
+          svmAddress: portfolioAddresses.svmAddress,
+          chainIds: filterChainIds,
+          chartPeriod: period,
+        },
+      })
+      const existingPeriodQueryState = queryClient.getQueryState(periodQuery.queryKey)
+      if (existingPeriodQueryState?.fetchStatus === 'fetching' || existingPeriodQueryState?.status === 'success') {
+        return
+      }
+      queryClient.prefetchQuery(periodQuery).catch(() => undefined)
+    },
+    [queryClient, portfolioAddresses.evmAddress, portfolioAddresses.svmAddress, filterChainIds, selectedPeriod],
+  )
+
   // Fetch activity data once at the top level to share between useSwapsThisWeek and MiniActivityTable
   const activityData = useActivityData({
     evmOwner: portfolioAddresses.evmAddress,
@@ -108,6 +139,7 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
               error={chartError}
               selectedPeriod={selectedPeriod}
               setSelectedPeriod={setSelectedPeriod}
+              onHoverPeriod={handleHoverPeriod}
               isTotalValueMatch={isTotalValueMatch}
             />
           </Trace>

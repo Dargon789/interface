@@ -3,9 +3,9 @@ import { useMedia } from 'ui/src'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useEvent } from 'utilities/src/react/hooks'
 import { NetworkFilter } from '~/components/NetworkFilter/NetworkFilter'
+import { getChainIdFromChainUrlParam, getChainUrlParam } from '~/features/params/chainParams'
 import { ExploreTab } from '~/pages/Explore/constants'
 import { useExploreParams } from '~/pages/Explore/redirects'
-import { getChainIdFromChainUrlParam, getChainUrlParam } from '~/utils/chainParams'
 
 function buildExploreUrl(tabName: ExploreTab | undefined, chainId: UniverseChainId | undefined): string {
   const chainUrlParam = chainId ? getChainUrlParam(chainId) : ''

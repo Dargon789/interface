@@ -265,6 +265,7 @@ export function useRemoveLiquidityTxAndGasInfo({ account }: { account?: string }
   } = useCheckLPApprovalQuery({
     approvalQueryParams,
     isQueryEnabled: Boolean(approvalQueryParams),
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     positionTokenAddress: positionInfo?.liquidityToken?.address,
   })
 
@@ -284,6 +285,7 @@ export function useRemoveLiquidityTxAndGasInfo({ account }: { account?: string }
 
   const v2ApprovalGasFeeUSD =
     useUSDCurrencyAmountOfGasFee(
+      // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
       positionInfo?.liquidityToken?.chainId,
       v2LpTokenApproval?.gasFeePositionTokenApproval,
     ) ?? undefined
@@ -365,6 +367,7 @@ export function useRemoveLiquidityTxAndGasInfo({ account }: { account?: string }
     })
     sendAnalyticsEvent(InterfaceEventName.DecreaseLiquidityFailed, {
       message,
+      // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
       ...decreaseCalldataQueryParams,
     })
   }

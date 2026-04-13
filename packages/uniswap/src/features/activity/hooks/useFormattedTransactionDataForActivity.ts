@@ -48,6 +48,7 @@ interface UseFormattedTransactionDataOptions {
   skip?: boolean
   chainIds?: UniverseChainId[]
   filterTransactionTypes?: TransactionTypeFilter[]
+  searchText?: string
 }
 
 type FormattedTransactionInputs = UseFormattedTransactionDataOptions &
@@ -78,6 +79,7 @@ export function useFormattedTransactionDataForActivity({
   skip,
   chainIds,
   filterTransactionTypes,
+  searchText,
   showLoadingOnRefetch = false,
   ...queryOptions
 }: FormattedTransactionInputs): FormattedTransactionDataResult {
@@ -106,6 +108,7 @@ export function useFormattedTransactionDataForActivity({
     skip,
     chainIds,
     filterTransactionTypes,
+    searchText,
     ...queryOptions,
   })
 
@@ -120,6 +123,7 @@ export function useFormattedTransactionDataForActivity({
     evmAddress,
     svmAddress,
     remoteTransactions: formattedTransactions,
+    skipLocalTransactions: !!searchText,
   })
 
   // TODO(CONS-722): update to only TradingApi.Routing.DUTCH_V2 once limit orders can be excluded from REST query
@@ -182,6 +186,7 @@ export function useFormattedTransactionDataForActivity({
   const memoizedSectionData = useMemoizedTransactionSectionData(sectionData, keyExtractor)
 
   const onRetry = useCallback(async () => {
+    // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
     await refetch()
   }, [refetch])
 

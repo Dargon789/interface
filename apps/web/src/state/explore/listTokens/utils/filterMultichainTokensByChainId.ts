@@ -17,6 +17,7 @@ export function filterMultichainTokensByChainId(
         return null
       }
       return new MultichainToken({
+        // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
         ...token,
         chainTokens: [matching],
       })

@@ -186,12 +186,10 @@ export function useTransactionGasWarning({
   accountAddress,
   derivedInfo,
   gasFee,
-  skipGasCheck = false,
 }: {
   accountAddress?: Address
   derivedInfo: DerivedSwapInfo | DerivedSendInfo
   gasFee?: string
-  skipGasCheck?: boolean
 }): Warning | undefined {
   const { chainId, currencyAmounts, currencyBalances } = derivedInfo
   const { t } = useTranslation()
@@ -217,11 +215,6 @@ export function useTransactionGasWarning({
   const balanceInsufficient = currencyAmountIn && currencyBalanceIn?.lessThan(currencyAmountIn)
 
   return useMemo(() => {
-    // Skip gas check if explicitly requested (e.g., for wallets that can pay fees in any token)
-    if (skipGasCheck) {
-      return undefined
-    }
-
     // if balance is already insufficient, dont need to show warning about network fee
     if (gasFee === undefined || isSmartContractAddress || balanceInsufficient || !gasBalance || hasGasFunds) {
       return undefined
@@ -243,7 +236,7 @@ export function useTransactionGasWarning({
       message: undefined,
       currency: gasBalance.currency,
     }
-  }, [gasFee, isSmartContractAddress, balanceInsufficient, gasBalance, hasGasFunds, t, skipGasCheck])
+  }, [gasFee, isSmartContractAddress, balanceInsufficient, gasBalance, hasGasFunds, t])
 }
 
 type GasFeeFormattedAmounts<T extends string | undefined> = T extends string

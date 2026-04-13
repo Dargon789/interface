@@ -61,8 +61,6 @@ interface UniswapContextValue {
   getCanBatchTransactions?: (chainId: UniverseChainId | undefined) => boolean
   getSwapDelegationInfo?: (chainId: UniverseChainId | undefined) => SwapDelegationInfo
   useAccountsStoreContextHook: () => AccountsStore
-  // Function to check if current wallet can pay gas fees in any token
-  getCanPayGasInAnyToken?: () => boolean
 }
 
 export const UniswapContext = createContext<UniswapContextValue | null>(null)
@@ -91,7 +89,6 @@ export function UniswapProvider({
   getCanBatchTransactions,
   getSwapDelegationInfo,
   useAccountsStoreContextHook,
-  getCanPayGasInAnyToken,
 }: PropsWithChildren<
   Omit<UniswapContextValue, 'isSwapTokenSelectorOpen' | 'setIsSwapTokenSelectorOpen' | 'setSwapOutputChainId'>
 >): JSX.Element {
@@ -140,7 +137,6 @@ export function UniswapProvider({
       getCanBatchTransactions,
       getSwapDelegationInfo,
       useAccountsStoreContextHook,
-      getCanPayGasInAnyToken,
     }),
     [
       navigateToBuyOrReceiveWithEmptyWallet,
@@ -168,7 +164,6 @@ export function UniswapProvider({
       getSwapDelegationInfo,
       onSwapChainsChanged,
       useAccountsStoreContextHook,
-      getCanPayGasInAnyToken,
     ],
   )
 

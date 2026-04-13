@@ -70,7 +70,7 @@ export function useDerivedSendInfo(state: SendState): SendInfo {
   const { data: recipientInputUnitag } = useUnitagsUsernameQuery({
     params: userInput ? { username: userInput } : undefined,
   })
-  const recipientInputUnitagAddress = recipientInputUnitag?.address?.address
+  const recipientInputUnitagAddress = recipientInputUnitag?.address
   const recipientInputUnitagUsername = validatedRecipientData?.unitag ?? recipientInputUnitag?.username
 
   const validatedRecipientAddress = useMemo(() => {

@@ -22,7 +22,7 @@ interface TokenDisplayProps {
 
 export const TokenDisplay = memo(function TokenDisplay({ currencyInfo, chainIds, isExpanded }: TokenDisplayProps) {
   const { t } = useTranslation()
-  const isMultichainTokenUX = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { chainId: urlChainId } = usePortfolioRoutes()
 
   if (!currencyInfo) {
@@ -31,7 +31,7 @@ export const TokenDisplay = memo(function TokenDisplay({ currencyInfo, chainIds,
 
   const { currency } = currencyInfo
   const symbolText = getSymbolDisplayText(currency.symbol) || EM_DASH
-  const showNetworksHover = isMultichainTokenUX && chainIds && chainIds.length > 1
+  const showNetworksHover = multichainTokenUxEnabled && chainIds && chainIds.length > 1
 
   return (
     <Flex row gap="$gap8" alignItems="center" justifyContent="flex-start" width="100%">
@@ -41,7 +41,7 @@ export const TokenDisplay = memo(function TokenDisplay({ currencyInfo, chainIds,
         symbol={getSymbolDisplayText(currency.symbol) || undefined}
         size={32}
         url={currencyInfo.logoUrl}
-        alwaysShowNetworkLogo={!!urlChainId && isMultichainTokenUX}
+        alwaysShowNetworkLogo={!!urlChainId && multichainTokenUxEnabled}
         networkCount={chainIds?.length}
       />
       <Flex width="100%">

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { ColorTokens, Flex, Text } from 'ui/src'
 import { Caret } from 'ui/src/components/icons/Caret'
-import { MAX_REASONABLE_USD_VALUE } from 'uniswap/src/components/ProfitLoss/constants'
+import { getValueSignInfo } from 'uniswap/src/components/ProfitLoss/constants'
 import { useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
@@ -27,14 +27,11 @@ export function ProfitLossRow({
   const { formatNumberOrString, formatPercent } = useLocalizationContext()
   const currency = useAppFiatCurrencyInfo()
 
-  const hasReasonableValue = value !== undefined && Math.abs(value) <= MAX_REASONABLE_USD_VALUE
-  const isPositive = hasReasonableValue ? value >= 0 : undefined
-  const arrowColor: ColorTokens | undefined =
-    isPositive === undefined ? undefined : isPositive ? '$statusSuccess' : '$statusCritical'
+  const { hasReasonableValue, isPositive, arrowColor } = getValueSignInfo(value)
 
   const formattedValue = hasReasonableValue
     ? formatNumberOrString({
-        value: Math.abs(value),
+        value: Math.abs(value ?? 0),
         type: NumberType.PortfolioBalance,
         currencyCode: currency.code,
       })
@@ -43,7 +40,7 @@ export function ProfitLossRow({
   const formattedPercent = hasReasonableValue && percent !== undefined ? formatPercent(Math.abs(percent)) : undefined
 
   return (
-    <Flex row justifyContent="space-between" alignItems="center">
+    <Flex row justifyContent="space-between" alignItems="center" pointerEvents="none">
       <Text variant="body3" color={labelColor}>
         {label}
       </Text>

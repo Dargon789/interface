@@ -5,7 +5,7 @@ import { Button, Flex, Text } from 'ui/src'
 import { AlertTriangleFilled } from 'ui/src/components/icons'
 import { fonts } from 'ui/src/theme'
 import { Modal } from 'uniswap/src/components/modals/Modal'
-import { UnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
+import { useUnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
 import { useResetUnitagsQueries } from 'uniswap/src/data/apiClients/unitagsApi/useResetUnitagsQueries'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
@@ -34,6 +34,7 @@ export function DeleteUnitagModal({
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const resetUnitagsQueries = useResetUnitagsQueries()
+  const unitagsApiClient = useUnitagsApiClient()
   const account = useAccount(address)
   const signerManager = useWalletSigners()
   const [isDeleting, setIsDeleting] = useState(false)
@@ -52,7 +53,7 @@ export function DeleteUnitagModal({
   const onDelete = async (): Promise<void> => {
     try {
       setIsDeleting(true)
-      const deleteResponse = await UnitagsApiClient.deleteUnitag({
+      const deleteResponse = await unitagsApiClient.deleteUnitag({
         data: { username: unitag },
         address: account.address,
         signMessage: generateSignerFunc(account, signerManager),

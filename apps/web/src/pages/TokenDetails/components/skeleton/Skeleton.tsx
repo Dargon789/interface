@@ -17,10 +17,10 @@ import { getHeaderLogoSize, getHeaderTitleLineHeight } from '~/components/Explor
 import { SwapSkeleton } from '~/components/swap/SwapSkeleton'
 import { LoadingBubble } from '~/components/Tokens/loading'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { useChainIdFromUrlParam } from '~/features/params/chainParams'
 import { useCurrency } from '~/hooks/Tokens'
 import { StatsWrapper, StatWrapper } from '~/pages/TokenDetails/components/info/StatsSection'
 import { ClickableTamaguiStyle } from '~/theme/components/styles'
-import { useChainIdFromUrlParam } from '~/utils/chainParams'
 
 const SWAP_COMPONENT_WIDTH = 360
 
@@ -58,6 +58,7 @@ export const RightPanel = styled(Flex, {
   $xl: {
     width: '100%',
     maxWidth: 780,
+    py: 40,
   },
 })
 
@@ -95,13 +96,13 @@ function NavBubble(props: LoadingBubbleProps) {
 
 function TokenLogoBubble({ isCompact, ...props }: LoadingBubbleProps & { isCompact: boolean }) {
   const media = useMedia()
-  const size = getHeaderLogoSize({ isCompact, isMobile: media.md })
+  const size = getHeaderLogoSize({ isCompact, media })
   return <DetailBubble width={size} height={size} round containerProps={{ maxWidth: size }} {...props} />
 }
 
 function TitleBubble({ isCompact, ...props }: LoadingBubbleProps & { isCompact: boolean }) {
   const media = useMedia()
-  const lineHeight = getHeaderTitleLineHeight({ isCompact, isMobile: media.md })
+  const lineHeight = getHeaderTitleLineHeight({ isCompact, media })
   return <DetailBubble height={lineHeight} width={136} containerProps={{ width: 'max-content' }} {...props} />
 }
 

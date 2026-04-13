@@ -411,10 +411,12 @@ function useSVMWalletInfos(): PlatformWalletInfo<Platform.SVM>[] {
       const walletToUse = currentSolanaWalletIsActive ? activeSolanaWallet : wallet
 
       // Ignore the coinbase adapter if the extension is not detected, as it errs upon connection attempt in this state.
+      /* oxlint-disable typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here */
       if (
         wallet.readyState === SolanaWalletReadyState.NotDetected &&
         wallet.adapter.name === CONNECTION_PROVIDER_NAMES.COINBASE_SOLANA_WALLET_ADAPTER
       ) {
+        /* oxlint-enable typescript/no-unnecessary-condition */
         return []
       }
 

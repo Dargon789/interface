@@ -17,7 +17,7 @@ export function getMigratedForApiUrl(): string {
   return `${getEntryGatewayUrl()}/FOR.v1.FORService`
 }
 
-export function getEntryGatewayUrl(): string {
+export function getEntryGatewayUrl(overrideEnv?: Environment): string {
   const config = getConfig()
 
   // Use proxy path if enabled (local dev, Vercel previews, or explicit opt-in)
@@ -31,9 +31,7 @@ export function getEntryGatewayUrl(): string {
     return override
   }
 
-  const environment = getCurrentEnv({
-    isVercelEnvironment: config.isVercelEnvironment,
-  })
+  const environment = overrideEnv || getCurrentEnv({ isVercelEnvironment: config.isVercelEnvironment })
   switch (environment) {
     case Environment.DEV: // Dev also currently uses staging builds, as for many features staging is more stable / less prone to breaking testing changes.
     case Environment.STAGING:

@@ -7,20 +7,23 @@ import {
   currencyInfosToTokenOptions,
   useCurrencyInfosToTokenOptions,
 } from 'uniswap/src/components/TokenSelector/hooks/useCurrencyInfosToTokenOptions'
+import { type PortfolioBalancesResult } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
 import { COMMON_BASES } from 'uniswap/src/constants/routing'
-import type { AddressGroup } from 'uniswap/src/features/accounts/store/types/AccountsState'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { currencyId } from 'uniswap/src/utils/currencyId'
 
 export function useCommonTokensOptionsWithFallback({
-  addresses,
   chainFilter,
+  portfolioData,
 }: {
-  addresses: AddressGroup
   chainFilter: UniverseChainId | null
+  portfolioData: PortfolioBalancesResult
 }): GqlResult<TokenOption[] | undefined> {
-  const { data, error, refetch, loading } = useCommonTokensOptions({ addresses, chainFilter })
-  const commonBases = chainFilter ? currencyInfosToTokenOptions(COMMON_BASES[chainFilter]) : undefined
+  const { data, error, refetch, loading } = useCommonTokensOptions({ chainFilter, portfolioData })
+  const commonBases = useMemo(
+    () => (chainFilter ? currencyInfosToTokenOptions(COMMON_BASES[chainFilter]) : undefined),
+    [chainFilter],
+  )
   const commonBasesCurrencyIds = useMemo(
     () => commonBases?.map((token) => currencyId(token.currencyInfo.currency)).filter(Boolean) ?? [],
     [commonBases],

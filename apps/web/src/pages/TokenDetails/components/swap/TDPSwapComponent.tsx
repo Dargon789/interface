@@ -1,5 +1,5 @@
 import { Currency } from '@uniswap/sdk-core'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { Flex } from 'ui/src'
@@ -20,6 +20,8 @@ import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 import { useCurrency } from '~/hooks/Tokens'
 import { Swap } from '~/pages/Swap'
 import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
+import { useTDPSwapCurrency } from '~/pages/TokenDetails/hooks/useTDPSwapCurrency'
+import { useUserPreservedCurrencies } from '~/pages/TokenDetails/hooks/useUserPreservedCurrencies'
 import { CurrencyState } from '~/state/swap/types'
 import { getInitialLogoUrl } from '~/utils/getInitialLogoURL'
 
@@ -32,38 +34,50 @@ export function TDPSwapComponent() {
     tokenColor: s.tokenColor,
   }))
   const navigate = useNavigate()
+  const swapCurrency = useTDPSwapCurrency()
 
   const currencyInfo = useCurrencyInfo(currencyId(currency))
 
-  const { inputCurrency, outputCurrency } = useSwapInitialCurrencies()
+  const { inputCurrency, outputCurrency } = useSwapInitialCurrencies(swapCurrency)
 
-  // Other token to prefill the swap form with
-  const initialInputCurrency = inputCurrency
-  // If the initial input currency is the same as the TDP currency, then we are selling the TDP currency
-  const initialOutputCurrency = useMemo((): Currency | undefined => {
+  // If the initial input currency is the same as the swap currency, then we are selling the TDP currency
+  const computedOutputCurrency = useMemo((): Currency | undefined => {
     if (
-      areCurrenciesEqual(initialInputCurrency, currency) &&
+      areCurrenciesEqual(inputCurrency, swapCurrency) &&
       // ensure the output is not equal to the input before setting
-      !areCurrenciesEqual(outputCurrency, initialInputCurrency)
+      !areCurrenciesEqual(outputCurrency, inputCurrency)
     ) {
       return outputCurrency
     }
 
-    // ensure the context currency is not equal to the input before setting
-    if (areCurrenciesEqual(currency, initialInputCurrency)) {
+    // ensure the swap currency is not equal to the input before setting
+    if (areCurrenciesEqual(swapCurrency, inputCurrency)) {
       return undefined
     }
 
-    return currency
-  }, [currency, initialInputCurrency, outputCurrency])
+    return swapCurrency
+  }, [swapCurrency, inputCurrency, outputCurrency])
+
+  const {
+    inputCurrency: initialInputCurrency,
+    outputCurrency: initialOutputCurrency,
+    markInteracted,
+  } = useUserPreservedCurrencies(inputCurrency, computedOutputCurrency)
 
   const [prevTokens, setPrevTokens] = useState<CurrencyState>({
     inputCurrency: initialInputCurrency,
     outputCurrency: initialOutputCurrency,
   })
 
+  // Keep prevTokens in sync when auto-fill currencies change (e.g., network filter change).
+  // Without this, handleCurrencyChange compares against stale old-chain tokens and navigates unexpectedly.
+  useEffect(() => {
+    setPrevTokens({ inputCurrency: initialInputCurrency, outputCurrency: initialOutputCurrency })
+  }, [initialInputCurrency, initialOutputCurrency])
+
   const handleCurrencyChange = useCallback(
     (tokens: CurrencyState, isBridgePair?: boolean) => {
+      markInteracted()
       const inputCurrencyURLAddress = getCurrencyURLAddress(tokens.inputCurrency)
       const outputCurrencyURLAddress = getCurrencyURLAddress(tokens.outputCurrency)
 
@@ -113,7 +127,7 @@ export function TDPSwapComponent() {
       })
       navigate(url, { state: { preloadedLogoSrc } })
     },
-    [address, currencyChainId, navigate, prevTokens],
+    [address, currencyChainId, markInteracted, navigate, prevTokens],
   )
 
   const [showWarningModal, setShowWarningModal] = useState(false)
@@ -131,12 +145,12 @@ export function TDPSwapComponent() {
     <Flex gap="$gap12">
       <Swap
         syncTabToUrl={false}
-        initialInputChainId={currency.chainId}
+        initialInputChainId={swapCurrency.chainId}
         initialInputCurrency={initialInputCurrency}
         initialOutputCurrency={initialOutputCurrency}
         onCurrencyChange={handleCurrencyChange}
         tokenColor={tokenColor}
-        tdpCurrency={currency}
+        tdpCurrency={swapCurrency}
       />
       <TokenWarningCard currencyInfo={currencyInfo} onPress={() => setShowWarningModal(true)} />
       {currencyInfo && (
@@ -165,37 +179,36 @@ function getCurrencyURLAddress(currency?: Currency): string {
   return NATIVE_CHAIN_ID
 }
 
-// Defaults the input currency to the output currency's native currency or undefined if the output currency is already the chain's native currency
+// Defaults the input currency to the swap currency's native currency or undefined if the swap currency is already the chain's native currency
 // Note: Query string input currency takes precedence if it's set
-function useSwapInitialCurrencies() {
-  const currency = useTDPStore((s) => s.currency)!
+function useSwapInitialCurrencies(swapCurrency: Currency) {
   const { useParsedQueryString } = useUrlContext()
   const parsedQs = useParsedQueryString()
 
   const inputTokenAddress = useMemo(() => {
     return typeof parsedQs.inputCurrency === 'string'
       ? parsedQs.inputCurrency
-      : currency.isNative
+      : swapCurrency.isNative
         ? undefined
-        : getNativeAddress(currency.chainId)
-  }, [currency.chainId, currency.isNative, parsedQs.inputCurrency])
+        : getNativeAddress(swapCurrency.chainId)
+  }, [swapCurrency.chainId, swapCurrency.isNative, parsedQs.inputCurrency])
 
   const outputTokenAddress = useMemo(() => {
     return typeof parsedQs.outputCurrency === 'string'
       ? parsedQs.outputCurrency
-      : currency.isNative
+      : swapCurrency.isNative
         ? undefined
-        : getNativeAddress(currency.chainId)
-  }, [currency.chainId, currency.isNative, parsedQs.outputCurrency])
+        : getNativeAddress(swapCurrency.chainId)
+  }, [swapCurrency.chainId, swapCurrency.isNative, parsedQs.outputCurrency])
 
   return {
     inputCurrency: useCurrency({
       address: inputTokenAddress,
-      chainId: currency.chainId,
+      chainId: swapCurrency.chainId,
     }),
     outputCurrency: useCurrency({
       address: outputTokenAddress,
-      chainId: currency.chainId,
+      chainId: swapCurrency.chainId,
     }),
   }
 }

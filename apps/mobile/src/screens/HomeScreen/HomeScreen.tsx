@@ -354,6 +354,7 @@ function HomeScreen({
   const contentHeader = useMemo(() => {
     return (
       <Flex
+        pointerEvents="box-none"
         backgroundColor="$surface1"
         pb={hasIntroCards ? '$none' : showEmptyWalletState ? '$spacing8' : '$spacing16'}
         px={isBottomTabsEnabled ? '$none' : '$spacing12'}
@@ -654,7 +655,7 @@ function HomeScreen({
   return (
     <Screen edges={['left', 'right']} onLayout={hideSplashScreen}>
       <View style={TAB_STYLES.container}>
-        <Animated.View style={headerContainerStyle} onLayout={handleHeaderLayout}>
+        <Animated.View pointerEvents="box-none" style={headerContainerStyle} onLayout={handleHeaderLayout}>
           {contentHeader}
         </Animated.View>
 

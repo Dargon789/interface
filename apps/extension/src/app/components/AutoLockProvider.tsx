@@ -12,6 +12,7 @@ export const AUTO_LOCK_ALARM_NAME = 'AutoLockAlarm'
  */
 function clearAutoLockAlarm(reason: string): void {
   try {
+    // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
     chrome.alarms.clear(AUTO_LOCK_ALARM_NAME)
     logger.debug('AutoLockProvider', 'clearAutoLockAlarm', reason)
   } catch (error) {
@@ -27,6 +28,7 @@ function clearAutoLockAlarm(reason: string): void {
  */
 function createAutoLockAlarm(delayInMinutes: number): void {
   try {
+    // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
     chrome.alarms.create(AUTO_LOCK_ALARM_NAME, { delayInMinutes })
     logger.debug('AutoLockProvider', 'createAutoLockAlarm', `Scheduled auto-lock alarm for ${delayInMinutes} minutes`)
   } catch (error) {

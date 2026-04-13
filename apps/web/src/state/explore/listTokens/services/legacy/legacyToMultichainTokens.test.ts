@@ -1,10 +1,10 @@
 import { SafetyLevel, SpamCode, TokenType } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { describe, expect, it, vi } from 'vitest'
+import { getChainIdFromChainUrlParam } from '~/features/params/chainParams'
 import { tokenStatsToMultichainTokens } from '~/state/explore/listTokens/services/legacy/legacyToMultichainTokens'
 import type { TokenStat } from '~/state/explore/types'
-import { getChainIdFromChainUrlParam } from '~/utils/chainParams'
 
-vi.mock('~/utils/chainParams', () => ({
+vi.mock('~/features/params/chainParams', () => ({
   getChainIdFromChainUrlParam: vi.fn(),
 }))
 

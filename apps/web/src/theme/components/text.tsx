@@ -5,6 +5,7 @@
 import { Text, TextProps as TextPropsOriginal } from 'rebass'
 import { deprecatedStyled } from '~/lib/deprecated-styled'
 
+/* oxlint-disable typescript/no-unsafe-return -- biome-parity: oxlint is stricter here */
 const TextWrapper = deprecatedStyled(Text).withConfig({
   shouldForwardProp: (prop) => prop !== 'color',
 })<{ color: keyof string }>`
@@ -22,6 +23,7 @@ const HeadingWrapper = deprecatedStyled.h1.withConfig({
   margin: ${({ margin }) => margin};
   letter-spacing: -0.02em;
 `
+/* oxlint-enable typescript/no-unsafe-return */
 
 type TextProps = Omit<TextPropsOriginal, 'css'>
 

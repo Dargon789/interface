@@ -48,7 +48,7 @@ export const TokenDetailsActionButtonsWrapper = memo(
     const insets = useAppInsets()
     const activeAddress = useActiveAccountAddressWithThrow()
     const { isTestnetModeEnabled } = useEnabledChains()
-    const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+    const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
     const { currencyId, chainId, address, currencyInfo, openTokenWarningModal, tokenColorLoading, navigation } =
       useTokenDetailsContext()
@@ -90,15 +90,15 @@ export const TokenDetailsActionButtonsWrapper = memo(
       onSelectNetwork,
     } = useNetworkBalanceSheet({ currencyId, chainId })
 
-    const hasTokenBalance = isMultichainTokenUx ? allChainBalances.length > 0 : Boolean(currentChainBalance)
+    const hasTokenBalance = multichainTokenUxEnabled ? allChainBalances.length > 0 : Boolean(currentChainBalance)
 
     // For multichain UX: resolve the chain with the highest balance (computed once, used by multiple handlers)
     const highestBalanceEntry = useMemo(() => {
-      if (!isMultichainTokenUx || !allChainBalances.length) {
+      if (!multichainTokenUxEnabled || !allChainBalances.length) {
         return null
       }
       return getHighestBalanceEntry(allChainBalances)
-    }, [isMultichainTokenUx, allChainBalances])
+    }, [multichainTokenUxEnabled, allChainBalances])
 
     const highestBalanceCurrencyId = highestBalanceEntry?.currencyInfo.currencyId ?? currencyId
 
@@ -126,7 +126,7 @@ export const TokenDetailsActionButtonsWrapper = memo(
     })
 
     const onPressSend = useEvent(() => {
-      if (isMultichainTokenUx && hasMultiChainBalances) {
+      if (multichainTokenUxEnabled && hasMultiChainBalances) {
         openSendSheet()
       } else {
         navigateToSend({ currencyAddress: address, chainId })
@@ -150,11 +150,11 @@ export const TokenDetailsActionButtonsWrapper = memo(
         openTokenWarningModal()
         return
       }
-      if (isMultichainTokenUx && highestBalanceEntry) {
+      if (multichainTokenUxEnabled && highestBalanceEntry) {
         const { currency } = highestBalanceEntry.currencyInfo
         const currencyAddress = currency.isToken ? currency.address : getNativeAddress(currency.chainId)
         navigateToSwapFlow({ currencyField: CurrencyField.OUTPUT, currencyAddress, currencyChainId: currency.chainId })
-      } else if (isMultichainTokenUx && highestTvlChainId) {
+      } else if (multichainTokenUxEnabled && highestTvlChainId) {
         const currencyAddress = highestTvlAddress ?? getNativeAddress(highestTvlChainId)
         navigateToSwapFlow({ currencyField: CurrencyField.OUTPUT, currencyAddress, currencyChainId: highestTvlChainId })
       } else {
@@ -163,7 +163,7 @@ export const TokenDetailsActionButtonsWrapper = memo(
     })
 
     const onPressSell = useEvent(() => {
-      if (isMultichainTokenUx && hasMultiChainBalances) {
+      if (multichainTokenUxEnabled && hasMultiChainBalances) {
         openSellSheet()
       } else {
         onPressSwap(CurrencyField.INPUT)
@@ -317,7 +317,7 @@ export const TokenDetailsActionButtonsWrapper = memo(
 
     return hideActionButtons ? null : (
       <AnimatedFlex mb={insets.bottom} backgroundColor="$surface1" entering={FadeInDown}>
-        {isMultichainTokenUx ? (
+        {multichainTokenUxEnabled ? (
           <TokenDetailsBuySellButtons
             actionMenuOptions={multichainActionMenuOptions}
             buyButtonIcon={multichainBuyVariant.icon}
@@ -336,7 +336,7 @@ export const TokenDetailsActionButtonsWrapper = memo(
           />
         )}
 
-        {isMultichainTokenUx && isNetworkSheetOpen && (
+        {multichainTokenUxEnabled && isNetworkSheetOpen && (
           <Modal
             overrideInnerContainer
             enableDynamicSizing

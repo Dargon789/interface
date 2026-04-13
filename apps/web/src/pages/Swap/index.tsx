@@ -323,6 +323,7 @@ function UniversalSwapFlow({
   const swapSettings = useWebSwapSettings()
   const resetDisableOneClickSwap = useResetOverrideOneClickSwapFlag()
 
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
   const connectorId = useAccount().connector?.id
   const passkeyAuthStatus = useGetPasskeyAuthStatus(connectorId)
 

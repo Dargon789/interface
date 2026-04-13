@@ -15,18 +15,15 @@ export function useFavoriteCurrencies(): GqlResult<CurrencyInfo[]> {
 
   // useTokenProjects returns each token on Arbitrum, Optimism, Polygon,
   // so we need to filter out the tokens which user has actually favorited
-  const favoriteTokens = useMemo(
-    () =>
-      favoriteTokensOnAllChains &&
-      favoriteCurrencyIds
-        .map((_currencyId) => {
-          return favoriteTokensOnAllChains.find((token) => token.currencyId === _currencyId)
-        })
-        .filter((token: CurrencyInfo | undefined): token is CurrencyInfo => {
-          return !!token
-        }),
-    [favoriteCurrencyIds, favoriteTokensOnAllChains],
-  )
+  const favoriteTokens = useMemo(() => {
+    if (!favoriteTokensOnAllChains) {
+      return undefined
+    }
+    const tokensByCurrencyId = new Map(favoriteTokensOnAllChains.map((token) => [token.currencyId, token]))
+    return favoriteCurrencyIds
+      .map((_currencyId) => tokensByCurrencyId.get(_currencyId))
+      .filter((token): token is CurrencyInfo => !!token)
+  }, [favoriteCurrencyIds, favoriteTokensOnAllChains])
 
   return { data: favoriteTokens, loading, error: persistedError, refetch }
 }

@@ -39,7 +39,6 @@ export type MenuOptionItem = {
  * @property sectionName - section name for analytics tracking
  * @property trackItemClicks - whether to track menu item clicks in analytics
  * @property adaptToSheet - When false, never show as bottom sheet on small viewports. Only applies in web app (never in extension). Defaults to true when undefined.
- * @property zIndex - Override z-index for the menu content (e.g. when rendered inside a modal so it appears above the modal).
  */
 export type ContextMenuProps = {
   menuItems: MenuOptionItem[]
@@ -60,8 +59,6 @@ export type ContextMenuProps = {
   trackItemClicks?: boolean
   /** When false, never show as bottom sheet on small viewports. Only applies in web app (never in extension). */
   adaptToSheet?: boolean
-  /** Override z-index for the menu content (e.g. when rendered inside a modal). */
-  zIndex?: number
 }
 
 export function ContextMenu(_: PropsWithChildren<ContextMenuProps>): JSX.Element {

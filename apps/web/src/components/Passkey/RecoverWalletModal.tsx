@@ -7,7 +7,7 @@ import { useDispatch } from 'react-redux'
 import { Flex } from 'ui/src'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
-import { UnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
+import { useUnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
 import { EmbeddedWalletApiClient } from 'uniswap/src/data/rest/embeddedWallet/requests'
 import { base64urlToBase64 } from 'uniswap/src/features/passkey/deviceSession'
 import { registerNewPasskey } from 'uniswap/src/features/passkey/embeddedWallet'
@@ -56,6 +56,7 @@ export function RecoverWalletModal() {
   const { t } = useTranslation()
   const { isOpen, onClose } = useModalState(ModalName.RecoverWallet)
   const queryClient = useQueryClient()
+  const unitagsApiClient = useUnitagsApiClient()
   const dispatch = useDispatch()
   const { ready: privyReady, getAccessToken } = usePrivy()
   const { generateAuthorizationSignature } = useAuthorizationSignature()
@@ -300,7 +301,7 @@ export function RecoverWalletModal() {
       let passkeyUsername: string | undefined
       if (recoveryWalletAddress) {
         try {
-          const unitagResponse = await UnitagsApiClient.fetchAddress({ address: recoveryWalletAddress })
+          const unitagResponse = await unitagsApiClient.fetchAddress({ address: recoveryWalletAddress })
           passkeyUsername = unitagResponse.username ?? shortenAddress({ address: recoveryWalletAddress })
         } catch {
           passkeyUsername = shortenAddress({ address: recoveryWalletAddress })

@@ -5,7 +5,6 @@ import { Flex, Text } from 'ui/src'
 import { AlertTriangleFilled } from 'ui/src/components/icons'
 import { Ellipsis } from 'ui/src/components/icons/Ellipsis'
 import { UniswapX } from 'ui/src/components/icons/UniswapX'
-import { zIndexes } from 'ui/src/theme'
 import { TransactionDetailsHeaderLogo } from 'uniswap/src/components/activity/details/TransactionDetailsHeaderLogo'
 import { ContextMenu, MenuOptionItem } from 'uniswap/src/components/menus/ContextMenu'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
@@ -59,7 +58,6 @@ export function TransactionDetailsHeader({
             closeMenu={closeContextMenu}
             openMenu={openContextMenu}
             adaptToSheet={false}
-            zIndex={zIndexes.overlay}
           >
             <Flex borderRadius="$roundedFull" p="$spacing4">
               <Ellipsis color="$neutral2" size="$icon.20" />

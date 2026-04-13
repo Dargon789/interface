@@ -107,6 +107,41 @@ describe('TokenDescription', () => {
     expect(screen.getByText('0xA0b8...eB48')).toBeVisible()
   })
 
+  it('does not render website pill for javascript: URI', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const validData = validTokenProjectResponse.data!
+    const unsafeTokenQuery = {
+      ...validTokenProjectResponse,
+      data: {
+        ...validData,
+        token: {
+          ...validData.token,
+          project: {
+            ...validData.token?.project,
+            homepageUrl: 'javascript:alert(1)',
+          },
+        },
+      },
+    }
+    const mockState = {
+      address: USDC_MAINNET.address,
+      currency: USDC_MAINNET,
+      currencyChain: GraphQLApi.Chain.Ethereum,
+      tokenQuery: unsafeTokenQuery,
+      multiChainMap: SINGLE_CHAIN_MAP,
+    }
+    mocked(useTDPStore).mockImplementation(((selector: (s: TDPState) => unknown) =>
+      selector(mockState as TDPState)) as typeof useTDPStore)
+
+    render(<TokenDescription />)
+
+    expect(screen.queryByText('Website')).toBeNull()
+    expect(screen.getByText('Twitter')).toBeVisible()
+    expect(screen.getByText('Etherscan')).toBeVisible()
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
+
   describe('multichain', () => {
     it('renders single-chain pills when flag is off even with multiple chains', () => {
       mocked(useFeatureFlag).mockReturnValue(false)

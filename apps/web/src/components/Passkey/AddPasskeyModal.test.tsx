@@ -1,9 +1,5 @@
 import { fireEvent } from '@testing-library/react'
-import {
-  authenticateWithPasskey,
-  getPrivyEnums,
-  registerNewAuthenticator,
-} from 'uniswap/src/features/passkey/embeddedWallet'
+import { authenticateWithPasskey, registerNewAuthenticator } from 'uniswap/src/features/passkey/embeddedWallet'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { AddPasskeyModal } from '~/components/Passkey/AddPasskeyModal'
 import { useModalState } from '~/hooks/useModalState'
@@ -13,7 +9,7 @@ import { render, screen } from '~/test-utils/render'
 
 vi.mock('uniswap/src/features/passkey/embeddedWallet', () => ({
   authenticateWithPasskey: vi.fn(),
-  getPrivyEnums: vi.fn(),
+  AuthenticatorAttachment: { PLATFORM: 0, CROSS_PLATFORM: 1 },
   registerNewAuthenticator: vi.fn(),
 }))
 

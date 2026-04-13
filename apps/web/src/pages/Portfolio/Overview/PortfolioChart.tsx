@@ -86,6 +86,7 @@ interface PortfolioChartProps {
   error?: Error | null
   selectedPeriod: ChartPeriod
   setSelectedPeriod: (period: ChartPeriod) => void
+  onHoverPeriod?: (period: ChartPeriod) => void
   portfolioTotalBalanceUSD?: number
   isTotalValueMatch: boolean
 }
@@ -98,6 +99,7 @@ export function PortfolioChart({
   portfolioTotalBalanceUSD,
   selectedPeriod,
   setSelectedPeriod,
+  onHoverPeriod,
   isTotalValueMatch,
 }: PortfolioChartProps): JSX.Element {
   const { t } = useTranslation()
@@ -158,8 +160,11 @@ export function PortfolioChart({
   }, [chartData, colors])
 
   const chartPercentChange = useMemo(() => {
+    if (selectedPeriod === ChartPeriod.MAX) {
+      return undefined
+    }
     return getPortfolioChartPercentChange(chartData.map((d) => d.close))
-  }, [chartData])
+  }, [chartData, selectedPeriod])
 
   const isLoading = isPending || !chartData.length
   const isDisabled = isPortfolioZero || !!error
@@ -216,10 +221,13 @@ export function PortfolioChart({
             hideYAxis={!isTotalValueMatch}
             yAxisFormatter={yAxisFormatter}
             pricePercentChange={chartPercentChange?.percentChange}
-            additionalHeaderContent={
-              <Text variant="body2" color="$neutral2" ml={-4}>
-                {chartPeriodToTimeLabel(t, selectedPeriod).toLocaleLowerCase()}
-              </Text>
+            hidePercentDelta={selectedPeriod === ChartPeriod.MAX}
+            additionalHeaderContent={({ isHovering }) =>
+              isHovering ? null : (
+                <Text variant="body2" color="$neutral2" ml={-4}>
+                  {chartPeriodToTimeLabel(t, selectedPeriod).toLocaleLowerCase()}
+                </Text>
+              )
             }
           />
         </Flex>
@@ -235,6 +243,9 @@ export function PortfolioChart({
           options={periodOptions}
           selectedOption={String(selectedPeriod)}
           onSelectOption={(periodStr: string) => setSelectedPeriod(Number(periodStr) as ChartPeriod)}
+          onHoverOption={
+            onHoverPeriod ? (periodStr: string) => onHoverPeriod(Number(periodStr) as ChartPeriod) : undefined
+          }
         />
       </Flex>
     </Flex>

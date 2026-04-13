@@ -18,6 +18,7 @@ export function DetailsHeaderContainer({ children, isCompact = false }: DetailsH
       px="$spacing40"
       $lg={{ px: '$padding20' }}
       backgroundColor="$surface1"
+      transition={HEADER_TRANSITION}
       zIndex="$header"
       alignSelf="center"
       $platform-web={{

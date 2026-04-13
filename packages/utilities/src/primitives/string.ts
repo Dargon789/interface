@@ -37,6 +37,7 @@ export function containsNonPrintableChars(msg: string): boolean {
   const regex = /[\p{C}\p{Z}]/gu
 
   if (regex.test(msg)) {
+    // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
     return ![...msg].every((char) => char === '\n' || char === '\r' || char === '\t' || !/\p{C}/u.test(char))
   }
 

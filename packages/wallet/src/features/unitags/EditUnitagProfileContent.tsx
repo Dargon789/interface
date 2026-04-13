@@ -1,4 +1,4 @@
-import { ProfileMetadata } from '@universe/api'
+import { GetAddressResponse } from '@universe/api'
 import { type ComponentType, type PropsWithChildren, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
@@ -18,7 +18,7 @@ import { Pen } from 'ui/src/components/icons'
 import { borderRadii, fonts, iconSizes, imageSizes, spacing } from 'ui/src/theme'
 import { DisplayNameText } from 'uniswap/src/components/accounts/DisplayNameText'
 import { TextInput } from 'uniswap/src/components/input/TextInput'
-import { UnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
+import { useUnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
 import { useResetUnitagsQueries } from 'uniswap/src/data/apiClients/unitagsApi/useResetUnitagsQueries'
 import { useUnitagsAddressQuery } from 'uniswap/src/data/apiClients/unitagsApi/useUnitagsAddressQuery'
 import { DisplayNameType } from 'uniswap/src/features/accounts/types'
@@ -47,6 +47,8 @@ import { useAccount } from 'wallet/src/features/wallet/hooks'
 import { generateSignerFunc } from 'wallet/src/features/wallet/signing/utils'
 
 const PADDING_WIDTH = isExtensionApp ? '$none' : '$spacing16'
+
+type ProfileMetadata = Pick<NonNullable<GetAddressResponse['metadata']>, 'avatar' | 'description' | 'twitter'>
 
 function DefaultButtonWrapper({ children }: PropsWithChildren): JSX.Element {
   return <>{children}</>
@@ -99,6 +101,7 @@ export function EditUnitagProfileContent({
   const account = useAccount(address)
   const colors = useSporeColors()
   const signerManager = useWalletSigners()
+  const unitagsApiClient = useUnitagsApiClient()
   const dispatch = useDispatch()
 
   const { data: retrievedUnitag, isLoading: loading } = useUnitagsAddressQuery({
@@ -237,9 +240,9 @@ export function EditUnitagProfileContent({
       : updatedMetadata
 
     setUpdateResponseLoading(true)
-    const updateResponse = await UnitagsApiClient.updateUnitagMetadata({
-      username: unitag,
+    const updateResponse = await unitagsApiClient.updateUnitagMetadata({
       data: {
+        username: unitag,
         metadata,
         clearAvatar: metadata.avatar === undefined,
       },

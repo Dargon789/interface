@@ -14,7 +14,6 @@ export function useAvatar(address: string | undefined): {
   avatar: string | undefined
   loading: boolean
 } {
-  // TODO(WEB-8012): Update to support Solana
   const validated = getValidAddress({ address, platform: Platform.EVM })
   const { data: ensAvatar, isLoading: ensLoading } = useENSAvatar(validated)
   const { data: unitag, isLoading: unitagLoading } = useUnitagsAddressQuery({

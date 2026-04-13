@@ -2,12 +2,10 @@ ignores: [
     # Dependencies that depcheck thinks are unused but are actually used
     "openapi-typescript-codegen",
     "typescript",
-    "eslint",
     "@typescript/native-preview",
     "depcheck",
     "@vitest/coverage-v8",
     "@types/react",
-    "ts-morph",
 
     # Used but depcheck doesn't detect correctly
     "@tanstack/react-query",

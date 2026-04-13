@@ -12,7 +12,18 @@ import { currencyIdToChain, currencyIdToGraphQLAddress, isNativeCurrencyAddress 
 import { canOpenURL, openURL } from 'uniswap/src/utils/link'
 import { logger } from 'utilities/src/logger/logger'
 
-const ALLOWED_EXTERNAL_URI_SCHEMES = ['http://', 'https://']
+/**
+ * Checks whether a URI uses an allowed external scheme (http or https).
+ * Uses the URL API for case-insensitive protocol parsing.
+ */
+export function isAllowedExternalUri(uri: string): boolean {
+  try {
+    const parsed = new URL(uri.trim())
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
 
 /**
  * Opens allowed URIs. if isSafeUri is set to true then this will open http:// and https:// as well as some deeplinks.
@@ -38,8 +49,7 @@ export async function openUri({
   controlsColor?: string
   throwOnError?: boolean
 }): Promise<void> {
-  const trimmedURI = uri.trim()
-  if (!isSafeUri && !ALLOWED_EXTERNAL_URI_SCHEMES.some((scheme) => trimmedURI.startsWith(scheme))) {
+  if (!isSafeUri && !isAllowedExternalUri(uri)) {
     const error = new Error('User attempted to open potentially unsafe url')
     logger.error(error, {
       tags: {
@@ -54,10 +64,11 @@ export async function openUri({
     return
   }
 
+  const trimmedURI = uri.trim()
   const isHttp = /^https?:\/\//.test(trimmedURI)
 
   // `canOpenURL` returns `false` for App Links / Universal Links, so we just assume any device can handle the `https://` protocol.
-  const supported = isHttp ? true : await canOpenURL(uri)
+  const supported = isHttp ? true : await canOpenURL(trimmedURI)
 
   if (!supported) {
     const error = new Error(`Cannot open URI: ${uri}`)

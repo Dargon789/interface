@@ -1,6 +1,10 @@
-import type {
+import {
   Action,
+  AuthenticationTypes,
+  AuthenticatorNameType,
   RegistrationOptions_AuthenticatorAttachment as AuthenticatorAttachment,
+} from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
+import type {
   ChallengeResponse,
   RegistrationOptions,
 } from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
@@ -17,54 +21,17 @@ import { getValidAddress } from 'uniswap/src/utils/addresses'
 import { HexString } from 'utilities/src/addresses/hex'
 import { logger } from 'utilities/src/logger/logger'
 
-export type {
+export {
   Action,
   AuthenticationTypes,
-  Authenticator,
   AuthenticatorNameType,
-  RecoveryMethod,
   RegistrationOptions_AuthenticatorAttachment as AuthenticatorAttachment,
 } from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
 
-type PrivyPbModule =
-  typeof import('@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb')
-
-let _privyPbModulePromise: Promise<PrivyPbModule> | undefined
-
-export async function loadPrivyPbModule(): Promise<PrivyPbModule> {
-  if (!_privyPbModulePromise) {
-    _privyPbModulePromise = (async (): Promise<PrivyPbModule> => {
-      try {
-        return await import(
-          /* @vite-ignore */
-          '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
-        )
-      } catch {
-        throw new Error('Embedded Wallet requires @uniswap/client-privy-embedded-wallet (private Uniswap package).')
-      }
-    })()
-  }
-  return _privyPbModulePromise
-}
-
-loadPrivyPbModule().catch(() => {
-  // Expected to fail without NPM_READ_ONLY_TOKEN
-})
-
-export async function getPrivyEnums(): Promise<{
-  Action: PrivyPbModule['Action']
-  AuthenticationTypes: PrivyPbModule['AuthenticationTypes']
-  AuthenticatorAttachment: PrivyPbModule['RegistrationOptions_AuthenticatorAttachment']
-  AuthenticatorNameType: PrivyPbModule['AuthenticatorNameType']
-}> {
-  const {
-    Action,
-    AuthenticationTypes,
-    RegistrationOptions_AuthenticatorAttachment: AuthenticatorAttachment,
-    AuthenticatorNameType,
-  } = await loadPrivyPbModule()
-  return { Action, AuthenticationTypes, AuthenticatorAttachment, AuthenticatorNameType }
-}
+export type {
+  Authenticator,
+  RecoveryMethod,
+} from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
 
 export async function registerNewPasskey({
   username,
@@ -77,12 +44,11 @@ export async function registerNewPasskey({
   action?: Action
   walletId?: string
 } = {}): Promise<{ credential: string }> {
-  const { AuthenticationTypes, Action: ActionEnum } = await loadPrivyPbModule()
   const options = { authenticatorAttachment, username } as unknown as RegistrationOptions
   try {
     const challengeJson = await EmbeddedWalletApiClient.fetchChallengeRequest({
       type: AuthenticationTypes.PASSKEY_REGISTRATION,
-      action: action ?? ActionEnum.CREATE_WALLET,
+      action: action ?? Action.CREATE_WALLET,
       options,
       walletId,
     })
@@ -159,13 +125,12 @@ export async function createNewEmbeddedWallet(
 
 // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
 export async function isSessionAuthenticatedForAction(action: Action): Promise<boolean> {
-  const { Action: ActionEnum } = await loadPrivyPbModule()
   const SESSION_ACTIONS: Action[] = [
-    ActionEnum.SIGN_MESSAGE,
-    ActionEnum.SIGN_TRANSACTION,
-    ActionEnum.SIGN_TYPED_DATA,
-    ActionEnum.LIST_AUTHENTICATORS,
-    ActionEnum.ACTION_UNSPECIFIED,
+    Action.SIGN_MESSAGE,
+    Action.SIGN_TRANSACTION,
+    Action.SIGN_TYPED_DATA,
+    Action.LIST_AUTHENTICATORS,
+    Action.ACTION_UNSPECIFIED,
   ]
   if (!SESSION_ACTIONS.includes(action)) {
     return false
@@ -174,7 +139,6 @@ export async function isSessionAuthenticatedForAction(action: Action): Promise<b
 }
 
 async function _reauthenticateSessionWithPasskey(action: Action, walletId?: string): Promise<ChallengeResponse> {
-  const { AuthenticationTypes } = await loadPrivyPbModule()
   const signinResponse = await signInWithPasskey()
   if (!signinResponse) {
     throw new Error('Failed to re-authenticate')
@@ -197,7 +161,6 @@ export async function authenticateWithPasskey(
     authenticatorId?: string
   },
 ): Promise<string | undefined> {
-  const { AuthenticationTypes } = await loadPrivyPbModule()
   try {
     const challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
       type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
@@ -234,14 +197,12 @@ export async function authenticateWithPasskey(
 }
 
 export async function authenticateWithPasskeyForSeedPhraseExport(walletId?: string): Promise<string | undefined> {
-  const { Action } = await loadPrivyPbModule()
   return await authenticateWithPasskey(Action.EXPORT_SEED_PHRASE, { walletId })
 }
 
 export async function signInWithPasskey(): Promise<
   { walletAddress: string; walletId: string; exported?: boolean } | undefined
 > {
-  const { Action } = await loadPrivyPbModule()
   try {
     const credential = await authenticateWithPasskey(Action.WALLET_SIGNIN)
     if (!credential) {
@@ -325,13 +286,11 @@ export async function authorizeAndCompleteRecovery({
   authMethodType: RecoveryAuthMethodType
   onProgress?: (step: import('uniswap/src/features/passkey/recoverySetup').SetupProgress) => void
 }): Promise<{ recoveryQuorumId: string }> {
-  const { AuthenticationTypes, Action: ActionEnum } = await loadPrivyPbModule()
-
   // Challenge — server creates recovery quorum, returns PATCH payload as WebAuthn challenge
   onProgress?.('challenging')
   const challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
     type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
-    action: ActionEnum.SETUP_RECOVERY,
+    action: Action.SETUP_RECOVERY,
     walletId,
     authPublicKey: encrypted.publicKey,
     privyUserId,

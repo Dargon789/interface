@@ -44,7 +44,6 @@ export function useTableLoadMore(params: {
     }
   }, [loadMore])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run it also when loadMore, loadingMore are changed
   useEffect(() => {
     // Use parentElement because the actual scrolling container is the parent wrapper,
     // not the table body div itself (which is a child of the scrollable container)
@@ -70,7 +69,6 @@ export function useTableLoadMore(params: {
     return () => scrollableElement.removeEventListener('scroll', updateScrollPosition)
   }, [loadMore, maxHeight, loadingMore, tableBodyRef])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run it also when distanceFromTop, loading are changed
   useEffect(() => {
     const scrollableElement = maxHeight ? tableBodyRef.current?.parentElement : window
     const shouldLoadMoreFromScroll = distanceToBottom < LOAD_MORE_BOTTOM_OFFSET

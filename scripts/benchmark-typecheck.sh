@@ -11,7 +11,7 @@ bun clean --quick
 bun g:prepare
 echo "⏱️  Running tsc..."
 START=$(date +%s)
-bun g:typecheck > /tmp/tsc-output.txt 2>&1
+export DISABLE_TSGO=true; bun g:typecheck > /tmp/tsc-output.txt 2>&1
 TSC_EXIT=$?
 END=$(date +%s)
 TSC_TIME=$((END - START))
@@ -22,7 +22,7 @@ bun clean --quick
 bun g:prepare
 echo "⏱️  Running tsgo..."
 START=$(date +%s)
-bun g:typecheck:tsgo > /tmp/tsgo-output.txt 2>&1
+bun g:typecheck > /tmp/tsgo-output.txt 2>&1
 TSGO_EXIT=$?
 END=$(date +%s)
 TSGO_TIME=$((END - START))

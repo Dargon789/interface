@@ -56,7 +56,9 @@ export default function AuthenticatedHeader({
 
   const isSolanaConnected = useConnectionStatus(Platform.SVM).isConnected
   const multipleWalletsConnected = useAccountsStore((state) => {
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     const evmWalletId = state.activeConnectors.evm?.session?.walletId
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     const svmWalletId = state.activeConnectors.svm?.session?.walletId
     return Boolean(evmWalletId && svmWalletId && evmWalletId !== svmWalletId)
   }) // if different wallets are connected, do not show mini wallet icon

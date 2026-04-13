@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { MAX_NUMBER_OF_TOKENS } from 'uniswap/src/components/CurrencyInputPanel/DefaultTokenOptions/constants'
 import { TokenOptionItem } from 'uniswap/src/components/CurrencyInputPanel/DefaultTokenOptions/TokenOptions/TokenOptionItem/TokenOptionItem'
 import { useCommonTokensOptionsWithFallback } from 'uniswap/src/components/TokenSelector/hooks/useCommonTokensOptionsWithFallback'
+import { usePortfolioBalancesForAddressById } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
 import { useActiveAddresses } from 'uniswap/src/features/accounts/store/hooks'
 import type { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { useSwapFormStoreDerivedSwapInfo } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
@@ -16,10 +17,11 @@ const useCommonTokensOptionsInfo = (): {
 } => {
   const addresses = useActiveAddresses()
   const chainId = useSwapFormStoreDerivedSwapInfo((s) => s.chainId)
+  const portfolioData = usePortfolioBalancesForAddressById(addresses)
 
   const { data: commonTokenOptions } = useCommonTokensOptionsWithFallback({
-    addresses,
     chainFilter: chainId,
+    portfolioData,
   })
 
   const numberOfCommonTokenOptions = commonTokenOptions?.length ?? 0

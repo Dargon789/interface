@@ -23,6 +23,7 @@ export default function PortfolioActivity() {
   const trace = useTrace()
   const [selectedTransactionType, setSelectedTransactionType] = useState<string>(ActivityFilterType.All)
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<string>(TimePeriod.All)
+  const [searchText, setSearchText] = useState('')
   const openTransactionDetailsModal = useOpenTransactionDetailsModal()
 
   const { evmAddress, svmAddress } = usePortfolioAddresses()
@@ -34,18 +35,21 @@ export default function PortfolioActivity() {
     chainId,
     selectedTransactionType,
     selectedTimePeriod,
+    searchText,
   })
 
   // Handler to clear type and time filters
   const handleClearFilters = useCallback(() => {
     setSelectedTransactionType(ActivityFilterType.All)
     setSelectedTimePeriod(TimePeriod.All)
+    setSearchText('')
   }, [])
 
   const { shouldShowEmptyState, emptyStateContent } = useActivityEmptyState({
     chainId,
     selectedTransactionType,
     selectedTimePeriod,
+    searchText,
     sectionData,
     isExternalWallet,
     showLoading,
@@ -92,6 +96,8 @@ export default function PortfolioActivity() {
             onTransactionTypeChange={setSelectedTransactionType}
             selectedTimePeriod={selectedTimePeriod}
             onTimePeriodChange={setSelectedTimePeriod}
+            searchText={searchText}
+            onSearchTextChange={setSearchText}
           />
         </Trace>
 

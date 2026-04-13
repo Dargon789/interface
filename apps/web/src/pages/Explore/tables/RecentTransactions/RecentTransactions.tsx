@@ -30,10 +30,10 @@ import { TableText } from '~/components/Table/shared/TableText'
 import { TimestampCell } from '~/components/Table/shared/TimestampCell'
 import { TokenLinkCell } from '~/components/Table/shared/TokenLinkCell'
 import { FilterHeaderRow, HeaderCell } from '~/components/Table/styled'
+import { useChainIdFromUrlParam } from '~/features/params/chainParams'
 import { useUpdateManualOutage } from '~/hooks/useUpdateManualOutage'
 import { useFilteredTransactions } from '~/pages/Explore/tables/RecentTransactions/useFilterTransaction'
 import { buildPortfolioUrl } from '~/pages/Portfolio/utils/portfolioUrls'
-import { useChainIdFromUrlParam } from '~/utils/chainParams'
 
 const TableRow = styled(Flex, {
   row: true,
@@ -44,7 +44,7 @@ const TableRow = styled(Flex, {
 type RecentTransactionType = GraphQLApi.PoolTransaction & { usdValueFormatted: string }
 
 export const RecentTransactionsTable = memo(function RecentTransactions() {
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const activeLocalCurrency = useAppFiatCurrency()
   const { convertFiatAmountFormatted, formatNumberOrString } = useLocalizationContext()
   const [filterModalIsOpen, toggleFilterModal] = useReducer((s) => !s, false)
@@ -273,7 +273,7 @@ export const RecentTransactionsTable = memo(function RecentTransactions() {
       data={filteredTransactionsWithFiat}
       loading={allDataStillLoading}
       error={combinedError}
-      v2={isMultichainTokenUx}
+      v2={multichainTokenUxEnabled}
       loadMore={loadMore}
       maxWidth={1200}
       defaultPinnedColumns={['timestamp', 'swap-type']}

@@ -149,6 +149,7 @@ function computeRoutes({
   }
 
   const tokenIn = quote.route[0]?.[0]?.tokenIn
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
   const tokenOut = quote.route[0]?.[quote.route[0]?.length - 1]?.tokenOut
 
   if (!tokenIn || !tokenOut) {

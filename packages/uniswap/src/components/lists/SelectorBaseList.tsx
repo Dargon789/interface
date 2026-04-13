@@ -1,8 +1,7 @@
 import { ContentStyle } from '@shopify/flash-list'
 import { memo, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AnimateTransition, Flex, Loader, Text } from 'ui/src'
-import { fonts } from 'ui/src/theme'
+import { Flex, Loader, Text } from 'ui/src'
 import { BaseCard } from 'uniswap/src/components/BaseCard/BaseCard'
 import { FocusedRowControl } from 'uniswap/src/components/lists/items/OptionItem'
 import { OnchainItemListOption } from 'uniswap/src/components/lists/items/types'
@@ -13,7 +12,6 @@ import {
 } from 'uniswap/src/components/lists/OnchainItemList/OnchainItemList'
 import type { OnchainItemSection } from 'uniswap/src/components/lists/OnchainItemList/types'
 import { SectionHeader, SectionHeaderProps } from 'uniswap/src/components/lists/SectionHeader'
-import { ITEM_SECTION_HEADER_ROW_HEIGHT } from 'uniswap/src/components/TokenSelector/constants'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 
 function EmptyResults(): JSX.Element {
@@ -104,14 +102,10 @@ function SelectorBaseListInner<T extends OnchainItemListOption>({
     )
   }
 
+  const isLoading = (!sections || !sections.length) && loading
+
   return (
-    <AnimateTransition animationType="fade" currentIndex={(!sections || !sections.length) && loading ? 0 : 1}>
-      <Flex grow px="$spacing20">
-        <Flex height={ITEM_SECTION_HEADER_ROW_HEIGHT} justifyContent="center" py="$spacing12" width={80}>
-          <Loader.Box height={fonts.subheading2.lineHeight} />
-        </Flex>
-        <Loader.Token gap="$none" repeat={15} />
-      </Flex>
+    <Flex grow>
       <OnchainItemList<T>
         ListEmptyComponent={emptyElement || <EmptyResults />}
         keyExtractor={keyExtractor}
@@ -124,7 +118,20 @@ function SelectorBaseListInner<T extends OnchainItemListOption>({
         renderedInModal={renderedInModal}
         contentContainerStyle={contentContainerStyle}
       />
-    </AnimateTransition>
+      {isLoading && (
+        <Flex grow position="absolute" top={0} left={0} right={0} bottom={0} backgroundColor="$surface1">
+          <SelectorBaseListSkeleton />
+        </Flex>
+      )}
+    </Flex>
+  )
+}
+
+export function SelectorBaseListSkeleton(): JSX.Element {
+  return (
+    <Flex grow px="$spacing20">
+      <Loader.Token gap="$none" repeat={3} />
+    </Flex>
   )
 }
 

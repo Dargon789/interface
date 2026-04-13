@@ -6,6 +6,7 @@
   "tags": ["platform:native", "scope:hashcash", "type:lib"],
   "targets": {
     "typecheck": {},
+    "typecheck:tsc": {},
     "typecheck:tsgo": {},
     "build": {
       "command": "tsc -b",
@@ -19,19 +20,16 @@
         "cwd": "{projectRoot}"
       }
     },
-    "lint:eslint": {},
-    "lint:eslint:fix": {},
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
     "lint": {},
     "lint:fix": {},
     "check": {},
-    "check:fix": {},
+    "check:fast": {},
     "check:deps:usage": {},
-    "lint-ci": {
-      "command": "eslint \"**/*.{js,ts,tsx}\" -f @jamesacarr/github-actions",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
-    },
     "specs": {
       "command": "tsc --noEmit false && nitrogen --logLevel=\"debug\"",
       "options": {
@@ -49,11 +47,6 @@
       "options": {
         "cwd": "{projectRoot}"
       }
-    },
-    "oxfmt": {},
-    "oxfmt:fix": {},
-    "oxlint": {},
-    "oxlint:fix": {},
-    "oxlint:type-aware": {}
+    }
   }
 }

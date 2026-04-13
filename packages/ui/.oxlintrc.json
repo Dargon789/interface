@@ -1,5 +1,6 @@
 {
   "extends": ["../../.oxlintrc.json"],
+  "ignorePatterns": ["vitest*.ts", "jest*.js", "babel*.js"],
   "rules": {
     "universe-custom/no-relative-import-paths": [
       "error",
@@ -21,6 +22,12 @@
     ]
   },
   "overrides": [
+    {
+      "files": ["src/components/icons/**"],
+      "rules": {
+        "typescript/no-unsafe-return": "off"
+      }
+    },
     {
       "files": ["**/*.ts", "**/*.tsx"],
       "rules": {

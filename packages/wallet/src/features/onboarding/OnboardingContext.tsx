@@ -1,6 +1,4 @@
 /* oxlint-disable max-lines */
-
-import { UnitagClaim } from '@universe/api'
 import dayjs from 'dayjs'
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -12,6 +10,7 @@ import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { MobileEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { useClaimUnitag } from 'uniswap/src/features/unitags/hooks/useClaimUnitag'
+import { UnitagClaim } from 'uniswap/src/features/unitags/types'
 import { ImportType } from 'uniswap/src/types/onboarding'
 import { ExtensionOnboardingFlow } from 'uniswap/src/types/screens/extension'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'

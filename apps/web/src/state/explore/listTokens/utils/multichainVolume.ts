@@ -24,6 +24,7 @@ export function sortMultichainTokenByVolume(
     const bVol = b.stats?.[volumeKey] ?? 0
     return bVol - aVol
   })
+  // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
   return { ...mcToken, chainTokens }
 }
 

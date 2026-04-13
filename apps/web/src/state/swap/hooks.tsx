@@ -8,17 +8,19 @@ import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { useSupportedChainId } from 'uniswap/src/features/chains/hooks/useSupportedChainId'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { getChainGasToken } from 'uniswap/src/features/gas/hooks/useChainGasToken'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { chainIdToPlatform } from 'uniswap/src/features/platforms/utils/chains'
 import { selectFilteredChainIds } from 'uniswap/src/features/transactions/swap/state/selectors'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { getValidAddress } from 'uniswap/src/utils/addresses'
+import { currencyAddress } from 'uniswap/src/utils/currencyId'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { getParsedChainId } from '~/features/params/chainParams'
 import { useCurrency } from '~/hooks/Tokens'
 import { useMultichainContext } from '~/state/multichain/useMultichainContext'
 import { CurrencyState, SerializedCurrencyState, SwapState } from '~/state/swap/types'
 import { useSwapAndLimitContext } from '~/state/swap/useSwapContext'
-import { getParsedChainId } from '~/utils/chainParams'
 
 export function useOnSwitchTokens(): () => void {
   const { setCurrencyState } = useSwapAndLimitContext()
@@ -238,7 +240,7 @@ export function useInitialCurrencyState(): {
     if (!hasCurrencyQueryParams || !isSupportedChainCompatible) {
       const initialChainId = persistedFilteredChainIds?.input ?? defaultChainId
       return {
-        initialInputCurrencyAddress: getNativeAddress(initialChainId),
+        initialInputCurrencyAddress: currencyAddress(getChainGasToken(initialChainId)),
         initialChainId,
       }
     }

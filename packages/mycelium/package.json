@@ -48,25 +48,20 @@
   "devDependencies": {
     "@types/node": "22.13.1",
     "@typescript/native-preview": "7.0.0-dev.20260311.1",
-    "@uniswap/eslint-config": "workspace:^",
     "depcheck": "1.4.7",
-    "eslint": "10.0.2",
     "react": "19.0.3",
     "tailwindcss": "4.1.16",
     "typescript": "5.8.3"
   },
   "scripts": {
     "typecheck": "nx typecheck @universe/mycelium",
-    "typecheck:tsgo": "nx typecheck:tsgo @universe/mycelium",
-    "lint": "nx lint @universe/mycelium",
-    "lint:fix": "nx lint:fix @universe/mycelium",
-    "lint:eslint": "nx lint:eslint @universe/mycelium",
-    "lint:eslint:fix": "nx lint:eslint:fix @universe/mycelium",
+    "check": "nx check @universe/mycelium",
+    "check:fast": "nx check:fast @universe/mycelium",
     "check:deps:usage": "nx check:deps:usage @universe/mycelium",
-    "oxlint": "nx oxlint @universe/mycelium",
-    "oxlint:fix": "nx oxlint:fix @universe/mycelium",
-    "oxfmt": "nx oxfmt @universe/mycelium",
-    "oxfmt:fix": "nx oxfmt:fix @universe/mycelium"
+    "format": "nx format @universe/mycelium",
+    "format:check": "nx format:check @universe/mycelium",
+    "lint": "nx lint @universe/mycelium",
+    "lint:fix": "nx lint:fix @universe/mycelium"
   },
   "nx": {
     "includedScripts": []

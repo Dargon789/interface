@@ -91,7 +91,6 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
   const { limitState, setLimitState, derivedLimitInfo } = useLimitContext()
 
   // Coerce non-mainnet currencies to mainnet defaults when limit tab mounts or currencies change
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we only want to run this effect when the input or output currency changes.
   useEffect(() => {
     const defaultLimitChainId = LIMIT_SUPPORTED_CHAINS[0]
     const inputIsOnLimitChain = !inputCurrency || LIMIT_SUPPORTED_CHAINS.includes(inputCurrency.chainId)

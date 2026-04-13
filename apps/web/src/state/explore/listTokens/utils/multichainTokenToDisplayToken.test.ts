@@ -1,5 +1,6 @@
 import { ChainToken, MultichainToken, TokenStats, TokenType } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { GraphQLApi } from '@universe/api'
+import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { createDataApiMultichainToken } from 'uniswap/src/test/fixtures/dataApi/multichainToken'
 import { describe, expect, it, vi } from 'vitest'
@@ -25,7 +26,7 @@ describe('multichainTokenToDisplayToken', () => {
       spamCode: 0,
       chainTokens: [],
     })
-    expect(multichainTokenToDisplayToken(mc)).toBeUndefined()
+    expect(multichainTokenToDisplayToken({ mcToken: mc })).toBeUndefined()
   })
 
   beforeEach(() => {
@@ -47,7 +48,7 @@ describe('multichainTokenToDisplayToken', () => {
       name: 'USD Coin',
     })
 
-    const result = multichainTokenToDisplayToken(mc)!
+    const result = multichainTokenToDisplayToken({ mcToken: mc })!
 
     expect(result.id).toBe('mc:1_0xABC')
     expect(mockToGraphQLChain).toHaveBeenCalledWith(1)
@@ -60,12 +61,49 @@ describe('multichainTokenToDisplayToken', () => {
       decimals: 6,
     })
 
-    const result = multichainTokenToDisplayToken(mc)!
+    const result = multichainTokenToDisplayToken({ mcToken: mc })!
 
     expect(mockToGraphQLChain).toHaveBeenCalledWith(8453)
     expect(result.chain).toBe('base')
     expect(result.address).toBe('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
     expect(result.decimals).toBe(6)
+  })
+
+  it('should prefer chainToken matching explore network filter when present', () => {
+    const mc = new MultichainToken({
+      multichainId: 'mc:multi',
+      symbol: 'USDC',
+      name: 'USD Coin',
+      type: TokenType.ERC20,
+      projectName: 'Circle',
+      logoUrl: '',
+      safetyLevel: 0,
+      spamCode: 0,
+      chainTokens: [
+        new ChainToken({
+          chainId: 1,
+          address: '0xEthFirst',
+          decimals: 6,
+          isBridged: false,
+        }),
+        new ChainToken({
+          chainId: 8453,
+          address: '0xBaseAddr',
+          decimals: 6,
+          isBridged: false,
+        }),
+      ],
+    })
+
+    const result = multichainTokenToDisplayToken({
+      mcToken: mc,
+      filterTimePeriod: TimePeriod.DAY,
+      exploreChainId: UniverseChainId.Base,
+    })!
+
+    expect(mockToGraphQLChain).toHaveBeenCalledWith(8453)
+    expect(result.chain).toBe('base')
+    expect(result.address).toBe('0xBaseAddr')
   })
 
   it('should map name, symbol, logo from multichain token', () => {
@@ -75,7 +113,7 @@ describe('multichainTokenToDisplayToken', () => {
       logoUrl: 'https://example.com/weth.png',
     })
 
-    const result = multichainTokenToDisplayToken(mc)!
+    const result = multichainTokenToDisplayToken({ mcToken: mc })!
 
     expect(result.name).toBe('Wrapped Ether')
     expect(result.symbol).toBe('WETH')
@@ -91,7 +129,7 @@ describe('multichainTokenToDisplayToken', () => {
       volume1d: 5_000_000,
     })
 
-    const result = multichainTokenToDisplayToken(mc)!
+    const result = multichainTokenToDisplayToken({ mcToken: mc })!
 
     expect(result.price?.value).toBe(2.5)
     expect(result.fullyDilutedValuation?.value).toBe(100_000_000)
@@ -113,7 +151,7 @@ describe('multichainTokenToDisplayToken', () => {
       chainTokens: [new ChainToken({ chainId: 1, address: '0xNoStats', decimals: 18, isBridged: false })],
     })
 
-    const result = multichainTokenToDisplayToken(mc)!
+    const result = multichainTokenToDisplayToken({ mcToken: mc })!
 
     expect(result.price).toBeUndefined()
     expect(result.fullyDilutedValuation).toBeUndefined()
@@ -130,7 +168,7 @@ describe('multichainTokenToDisplayToken', () => {
       spamCode: 1,
     })
 
-    const result = multichainTokenToDisplayToken(mc)!
+    const result = multichainTokenToDisplayToken({ mcToken: mc })!
 
     expect(result.project?.name).toBe('Circle')
     expect(result.project?.logo?.url).toBe('https://example.com/logo.png')
@@ -141,7 +179,7 @@ describe('multichainTokenToDisplayToken', () => {
   it('should set project.logo undefined when logoUrl is empty', () => {
     const mc = createDataApiMultichainToken({ logoUrl: '' })
 
-    const result = multichainTokenToDisplayToken(mc)!
+    const result = multichainTokenToDisplayToken({ mcToken: mc })!
 
     expect(result.project?.logo).toBeUndefined()
   })
@@ -149,7 +187,7 @@ describe('multichainTokenToDisplayToken', () => {
   it('should set isSpam false when spamCode is 0', () => {
     const mc = createDataApiMultichainToken({ spamCode: 0 })
 
-    const result = multichainTokenToDisplayToken(mc)!
+    const result = multichainTokenToDisplayToken({ mcToken: mc })!
 
     expect(result.project?.isSpam).toBe(false)
   })
@@ -179,7 +217,11 @@ describe('multichainTokenToDisplayToken', () => {
       chainTokens: [chainToken],
     })
 
-    expect(multichainTokenToDisplayToken(mc, TimePeriod.DAY)!.volume?.value).toBe(1_000_000)
-    expect(multichainTokenToDisplayToken(mc, TimePeriod.WEEK)!.volume?.value).toBe(5_000_000)
+    expect(multichainTokenToDisplayToken({ mcToken: mc, filterTimePeriod: TimePeriod.DAY })!.volume?.value).toBe(
+      1_000_000,
+    )
+    expect(multichainTokenToDisplayToken({ mcToken: mc, filterTimePeriod: TimePeriod.WEEK })!.volume?.value).toBe(
+      5_000_000,
+    )
   })
 })

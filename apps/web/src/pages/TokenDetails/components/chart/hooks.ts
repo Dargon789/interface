@@ -16,7 +16,12 @@ import {
 } from '~/components/Charts/utils'
 import { SingleHistogramData } from '~/components/Charts/VolumeChart/utils'
 
-type TDPChartQueryVariables = { chain: GraphQLApi.Chain; address?: string; duration: GraphQLApi.HistoryDuration }
+export type TDPChartQueryVariables = {
+  chain: GraphQLApi.Chain
+  address?: string
+  duration: GraphQLApi.HistoryDuration
+  multichain: boolean
+}
 
 function fallbackToPriceChartData(priceHistoryEntry: GraphQLApi.PriceHistoryFallbackFragment): PriceChartData {
   const { value, timestamp } = priceHistoryEntry
@@ -70,7 +75,7 @@ export function useTDPPriceChartData({
         : { address: undefined, chain: variables.chain },
       duration: variables.duration,
     },
-    skip: skip || !currencyIdValue || priceChartType === PriceChartType.CANDLESTICK,
+    skip: skip || !currencyIdValue || priceChartType === PriceChartType.CANDLESTICK || variables.multichain,
     // IMPORTANT: Must use no-cache to prevent infinite query loop.
     //
     // TokenPriceHistory returns Token objects (with chain/address) nested inside tokenProjects.
@@ -80,7 +85,8 @@ export function useTDPPriceChartData({
     fetchPolicy: 'no-cache',
   })
 
-  const loading = subgraphLoading || (priceChartType === PriceChartType.LINE && coinGeckoLoading)
+  const loading =
+    subgraphLoading || (priceChartType === PriceChartType.LINE && !variables.multichain && coinGeckoLoading)
 
   return useMemo(() => {
     const subgraphMarket = subgraphData?.token?.market
@@ -97,7 +103,7 @@ export function useTDPPriceChartData({
 
     // For line charts, prefer CoinGecko priceHistory but use PER-CHAIN current price
     // For candlestick charts, always use subgraph OHLC (only source)
-    const useCoinGeckoHistory = priceChartType === PriceChartType.LINE && coinGeckoPriceHistory
+    const useCoinGeckoHistory = priceChartType === PriceChartType.LINE && coinGeckoPriceHistory && !variables.multichain
     const priceHistory = useCoinGeckoHistory ? coinGeckoPriceHistory : subgraphPriceHistory
 
     // CRITICAL: Always use per-chain price from subgraph for multi-chain tokens
@@ -213,6 +219,7 @@ export function useTDPPriceChartData({
     priceChartType,
     variables.duration,
     variables.chain,
+    variables.multichain,
   ])
 }
 

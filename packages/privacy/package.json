@@ -7,18 +7,15 @@
   "devDependencies": {
     "@types/node": "22.13.1",
     "@typescript/native-preview": "7.0.0-dev.20260311.1",
-    "@uniswap/eslint-config": "workspace:^",
     "depcheck": "1.4.7",
-    "eslint": "10.0.2",
     "typescript": "5.8.3"
   },
   "scripts": {
     "typecheck": "nx typecheck privacy",
-    "typecheck:tsgo": "nx typecheck:tsgo privacy",
     "lint": "nx lint privacy",
     "lint:fix": "nx lint:fix privacy",
-    "lint:eslint": "nx lint:eslint privacy",
-    "lint:eslint:fix": "nx lint:eslint:fix privacy",
+    "check": "nx check privacy",
+    "check:fast": "nx check:fast privacy",
     "check:deps:usage": "nx check:deps:usage privacy"
   },
   "nx": {

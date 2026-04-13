@@ -736,6 +736,37 @@ const jsxPropOrder = {
   },
 }
 
+// ── enum-member-naming ─────────────────────────────────────────────────
+// Ported from @typescript-eslint/naming-convention (enumMember + PascalCase only).
+// Can be replaced when oxlint-tsgolint supports the naming-convention rule
+
+const PASCAL_CASE_RE = /^[A-Z][a-zA-Z0-9]*$/
+
+const enumMemberNaming = {
+  meta: {
+    type: 'suggestion',
+    schema: [],
+    messages: {
+      notPascalCase: 'Enum member "{{name}}" must be PascalCase.',
+    },
+  },
+  create(context) {
+    return {
+      TSEnumMember(node) {
+        const name =
+          node.id.type === 'Identifier'
+            ? node.id.name
+            : node.id.type === 'Literal'
+              ? String(node.id.value)
+              : null
+        if (name && !PASCAL_CASE_RE.test(name)) {
+          context.report({ node: node.id, messageId: 'notPascalCase', data: { name } })
+        }
+      },
+    }
+  },
+}
+
 // ── Plugin export ──────────────────────────────────────────────────────
 
 const plugin = {
@@ -750,6 +781,7 @@ const plugin = {
     'no-relative-import-paths': noRelativeImportPaths,
     'no-nested-component-definitions': noNestedComponentDefinitions,
     'jsx-prop-order': jsxPropOrder,
+    'enum-member-naming': enumMemberNaming,
   },
 }
 

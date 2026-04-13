@@ -121,7 +121,7 @@ export const setLanguageToNavigatorLanguage = createSafeMigration({
   onError: (state: any) => ({
     ...state,
     userSettings: {
-      ...(state?.userSettings ?? {}),
+      ...state?.userSettings,
       currentLanguage: Language.English,
     },
   }),

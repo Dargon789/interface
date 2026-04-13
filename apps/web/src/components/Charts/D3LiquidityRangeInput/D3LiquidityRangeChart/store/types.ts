@@ -4,7 +4,7 @@ import { GraphQLApi } from '@universe/api'
 import * as d3 from 'd3'
 import { UseSporeColorsReturn } from 'ui/src/hooks/useSporeColors'
 import { TickData } from '~/appGraphql/data/AllV3TicksQuery'
-import { BucketChartEntry } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/utils/liquidityBucketing/liquidityBucketing'
+import { BucketChartEntry } from '~/components/Charts/D3LiquidityChartShared/utils/liquidityBucketing/liquidityBucketing'
 import { TickAlignment } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/utils/priceToY'
 import { ChartEntry } from '~/components/Charts/LiquidityRangeInput/types'
 import { PriceChartData } from '~/components/Charts/PriceChart'
@@ -79,6 +79,8 @@ export type AnimationParams = {
 }
 
 export type RenderingContext = {
+  /** Unique ID per chart instance, used to namespace SVG IDs (clipPath, gradient) so multiple charts don't collide */
+  chartId: string
   colors: UseSporeColorsReturn
   dimensions: {
     width: number
@@ -93,6 +95,8 @@ export type RenderingContext = {
   tickSpacing: number
   /** Current tick derived from current price: Math.round(Math.log(currentPrice) / Math.log(1.0001)) */
   currentTick: number
+  token0Color: string
+  token1Color: string
   priceToY: ({ price, tickAlignment }: { price: number; tickAlignment?: TickAlignment }) => number
   tickToY: ({ tick, tickAlignment }: { tick: number; tickAlignment?: TickAlignment }) => number
   yToTick: (y: number) => number

@@ -4,7 +4,6 @@ import { GraphQLApi } from '@universe/api'
 import { createContext } from 'react'
 import { GqlChainId, UniverseChainId } from 'uniswap/src/features/chains/types'
 import { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
-import { TDPChartState } from '~/pages/TokenDetails/components/chart/TDPChartState'
 import type { createTDPStore } from '~/pages/TokenDetails/context/createTDPStore'
 
 export type MultiChainMap = {
@@ -20,9 +19,10 @@ type BaseTDPContext = {
   address: string
 
   tokenQuery: QueryResult<GraphQLApi.TokenWebQuery, GraphQLApi.Exact<{ chain: GraphQLApi.Chain; address?: string }>>
-  chartState: TDPChartState
 
   multiChainMap: MultiChainMap
+
+  selectedMultichainChainId: UniverseChainId | undefined
 
   tokenColor?: string
 }

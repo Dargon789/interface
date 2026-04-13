@@ -11,25 +11,29 @@ import {
   TimePeriodDisplay,
 } from '~/components/Explore/constants'
 import { AdvancedPriceChartToggle } from '~/pages/TokenDetails/components/chart/AdvancedPriceChartToggle'
-import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
+import {
+  getDisplayPriceChartType,
+  type TokenDetailsChartType,
+} from '~/pages/TokenDetails/components/chart/TDPChartState'
+import { useTDPChartStateContext } from '~/pages/TokenDetails/components/chart/TDPChartStateContext'
 
-type TokenDetailsChartType = ChartType.PRICE | ChartType.VOLUME | ChartType.TVL
 const TOKEN_DETAILS_CHART_OPTIONS: TokenDetailsChartType[] = [ChartType.PRICE, ChartType.VOLUME, ChartType.TVL]
 
 export function ChartControls() {
   const {
-    activeQuery,
+    chartType,
     timePeriod,
     setTimePeriod,
     setChartType,
     priceChartType,
     setPriceChartType,
     disableCandlestickUI,
-  } = useTDPStore((s) => s.chartState)
+  } = useTDPChartStateContext()
   const refitChartContent = useAtomValue(refitChartContentAtom)
   const media = useMedia()
   const isMediumScreen = media.lg
-  const showAdvancedPriceChartToggle = activeQuery.chartType === ChartType.PRICE
+  const showAdvancedPriceChartToggle = chartType === ChartType.PRICE
+  const displayPriceChartType = getDisplayPriceChartType(priceChartType, disableCandlestickUI)
 
   return (
     <ChartActionsContainer>
@@ -47,7 +51,7 @@ export function ChartControls() {
       >
         {showAdvancedPriceChartToggle && (
           <AdvancedPriceChartToggle
-            currentChartType={priceChartType}
+            currentChartType={displayPriceChartType}
             onChartTypeChange={setPriceChartType}
             disableCandlestickUI={disableCandlestickUI}
           />
@@ -55,7 +59,7 @@ export function ChartControls() {
         <Flex $md={{ width: '100%' }}>
           <ChartTypeToggle
             availableOptions={TOKEN_DETAILS_CHART_OPTIONS}
-            currentChartType={activeQuery.chartType}
+            currentChartType={chartType}
             onChartTypeChange={(c: ChartType) => {
               setChartType(c as TokenDetailsChartType)
               if (c === ChartType.PRICE) {

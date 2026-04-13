@@ -247,12 +247,18 @@
         "cwd": "{projectRoot}"
       }
     },
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
+    "lint:typeaware-custom": {
+      "command": "bun config/oxlint-plugins/typeaware-custom.ts apps/mobile --native"
+    },
     "lint": {},
     "lint:fix": {},
     "check": {},
-    "check:fix": {},
-    "lint:eslint": {},
-    "lint:eslint:fix": {},
+    "check:fast": {},
     "start": {
       "command": "EXPO_ANDROID_LAUNCH_ACTIVITY='com.uniswap.mobile.dev/com.uniswap.MainActivity' EXPO_BUILD_CONFIGURATION=Debug NODE_ENV=development bunx expo start --scheme uniswap",
       "options": {
@@ -294,6 +300,7 @@
       }
     },
     "typecheck": {},
+    "typecheck:tsc": {},
     "typecheck:tsgo": {},
     "unicons": {
       "command": "cd scripts && python3 populate_svgs.py && cd .. && bun run lint --fix",
@@ -357,11 +364,6 @@
       "options": {
         "cwd": "{projectRoot}"
       }
-    },
-    "oxfmt": {},
-    "oxfmt:fix": {},
-    "oxlint": {},
-    "oxlint:fix": {},
-    "oxlint:type-aware": {}
+    }
   }
 }

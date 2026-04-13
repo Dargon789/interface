@@ -95,16 +95,16 @@ export function formatPortfolioResponseToMap({
     const hasMultichainFromBackend = portfolioData.portfolio.multichainBalances.length > 0
     // When we requested multichain from backend, only use response.multichainBalances — do not fall back to transforming legacy (that would show real data instead of mock).
     if (requestedMultichainFromBackend === true && !hasMultichainFromBackend) {
-      return undefined
+      return {}
     }
     const transformed = shouldTransformToMultichain(portfolioData)
       ? transformPortfolioToMultichain(portfolioData)
       : portfolioData
     const multichainMap = getPortfolioMultichainBalancesById(transformed, ownerAddress)
-    if (!multichainMap) {
-      return undefined
-    }
     const byCurrencyId: Record<CurrencyId, PortfolioMultichainBalance> = {}
+    if (!multichainMap) {
+      return byCurrencyId
+    }
     for (const multichain of Object.values(multichainMap)) {
       const token = multichain.tokens[0]
       if (!token) {
@@ -339,6 +339,7 @@ function updateBalanceVisibility({
     }
 
     const matches = matchesCurrency(token, targetCurrency)
+    // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
     return matches ? { ...balance, isHidden } : balance
   })
 }
@@ -391,8 +392,10 @@ export const createPortfolioCacheUpdater =
         input,
         (old) =>
           ({
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
             ...(old || currentData),
             portfolio: {
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
               ...currentData.portfolio,
               balances: updatedBalances,
               totalValueUsd: newTotal,

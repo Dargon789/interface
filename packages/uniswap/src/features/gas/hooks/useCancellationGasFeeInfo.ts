@@ -135,6 +135,7 @@ function useUniswapXCancelRequest({
 
   const queryKey = useMemo(() => {
     if (orders && orders.length > 0) {
+      // oxlint-disable-next-line typescript/require-array-sort-compare -- biome-parity: oxlint is stricter here
       const orderHashes = orders
         .map((o) => o.orderHash)
         .filter(Boolean)

@@ -142,6 +142,7 @@ export function SendReviewDetails({
       submitTranaction()
     }
 
+    // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
     await onSubmitSend?.()
   }, [authTrigger, setScreen, submitTranaction, onSubmitSend])
 

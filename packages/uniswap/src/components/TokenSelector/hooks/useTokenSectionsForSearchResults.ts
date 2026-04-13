@@ -31,19 +31,20 @@ export function useTokenSectionsForSearchResults({
 }): GqlResult<OnchainItemSection<TokenOption>[]> {
   const { t } = useTranslation()
 
+  const portfolioData = usePortfolioBalancesForAddressById(addresses)
   const {
     data: portfolioBalancesById,
     error: portfolioBalancesByIdError,
     refetch: refetchPortfolioBalances,
     loading: portfolioBalancesByIdLoading,
-  } = usePortfolioBalancesForAddressById(addresses)
+  } = portfolioData
 
   const {
     data: portfolioTokenOptions,
     error: portfolioTokenOptionsError,
     refetch: refetchPortfolioTokenOptions,
     loading: portfolioTokenOptionsLoading,
-  } = usePortfolioTokenOptions({ addresses, chainFilter, searchFilter: searchFilter ?? undefined })
+  } = usePortfolioTokenOptions({ chainFilter, searchFilter: searchFilter ?? undefined, portfolioData })
 
   // Bridging tokens are only shown if input is provided
   const {
@@ -51,7 +52,7 @@ export function useTokenSectionsForSearchResults({
     error: bridgingTokenOptionsError,
     refetch: refetchBridgingTokenOptions,
     loading: bridgingTokenOptionsLoading,
-  } = useBridgingTokensOptions({ oppositeSelectedToken: input, addresses, chainFilter })
+  } = useBridgingTokensOptions({ oppositeSelectedToken: input, chainFilter, portfolioData })
 
   // Only call search endpoint if isBalancesOnlySearch is false
   const {

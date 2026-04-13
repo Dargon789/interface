@@ -16,7 +16,7 @@ import { ContextMenu } from 'uniswap/src/components/menus/ContextMenu'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import type { Authenticator, RecoveryMethod } from 'uniswap/src/features/passkey/embeddedWallet'
-import { AuthenticatorNameType, getPrivyEnums, listAuthenticators } from 'uniswap/src/features/passkey/embeddedWallet'
+import { AuthenticatorNameType, listAuthenticators } from 'uniswap/src/features/passkey/embeddedWallet'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import i18n from 'uniswap/src/i18n'
@@ -37,8 +37,6 @@ function getPrivyAppId(): string | undefined {
 }
 
 export const LIST_AUTHENTICATORS_QUERY_KEY = 'listAuthenticators'
-
-type AuthenticatorNameTypeValues = Awaited<ReturnType<typeof getPrivyEnums>>['AuthenticatorNameType']
 
 enum AuthenticatorProvider {
   Google = 'Chrome',
@@ -84,7 +82,7 @@ function getProviderLabel(provider: AuthenticatorProvider, count?: number) {
 
 function getProvider(
   providerName: AuthenticatorNameType,
-  nameType: AuthenticatorNameTypeValues,
+  nameType: typeof AuthenticatorNameType,
 ): AuthenticatorProvider {
   switch (providerName) {
     case nameType.GOOGLE_PASSWORD_MANAGER:
@@ -103,7 +101,7 @@ function getProvider(
 
 function convertAuthenticatorsToDisplay(
   authenticators: Authenticator[],
-  nameType: AuthenticatorNameTypeValues,
+  nameType: typeof AuthenticatorNameType,
 ): AuthenticatorDisplay[] {
   let otherPasskeyCount = 1
   return authenticators.map((authenticator) => {
@@ -112,6 +110,7 @@ function convertAuthenticatorsToDisplay(
     const label = getProviderLabel(provider, otherPasskeyCount)
     isOtherPasskey && otherPasskeyCount++
     return {
+      // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
       ...authenticator,
       provider,
       label,
@@ -261,11 +260,8 @@ export default function PasskeyMenu({ onClose }: { onClose: () => void }) {
   const { data, isLoading } = useQuery({
     queryKey: [LIST_AUTHENTICATORS_QUERY_KEY, walletId],
     queryFn: async () => {
-      const [result, { AuthenticatorNameType: authenticatorNameType }] = await Promise.all([
-        listAuthenticators(walletId ?? undefined),
-        getPrivyEnums(),
-      ])
-      const display = convertAuthenticatorsToDisplay(result.authenticators, authenticatorNameType)
+      const result = await listAuthenticators(walletId ?? undefined)
+      const display = convertAuthenticatorsToDisplay(result.authenticators, AuthenticatorNameType)
       display.sort((a, b) => {
         const aTime = Number(a.createdAt) || 0
         const bTime = Number(b.createdAt) || 0

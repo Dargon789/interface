@@ -60,22 +60,18 @@
         "cwd": "{projectRoot}"
       }
     },
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
+    "lint:typeaware-custom": {
+      "command": "bun config/oxlint-plugins/typeaware-custom.ts apps/extension"
+    },
     "lint": {},
     "lint:fix": {},
     "check": {},
-    "check:fix": {},
-    "lint:eslint": {
-      "command": "NODE_OPTIONS='--max_old_space_size=8192 --max-semi-space-size=256' eslint --cache --cache-location node_modules/.cache/eslint/ --max-warnings=0 .",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
-    },
-    "lint:eslint:fix": {
-      "command": "NODE_OPTIONS='--max_old_space_size=8192 --max-semi-space-size=256' eslint --cache --cache-location node_modules/.cache/eslint/ . --fix",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
-    },
+    "check:fast": {},
     "postinstall": {
       "command": "wxt prepare",
       "options": {
@@ -145,6 +141,7 @@
       }
     },
     "typecheck": {},
+    "typecheck:tsc": {},
     "typecheck:tsgo": {},
     "zip": {
       "command": "wxt zip",
@@ -217,11 +214,6 @@
         "cwd": "{projectRoot}"
       },
       "dependsOn": ["build:wxt"]
-    },
-    "oxfmt": {},
-    "oxfmt:fix": {},
-    "oxlint": {},
-    "oxlint:fix": {},
-    "oxlint:type-aware": {}
+    }
   }
 }

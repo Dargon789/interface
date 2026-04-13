@@ -42,6 +42,26 @@ export function serializeErrorForWideEvent(err: unknown, depth = 0): SerializedE
     }
   }
 
+  // Handle Response objects (e.g., React Router throws these for unmatched routes)
+  if (typeof Response !== 'undefined' && err instanceof Response) {
+    return {
+      class: 'Response',
+      message: `HTTP ${err.status} ${err.statusText || '(no status text)'}`,
+      code: String(err.status),
+    }
+  }
+
+  // Handle plain objects — JSON.stringify to preserve useful information
+  if (typeof err === 'object' && err !== null) {
+    try {
+      const json = JSON.stringify(err)
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
+      return { class: err.constructor?.name ?? 'Object', message: json.length > 2000 ? json.slice(0, 2000) : json }
+    } catch {
+      return { class: 'Object', message: '(unserializable object)' }
+    }
+  }
+
   if (err !== undefined && err !== null) {
     return { class: typeof err, message: String(err) }
   }

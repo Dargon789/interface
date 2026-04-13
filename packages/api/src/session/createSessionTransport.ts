@@ -1,5 +1,7 @@
 import { type ConnectTransportOptions, createConnectTransport } from '@connectrpc/connect-web'
 
+type Interceptors = NonNullable<ConnectTransportOptions['interceptors']>
+
 /**
  * Options for creating a session transport.
  * All configuration is explicit - no platform detection.
@@ -23,7 +25,10 @@ export interface CreateSessionTransportOptions {
   /** Dynamic device ID getter (for mobile/extension that use headers instead of cookies) */
   getDeviceId?: () => Promise<string | null>
 
-  /** Additional ConnectRPC transport options */
+  /** Additional interceptors (run after the built-in header injection interceptor) */
+  interceptors?: Interceptors
+
+  /** Additional ConnectRPC transport options (note: use `interceptors` above instead of transportOptions.interceptors) */
   transportOptions?: Partial<ConnectTransportOptions>
 }
 
@@ -68,7 +73,16 @@ export interface CreateSessionTransportOptions {
 export function createSessionTransport(
   options: CreateSessionTransportOptions,
 ): ReturnType<typeof createConnectTransport> {
-  const { baseUrl, headers, cookie, credentials, getSessionId, getDeviceId, transportOptions } = options
+  const {
+    baseUrl,
+    headers,
+    cookie,
+    credentials,
+    getSessionId,
+    getDeviceId,
+    interceptors: extraInterceptors,
+    transportOptions,
+  } = options
 
   return createConnectTransport({
     baseUrl,
@@ -101,6 +115,7 @@ export function createSessionTransport(
 
         return next(request)
       },
+      ...(extraInterceptors ?? []),
     ],
     ...transportOptions,
   })

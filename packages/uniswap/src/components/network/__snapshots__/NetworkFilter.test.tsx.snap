@@ -57,7 +57,7 @@ exports[`NetworkFilter > renders a NetworkFilter 1`] = `
       </div>
     </div>
     <span
-      style="z-index: 1070; position: fixed; inset: 0; contain: strict; pointer-events: none;"
+      style="z-index: 6071; position: fixed; inset: 0; contain: strict; pointer-events: none;"
     />
     <div
       style="display: contents;"

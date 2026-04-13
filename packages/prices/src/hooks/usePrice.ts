@@ -25,7 +25,7 @@ export function usePrice(options: UsePriceOptions): number | undefined {
 
   const enabled = chainId !== undefined && !!address
 
-  const getIsWsConnected = wsClient.isConnected.bind(wsClient)
+  const getIsWsConnected = wsClient ? wsClient.isConnected.bind(wsClient) : () => false
 
   // Data is populated externally via queryClient.setQueryData from WS messages.
   // When restBatcher is provided and WS is disconnected, queryFn fires as a
@@ -38,7 +38,7 @@ export function usePrice(options: UsePriceOptions): number | undefined {
   )
 
   useEffect(() => {
-    if (!enabled || !live) {
+    if (!enabled || !live || !wsClient) {
       return undefined
     }
     return wsClient.subscribe({

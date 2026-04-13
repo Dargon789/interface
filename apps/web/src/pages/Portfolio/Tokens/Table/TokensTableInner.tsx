@@ -16,13 +16,13 @@ import { PORTFOLIO_TABLE_ROW_HEIGHT } from '~/pages/Portfolio/constants'
 import { useNavigateToTokenDetails } from '~/pages/Portfolio/Tokens/hooks/useNavigateToTokenDetails'
 import { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
 import { TokenColumns, useTokenColumns } from '~/pages/Portfolio/Tokens/Table/columns/useTokenColumns'
-import type { TokenTableRow } from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
 import {
   buildTokenTableRows,
   getSubRows,
   getTokenDataForRow,
   getTokenTableRowId,
 } from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
+import type { TokenTableRow } from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
 
 export function TokensTableInner({
   tokenData,
@@ -57,10 +57,18 @@ export function TokensTableInner({
   const { value: isModalVisible, setTrue: openModal, setFalse: closeModal } = useBooleanState(false)
   const showLoadingSkeleton = loading || !!error
   const trace = useTrace()
-  const multichainExpandable = useFeatureFlag(FeatureFlags.MultichainTokenUx)
-  const rows = useMemo(() => buildTokenTableRows(tokenData, multichainExpandable), [tokenData, multichainExpandable])
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const allowMultichainExpandRows = multichainTokenUxEnabled && !showHiddenTokensBanner
+  const rows = useMemo(
+    () => buildTokenTableRows(tokenData, allowMultichainExpandRows),
+    [tokenData, allowMultichainExpandRows],
+  )
 
-  const columns = useTokenColumns({ hiddenColumns, showLoadingSkeleton, showUnrealizedPnlPercent })
+  const columns = useTokenColumns({
+    hiddenColumns,
+    showLoadingSkeleton,
+    showUnrealizedPnlPercent,
+  })
 
   const navigateToTokenDetails = useNavigateToTokenDetails()
 
@@ -81,7 +89,7 @@ export function TokensTableInner({
       if (loading) {
         return content
       }
-      const canExpand = multichainExpandable && row.getCanExpand()
+      const canExpand = allowMultichainExpandRows && row.getCanExpand()
       const onPress = canExpand
         ? () => row.toggleExpanded()
         : () => handleTokenRowClick(getTokenDataForRow(row.original))
@@ -91,7 +99,7 @@ export function TokensTableInner({
         </TouchableArea>
       )
     },
-    [loading, multichainExpandable, handleTokenRowClick],
+    [loading, allowMultichainExpandRows, handleTokenRowClick],
   )
 
   return (

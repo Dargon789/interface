@@ -1,6 +1,7 @@
 // Basic clipboard functionality
 const Clipboard = {
   setStringAsync: async (text) => {
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       try {
         await navigator.clipboard.writeText(text)
@@ -15,6 +16,7 @@ const Clipboard = {
   },
 
   getStringAsync: async () => {
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       try {
         const text = await navigator.clipboard.readText()

@@ -1,6 +1,6 @@
 import * as datadog from '@pulumi/datadog'
-import { MonitorDefinition, defaultMonitorOptions } from './types'
 import { buildTags, buildMessage, settings } from './config'
+import { MonitorDefinition, defaultMonitorOptions } from './types'
 
 /**
  * Create a Datadog monitor from a MonitorDefinition
@@ -38,8 +38,8 @@ export function createMonitor(def: MonitorDefinition): datadog.Monitor {
     name: monitorName,
     type: def.type,
     query: def.query,
-    message: message,
-    tags: tags,
+    message,
+    tags,
     priority: def.priority.toString(),
     monitorThresholds: def.thresholds
       ? {

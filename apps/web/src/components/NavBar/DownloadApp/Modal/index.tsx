@@ -41,6 +41,7 @@ export function GetTheAppModal() {
       skipLogImpression
       name={ModalName.DownloadApp}
       isModalOpen={isOpen}
+      isDismissible={!isEmbeddedWalletEnabled}
       maxWidth="fit-content"
       mx="auto"
       onClose={close}

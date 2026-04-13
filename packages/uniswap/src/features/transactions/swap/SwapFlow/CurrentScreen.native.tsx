@@ -17,6 +17,7 @@ import {
 } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewScreen'
 import { useDelayedRender } from 'utilities/src/react/useDelayedRender'
 
+// oxlint-disable-next-line typescript/consistent-return -- biome-parity: oxlint is stricter here
 export function CurrentScreen({
   settings,
   onSubmitSwap,

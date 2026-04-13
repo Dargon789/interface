@@ -75,11 +75,9 @@ function MultichainCountBadge({
         <Text
           allowFontScaling={false}
           color="$neutral1"
-          fontFamily="$button"
-          fontSize={10}
-          fontWeight="$book"
+          variant="buttonLabel4"
+          $platform-web={{ fontSize: 10, lineHeight: 12 }}
           numberOfLines={1}
-          lineHeight={8}
         >
           {count > 99 ? '99+' : String(count)}
         </Text>
@@ -142,7 +140,7 @@ export const TokenLogo = memo(function TokenLogoInner({
   lineHeight = 14,
   transition,
 }: TokenLogoProps): JSX.Element {
-  const isMultichainUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const isTestnetToken = !!chainId && isTestnetChain(chainId)
 
   // We want to avoid the extra render on mobile when updating the state, so we set this to `true` from the start.
@@ -153,7 +151,7 @@ export const TokenLogo = memo(function TokenLogoInner({
 
   const borderWidth = isTestnetToken ? size / TESTNET_BORDER_DIVISOR : 0
 
-  const showMultichainCountBadge = isMultichainUxEnabled && networkCount !== undefined && networkCount > 1
+  const showMultichainCountBadge = multichainTokenUxEnabled && networkCount !== undefined && networkCount > 1
   const showNetworkLogo = shouldShowNetworkLogo({
     alwaysShowNetworkLogo,
     hideNetworkLogo,

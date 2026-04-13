@@ -9,8 +9,8 @@ import { zIndexes } from 'ui/src/theme'
 import { useShadowPropsShort } from 'ui/src/theme/shadows'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { getChainUrlParam } from '~/features/params/chainParams'
 import { ExternalLink } from '~/theme/components/Links'
-import { getChainUrlParam } from '~/utils/chainParams'
 
 function getLimitedDataBannerSessionStorageKey(tokenAddress: string): string {
   return `hideLimitedDataBanner-${tokenAddress}`
@@ -39,7 +39,7 @@ function BannerWrapper({ children, onDismiss, testId }: BannerWrapperProps): JSX
         position: 'fixed',
         bottom: 40,
         right: 20,
-        ...(shadowProps['$platform-web'] || {}),
+        ...shadowProps['$platform-web'],
       }}
       $lg={{
         bottom: 62,

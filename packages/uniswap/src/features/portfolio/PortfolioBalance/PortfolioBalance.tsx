@@ -30,6 +30,8 @@ interface PortfolioBalanceProps {
   overridePercentChange?: number
   /** When set, overrides the backend 1-day absolute change with a period-aware value */
   overrideAbsoluteChangeUSD?: number
+  /** When true, hides the percent change (absolute change still shown) */
+  hidePercentChange?: boolean
 }
 
 export const PortfolioBalance = memo(function PortfolioBalanceInner({
@@ -41,6 +43,7 @@ export const PortfolioBalance = memo(function PortfolioBalanceInner({
   overrideBalanceUSD,
   overridePercentChange,
   overrideAbsoluteChangeUSD,
+  hidePercentChange,
 }: PortfolioBalanceProps): JSX.Element {
   const { t } = useTranslation()
   const { data, loading, networkStatus, refetch } = usePortfolioTotalValue({
@@ -64,7 +67,7 @@ export const PortfolioBalance = memo(function PortfolioBalanceInner({
 
   const { percentChange: backendPercentChange, absoluteChangeUSD: backendAbsoluteChangeUSD, balanceUSD } = data || {}
 
-  const percentChange = overridePercentChange ?? backendPercentChange
+  const percentChange = hidePercentChange ? undefined : (overridePercentChange ?? backendPercentChange)
   const absoluteChangeUSD = overrideAbsoluteChangeUSD ?? backendAbsoluteChangeUSD
 
   const isRightToLeft = i18next.dir() === 'rtl'
@@ -109,7 +112,8 @@ export const PortfolioBalance = memo(function PortfolioBalanceInner({
             variant="body3"
           />
         </Shine>
-        {chartPeriod !== undefined && (
+        {/* Hide period label during chart scrub (overrideBalanceUSD is set while scrubbing) */}
+        {chartPeriod !== undefined && overrideBalanceUSD === undefined && (
           <Text variant="body3" color="$neutral3" ml="$spacing4">
             {chartPeriodToTimeLabel(t, chartPeriod).toLocaleLowerCase()}
           </Text>

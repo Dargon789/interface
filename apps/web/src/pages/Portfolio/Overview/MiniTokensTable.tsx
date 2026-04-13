@@ -5,6 +5,7 @@ import { Flex } from 'ui/src'
 import { useGetWalletTokensProfitLossQuery } from 'uniswap/src/data/rest/getWalletTokensProfitLoss'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { useRestPortfolioValueModifier } from 'uniswap/src/features/dataApi/balances/balancesRest'
 import { ElementName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
@@ -28,7 +29,9 @@ export const MiniTokensTable = memo(function MiniTokensTable({ maxTokens = 8, ch
   const { externalAddress, chainId: routeChainId } = usePortfolioRoutes()
   const portfolioAddresses = usePortfolioAddresses()
   const isProfitLossEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { chains: enabledChains } = useEnabledChains()
+  const modifier = useRestPortfolioValueModifier(portfolioAddresses.evmAddress ?? portfolioAddresses.svmAddress)
   const viewAllHref = buildPortfolioUrl({
     tab: PortfolioTab.Tokens,
     chainId: routeChainId,
@@ -40,6 +43,8 @@ export const MiniTokensTable = memo(function MiniTokensTable({ maxTokens = 8, ch
       evmAddress: portfolioAddresses.evmAddress,
       svmAddress: portfolioAddresses.svmAddress,
       chainIds: chainId ? [chainId] : enabledChains,
+      modifier,
+      multichain: multichainTokenUxEnabled || undefined,
     },
     enabled: isProfitLossEnabled,
   })

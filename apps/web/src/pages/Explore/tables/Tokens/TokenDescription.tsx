@@ -11,9 +11,9 @@ import { shortenAddress } from 'utilities/src/addresses'
 import { GroupHoverTransition } from '~/components/GroupHoverTransition'
 import { EllipsisText, TableText } from '~/components/Table/shared/TableText'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { getChainIdFromChainUrlParam } from '~/features/params/chainParams'
 import type { TokenStat } from '~/state/explore/types'
 import { CopyHelper } from '~/theme/components/CopyHelper'
-import { getChainIdFromChainUrlParam } from '~/utils/chainParams'
 
 const TokenDetailsContainer = styled(Flex, {
   flex: 1,
@@ -46,11 +46,11 @@ interface TokenDescriptionProps {
 
 export function TokenDescription({ token, chainIdsByVolume = [], chainFilter }: TokenDescriptionProps) {
   const { t } = useTranslation()
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
-  const isMultiNetworkRow = isMultichainTokenUx && chainIdsByVolume.length > 1
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const isMultiNetworkRow = multichainTokenUxEnabled && chainIdsByVolume.length > 1
   /** Omit chain badge on the logo when volume spans multiple networks — row uses NetworkIconList on hover instead. */
   const logoChainId = isMultiNetworkRow ? undefined : getChainIdFromChainUrlParam(token.chain.toLowerCase())
-  const logoSize = isMultichainTokenUx ? iconSizes.icon32 : iconSizes.icon24
+  const logoSize = multichainTokenUxEnabled ? iconSizes.icon32 : iconSizes.icon24
   const disableHoverTransition =
     chainIdsByVolume.length === 1 && (token.address === NATIVE_CHAIN_ID || token.address === ZERO_ADDRESS)
 
@@ -63,15 +63,15 @@ export function TokenDescription({ token, chainIdsByVolume = [], chainFilter }: 
           size={logoSize}
           symbol={token.symbol}
           url={token.logo}
-          alwaysShowNetworkLogo={isMultichainTokenUx && !!chainFilter}
-          showMainnetNetworkLogo={isMultichainTokenUx}
+          alwaysShowNetworkLogo={multichainTokenUxEnabled && !!chainFilter}
+          showMainnetNetworkLogo={multichainTokenUxEnabled}
         />
       </View>
-      <TokenDetailsContainer multichainUx={isMultichainTokenUx}>
-        <EllipsisText variant={isMultichainTokenUx ? 'body2' : undefined} data-testid={TestID.TokenName}>
+      <TokenDetailsContainer multichainUx={multichainTokenUxEnabled}>
+        <EllipsisText variant={multichainTokenUxEnabled ? 'body2' : undefined} data-testid={TestID.TokenName}>
           {token.name ?? token.project?.name}
         </EllipsisText>
-        {isMultichainTokenUx ? (
+        {multichainTokenUxEnabled ? (
           <GroupHoverTransition
             height={SYMBOL_SLOT_HEIGHT}
             showTransition={!disableHoverTransition}
@@ -120,9 +120,9 @@ export function TokenDescription({ token, chainIdsByVolume = [], chainFilter }: 
   )
 }
 
-export function getTokenDescriptionColumnSize(isLgBreakpoint: boolean, isMultichainTokenUx: boolean): number {
+export function getTokenDescriptionColumnSize(isLgBreakpoint: boolean, multichainTokenUxEnabled: boolean): number {
   if (!isLgBreakpoint) {
     return 300
   }
-  return isMultichainTokenUx ? 225 : 150
+  return multichainTokenUxEnabled ? 225 : 150
 }

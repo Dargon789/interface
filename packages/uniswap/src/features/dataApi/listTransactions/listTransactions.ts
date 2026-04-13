@@ -30,6 +30,7 @@ type ListTransactionsQueryArgs = {
   chainIds?: UniverseChainId[]
   fiatOnRampParams?: PartialMessage<FiatOnRampParams>
   filterTransactionTypes?: TransactionTypeFilter[]
+  searchText?: string
 }
 
 /**
@@ -46,6 +47,7 @@ export function useListTransactions({
   skip,
   fiatOnRampParams,
   filterTransactionTypes,
+  searchText,
 }: ListTransactionsQueryArgs & { skip?: boolean }): TransactionListDataResult {
   const { chains: defaultChainIds } = useEnabledChains()
   // Use provided chainIds or fallback to default chains
@@ -71,6 +73,7 @@ export function useListTransactions({
       pageSize: finalPageSize,
       fiatOnRampParams,
       filterTransactionTypes,
+      searchText: searchText || undefined,
     },
     enabled: !!(evmAddress || svmAddress) && !skip,
   })

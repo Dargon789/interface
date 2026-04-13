@@ -1,11 +1,9 @@
-/** biome-ignore-all assist/source/organizeImports: we want to manually group exports by category */
-
 /**
  * @universe/api - Unified data layer for Uniswap Universe
  *
  * This is the ONLY public entry point for the API package.
  * All exports must be explicitly listed here.
- * Deep imports are forbidden and will be blocked by ESLint.
+ * Deep imports are forbidden and will be blocked by lint.
  */
 
 // Foundations
@@ -151,31 +149,29 @@ export {
   type ScreenResponse,
 } from '@universe/api/src/clients/compliance/createComplianceApiClient'
 
-// Unitags API
-export {
-  type ProfileMetadata,
-  type UnitagAddressesRequest,
-  type UnitagAddressesResponse,
-  type UnitagAddressRequest,
-  type UnitagAddressResponse,
-  type UnitagAvatarUploadCredentials,
-  type UnitagChangeUsernameRequestBody,
-  type UnitagClaim,
-  type UnitagClaimContext,
-  type UnitagClaimEligibilityRequest,
-  type UnitagClaimEligibilityResponse,
-  type UnitagClaimSource,
-  type UnitagClaimUsernameRequestBody,
-  type UnitagDeleteUsernameRequestBody,
-  UnitagErrorCodes,
-  type UnitagGetAvatarUploadUrlResponse,
-  type UnitagResponse,
-  type UnitagUpdateMetadataRequestBody,
-  type UnitagUpdateMetadataResponse,
-  type UnitagUsernameRequest,
-  type UnitagUsernameResponse,
-} from '@universe/api/src/clients/unitags/types'
+// Old Unitags API (REST)
+export { ensureNewErrorCode } from '@universe/api/src/clients/unitags/types'
 export { createUnitagsApiClient } from '@universe/api/src/clients/unitags/createUnitagsApiClient'
+
+// New Unitags Service API
+export {
+  createUnitagServiceApiClient as createUnitagsServiceApiClient,
+  type UnitagsServiceApiClient,
+  type UnitagsServiceApiClientContext,
+} from '@universe/api/src/clients/unitags/createUnitagsServiceApiClient'
+export { UnitagService } from '@uniswap/client-unitag/dist/uniswap/unitag/v1/UnitagService_connect'
+export { UnitagErrorCode } from '@uniswap/client-unitag/dist/uniswap/unitag/v1/UnitagService_pb'
+export {
+  GetUsernameRequest,
+  GetUsernameResponse,
+  GetAddressRequest,
+  GetAddressResponse,
+  GetAddressesRequest,
+  GetAddressesResponse,
+  CanClaimUsernameRequest,
+  CanClaimUsernameResponse,
+  AvatarUploadResponse,
+} from '@uniswap/client-unitag/dist/uniswap/unitag/v1/UnitagService_pb'
 
 // Gas Service API (ConnectRPC - estimateGasFee via UniRPC v2)
 export {

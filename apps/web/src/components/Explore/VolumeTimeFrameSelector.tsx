@@ -7,12 +7,12 @@ import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { TimePeriod } from '~/appGraphql/data/util'
 import { Dropdown, InternalMenuItem } from '~/components/Dropdowns/Dropdown'
 import { getTimePeriodLabel, ORDERED_TIMES, SOLANA_ORDERED_TIMES } from '~/components/Explore/constants'
+import { getChainIdFromChainUrlParam } from '~/features/params/chainParams'
 import {
   useExploreTablesFilterStore,
   useExploreTablesFilterStoreActions,
 } from '~/pages/Explore/exploreTablesFilterStore'
 import { useExploreParams } from '~/pages/Explore/redirects'
-import { getChainIdFromChainUrlParam } from '~/utils/chainParams'
 
 // TODO: change this to reflect data pipeline
 export function VolumeTimeFrameSelector() {

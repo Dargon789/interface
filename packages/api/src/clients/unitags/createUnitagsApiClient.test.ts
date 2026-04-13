@@ -140,8 +140,7 @@ describe('UnitagsApiClient', () => {
       expect(config?.transformRequest).toBeDefined()
 
       const params = {
-        username: 'testuser',
-        data: { metadata: { description: 'updated' } },
+        data: { username: 'testuser', metadata: { description: 'updated' } },
         address: '0x123',
         signMessage: vi.fn().mockResolvedValue('mock-signature'),
       }

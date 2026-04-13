@@ -23,6 +23,7 @@ export type TokenSectionsHookProps = {
 export type ConvertFiatAmountFormattedCallback = (
   fromAmount: Maybe<string | number>,
   numberType: FiatNumberType,
+  // oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
   placeholder?: string | undefined,
 ) => string
 

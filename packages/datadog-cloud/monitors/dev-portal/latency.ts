@@ -1,5 +1,5 @@
-import { MonitorDefinition } from '../../types'
 import { settings } from '../../config'
+import { MonitorDefinition } from '../../types'
 
 // ALB metrics use name:dev-portal-lb tag, scoped by environment from Pulumi config
 const albTagFilter = `name:dev-portal-lb,unienv:${settings.environment}`

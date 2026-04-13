@@ -1,4 +1,4 @@
-import { CHART_BEHAVIOR } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/constants'
+import { CHART_BEHAVIOR } from '~/components/Charts/D3LiquidityChartShared/constants'
 import { createCurrentTickRenderer } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/renderers/CurrentTickRenderer'
 import { createLiquidityBarsOverlayRenderer } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/renderers/LiquidityBarsOverlayRenderer'
 import { createLiquidityBarsRenderer } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/renderers/LiquidityBarsRenderer'

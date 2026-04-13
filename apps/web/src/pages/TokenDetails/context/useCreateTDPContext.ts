@@ -12,10 +12,9 @@ import { buildCurrencyId, buildNativeCurrencyId, isNativeCurrencyAddress } from 
 import { gqlToCurrency } from '~/appGraphql/data/util'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 import { useActiveAddresses } from '~/features/accounts/store/hooks'
+import { useChainIdFromUrlParam } from '~/features/params/chainParams'
 import { useSrcColor } from '~/hooks/useColor'
-import { useCreateTDPChartState } from '~/pages/TokenDetails/components/chart/TDPChartState'
 import { LoadedTDPContext, MultiChainMap, PendingTDPContext } from '~/pages/TokenDetails/context/TDPContext'
-import { useChainIdFromUrlParam } from '~/utils/chainParams'
 import { getNativeTokenDBAddress } from '~/utils/nativeTokens'
 
 export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
@@ -29,13 +28,13 @@ export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
   const isNative = tokenAddress === NATIVE_CHAIN_ID
 
   const tokenDBAddress = isNative ? getNativeTokenDBAddress(currencyChainInfo.backendChain.chain) : tokenAddress
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const tokenQuery = GraphQLApi.useTokenWebQuery({
     variables: {
       address: tokenDBAddress,
       chain: currencyChainInfo.backendChain.chain,
-      multichain: isMultichainTokenUx,
+      multichain: multichainTokenUxEnabled,
     },
     errorPolicy: 'all',
   })
@@ -53,8 +52,6 @@ export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
     }
     return undefined
   }, [tokenQuery.data?.token, isNative, currencyChainInfo.id])
-
-  const chartState = useCreateTDPChartState(tokenDBAddress, currencyChainInfo.backendChain.chain)
 
   const multiChainMap = useMultiChainMap(tokenQuery)
 
@@ -78,8 +75,8 @@ export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
       // `currency.address` is checksummed, whereas the `tokenAddress` url param may not be
       address: (currency?.isNative ? NATIVE_CHAIN_ID : currency?.address) ?? tokenAddress,
       tokenQuery,
-      chartState,
       multiChainMap,
+      selectedMultichainChainId: undefined,
       tokenColor,
     }
   }, [
@@ -88,7 +85,6 @@ export function useCreateTDPContext(): PendingTDPContext | LoadedTDPContext {
     currencyChainInfo.id,
     tokenAddress,
     tokenQuery,
-    chartState,
     multiChainMap,
     tokenColor,
   ])

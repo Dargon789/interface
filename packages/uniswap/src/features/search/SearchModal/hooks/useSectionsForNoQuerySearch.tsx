@@ -42,8 +42,8 @@ export function useSectionsForNoQuerySearch({
     endElement: <ClearRecentSearchesButton />,
   })
 
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
-  const isMultichainPath = isMultichainTokenUx && chainFilter === null
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const isMultichainPath = multichainTokenUxEnabled && chainFilter === null
 
   const numberOfTrendingTokens =
     activeTab === SearchTab.All

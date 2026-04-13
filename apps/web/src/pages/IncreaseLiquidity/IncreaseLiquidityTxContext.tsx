@@ -153,6 +153,7 @@ export function IncreaseLiquidityTxContextProvider({ children }: PropsWithChildr
     gasFeeToken1Approval,
   )
   const gasFeeLiquidityTokenUSD = useUSDCurrencyAmountOfGasFee(
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     positionInfo?.liquidityToken?.chainId,
     gasFeePositionTokenApproval,
   )
@@ -277,6 +278,7 @@ export function IncreaseLiquidityTxContextProvider({ children }: PropsWithChildr
     if (increaseCalldataQueryParams) {
       sendAnalyticsEvent(InterfaceEventName.IncreaseLiquidityFailed, {
         message,
+        // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
         ...increaseCalldataQueryParams,
       })
     }
@@ -349,16 +351,19 @@ export function IncreaseLiquidityTxContextProvider({ children }: PropsWithChildr
     if (increaseCalldataQueryParams instanceof IncreasePositionRequest) {
       updatedIncreaseCalldataQueryParams = validatedPermit
         ? new IncreasePositionRequest({
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
             ...increaseCalldataQueryParams,
             v4BatchPermitData: validatedPermit,
           })
         : increaseCalldataQueryParams
     } else if (increaseCalldataQueryParams?.increaseLpPosition.case === 'v4IncreaseLpPosition') {
       updatedIncreaseCalldataQueryParams = new IncreaseLPPositionRequest({
+        // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
         ...increaseCalldataQueryParams,
         increaseLpPosition: {
           case: 'v4IncreaseLpPosition',
           value: {
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
             ...increaseCalldataQueryParams.increaseLpPosition.value,
             batchPermitData: validatedPermit,
           },

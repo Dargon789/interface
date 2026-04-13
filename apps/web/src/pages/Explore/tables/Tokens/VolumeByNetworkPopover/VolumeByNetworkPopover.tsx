@@ -126,7 +126,7 @@ export function VolumeByNetworkPopover({
       </Popover.Trigger>
       <Popover.Content
         zIndex={zIndexes.popover}
-        backgroundColor="$surface4"
+        backgroundColor="$surface1"
         borderColor="$surface3"
         borderRadius="$rounded20"
         borderWidth="$spacing1"
@@ -137,10 +137,6 @@ export function VolumeByNetworkPopover({
         p="$spacing16"
         minWidth={POPOVER_MIN_WIDTH}
         {...shadowProps}
-        $platform-web={{
-          ...shadowProps['$platform-web'],
-          backdropFilter: 'blur(12px)',
-        }}
       >
         <Flex gap="$spacing16" width="100%">
           <Flex row justifyContent="space-between" alignItems="baseline">

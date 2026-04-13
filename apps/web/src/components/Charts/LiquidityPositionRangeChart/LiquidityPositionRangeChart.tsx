@@ -181,6 +181,7 @@ class LPPriceChartModel extends ChartModel<PriceChartData> {
     const autoscaleInfoProvider = (original: () => any) => {
       const res = original()
       if (params.minVisiblePrice && params.maxVisiblePrice) {
+        // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
         return {
           ...res,
           priceRange: {
@@ -189,6 +190,7 @@ class LPPriceChartModel extends ChartModel<PriceChartData> {
           },
         }
       }
+      // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
       return res
     }
 
@@ -544,6 +546,7 @@ function LiquidityPositionRangeChart({
     })
 
     // Convert Map values back to array and sort
+    // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
     return Array.from(uniqueTicksMap.values()).sort((a, b) => a.price0 - b.price0)
   }, [formattedData])
 

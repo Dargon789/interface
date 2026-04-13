@@ -1,8 +1,11 @@
-import type { Action } from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
+import {
+  Action,
+  AuthenticationTypes,
+} from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
 import type { SignAuth } from '@universe/api'
 import { EmbeddedWalletApiClient } from 'uniswap/src/data/rest/embeddedWallet/requests'
 import { getDeviceSession, signWithDeviceKey } from 'uniswap/src/features/passkey/deviceSession'
-import { authenticateWithPasskey, loadPrivyPbModule } from 'uniswap/src/features/passkey/embeddedWallet'
+import { authenticateWithPasskey } from 'uniswap/src/features/passkey/embeddedWallet'
 import { logger } from 'utilities/src/logger/logger'
 
 async function signWithDeviceSessionOrPasskey<T>({
@@ -16,7 +19,6 @@ async function signWithDeviceSessionOrPasskey<T>({
   challengeParams: Record<string, string>
   signRequest: (auth: SignAuth) => Promise<T>
 }): Promise<T> {
-  const { AuthenticationTypes } = await loadPrivyPbModule()
   const session = getDeviceSession()
   if (session) {
     const challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
@@ -45,7 +47,6 @@ async function signWithDeviceSessionOrPasskey<T>({
 }
 
 export async function signMessageWithPasskey(message: string, walletId?: string): Promise<string | undefined> {
-  const { Action } = await loadPrivyPbModule()
   try {
     const result = await signWithDeviceSessionOrPasskey({
       action: Action.SIGN_MESSAGE,
@@ -63,7 +64,6 @@ export async function signMessageWithPasskey(message: string, walletId?: string)
 }
 
 export async function signTransactionWithPasskey(transaction: string, walletId?: string): Promise<string | undefined> {
-  const { Action } = await loadPrivyPbModule()
   try {
     const result = await signWithDeviceSessionOrPasskey({
       action: Action.SIGN_TRANSACTION,
@@ -82,7 +82,6 @@ export async function signTransactionWithPasskey(transaction: string, walletId?:
 }
 
 export async function signTypedDataWithPasskey(typedData: string, walletId?: string): Promise<string | undefined> {
-  const { Action } = await loadPrivyPbModule()
   try {
     const result = await signWithDeviceSessionOrPasskey({
       action: Action.SIGN_TYPED_DATA,
@@ -100,7 +99,6 @@ export async function signTypedDataWithPasskey(typedData: string, walletId?: str
 }
 
 export async function exportEncryptedSeedPhrase(encryptionKey: string, walletId?: string): Promise<string | undefined> {
-  const { Action } = await loadPrivyPbModule()
   try {
     const credential = await authenticateWithPasskey(Action.EXPORT_SEED_PHRASE, { walletId, encryptionKey })
     if (!credential) {

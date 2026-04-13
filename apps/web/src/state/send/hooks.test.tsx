@@ -175,7 +175,7 @@ describe('useDerivedSendInfo', () => {
     const unitagName = 'myunitag'
 
     ;(useUnitagsUsernameQuery as Mock).mockReturnValue({
-      data: { address: { address: validAddressWithUnitag }, username: unitagName },
+      data: { address: validAddressWithUnitag, username: unitagName },
       isLoading: false,
     })
 
@@ -200,7 +200,7 @@ describe('useDerivedSendInfo', () => {
     const fallbackUnitagName = 'myunitagfallackusername'
 
     ;(useUnitagsUsernameQuery as Mock).mockReturnValue({
-      data: { address: { address: validAddressWithUnitag } },
+      data: { address: validAddressWithUnitag },
       isLoading: false,
     })
     ;(useUnitagsAddressQuery as Mock).mockReturnValue({

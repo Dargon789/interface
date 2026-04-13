@@ -27,6 +27,8 @@ export interface WatchPlanStepParams {
   address: Address
   stepChainId?: UniverseChainId
   sourceChainId: UniverseChainId
+  /** If provided, used as the initial plan state to avoid a redundant GET call after PATCH. */
+  initialPlanResponse?: TradingApi.PlanResponse
 }
 
 export interface WatchPlanStepResult {
@@ -41,7 +43,7 @@ export interface WatchPlanStepResult {
  * Follows the same pattern as waitForRemoteUpdate - directly callable, returns result.
  */
 export function* watchPlanStep(params: WatchPlanStepParams): SagaGenerator<WatchPlanStepResult> {
-  const { planId, targetStepIndex, stepChainId, sourceChainId, address } = params
+  const { planId, targetStepIndex, stepChainId, sourceChainId, address, initialPlanResponse } = params
 
   const pollingInterval = stepChainId ? getChainInfo(stepChainId).tradingApiPollingIntervalMs : ONE_SECOND_MS
   let attempt = 0
@@ -60,7 +62,11 @@ export function* watchPlanStep(params: WatchPlanStepParams): SagaGenerator<Watch
       maxAttempts: MAX_ATTEMPTS,
     })
 
-    const tradeStatusResponse = yield* call(TradingApiSessionClient.getExistingPlan, { planId })
+    // On the first iteration, use the PATCH response if available to skip a redundant GET call.
+    const tradeStatusResponse =
+      attempt === 0 && initialPlanResponse
+        ? initialPlanResponse
+        : yield* call(TradingApiSessionClient.getExistingPlan, { planId })
 
     const updatedPlanTx = extractPlanResponseDetails(tradeStatusResponse)
     if (!updatedPlanTx) {
@@ -119,6 +125,7 @@ export function* watchPlanStep(params: WatchPlanStepParams): SagaGenerator<Watch
     targetStepIndex,
   })
 }
+
 /**
  * Triggers balance updates for a specific finalized step in a plan.
  */

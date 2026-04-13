@@ -9,7 +9,7 @@ import { HexString } from 'utilities/src/addresses/hex'
  *
  *  @returns true if the address is valid, otherwise returns false
  */
-export function isEVMAddress(address?: string | null | undefined): address is HexString {
+export function isEVMAddress(address?: string | null): address is HexString {
   if (!address) {
     return false
   }
@@ -23,7 +23,7 @@ export function isEVMAddress(address?: string | null | undefined): address is He
  * but *should* only be used to check for checksummed addresses since it is an expensive operation
  * @returns true if the address is valid, otherwise returns false
  */
-export function isEVMAddressWithChecksum(value?: string | null | undefined): value is HexString {
+export function isEVMAddressWithChecksum(value?: string | null): value is HexString {
   if (!value) {
     return false
   }

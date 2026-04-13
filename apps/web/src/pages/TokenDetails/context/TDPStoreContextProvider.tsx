@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
 import { useHasValueChanged } from 'utilities/src/react/useHasValueChanged'
 import { shallow } from 'zustand/shallow'
 import { createTDPStore } from '~/pages/TokenDetails/context/createTDPStore'
+import { TDPChainSearchParamSync } from '~/pages/TokenDetails/context/TDPChainSearchParamSync'
 import { TDPStoreContext } from '~/pages/TokenDetails/context/TDPContext'
 import { useCreateTDPContext } from '~/pages/TokenDetails/context/useCreateTDPContext'
 
@@ -11,7 +12,7 @@ interface TDPStoreContextProviderProps {
   children: ReactNode
 }
 
-/** Identity for "same token page" so we can do partial updates when only data (e.g. tokenQuery, chartState) changes */
+/** Identity for "same token page" so we can do partial updates when only data (e.g. tokenQuery) changes */
 function useTDPIdentity() {
   const { tokenAddress, chainName } = useParams<{ tokenAddress: string; chainName: string }>()
   return { tokenAddress: tokenAddress ?? '', chainName: chainName ?? '' }
@@ -49,9 +50,6 @@ export function TDPStoreContextProvider({ children }: TDPStoreContextProviderPro
     if (!shallow(state.multiChainMap, derivedState.multiChainMap)) {
       actions.setMultiChainMap(derivedState.multiChainMap)
     }
-    if (!shallow(state.chartState, derivedState.chartState)) {
-      actions.setChartState(derivedState.chartState)
-    }
     if (state.tokenColor !== derivedState.tokenColor) {
       actions.setTokenColor(derivedState.tokenColor)
     }
@@ -70,5 +68,10 @@ export function TDPStoreContextProvider({ children }: TDPStoreContextProviderPro
     }
   }, [store])
 
-  return <TDPStoreContext.Provider value={store}>{children}</TDPStoreContext.Provider>
+  return (
+    <TDPStoreContext.Provider value={store}>
+      <TDPChainSearchParamSync />
+      {children}
+    </TDPStoreContext.Provider>
+  )
 }

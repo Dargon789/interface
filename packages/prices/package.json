@@ -15,10 +15,8 @@
     "@testing-library/react": "16.3.0",
     "@types/node": "22.13.1",
     "@typescript/native-preview": "7.0.0-dev.20260311.1",
-    "@uniswap/eslint-config": "workspace:^",
     "@vitest/coverage-v8": "3.2.1",
     "depcheck": "1.4.7",
-    "eslint": "10.0.2",
     "react": "19.0.3",
     "typescript": "5.8.3",
     "vitest": "3.2.1"
@@ -26,16 +24,13 @@
   "scripts": {
     "test": "nx test prices",
     "typecheck": "nx typecheck prices",
-    "typecheck:tsgo": "nx typecheck:tsgo prices",
-    "lint": "nx lint prices",
-    "lint:fix": "nx lint:fix prices",
-    "lint:eslint": "nx lint:eslint prices",
-    "lint:eslint:fix": "nx lint:eslint:fix prices",
+    "check": "nx check prices",
+    "check:fast": "nx check:fast prices",
     "check:deps:usage": "nx check:deps:usage prices",
-    "oxlint": "nx oxlint prices",
-    "oxlint:fix": "nx oxlint:fix prices",
-    "oxfmt": "nx oxfmt prices",
-    "oxfmt:fix": "nx oxfmt:fix prices"
+    "format": "nx format prices",
+    "format:check": "nx format:check prices",
+    "lint": "nx lint prices",
+    "lint:fix": "nx lint:fix prices"
   },
   "nx": {
     "includedScripts": []

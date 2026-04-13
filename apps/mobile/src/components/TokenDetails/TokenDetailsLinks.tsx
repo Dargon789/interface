@@ -14,8 +14,8 @@ import { getBlockExplorerIcon } from 'uniswap/src/components/chains/BlockExplore
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { MultichainAddressSheet } from 'uniswap/src/components/MultichainTokenDetails/MultichainAddressSheet'
 import { MultichainExplorerList } from 'uniswap/src/components/MultichainTokenDetails/MultichainExplorerList'
-import type { MultichainTokenEntry } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
 import { useOrderedMultichainEntries } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
+import type { MultichainTokenEntry } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
 import { useTokenProjectUrlsPartsFragment } from 'uniswap/src/data/graphql/uniswap-data-api/fragments'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
@@ -66,9 +66,16 @@ function useMultichainTokenEntries(currencyId: string): MultichainTokenEntry[] {
 export function TokenDetailsLinks(): JSX.Element {
   const { t } = useTranslation()
 
-  const { address, chainId, currencyId } = useTokenDetailsContext()
+  const {
+    address,
+    chainId,
+    currencyId,
+    isMultichainAddressSheetOpen,
+    openMultichainAddressSheet,
+    closeMultichainAddressSheet,
+  } = useTokenDetailsContext()
 
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const multichainEntries = useMultichainTokenEntries(currencyId)
   const hasMultipleChains = multichainEntries.length > 1
 
@@ -87,7 +94,6 @@ export function TokenDetailsLinks(): JSX.Element {
   const isNativeCurrency = isNativeCurrencyAddress(chainId, address)
 
   const [isExplorerSheetOpen, setIsExplorerSheetOpen] = useState(false)
-  const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false)
 
   const handleExplorerPress = useCallback(async (url: string) => {
     await openUri({ uri: url })
@@ -95,7 +101,7 @@ export function TokenDetailsLinks(): JSX.Element {
   }, [])
 
   const links = useMemo((): LinkButtonProps[] => {
-    const showMultichainDropdowns = isMultichainTokenUx && hasMultipleChains
+    const showMultichainDropdowns = multichainTokenUxEnabled && hasMultipleChains
     const isNativeAddress = isDefaultNativeAddress({ address, platform: chainIdToPlatform(chainId) })
     const items: LinkButtonProps[] = []
 
@@ -106,7 +112,7 @@ export function TokenDetailsLinks(): JSX.Element {
           element: ElementName.MultichainAddress,
           label: t('common.address'),
           testID: TestID.MultichainAddressDropdown,
-          onPress: () => setIsAddressSheetOpen(true),
+          onPress: openMultichainAddressSheet,
         })
       } else {
         items.push({
@@ -167,8 +173,9 @@ export function TokenDetailsLinks(): JSX.Element {
     chainId,
     address,
     isNativeCurrency,
-    isMultichainTokenUx,
+    multichainTokenUxEnabled,
     hasMultipleChains,
+    openMultichainAddressSheet,
     homepageUrl,
     twitterName,
     explorerName,
@@ -207,9 +214,9 @@ export function TokenDetailsLinks(): JSX.Element {
       )}
 
       <MultichainAddressSheet
-        isOpen={isAddressSheetOpen}
+        isOpen={isMultichainAddressSheetOpen}
         chains={multichainEntries}
-        onClose={() => setIsAddressSheetOpen(false)}
+        onClose={closeMultichainAddressSheet}
       />
     </Flex>
   )

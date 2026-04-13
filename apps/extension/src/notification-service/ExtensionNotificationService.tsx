@@ -108,6 +108,7 @@ function provideExtensionNotificationService(ctx: {
   })
 
   const localTriggersDataSource = createExtensionLocalTriggerDataSource({
+    // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
     getState: () => ctx.getReduxStore().getState(),
     dispatch: ctx.getReduxStore().dispatch,
     tracker,

@@ -31,7 +31,6 @@ ignores: [
     "react-native-restart",
     "sp-react-native-in-app-updates",
     "typescript",
-    "eslint",
     "@typescript/native-preview",
     # Dependencies that depcheck thinks are missing but are actually present or never used
     ## Internal packages / workspaces

@@ -1,7 +1,17 @@
 {
   "extends": ["../../.oxlintrc.json"],
-  "ignorePatterns": [".maestro/**", "scripts/**", "ReactotronConfig.ts", "index.js", ".storybook/**"],
+  "ignorePatterns": [
+    ".maestro/**",
+    "scripts/**",
+    "ReactotronConfig.ts",
+    "index.js",
+    ".storybook/**",
+    "src/polyfills/**",
+    "jest*.js",
+    "__mocks__/**"
+  ],
   "rules": {
+    "universe-custom/enum-member-naming": "error",
     "no-shadow": "error",
     "no-restricted-imports": [
       "error",
@@ -15,8 +25,6 @@
       }
     ],
     "universe-custom/no-transform-percentage-strings": "error",
-    "@jambit/typed-redux-saga/use-typed-effects": "error",
-    "@jambit/typed-redux-saga/delegate-effects": "error",
     "complexity": ["error", 20],
     "max-depth": ["error", 4],
     "max-nested-callbacks": ["error", 3],

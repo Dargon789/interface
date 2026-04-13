@@ -76,6 +76,7 @@ export default async function fetchTokenList({
       const json = await response.json()
       const list = skipValidation ? json : await validateTokenList(json)
       listCache.set(listUrl, list)
+      // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
       return list
     } catch (error) {
       logger.debug(

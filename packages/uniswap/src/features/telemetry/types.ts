@@ -11,7 +11,7 @@ import {
   type IncreaseLPPositionRequest,
 } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
 import { type Currency, type TradeType } from '@uniswap/sdk-core'
-import { type TradingApi, type UnitagClaimContext } from '@universe/api'
+import { type TradingApi } from '@universe/api'
 import { type Experiments } from '@universe/gating'
 import type { PresetPercentage } from 'uniswap/src/components/CurrencyInputPanel/AmountInputPresets/types'
 import { type OnchainItemSectionName } from 'uniswap/src/components/lists/OnchainItemList/types'
@@ -39,6 +39,7 @@ import {
 import { type TokenProtectionWarning } from 'uniswap/src/features/tokens/warnings/types'
 import { type TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { type WrapType } from 'uniswap/src/features/transactions/types/wrap'
+import { type UnitagClaimContext } from 'uniswap/src/features/unitags/types'
 import { type CurrencyField } from 'uniswap/src/types/currency'
 import { type LimitsExpiry } from 'uniswap/src/types/limits'
 import { type ImportType } from 'uniswap/src/types/onboarding'
@@ -319,11 +320,6 @@ export type DappContextProperties = {
   connectedAddresses: Address[]
 }
 
-export enum SwapPriceImpactUserResponse {
-  ACCEPTED = 'Accepted',
-  REJECTED = 'Rejected',
-}
-
 export enum SwapPriceUpdateUserResponse {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
@@ -335,10 +331,6 @@ export type SwapPriceUpdateActionProperties = {
   token_in_symbol?: string
   token_out_symbol?: string
   price_update_basis_points?: number
-}
-
-export type SwapPriceImpactActionProperties = {
-  response: SwapPriceImpactUserResponse
 }
 
 type InterfaceSearchResultSelectionProperties = {
@@ -998,11 +990,11 @@ export type UniverseEventProperties = {
     chain_id: UniverseChainId
     token_symbol: string | undefined
   }
-  [SwapEventName.SwapPriceImpactAcknowledged]: SwapPriceImpactActionProperties
   [SwapEventName.SwapPriceUpdateAcknowledged]: SwapPriceUpdateActionProperties
   [SwapEventName.SwapTransactionCompleted]:
     | ClassicSwapTransactionResultProperties
     | UniswapXTransactionResultProperties
+    // oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
     | BridgeSwapTransactionResultProperties
   [SwapEventName.SwapTransactionFailed]:
     | FailedClassicSwapResultProperties
@@ -1096,6 +1088,27 @@ export type UniverseEventProperties = {
     total_balances_usd_per_chain: Record<string, number>
     wallet: string
     view_only: boolean
+  }
+  [UniswapEventName.PnlCoverageReport]: {
+    pnl_token_count: number
+    portfolio_token_count: number
+    coverage_rate: number
+  }
+  [UniswapEventName.PnlPortfolioReport]: {
+    unrealized_return_usd: number | undefined
+    unrealized_return_percent: number | undefined
+    realized_return_usd: number | undefined
+    total_return_usd: number | undefined
+    period: string
+  }
+  [UniswapEventName.PnlTokenReport]: {
+    average_cost_usd: number | undefined
+    unrealized_return_usd: number | undefined
+    unrealized_return_percent: number | undefined
+    realized_return_usd: number | undefined
+    realized_return_percent: number | undefined
+    token_address: string
+    chain_id: number
   }
   [UniswapEventName.ConversionEventSubmitted]: {
     id: string

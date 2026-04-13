@@ -105,7 +105,7 @@ export const ProfileHeader = memo(function ProfileHeader({ address }: ProfileHea
     dispatch(
       openModal({
         name: ModalName.Send,
-        ...{ initialState: initialSendState },
+        initialState: initialSendState,
       }),
     )
   }, [dispatch, initialSendState])

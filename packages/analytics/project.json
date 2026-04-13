@@ -6,18 +6,17 @@
   "tags": [],
   "targets": {
     "typecheck": {},
+    "typecheck:tsc": {},
     "typecheck:tsgo": {},
-    "oxfmt": {},
-    "oxfmt:fix": {},
-    "oxlint": {},
-    "oxlint:fix": {},
-    "oxlint:type-aware": {},
-    "lint:eslint": {},
-    "lint:eslint:fix": {},
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
     "lint": {},
     "lint:fix": {},
     "check": {},
-    "check:fix": {},
+    "check:fast": {},
     "check:deps:usage": {}
   }
 }

@@ -13,6 +13,8 @@ interface TokenDetailsNetworkFilterProps {
   selectedChainId: UniverseChainId | undefined
   setSelectedChainId: (chainId: UniverseChainId | undefined) => void
   showAddressCopy: boolean
+  showNetworkName?: boolean
+  position?: 'left' | 'right'
 }
 
 export function TokenDetailsNetworkFilter({
@@ -20,11 +22,13 @@ export function TokenDetailsNetworkFilter({
   showAddressCopy,
   selectedChainId,
   setSelectedChainId,
+  showNetworkName = true,
+  position = 'left',
 }: TokenDetailsNetworkFilterProps) {
   const { t } = useTranslation()
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
-  if (!isMultichainTokenUx || chainIds.length <= 1) {
+  if (!multichainTokenUxEnabled || chainIds.length <= 1) {
     return null
   }
 
@@ -40,11 +44,14 @@ export function TokenDetailsNetworkFilter({
           customTrigger={
             <Flex row alignItems="center" gap="$spacing6">
               <NetworkLogo chainId={selectedChainId ?? null} size={iconSizes.icon16} transition={HEADER_TRANSITION} />
-              <Text variant="buttonLabel3" color="$neutral2" transition={HEADER_TRANSITION}>
-                {selectedChainId ? getChainInfo(selectedChainId).label : t('transaction.network.all')}
-              </Text>
+              {showNetworkName && (
+                <Text variant="buttonLabel3" color="$neutral2" transition={HEADER_TRANSITION}>
+                  {selectedChainId ? getChainInfo(selectedChainId).label : t('transaction.network.all')}
+                </Text>
+              )}
             </Flex>
           }
+          position={position}
           onPress={setSelectedChainId}
         />
       </Flex>

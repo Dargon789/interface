@@ -12,7 +12,8 @@ import { FiatNumberType, NumberType } from 'utilities/src/format/types'
 import { TokenQueryData } from '~/appGraphql/data/Token'
 import { getHeaderDescription, TokenSortMethod } from '~/components/Tokens/constants'
 import { MouseoverTooltip } from '~/components/Tooltip'
-import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
+import { useTDPEffectiveCurrency } from '~/pages/TokenDetails/hooks/useTDPEffectiveCurrency'
+import { useTDPStatsMarketSource } from '~/pages/TokenDetails/hooks/useTDPStatsMarketSource'
 
 const STATS_GAP = '$gap20'
 
@@ -87,36 +88,31 @@ function Stat({
 }
 
 type StatsSectionProps = {
-  tokenQueryData: TokenQueryData
+  tokenQueryData: TokenQueryData | undefined
 }
+
 export function StatsSection({ tokenQueryData }: StatsSectionProps) {
   const { t } = useTranslation()
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
-  const currency = useTDPStore((s) => s.currency)!
-  const currencyChainId = useTDPStore((s) => s.currencyChainId)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const effectiveCurrency = useTDPEffectiveCurrency()
 
-  // Construct currencyId for shared hooks
-  const currencyIdValue = useMemo(() => currencyId(currency), [currency])
+  const { showAggregatedStats, filteredDeploymentMarket, networkFilterName, marketStatsInput } =
+    useTDPStatsMarketSource(tokenQueryData)
 
-  // Live price from centralized provider (feature-flag aware via TokenPriceContext)
+  const currencyIdValue = useMemo(() => currencyId(effectiveCurrency), [effectiveCurrency])
   const spotPrice = useTokenSpotPrice(currencyIdValue)
 
-  // When multichain token UX is on, TokenWebQuery returns aggregated market/project data — pass it so the hook uses it for stats.
-  const aggregatedInput = useMemo(
-    () =>
-      isMultichainTokenUx && tokenQueryData
-        ? { market: tokenQueryData.market, project: tokenQueryData.project }
-        : undefined,
-    [isMultichainTokenUx, tokenQueryData],
-  )
   const stats = useTokenMarketStats(currencyIdValue, {
+    aggregatedData: marketStatsInput,
     currentPriceOverride: spotPrice,
-    aggregatedData: aggregatedInput,
   })
 
-  // Prefer TDP query's 24h volume when available; otherwise use hook (fragment or aggregated)
-  const volume = tokenQueryData?.market?.volume24H?.value ?? stats.volume
-  const tvl = tokenQueryData?.market?.totalValueLocked?.value
+  const volume =
+    (showAggregatedStats ? tokenQueryData?.market?.volume24H?.value : filteredDeploymentMarket?.volume24H?.value) ??
+    stats.volume
+  const tvl = showAggregatedStats
+    ? tokenQueryData?.market?.totalValueLocked?.value
+    : filteredDeploymentMarket?.totalValueLocked?.value
   const { marketCap, fdv, high52w, low52w } = stats
 
   const hasStats = tvl || fdv || marketCap || volume || high52w || low52w
@@ -129,7 +125,14 @@ export function StatsSection({ tokenQueryData }: StatsSectionProps) {
           <Stat
             testID={TestID.TokenDetailsStatsTvl}
             value={tvl}
-            description={t('stats.tvl.description')}
+            description={
+              multichainTokenUxEnabled && networkFilterName
+                ? t('stats.tvl.description.network', {
+                    symbol: effectiveCurrency.symbol,
+                    network: networkFilterName,
+                  })
+                : t('stats.tvl.description', { symbol: effectiveCurrency.symbol })
+            }
             title={t('common.totalValueLocked')}
           />
           <Stat
@@ -148,7 +151,7 @@ export function StatsSection({ tokenQueryData }: StatsSectionProps) {
             testID={TestID.TokenDetailsStatsVolume24h}
             value={volume}
             description={
-              currencyChainId === UniverseChainId.Tempo
+              effectiveCurrency.chainId === UniverseChainId.Tempo
                 ? t('stats.volume.1d.description.tempo')
                 : t('stats.volume.1d.description')
             }
@@ -169,11 +172,10 @@ export function StatsSection({ tokenQueryData }: StatsSectionProps) {
         </TokenStatsSection>
       </StatsWrapper>
     )
-  } else {
-    return (
-      <Text color="$neutral3" pt="$spacing40" data-cy="token-details-no-stats-data">
-        {t('stats.noStatsAvailable')}
-      </Text>
-    )
   }
+  return (
+    <Text color="$neutral3" pt="$spacing40" data-cy="token-details-no-stats-data">
+      {t('stats.noStatsAvailable')}
+    </Text>
+  )
 }

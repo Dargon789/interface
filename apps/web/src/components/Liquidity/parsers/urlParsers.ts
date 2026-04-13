@@ -11,10 +11,10 @@ import {
   RangeAmountInputPriceMode,
 } from '~/components/Liquidity/Create/types'
 import { DepositState } from '~/components/Liquidity/types'
+import { getChainIdFromChainUrlParam, getChainUrlParam } from '~/features/params/chainParams'
 import { checkIsNative } from '~/hooks/Tokens'
 import { parseCurrencyFromURLParameter } from '~/state/swap/hooks'
 import { PositionField } from '~/types/position'
-import { getChainIdFromChainUrlParam, getChainUrlParam } from '~/utils/chainParams'
 import { assume0xAddress } from '~/utils/wagmi'
 
 const priceRangeStateSchema: z.ZodSchema<Partial<PriceRangeState>> = z

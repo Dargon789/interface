@@ -18,6 +18,17 @@ interface AppConfig {
   getTrustedClientIp: (c: Context) => string | undefined
 }
 
+// ── Frame protection ─────────────────────────────────────────────────
+// frame-ancestors cannot be enforced via <meta> CSP tags (W3C spec) — it
+// must be an HTTP response header. Cloudflare Workers returns responses
+// with immutable headers, so we clone into a mutable Response.
+function withFrameProtection(res: Response): Response {
+  const headers = new Headers(res.headers)
+  headers.set('Content-Security-Policy', "frame-ancestors 'self' https://app.safe.global")
+  headers.set('X-Frame-Options', 'SAMEORIGIN')
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
+}
+
 // ── Shared constants ─────────────────────────────────────────────────
 export const ENTRY_GATEWAY_URLS = {
   development: 'https://entry-gateway.backend-staging.api.uniswap.org',
@@ -134,11 +145,11 @@ export function createApp({ fetchSpaHtml, getEntryGatewayUrl, getWebSocketUrl, g
     // API routes should not be processed by meta tag injection
     if (url.pathname.startsWith('/api/')) {
       await next()
-      return c.res
+      return withFrameProtection(c.res)
     }
 
     // For non-API routes, use meta tag injection middleware
-    return metaTagInjectionMiddleware(c, next)
+    return withFrameProtection(await metaTagInjectionMiddleware(c, next))
   })
 
   return app

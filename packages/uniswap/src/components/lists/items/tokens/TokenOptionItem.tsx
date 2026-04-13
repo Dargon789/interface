@@ -12,8 +12,8 @@ import {
 import { TokenOption } from 'uniswap/src/components/lists/items/types'
 import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
 import { MultichainAddressSheet } from 'uniswap/src/components/MultichainTokenDetails/MultichainAddressSheet'
-import type { MultichainTokenEntry } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
 import { useOrderedMultichainEntries } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
+import type { MultichainTokenEntry } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
 import { getWarningIconColors } from 'uniswap/src/components/warnings/utils'
 import WarningIcon from 'uniswap/src/components/warnings/WarningIcon'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
@@ -340,8 +340,9 @@ export const TokenOptionItem = memo(function TokenOptionItemInner(
   const { value: isAddressSheetOpen, setFalse: closeAddressSheet, setTrue: openAddressSheet } = useBooleanState(false)
   const { hapticFeedback } = useHapticFeedback()
 
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
-  const multichainData = !isLegacyTokenOptionItemProps(props) && isMultichainTokenUx ? props.multichainData : undefined
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainData =
+    !isLegacyTokenOptionItemProps(props) && multichainTokenUxEnabled ? props.multichainData : undefined
   const rawEntries = useMemo<MultichainTokenEntry[]>(
     () =>
       multichainData

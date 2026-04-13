@@ -33,7 +33,7 @@ function useSearchTokensQuery<T>({
   const { chains: enabledChainIds } = useEnabledChains()
 
   const isSvmConnected = useConnectionStatus(Platform.SVM).isConnected
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const variables = useMemo(
     () => ({
@@ -43,9 +43,9 @@ function useSearchTokensQuery<T>({
       page: 1,
       size,
       prioritizeSvm: isSvmConnected,
-      multichain: isMultichainTokenUx,
+      multichain: multichainTokenUxEnabled,
     }),
-    [searchQuery, chainFilter, size, enabledChainIds, isSvmConnected, isMultichainTokenUx],
+    [searchQuery, chainFilter, size, enabledChainIds, isSvmConnected, multichainTokenUxEnabled],
   )
 
   const { data, error, isPending, refetch } = useSearchTokensAndPoolsQuery<T>({

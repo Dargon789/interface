@@ -19,8 +19,14 @@ const dataApiClient = createPromiseClient(DataApiService, dataApiTransport)
 /**
  * Creates a RestPriceClient that uses the ConnectRPC DataApiService
  * to fetch token prices via POST /data.v1.DataApiService/GetTokenPrices.
+ *
+ * @param options.preferQuotePrices - When true, the backend returns TAPI quote
+ *   prices (with Aurora as fallback) and logs the comparison. Used during the
+ *   metrics collection phase to validate Aurora data quality before full rollout.
  */
-export function createRestPriceClient(): RestPriceClient {
+export function createRestPriceClient(options?: { preferQuotePrices?: boolean }): RestPriceClient {
+  const preferQuotePrices = options?.preferQuotePrices ?? false
+
   return {
     async getTokenPrices(tokens: TokenIdentifier[]): Promise<Map<string, TokenPriceData>> {
       const response = await dataApiClient.getTokenPrices({
@@ -28,6 +34,7 @@ export function createRestPriceClient(): RestPriceClient {
           chainId: t.chainId,
           address: t.address.toLowerCase(),
         })),
+        preferQuotePrices,
       })
 
       const result = new Map<string, TokenPriceData>()

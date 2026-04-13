@@ -298,6 +298,7 @@ function DappRequestFooter({
   )
 }
 
+// oxlint-disable-next-line typescript/consistent-return -- biome-parity: oxlint is stricter here
 function WarningSection({ request, isRequestStale }: { request: DappRequest; isRequestStale: boolean }) {
   const { t } = useTranslation()
 

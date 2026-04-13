@@ -39,6 +39,7 @@ export function createMigratePositionAsyncStep(
 
       try {
         const updatedRequest = new MigrateV3ToV4LPPositionRequest({
+          // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
           ...migratePositionRequestArgs,
           signature,
           signatureDeadline: Number(signatureDeadline),
@@ -57,6 +58,7 @@ export function createMigratePositionAsyncStep(
           })
           sendAnalyticsEvent(InterfaceEventName.MigrateLiquidityFailed, {
             message,
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
             ...migratePositionRequestArgs,
           })
         }

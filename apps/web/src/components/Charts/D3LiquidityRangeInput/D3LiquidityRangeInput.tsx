@@ -8,11 +8,11 @@ import { Flex, SegmentedControlOption, Shine, Text } from 'ui/src'
 import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityChartShared/constants'
 import { D3LiquidityChartHeader } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/components/D3LiquidityChartHeader'
 import { D3LiquidityMinMaxInput } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/components/D3LiquidityMinMaxInput'
 import { DefaultPriceStrategies } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/components/DefaultPriceStrategies'
 import { LiquidityRangeActionButtons } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/components/LiquidityRangeActionButtons/LiquidityRangeActionButtons'
-import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/constants'
 import D3LiquidityRangeChart from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/D3LiquidityRangeChart'
 import { LiquidityChartStoreProvider } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/LiquidityChartStoreProvider'
 import { useDensityChartData } from '~/components/Charts/LiquidityRangeInput/hooks'
@@ -22,6 +22,7 @@ import { PriceChartData } from '~/components/Charts/PriceChart'
 import { ChartType } from '~/components/Charts/utils'
 import { InitialPosition, RangeAmountInputPriceMode } from '~/components/Liquidity/Create/types'
 import { getBaseAndQuoteCurrencies } from '~/components/Liquidity/utils/currency'
+import { useColor } from '~/hooks/useColor'
 import { usePoolPriceChartData } from '~/hooks/usePoolPriceChartData'
 import { useAllPoolTicks } from '~/hooks/usePoolTickData'
 import { useMultichainContext } from '~/state/multichain/useMultichainContext'
@@ -199,6 +200,13 @@ export function D3LiquidityRangeInput({
     priceInverted,
   )
 
+  // Token colors: token0Color for ticks above currentTick, token1Color for below
+  // When priceInverted, the visual base/quote are swapped relative to SDK token0/token1
+  const sdkToken0Color = useColor(sdkCurrencies.TOKEN0 ?? undefined)
+  const sdkToken1Color = useColor(sdkCurrencies.TOKEN1 ?? undefined)
+  const token0Color = priceInverted ? sdkToken1Color : sdkToken0Color
+  const token1Color = priceInverted ? sdkToken0Color : sdkToken1Color
+
   const finalTickData = useMemo(() => {
     if (!priceInverted) {
       return rawTicks
@@ -271,6 +279,8 @@ export function D3LiquidityRangeInput({
               currentTick={priceInverted ? -currentTick : currentTick}
               rawTicks={finalTickData}
               protocolVersion={protocolVersion}
+              token0Color={token0Color}
+              token1Color={token1Color}
             />
           ) : (
             <Shine disabled={showChartErrorView} p="$spacing16">

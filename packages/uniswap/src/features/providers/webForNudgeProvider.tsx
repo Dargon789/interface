@@ -1,5 +1,4 @@
 import React from 'react'
-import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
 import { useIsPortfolioZero } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useIsPortfolioZero'
 import { isWebApp } from 'utilities/src/platform'
 
@@ -39,12 +38,8 @@ export function useSetIsShowingWebFORNudge(): (v: boolean) => void {
 
 export function useWebFORNudgeGateEnabled(): boolean {
   const isPortfolioZero = useIsPortfolioZero()
-  const { getCanPayGasInAnyToken } = useUniswapContext()
 
-  // If wallet can pay gas in any token (e.g., Porto wallet), don't show the nudge
-  const canPayGasInAnyToken = getCanPayGasInAnyToken?.() ?? false
-
-  return isWebApp && isPortfolioZero && !canPayGasInAnyToken
+  return isWebApp && isPortfolioZero
 }
 
 export function useIsWebFORNudgeEnabled(): boolean {

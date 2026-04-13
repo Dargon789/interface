@@ -584,11 +584,9 @@ describe(usePortfolioTokenOptions, () => {
         vi.spyOn(console, 'error').mockImplementation(vi.fn())
       }
 
-      mockUsePortfolioBalancesForAddressById.mockReturnValue(mockPortfolioBalancesHook(input))
-
       const { result } = renderHook(() =>
         usePortfolioTokenOptions({
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1, svmAddress: undefined },
+          portfolioData: mockPortfolioBalancesHook(input),
           chainFilter: null,
         }),
       )
@@ -622,6 +620,7 @@ describe(usePortfolioTokenOptions, () => {
     const shownPortfolioBalanceTokenOptions = [ethPortfolioBalanceTokenOption, usdcPortfolioBalanceTokenOption]
 
     const allTokenBalances = [...shownTokenBalances, ...hiddenTokenBalances]
+    const allTokenBalancesPortfolioData = mockPortfolioBalancesHook(allTokenBalances)
 
     // Using a looser type for output to allow expect.any(Function) in test cases
     const cases: {
@@ -631,7 +630,7 @@ describe(usePortfolioTokenOptions, () => {
     }[] = [
       {
         test: 'returns only shown tokens after data is fetched',
-        input: { addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1, svmAddress: undefined }, chainFilter: null },
+        input: { portfolioData: allTokenBalancesPortfolioData, chainFilter: null },
         output: {
           data: shownPortfolioBalanceTokenOptions,
           loading: false,
@@ -642,7 +641,7 @@ describe(usePortfolioTokenOptions, () => {
       {
         test: 'returns shown tokens filtered by chain',
         input: {
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1, svmAddress: undefined },
+          portfolioData: allTokenBalancesPortfolioData,
           chainFilter: fromGraphQLChain(usdcTokenBalance.token.chain),
         },
         output: {
@@ -655,7 +654,7 @@ describe(usePortfolioTokenOptions, () => {
       {
         test: 'returns shown tokens starting with "et" (ETH) filtered by search filter',
         input: {
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1, svmAddress: undefined },
+          portfolioData: allTokenBalancesPortfolioData,
           chainFilter: null,
           searchFilter: 'et',
         },
@@ -669,7 +668,7 @@ describe(usePortfolioTokenOptions, () => {
       {
         test: 'returns shown tokens starting with "us" (USDC) filtered by search filter',
         input: {
-          addresses: { evmAddress: SAMPLE_SEED_ADDRESS_1, svmAddress: undefined },
+          portfolioData: allTokenBalancesPortfolioData,
           chainFilter: null,
           searchFilter: 'us',
         },
@@ -683,10 +682,7 @@ describe(usePortfolioTokenOptions, () => {
       {
         test: 'returns no data when there is no token that matches both chain and search filter',
         input: {
-          addresses: {
-            evmAddress: SAMPLE_SEED_ADDRESS_1,
-            svmAddress: undefined,
-          },
+          portfolioData: allTokenBalancesPortfolioData,
           chainFilter: UniverseChainId.Base,
           searchFilter: 'et',
         },
@@ -700,8 +696,6 @@ describe(usePortfolioTokenOptions, () => {
     ]
 
     it.each(cases)('$test', async ({ input, output }) => {
-      mockUsePortfolioBalancesForAddressById.mockReturnValue(mockPortfolioBalancesHook(allTokenBalances))
-
       const { result } = renderHook(() => usePortfolioTokenOptions(input))
 
       await waitFor(() => {
@@ -766,16 +760,9 @@ describe(useTrendingTokensOptions, () => {
       error: null,
     } as UseQueryResult<TokenRankingsResponse, ConnectError>)
 
-    mockUsePortfolioBalancesForAddressById.mockReturnValue(
-      mockPortfolioBalancesHook(portfolios[0]?.tokenBalances || []),
-    )
-
     const { result } = renderHook(() =>
       useTrendingTokensOptions({
-        addresses: {
-          evmAddress: SAMPLE_SEED_ADDRESS_1,
-          svmAddress: undefined,
-        },
+        portfolioData: mockPortfolioBalancesHook(portfolios[0]?.tokenBalances || []),
         chainFilter: UniverseChainId.ArbitrumOne,
       }),
     )
@@ -799,14 +786,9 @@ describe(useTrendingTokensOptions, () => {
       error: null,
     })
 
-    mockUsePortfolioBalancesForAddressById.mockReturnValue(mockPortfolioBalancesHook(new Error('Test')))
-
     const { result } = renderHook(() =>
       useTrendingTokensOptions({
-        addresses: {
-          evmAddress: SAMPLE_SEED_ADDRESS_1,
-          svmAddress: undefined,
-        },
+        portfolioData: mockPortfolioBalancesHook(new Error('Test')),
         chainFilter: UniverseChainId.ArbitrumOne,
       }),
     )
@@ -832,16 +814,9 @@ describe(useTrendingTokensOptions, () => {
       error: new Error('Failed to fetch trending tokens'),
     })
 
-    mockUsePortfolioBalancesForAddressById.mockReturnValue(
-      mockPortfolioBalancesHook(portfolios[0]?.tokenBalances || []),
-    )
-
     const { result } = renderHook(() =>
       useTrendingTokensOptions({
-        addresses: {
-          evmAddress: SAMPLE_SEED_ADDRESS_1,
-          svmAddress: undefined,
-        },
+        portfolioData: mockPortfolioBalancesHook(portfolios[0]?.tokenBalances || []),
         chainFilter: UniverseChainId.ArbitrumOne,
       }),
     )
@@ -864,16 +839,9 @@ describe(useTrendingTokensOptions, () => {
       error: null,
     })
 
-    mockUsePortfolioBalancesForAddressById.mockReturnValue(
-      mockPortfolioBalancesHook(portfolios[0]?.tokenBalances || []),
-    )
-
     const { result } = renderHook(() =>
       useTrendingTokensOptions({
-        addresses: {
-          evmAddress: SAMPLE_SEED_ADDRESS_1,
-          svmAddress: undefined,
-        },
+        portfolioData: mockPortfolioBalancesHook(portfolios[0]?.tokenBalances || []),
         chainFilter: UniverseChainId.ArbitrumOne,
       }),
     )
@@ -955,8 +923,6 @@ describe(useCommonTokensOptionsWithFallback, () => {
   ]
 
   it.each(cases)('$test', async ({ portfolioInput, tokenProjectsInput, chainFilter, output }) => {
-    mockUsePortfolioBalancesForAddressById.mockReturnValue(mockPortfolioBalancesHook(portfolioInput))
-
     // Mock the GraphQL tokenProjects query
     const { resolvers } = queryResolvers({
       tokenProjects: queryResolver(tokenProjectsInput),
@@ -964,9 +930,7 @@ describe(useCommonTokensOptionsWithFallback, () => {
     const { result } = renderHook(
       () =>
         useCommonTokensOptionsWithFallback({
-          addresses: {
-            evmAddress: SAMPLE_SEED_ADDRESS_1,
-          },
+          portfolioData: mockPortfolioBalancesHook(portfolioInput),
           chainFilter,
         }),
       { resolvers },
@@ -1041,8 +1005,6 @@ describe(useFavoriteTokensOptions, () => {
   ]
 
   it.each(cases)('$test', async ({ portfolioInput, tokenProjectsInput, chainFilter, output }) => {
-    mockUsePortfolioBalancesForAddressById.mockReturnValue(mockPortfolioBalancesHook(portfolioInput))
-
     // Mock the GraphQL tokenProjects query
     const { resolvers } = queryResolvers({
       tokenProjects: queryResolver(tokenProjectsInput),
@@ -1050,10 +1012,7 @@ describe(useFavoriteTokensOptions, () => {
     const { result } = renderHook(
       () =>
         useFavoriteTokensOptions({
-          addresses: {
-            evmAddress: SAMPLE_SEED_ADDRESS_1,
-            svmAddress: undefined,
-          },
+          portfolioData: mockPortfolioBalancesHook(portfolioInput),
           chainFilter,
         }),
       {

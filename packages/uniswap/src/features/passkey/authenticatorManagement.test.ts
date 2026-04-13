@@ -11,7 +11,6 @@ import {
   getDeviceSession,
   setDeviceSession,
 } from 'uniswap/src/features/passkey/deviceSession'
-import { loadPrivyPbModule } from 'uniswap/src/features/passkey/embeddedWallet'
 import { authenticatePasskey, registerPasskey } from 'uniswap/src/features/passkey/passkey'
 import { type MockedFunction, vi } from 'vitest'
 
@@ -25,8 +24,19 @@ vi.mock('uniswap/src/data/rest/embeddedWallet/requests', () => ({
   },
 }))
 
+vi.mock('@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb', () => ({
+  Action: {
+    REGISTER_NEW_AUTHENTICATION_TYPES: 5,
+    DELETE_RECOVERY: 6,
+  },
+  AuthenticationTypes: {
+    PASSKEY_AUTHENTICATION: 1,
+    PASSKEY_REGISTRATION: 2,
+  },
+}))
+
 vi.mock('uniswap/src/features/passkey/embeddedWallet', () => ({
-  loadPrivyPbModule: vi.fn(),
+  authenticateWithPasskey: vi.fn(),
 }))
 
 vi.mock('uniswap/src/features/passkey/passkey', () => ({
@@ -34,7 +44,15 @@ vi.mock('uniswap/src/features/passkey/passkey', () => ({
   registerPasskey: vi.fn(),
 }))
 
-const mockLoadPrivyPbModule = loadPrivyPbModule as MockedFunction<typeof loadPrivyPbModule>
+const MOCK_ACTION = {
+  REGISTER_NEW_AUTHENTICATION_TYPES: 5,
+} as const
+
+const MOCK_AUTH_TYPES = {
+  PASSKEY_AUTHENTICATION: 1,
+  PASSKEY_REGISTRATION: 2,
+} as const
+
 const mockAuthenticatePasskey = authenticatePasskey as MockedFunction<typeof authenticatePasskey>
 const mockRegisterPasskey = registerPasskey as MockedFunction<typeof registerPasskey>
 
@@ -55,23 +73,10 @@ const mockFetchDeleteAuthenticatorRequest = EmbeddedWalletApiClient.fetchDeleteA
   typeof EmbeddedWalletApiClient.fetchDeleteAuthenticatorRequest
 >
 
-const MOCK_ACTION = {
-  REGISTER_NEW_AUTHENTICATION_TYPES: 5,
-} as const
-
-const MOCK_AUTH_TYPES = {
-  PASSKEY_AUTHENTICATION: 1,
-  PASSKEY_REGISTRATION: 2,
-} as const
-
 describe('authenticatorManagement', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     clearDeviceSession()
-    mockLoadPrivyPbModule.mockResolvedValue({
-      Action: MOCK_ACTION,
-      AuthenticationTypes: MOCK_AUTH_TYPES,
-    } as unknown as Awaited<ReturnType<typeof loadPrivyPbModule>>)
   })
 
   afterEach(() => {

@@ -17,6 +17,7 @@ export {
   CreateAuctionConfigKey,
   DatadogIgnoredErrorsConfigKey,
   DatadogSessionSampleRateKey,
+  DisableWalletSearchTermsConfigKey,
   DynamicConfigs,
   EmbeddedWalletBetaPassphrasesKey,
   EmbeddedWalletConfigKey,

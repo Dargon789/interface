@@ -9,6 +9,7 @@ export type {
   GetThemeValueForKey,
   ImageProps,
   InputProps,
+  MediaQueryState,
   PopperProps,
   SpaceTokens,
   TabLayout,
@@ -81,11 +82,17 @@ export * from './components/input/utils'
 export { type AnimatedScrollView, Flex, type FlexProps, flexStyles, Inset, Separator } from './components/layout'
 export { HorizontalDottedLineSeparator } from './components/lines/HorizontalDottedLineSeparator'
 export { VerticalDottedLineSeparator } from './components/lines/VerticalDottedLineSeparator'
-export { ModalCloseIcon, WebBottomSheet } from './components/modal/AdaptiveWebModal'
+export {
+  EffectiveModalOrSheetZIndexContext,
+  ModalCloseIcon,
+  useEffectiveModalOrSheetZIndex,
+  WebBottomSheet,
+} from './components/modal/AdaptiveWebModal'
 export * from './components/OverKeyboardContent/OverKeyboardContent'
 export { AdaptiveWebPopoverContent } from './components/popover/AdaptiveWebPopoverContent'
 export { QRCodeDisplay } from './components/QRCode/QRCodeDisplay'
 export { RefreshButton } from './components/RefreshButton/RefreshButton'
+export type { RemoveScrollProps } from './components/RemoveScroll/RemoveScroll'
 export * from './components/RemoveScroll/RemoveScroll'
 export * from './components/radio/Radio'
 export * from './components/SegmentedControl/SegmentedControl'

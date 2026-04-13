@@ -4,7 +4,6 @@ jest.mock('src/contentScript/isSandboxedFrame', () => ({
   isSandboxedFrame: jest.fn(() => false),
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { isSandboxedFrame } = require('src/contentScript/isSandboxedFrame') as {
   isSandboxedFrame: jest.Mock
 }
@@ -15,7 +14,7 @@ interface TestMessage {
 }
 
 function isTestMessage(message: unknown): message is TestMessage {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
   return typeof message === 'object' && message !== null && (message as TestMessage).type === 'TEST'
 }
 

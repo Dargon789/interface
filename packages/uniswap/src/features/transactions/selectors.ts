@@ -62,8 +62,8 @@ export function makeSelectAddressTransactions(): AddressTransactionsSelector {
 
     // Combine transactions from both addresses
     const combinedTransactions = {
-      ...(evmAddressTransactions || {}),
-      ...(svmAddressTransactions || {}),
+      ...evmAddressTransactions,
+      ...svmAddressTransactions,
     }
 
     // oxlint-disable-next-line max-params

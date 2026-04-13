@@ -11,10 +11,10 @@ import { usePortfolioTotalValue } from 'uniswap/src/features/dataApi/balances/ba
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import type { Authenticator } from 'uniswap/src/features/passkey/embeddedWallet'
 import {
+  Action,
   authenticateWithPasskey,
   deleteAuthenticator,
   disconnectWallet,
-  getPrivyEnums,
 } from 'uniswap/src/features/passkey/embeddedWallet'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
@@ -61,7 +61,6 @@ export function RemovePasskeyModal() {
 
   const { mutate: verifyPasskey } = usePasskeyAuthWithHelpModal(
     async () => {
-      const { Action } = await getPrivyEnums()
       return await authenticateWithPasskey(Action.DELETE_AUTHENTICATOR, {
         walletId: walletId ?? undefined,
         authenticatorId: initialState?.authenticatorId,

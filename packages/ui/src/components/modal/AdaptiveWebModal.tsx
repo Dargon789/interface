@@ -1,4 +1,6 @@
+import { ParentSheetContext } from '@tamagui/sheet'
 import { type PropsWithChildren, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useMemo } from 'react'
 import type { DimensionValue } from 'react-native'
 import {
   Adapt,
@@ -20,6 +22,34 @@ import { useShadowPropsShort } from 'ui/src/theme/shadows'
 import { isWebApp } from 'utilities/src/platform'
 
 export const ADAPTIVE_MODAL_ANIMATION_DURATION = 200
+
+/** Provides the effective z-index of the current modal/sheet layer so descendants (e.g. context menus) can render above it. When the modal uses the bottom-sheet adapt branch (`Adapt when="md"`), uses Tamagui's ParentSheetContext.zIndex + 1 (same formula as Sheet); otherwise the dialog's z-index. */
+export const EffectiveModalOrSheetZIndexContext = createContext<number | undefined>(undefined)
+
+/**
+ * Z-index for {@link EffectiveModalOrSheetZIndexContext} in adaptive modals: matches Tamagui sheet stacking when
+ * the modal uses the bottom-sheet adapt branch (`Adapt when="md"`), otherwise the dialog portal layer.
+ */
+export function useEffectiveModalOrSheetZIndex({
+  adaptToSheet,
+  isTopAligned,
+  zIndex,
+}: {
+  adaptToSheet: boolean
+  isTopAligned: boolean
+  zIndex?: number
+}): number | undefined {
+  const media = useMedia()
+  const parentSheet = useContext(ParentSheetContext)
+  return useMemo((): number | undefined => {
+    if (adaptToSheet && !isTopAligned && media.md) {
+      // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
+      return (parentSheet.zIndex ?? 0) + 1 // Tamagui Sheet uses parent zIndex + 1 for the sheet layer
+    }
+    const dialogZ = zIndex ?? zIndexes.modal
+    return typeof dialogZ === 'number' ? dialogZ : undefined
+  }, [adaptToSheet, isTopAligned, media.md, zIndex, parentSheet.zIndex])
+}
 
 export function ModalCloseIcon(props: CloseIconProps): JSX.Element {
   // hide close icon on bottom sheet on interface
@@ -244,6 +274,7 @@ export function AdaptiveWebModal({
   const filteredRest = Object.fromEntries(Object.entries(rest).filter(([_, v]) => v !== undefined)) as typeof rest // Filter out undefined properties from rest
   const scrollbarStyles = useScrollbarStyles()
   const isTopAligned = alignment === 'top'
+  const effectiveZIndex = useEffectiveModalOrSheetZIndex({ adaptToSheet, isTopAligned, zIndex })
 
   const topAlignedStyles: FlexProps = isTopAligned
     ? {
@@ -281,7 +312,9 @@ export function AdaptiveWebModal({
             onClose={onClose}
             {...filteredRest}
           >
-            <Adapt.Contents />
+            <EffectiveModalOrSheetZIndexContext.Provider value={effectiveZIndex}>
+              <Adapt.Contents />
+            </EffectiveModalOrSheetZIndexContext.Provider>
           </WebBottomSheet>
         </Adapt>
       )}
@@ -318,7 +351,9 @@ export function AdaptiveWebModal({
             width="calc(100vw - 32px)"
             {...filteredRest}
           >
-            {children}
+            <EffectiveModalOrSheetZIndexContext.Provider value={effectiveZIndex}>
+              {children}
+            </EffectiveModalOrSheetZIndexContext.Provider>
           </Dialog.Content>
         </Flex>
       </Dialog.Portal>
@@ -363,6 +398,7 @@ export function WebModalWithBottomAttachment({
   )
 
   const isTopAligned = alignment === 'top'
+  const effectiveZIndex = useEffectiveModalOrSheetZIndex({ adaptToSheet, isTopAligned, zIndex })
 
   return (
     <Dialog modal open={isOpen} onOpenChange={handleClose}>
@@ -380,7 +416,9 @@ export function WebModalWithBottomAttachment({
             onClose={onClose}
             {...filteredRest}
           >
-            <Adapt.Contents />
+            <EffectiveModalOrSheetZIndexContext.Provider value={effectiveZIndex}>
+              <Adapt.Contents />
+            </EffectiveModalOrSheetZIndexContext.Provider>
           </WebBottomSheet>
         </Adapt>
       )}
@@ -404,21 +442,23 @@ export function WebModalWithBottomAttachment({
           width="calc(100vw - 32px)"
         >
           <Flex height="100%" width="100%" gap="$spacing8">
-            <Flex
-              {...shadowProps}
-              backgroundColor={backgroundColor}
-              borderColor={borderColor ?? '$surface3'}
-              borderRadius="$rounded16"
-              borderWidth={borderWidth ?? '$spacing1'}
-              px="$spacing24"
-              py="$spacing16"
-              gap={gap ?? '$gap4'}
-              overflow="hidden"
-              {...filteredRest}
-            >
-              {children}
-            </Flex>
-            {bottomAttachment && <Flex>{bottomAttachment}</Flex>}
+            <EffectiveModalOrSheetZIndexContext.Provider value={effectiveZIndex}>
+              <Flex
+                {...shadowProps}
+                backgroundColor={backgroundColor}
+                borderColor={borderColor ?? '$surface3'}
+                borderRadius="$rounded16"
+                borderWidth={borderWidth ?? '$spacing1'}
+                px="$spacing24"
+                py="$spacing16"
+                gap={gap ?? '$gap4'}
+                overflow="hidden"
+                {...filteredRest}
+              >
+                {children}
+              </Flex>
+              {bottomAttachment && <Flex>{bottomAttachment}</Flex>}
+            </EffectiveModalOrSheetZIndexContext.Provider>
           </Flex>
         </Dialog.Content>
       </Dialog.Portal>

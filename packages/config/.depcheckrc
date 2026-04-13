@@ -1,7 +1,6 @@
 ignores: [
     # Standard ignores
     "typescript",
-    "eslint",
     "@typescript/native-preview",
     "depcheck",
 

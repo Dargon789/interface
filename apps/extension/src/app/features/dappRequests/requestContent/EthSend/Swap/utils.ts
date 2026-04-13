@@ -337,6 +337,7 @@ function getFallbackOutputValue(allCommands?: UniversalRouterCommand[]): string 
   const sweepAmountOutParam = sweepCommand?.params.find(isAmountMinParam)
   const unwrapWethAmountOutParam = unwrapWethCommand?.params.find(isAmountMinParam)
 
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   return sweepAmountOutParam?.value || unwrapWethAmountOutParam?.value || '0'
 }
 
@@ -345,6 +346,7 @@ function getFallbackInputValue(command: UniversalRouterCommand): string {
   const potentialSettleParam = command.params.find(isSettleParam)
   const settleParam = potentialSettleParam && isSettleParam(potentialSettleParam) ? potentialSettleParam : undefined
   const settleAmountValue = settleParam?.value.find((item) => item.name === 'amount')
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   return settleAmountValue?.value || '0'
 }
 

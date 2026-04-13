@@ -1,4 +1,4 @@
-import { orderedTransportUrls } from '~/components/Web3Provider/wagmiConfig'
+import { orderedTransportUrls, SAFE_ALLOWED_ORIGIN } from '~/components/Web3Provider/wagmiConfig'
 
 // A minimal type that matches the structure returned by getChainInfo().
 type MockChain = {
@@ -91,5 +91,43 @@ describe('orderedTransportUrls', () => {
     // All four arrays have the same URL => only one unique entry
     expect(result).toHaveLength(1)
     expect(result).toEqual(['https://common.com'])
+  })
+})
+
+describe('SAFE_ALLOWED_ORIGIN', () => {
+  it('matches the canonical Safe web app origin', () => {
+    expect(SAFE_ALLOWED_ORIGIN.test('https://app.safe.global')).toBe(true)
+  })
+
+  it('rejects subdomain spoofing', () => {
+    expect(SAFE_ALLOWED_ORIGIN.test('https://evil.app.safe.global')).toBe(false)
+  })
+
+  it('rejects suffix spoofing', () => {
+    expect(SAFE_ALLOWED_ORIGIN.test('https://app.safe.global.evil.com')).toBe(false)
+  })
+
+  it('rejects http scheme downgrade', () => {
+    expect(SAFE_ALLOWED_ORIGIN.test('http://app.safe.global')).toBe(false)
+  })
+
+  it('rejects origin with path appended', () => {
+    expect(SAFE_ALLOWED_ORIGIN.test('https://app.safe.global/path')).toBe(false)
+  })
+
+  it('rejects arbitrary attacker origin', () => {
+    expect(SAFE_ALLOWED_ORIGIN.test('https://attacker.com')).toBe(false)
+  })
+
+  it('rejects origin with port', () => {
+    expect(SAFE_ALLOWED_ORIGIN.test('https://app.safe.global:8080')).toBe(false)
+  })
+
+  it('rejects empty string', () => {
+    expect(SAFE_ALLOWED_ORIGIN.test('')).toBe(false)
+  })
+
+  it('rejects null origin', () => {
+    expect(SAFE_ALLOWED_ORIGIN.test('null')).toBe(false)
   })
 })

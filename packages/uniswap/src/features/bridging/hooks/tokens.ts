@@ -2,14 +2,13 @@ import { GqlResult, GraphQLApi, TradingApi } from '@universe/api'
 import { useCallback, useMemo } from 'react'
 import { OnchainItemListOptionType, TokenOption } from 'uniswap/src/components/lists/items/types'
 import { filter } from 'uniswap/src/components/TokenSelector/filter'
-import { usePortfolioBalancesForAddressById } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
+import { type PortfolioBalancesResult } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
 import { createEmptyTokenOptionFromBridgingToken } from 'uniswap/src/components/TokenSelector/utils'
 import { useTradingApiSwappableTokensQuery } from 'uniswap/src/data/apiClients/tradingApi/useTradingApiSwappableTokensQuery'
 import { tradingApiSwappableTokenToCurrencyInfo } from 'uniswap/src/data/apiClients/tradingApi/utils/tradingApiSwappableTokenToCurrencyInfo'
 import { useCrossChainBalances } from 'uniswap/src/data/balances/hooks/useCrossChainBalances'
 import { normalizeCurrencyIdForMapLookup } from 'uniswap/src/data/cache'
 import { TradeableAsset } from 'uniswap/src/entities/assets'
-import type { AddressGroup } from 'uniswap/src/features/accounts/store/types/AccountsState'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { toSupportedChainId } from 'uniswap/src/features/chains/utils'
@@ -123,12 +122,12 @@ export function useBridgingTokenWithHighestBalance({
 
 export function useBridgingTokensOptions({
   oppositeSelectedToken,
-  addresses,
   chainFilter,
+  portfolioData,
 }: {
   oppositeSelectedToken: TradeableAsset | undefined
-  addresses: AddressGroup
   chainFilter: UniverseChainId | null
+  portfolioData: PortfolioBalancesResult
 }): GqlResult<TokenOption[] | undefined> & { shouldNest?: boolean } {
   const tokenIn = oppositeSelectedToken?.address
     ? getTokenAddressFromChainForTradingApi(oppositeSelectedToken.address, oppositeSelectedToken.chainId)
@@ -155,7 +154,7 @@ export function useBridgingTokensOptions({
     error: portfolioBalancesByIdError,
     refetch: portfolioBalancesByIdRefetch,
     loading: loadingPorfolioBalancesById,
-  } = usePortfolioBalancesForAddressById(addresses)
+  } = portfolioData
 
   const tokenOptions = useBridgingTokensToTokenOptions(bridgingTokens?.tokens, portfolioBalancesById)
   // Filter out tokens that are not on the current chain, unless the input token is the same as the current chain
@@ -194,14 +193,15 @@ function useBridgingTokensToTokenOptions(
     }
 
     // We sort the tokens by chain in the same order as in the network selector
+    const chainIndexMap = new Map(enabledChainIds.map((id, index) => [id, index]))
     const sortedBridgingTokens = [...bridgingTokens].sort((a, b) => {
       const chainIdA = toSupportedChainId(a.chainId)
       const chainIdB = toSupportedChainId(b.chainId)
       if (!chainIdA || !chainIdB) {
         return 0
       }
-      const indexA = enabledChainIds.indexOf(chainIdA)
-      const indexB = enabledChainIds.indexOf(chainIdB)
+      const indexA = chainIndexMap.get(chainIdA) ?? -1
+      const indexB = chainIndexMap.get(chainIdB) ?? -1
 
       if (indexA === -1 && indexB === -1) {
         // If neither chain is enabled, treat them as equal

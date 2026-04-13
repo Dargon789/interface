@@ -5,7 +5,7 @@ import type { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { SlippageInfo } from 'uniswap/src/features/transactions/swap/components/MaxSlippageRow/SlippageInfo/SlippageInfo'
 import type { DerivedSwapInfo } from 'uniswap/src/features/transactions/swap/types/derivedSwapInfo'
-import { BridgeTrade } from 'uniswap/src/features/transactions/swap/types/trade'
+import { BridgeTrade, ChainedActionTrade } from 'uniswap/src/features/transactions/swap/types/trade'
 
 interface MaxSlippageRowProps {
   acceptedDerivedSwapInfo: DerivedSwapInfo<CurrencyInfo, CurrencyInfo>
@@ -51,7 +51,9 @@ export function MaxSlippageRow({
       >
         <Flex row shrink alignItems="center" gap="$spacing4">
           <Text color="$neutral2" numberOfLines={3} variant="body3">
-            {t('swap.details.slippage')}
+            {acceptedTrade instanceof ChainedActionTrade
+              ? t('swap.details.slippage.total')
+              : t('swap.details.slippage')}
           </Text>
         </Flex>
       </SlippageInfo>

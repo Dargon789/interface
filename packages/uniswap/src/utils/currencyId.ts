@@ -211,6 +211,7 @@ export type MaybeChainId = number | UniverseChainId | null | undefined | Trading
  */
 export function validateAndBuildCurrencyId(params: {
   chainId: MaybeChainId
+  // oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
   tokenAddress: Address | string | undefined
 }): {
   chainId: UniverseChainId

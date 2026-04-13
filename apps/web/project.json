@@ -197,25 +197,18 @@
         "cwd": "{projectRoot}"
       }
     },
-    "lint": {
-      "executor": "nx:noop",
-      "dependsOn": ["check:circular", "check:deps:usage", "lint:eslint", "oxlint"]
-    },
+    "format": {},
+    "format:check": {},
+    "lint": {},
     "lint:fix": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
+    "lint:typeaware-custom": {
+      "command": "bun config/oxlint-plugins/typeaware-custom.ts apps/web"
+    },
     "check": {},
-    "check:fix": {},
-    "lint:eslint": {
-      "command": "NODE_OPTIONS='--max_old_space_size=8192 --max-semi-space-size=256' eslint --cache --cache-location node_modules/.cache/eslint/ --max-warnings=0 .",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
-    },
-    "lint:eslint:fix": {
-      "command": "NODE_OPTIONS='--max_old_space_size=8192 --max-semi-space-size=256' eslint --cache --cache-location node_modules/.cache/eslint/ . --fix",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
-    },
+    "check:fast": {},
     "playwright:test": {
       "command": "playwright test",
       "options": {
@@ -235,12 +228,17 @@
       }
     },
     "typecheck": {
-      "dependsOn": ["^typecheck", "typecheck:cloud"]
+      "dependsOn": ["prepare", "typecheck:cloud"]
     },
-    "typecheck:tsgo": {
-      "dependsOn": ["typecheck:cloud:tsgo"]
-    },
+    "typecheck:tsc": {},
+    "typecheck:tsgo": {},
     "typecheck:cloud": {
+      "command": "if test \"$DISABLE_TSGO\" = \"true\"; then bun run nx typecheck:cloud:tsc; else bun run nx typecheck:cloud:tsgo; fi",
+      "options": {
+        "cwd": "{projectRoot}"
+      }
+    },
+    "typecheck:cloud:tsc": {
       "command": "tsc -p functions/tsconfig.json",
       "options": {
         "cwd": "{projectRoot}"
@@ -363,11 +361,6 @@
       "options": {
         "cwd": "{projectRoot}"
       }
-    },
-    "oxfmt": {},
-    "oxfmt:fix": {},
-    "oxlint": {},
-    "oxlint:fix": {},
-    "oxlint:type-aware": {}
+    }
   }
 }

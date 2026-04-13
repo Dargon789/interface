@@ -1,103 +1,101 @@
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
 import { Flex } from 'ui/src'
-import { useTokenPriceChange } from 'uniswap/src/features/dataApi/tokenDetails/useTokenDetailsData'
-import { currencyId } from 'uniswap/src/utils/currencyId'
-import { TimePeriod, toHistoryDuration } from '~/appGraphql/data/util'
-import { ChartSkeleton } from '~/components/Charts/LoadingState'
-import { PriceChart } from '~/components/Charts/PriceChart'
-import { LineChart } from '~/components/Charts/StackedLineChart'
-import { ChartType, DataQuality } from '~/components/Charts/utils'
-import { VolumeChart } from '~/components/Charts/VolumeChart'
-import { EXPLORE_CHART_HEIGHT_PX } from '~/components/Explore/constants'
+import { toHistoryDuration } from '~/appGraphql/data/util'
+import { ChartType } from '~/components/Charts/utils'
 import { ChartControls } from '~/pages/TokenDetails/components/chart/ChartControls'
+import { getDisplayPriceChartType } from '~/pages/TokenDetails/components/chart/TDPChartState'
+import {
+  TDPChartStateProvider,
+  useTDPChartStateContext,
+} from '~/pages/TokenDetails/components/chart/TDPChartStateContext'
+import { TDPPriceChartPanel } from '~/pages/TokenDetails/components/chart/TDPPriceChartPanel'
+import { TDPTvlChartPanel } from '~/pages/TokenDetails/components/chart/TDPTvlChartPanel'
+import { TDPVolumeChartPanel } from '~/pages/TokenDetails/components/chart/TDPVolumeChartPanel'
 import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
+import { getTDPChartGraphqlTarget } from '~/pages/TokenDetails/hooks/getTDPChartGraphqlTarget'
+import { useMultichainTokenEntries } from '~/pages/TokenDetails/hooks/useMultichainTokenEntries'
 
-export function ChartSection() {
-  const { tokenColor, currency, chartState } = useTDPStore((s) => ({
+function ChartSectionBody(): JSX.Element {
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+
+  const {
+    tokenColor,
+    currency,
+    tokenQueryData,
+    pathGraphqlChain,
+    pathTokenDbAddress,
+    selectedMultichainChainId,
+    multiChainMap,
+  } = useTDPStore((s) => ({
     tokenColor: s.tokenColor,
     currency: s.currency!,
-    chartState: s.chartState,
+    tokenQueryData: s.tokenQuery.data?.token,
+    pathGraphqlChain: s.currencyChain,
+    pathTokenDbAddress: s.tokenQuery.variables?.address,
+    selectedMultichainChainId: s.selectedMultichainChainId,
+    multiChainMap: s.multiChainMap,
   }))
-  const { activeQuery, timePeriod, priceChartType } = chartState
-  const { t } = useTranslation()
 
-  // Get the 24hr price change from API to ensure consistency with mobile
-  // Both platforms now show the same 24hr change regardless of selected chart period
-  const currencyIdValue = useMemo(() => currencyId(currency), [currency])
-  const priceChange24h = useTokenPriceChange(currencyIdValue)
+  const multichainEntries = useMultichainTokenEntries(multiChainMap)
+  const isMultiChainAsset = multichainEntries.length > 1
 
-  // Calculate percentage change from chart data for the selected duration
-  const calculatedPriceChange = useMemo(() => {
-    if (activeQuery.chartType !== ChartType.PRICE || !activeQuery.entries.length) {
-      return undefined
-    }
-    const openPrice = activeQuery.entries[0].close
-    const closePrice = activeQuery.entries[activeQuery.entries.length - 1].close
-    if (!openPrice || !closePrice || openPrice === 0) {
-      return undefined
-    }
-    return ((closePrice - openPrice) / openPrice) * 100
-  }, [activeQuery])
+  const showMultichainAggregation =
+    multichainTokenUxEnabled && isMultiChainAsset && selectedMultichainChainId === undefined
 
-  // Use API's 24hr change for 1d, calculated change for other durations
-  const pricePercentChange = timePeriod === TimePeriod.DAY ? priceChange24h : calculatedPriceChange
+  const { chain: tokenChain, address: tokenDBAddress } = useMemo(
+    () =>
+      getTDPChartGraphqlTarget({
+        multichainTokenUxEnabled,
+        selectedMultichainChainId,
+        tokenQueryData,
+        pathGraphqlChain,
+        pathTokenDbAddress,
+      }),
+    [multichainTokenUxEnabled, pathGraphqlChain, pathTokenDbAddress, selectedMultichainChainId, tokenQueryData],
+  )
 
-  // oxlint-disable-next-line consistent-return
-  const getSection = () => {
-    if (activeQuery.dataQuality === DataQuality.INVALID) {
-      return (
-        <ChartSkeleton
-          type={activeQuery.chartType}
-          height={EXPLORE_CHART_HEIGHT_PX}
-          errorText={activeQuery.loading ? undefined : t('chart.error.tokens')}
-        />
-      )
-    }
+  const { chartType, timePeriod, priceChartType, disableCandlestickUI, setDisableCandlestickUI } =
+    useTDPChartStateContext()
 
-    const stale = activeQuery.dataQuality === DataQuality.STALE
-    switch (activeQuery.chartType) {
-      case ChartType.PRICE:
-        return (
-          <PriceChart
-            data={activeQuery.entries}
-            height={EXPLORE_CHART_HEIGHT_PX}
-            type={priceChartType}
-            stale={stale}
-            timePeriod={toHistoryDuration(timePeriod)}
-            pricePercentChange={pricePercentChange}
-            overrideColor={tokenColor}
-          />
-        )
-      case ChartType.VOLUME:
-        return (
-          <VolumeChart
-            data={activeQuery.entries}
-            height={EXPLORE_CHART_HEIGHT_PX}
-            timePeriod={timePeriod}
-            stale={stale}
-            overrideColor={tokenColor}
-          />
-        )
-      case ChartType.TVL:
-        return (
-          <LineChart
-            data={activeQuery.entries}
-            height={EXPLORE_CHART_HEIGHT_PX}
-            stale={stale}
-            overrideColor={tokenColor}
-          />
-        )
-    }
-  }
+  const variables = useMemo(
+    () => ({
+      address: tokenDBAddress,
+      chain: tokenChain,
+      duration: toHistoryDuration(timePeriod),
+      multichain: showMultichainAggregation,
+    }),
+    [showMultichainAggregation, timePeriod, tokenChain, tokenDBAddress],
+  )
+
+  const displayPriceChartType = getDisplayPriceChartType(priceChartType, disableCandlestickUI)
 
   return (
-    <Flex
-      data-cy={`tdp-${activeQuery.chartType}-chart-container`}
-      testID={`tdp-${activeQuery.chartType}-chart-container`}
-    >
-      {getSection()}
+    <Flex data-cy={`tdp-${chartType}-chart-container`} testID={`tdp-${chartType}-chart-container`}>
+      {chartType === ChartType.PRICE && (
+        <TDPPriceChartPanel
+          variables={variables}
+          priceChartType={priceChartType}
+          displayPriceChartType={displayPriceChartType}
+          setDisableCandlestickUI={setDisableCandlestickUI}
+          tokenColor={tokenColor}
+          timePeriod={timePeriod}
+          currency={currency}
+        />
+      )}
+      {chartType === ChartType.VOLUME && (
+        <TDPVolumeChartPanel variables={variables} tokenColor={tokenColor} timePeriod={timePeriod} />
+      )}
+      {chartType === ChartType.TVL && <TDPTvlChartPanel variables={variables} tokenColor={tokenColor} />}
       <ChartControls />
     </Flex>
+  )
+}
+
+export function ChartSection(): JSX.Element {
+  return (
+    <TDPChartStateProvider>
+      <ChartSectionBody />
+    </TDPChartStateProvider>
   )
 }

@@ -66,32 +66,33 @@ export enum Locale {
  */
 export enum DynamicConfigs {
   // Shared
-  Swap = 'swap_config',
-  NetworkRequests = 'network_requests',
-  Chains = 'chains',
-  SyncTransactionSubmissionChainIds = 'sync_transaction_submission_chain_ids',
   BlockedAsyncSubmissionChainIds = 'blocked_async_submission_chain_ids',
+  Chains = 'chains',
+  DisableWalletSearchTerms = 'disable_wallet_search_terms',
+  NetworkRequests = 'network_requests',
+  Swap = 'swap_config',
+  SyncTransactionSubmissionChainIds = 'sync_transaction_submission_chain_ids',
 
   // Wallet
-  HomeScreenExploreTokens = 'home_screen_explore_tokens',
-  ForceUpgrade = 'force_upgrade',
-  OnDeviceRecovery = 'on_device_recovery',
-  UwuLink = 'uwulink_config',
-  GasStrategies = 'gas_strategy',
-  DatadogSessionSampleRate = 'datadog_session_sample_rate',
   DatadogIgnoredErrors = 'datadog_ignored_errors',
+  DatadogSessionSampleRate = 'datadog_session_sample_rate',
   EmbeddedWalletConfig = 'embedded_wallet_config',
   ExtensionBiometricUnlock = 'extension_biometric_unlock_config',
+  ForceUpgrade = 'force_upgrade',
+  GasStrategies = 'gas_strategy',
+  HomeScreenExploreTokens = 'home_screen_explore_tokens',
+  OnDeviceRecovery = 'on_device_recovery',
+  UwuLink = 'uwulink_config',
 
   // Web
+  AllowedV4WethHookAddresses = 'allowed_v4_weth_hook_addresses',
   AstroChain = 'astro_chain',
+  CreateAuction = 'create_auction_config',
   EmbeddedWalletBetaPassphrases = 'embedded_wallet_beta_passphrases',
   ExternallyConnectableExtension = 'externally_connectable_extension',
   LPConfig = 'lp_config',
-  AllowedV4WethHookAddresses = 'allowed_v4_weth_hook_addresses',
   OutageBannerChainId = 'outage_banner_chain_id',
   VerifiedAuctions = 'verified_auctions',
-  CreateAuction = 'create_auction_config',
 }
 
 // Config values go here for easy access
@@ -131,6 +132,10 @@ export enum NetworkRequestsConfigKey {
 export enum ChainsConfigKey {
   OrderedChainIds = 'orderedChainIds',
   NewChainIds = 'newChainIds',
+}
+
+export enum DisableWalletSearchTermsConfigKey {
+  Terms = 'terms',
 }
 
 // Wallet
@@ -253,31 +258,32 @@ export enum EmbeddedWalletBetaPassphrasesKey {
 
 export type DynamicConfigKeys = {
   // Shared
-  [DynamicConfigs.Swap]: SwapConfigKey
-  [DynamicConfigs.NetworkRequests]: NetworkRequestsConfigKey
+  [DynamicConfigs.BlockedAsyncSubmissionChainIds]: BlockedAsyncSubmissionChainIdsConfigKey
   [DynamicConfigs.Chains]: ChainsConfigKey
+  [DynamicConfigs.DisableWalletSearchTerms]: DisableWalletSearchTermsConfigKey
+  [DynamicConfigs.NetworkRequests]: NetworkRequestsConfigKey
+  [DynamicConfigs.Swap]: SwapConfigKey
+  [DynamicConfigs.SyncTransactionSubmissionChainIds]: SyncTransactionSubmissionChainIdsConfigKey
 
   // Wallet
-  [DynamicConfigs.HomeScreenExploreTokens]: HomeScreenExploreTokensConfigKey
-  [DynamicConfigs.ForceUpgrade]: ForceUpgradeConfigKey
-  [DynamicConfigs.OnDeviceRecovery]: OnDeviceRecoveryConfigKey
-  [DynamicConfigs.UwuLink]: UwuLinkConfigKey
   [DynamicConfigs.DatadogIgnoredErrors]: DatadogIgnoredErrorsConfigKey
   [DynamicConfigs.DatadogSessionSampleRate]: DatadogSessionSampleRateKey
   [DynamicConfigs.EmbeddedWalletConfig]: EmbeddedWalletConfigKey
   [DynamicConfigs.ExtensionBiometricUnlock]: ExtensionBiometricUnlockConfigKey
-  [DynamicConfigs.SyncTransactionSubmissionChainIds]: SyncTransactionSubmissionChainIdsConfigKey
+  [DynamicConfigs.ForceUpgrade]: ForceUpgradeConfigKey
+  [DynamicConfigs.HomeScreenExploreTokens]: HomeScreenExploreTokensConfigKey
+  [DynamicConfigs.OnDeviceRecovery]: OnDeviceRecoveryConfigKey
+  [DynamicConfigs.UwuLink]: UwuLinkConfigKey
 
   // Web
-  [DynamicConfigs.AstroChain]: AstroChainConfigKey
-  [DynamicConfigs.ExternallyConnectableExtension]: ExternallyConnectableExtensionConfigKey
-  [DynamicConfigs.LPConfig]: LPConfigKey
   [DynamicConfigs.AllowedV4WethHookAddresses]: AllowedV4WethHookAddressesConfigKey
-  [DynamicConfigs.VerifiedAuctions]: VerifiedAuctionsConfigKey
-  [DynamicConfigs.BlockedAsyncSubmissionChainIds]: BlockedAsyncSubmissionChainIdsConfigKey
-  [DynamicConfigs.OutageBannerChainId]: OutageBannerChainIdConfigKey
+  [DynamicConfigs.AstroChain]: AstroChainConfigKey
   [DynamicConfigs.CreateAuction]: CreateAuctionConfigKey
   [DynamicConfigs.EmbeddedWalletBetaPassphrases]: EmbeddedWalletBetaPassphrasesKey
+  [DynamicConfigs.ExternallyConnectableExtension]: ExternallyConnectableExtensionConfigKey
+  [DynamicConfigs.LPConfig]: LPConfigKey
+  [DynamicConfigs.OutageBannerChainId]: OutageBannerChainIdConfigKey
+  [DynamicConfigs.VerifiedAuctions]: VerifiedAuctionsConfigKey
 }
 
 // This type must match the format in statsig dynamic config for uwulink

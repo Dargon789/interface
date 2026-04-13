@@ -890,7 +890,7 @@ export function useLocalActivities(account: string): ActivityMap {
           }),
         )
 
-      const allActivities = await Promise.all([...transactions])
+      const allActivities = await Promise.all(transactions)
       return createActivityMapByHash(allActivities)
     },
   })

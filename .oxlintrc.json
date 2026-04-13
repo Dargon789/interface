@@ -1,12 +1,14 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "import", "jest", "vitest"],
+  "plugins": ["react", "typescript", "import", "jest", "vitest", "unicorn"],
   "jsPlugins": [
     "./config/oxlint-plugins/universe-custom.js",
-    "eslint-plugin-check-file",
     "@jambit/eslint-plugin-typed-redux-saga",
     "eslint-plugin-security",
-    "eslint-plugin-no-unsanitized"
+    "eslint-plugin-no-unsanitized",
+    // TODO: Remove oxlint-plugin-eslint after oxlint ships native object-shorthand
+    // (https://github.com/oxc-project/oxc/pull/17688)
+    "oxlint-plugin-eslint"
   ],
   "env": {
     "browser": true,
@@ -34,6 +36,8 @@
     "**/vitest.config*",
     "**/vitest-setup*",
     "**/vitest-package-mocks*",
+    "**/jest-setup*",
+    "**/jest-package-mocks*",
     "**/.wxt/**",
     "**/wxt.config.*",
   ],
@@ -103,14 +107,17 @@
     "security/detect-buffer-noassert": "error",
     "security/detect-child-process": "error",
     "security/detect-disable-mustache-escape": "error",
-    "security/detect-eval-with-expression": "error",
     "security/detect-non-literal-regexp": "error",
     "security/detect-pseudoRandomBytes": "error",
-    "security/detect-new-buffer": "error",
+    "unicorn/no-new-buffer": "error",
+    "unicorn/no-new-array": "off",
     "no-unsanitized/method": "error",
     "no-unsanitized/property": "error",
 
     // ── style ──────────────────────────────────────────────────────────
+    // TODO: Replace with native object-shorthand after next oxlint update
+    // (https://github.com/oxc-project/oxc/pull/17688)
+    "eslint-js/object-shorthand": ["error", "always"],
     "jest/no-conditional-expect": "off",
     "jest/require-to-throw-message": "off",
     "jest/no-done-callback": "error",
@@ -298,8 +305,9 @@
     ],
     "universe-custom/no-redux-modals": "error",
 
-    // ── check-file ─────────────────────────────────────────────────────
-    "check-file/no-index": "off",
+    // ── typed-redux-saga ──────────────────────────────────────────────
+    "@jambit/typed-redux-saga/use-typed-effects": "error",
+    "@jambit/typed-redux-saga/delegate-effects": "error",
 
     // ── additional eslint rules not in biome ───────────────────────────
     "guard-for-in": "error",
@@ -319,6 +327,10 @@
     "typescript/no-floating-promises": "error",
     "typescript/no-unsafe-return": "error",
     "typescript/no-unnecessary-condition": ["error", { "allowConstantLoopConditions": true }],
+    "typescript/no-redundant-type-constituents": "off",
+    "typescript/unbound-method": "off",
+    "typescript/restrict-template-expressions": "off",
+    "typescript/no-base-to-string": "off",
 
     // ── suspicious ─────────────────────────────────────────────────────
     "no-alert": "warn",
@@ -357,10 +369,11 @@
   "overrides": [
     // ── Migration + vitest setup files: relax type rules ───────────────
     {
-      "files": ["**/*migration*", "**/*Migration*", "**/vitest-setup*", "**/vitest-package-mocks*"],
+      "files": ["**/*migration*", "**/*Migration*", "**/migrations/**/*.ts"],
       "rules": {
         "typescript/no-explicit-any": "off",
-        "typescript/no-non-null-assertion": "off"
+        "typescript/no-non-null-assertion": "off",
+        "typescript/no-unsafe-return": "off"
       }
     },
     // ── Logger, scripts, devtools: allow console ───────────────────────
@@ -428,6 +441,9 @@
         "universe-custom/custom-map-sort": "off",
         "universe-custom/no-hex-string-casting": "off",
         "typescript/triple-slash-reference": "off",
+        "typescript/await-thenable": "off",
+        "typescript/no-unsafe-return": "off",
+        "typescript/no-misused-spread": "off",
         "security/detect-non-literal-regexp": "off",
         "prefer-const": "off",
         "no-shadow": "off",

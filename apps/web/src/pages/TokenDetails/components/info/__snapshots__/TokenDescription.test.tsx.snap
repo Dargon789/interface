@@ -37,29 +37,22 @@ exports[`TokenDescription > no description or social buttons shown when not avai
           style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: row; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; align-items: center; gap: var(--t-space-gap8); border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transform: scale(1);"
           tabindex="0"
         >
-          <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _position-relative _width-16px _height-16px"
+          <svg
+            fill="none"
+            stroke-width="8"
+            style="width: 16px; height: 16px; color: rgb(19, 19, 19);"
+            viewBox="0 0 16 16"
           >
-            <div
-              class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _position-absolute _top-0px _left-0px"
+            <g
+              id="page"
             >
-              <div
-                style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; opacity: 1; width: 100%; flex-grow: 1; transform: translateX(0px); transition: all 300ms ease-in-out;"
-              >
-                <svg
-                  fill="none"
-                  stroke-width="8"
-                  style="width: 16px; height: 16px; color: rgb(19, 19, 19);"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M18.375 6.25H9.625C7.448 6.25 6.25 7.448 6.25 9.625V18.375C6.25 20.552 7.448 21.75 9.625 21.75H18.375C20.552 21.75 21.75 20.552 21.75 18.375V9.625C21.75 7.448 20.552 6.25 18.375 6.25ZM20.25 18.375C20.25 19.707 19.707 20.25 18.375 20.25H9.625C8.293 20.25 7.75 19.707 7.75 18.375V9.625C7.75 8.293 8.293 7.75 9.625 7.75H18.375C19.707 7.75 20.25 8.293 20.25 9.625V18.375ZM3.75 5.62V14.38C3.75 15.578 4.23309 15.873 4.39209 15.971C4.74609 16.187 4.85589 16.649 4.63989 17.002C4.49789 17.233 4.25202 17.36 3.99902 17.36C3.86602 17.36 3.72991 17.324 3.60791 17.25C2.70691 16.698 2.25 15.733 2.25 14.38V5.62C2.25 3.478 3.47912 2.25 5.62012 2.25H14.3799C16.0649 2.25 16.87 2.98897 17.25 3.60797C17.466 3.96097 17.355 4.42298 17.002 4.63898C16.648 4.85598 16.1879 4.74399 15.9709 4.39099C15.8739 4.23199 15.5779 3.74902 14.3799 3.74902H5.62012C4.29212 3.75002 3.75 4.292 3.75 5.62Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
+              <path
+                d="M11.2533 10H13.48C13.44 10.06 13.3933 10.1067 13.34 10.16L10.16 13.34C10.1067 13.3933 10.06 13.44 10 13.48V11.2533C10 10.56 10.5599 10 11.2533 10ZM14 4.24666V8.56665C14 8.71332 13.9866 8.86 13.9533 9H11.2533C10.0066 9 9 10.0067 9 11.2533V13.9534C8.86 13.9867 8.7134 14 8.56673 14H4.25326C2.74659 14 2 13.2467 2 11.7467V4.24666C2 2.74666 2.74659 2 4.25326 2H11.7467C13.2534 2 14 2.74666 14 4.24666ZM8.5 9.33333C8.5 9.05733 8.276 8.83333 8 8.83333H5.33333C5.05733 8.83333 4.83333 9.05733 4.83333 9.33333C4.83333 9.60933 5.05733 9.83333 5.33333 9.83333H8C8.276 9.83333 8.5 9.60933 8.5 9.33333ZM11.1667 6.33333C11.1667 6.05733 10.9427 5.83333 10.6667 5.83333H5.33333C5.05733 5.83333 4.83333 6.05733 4.83333 6.33333C4.83333 6.60933 5.05733 6.83333 5.33333 6.83333H10.6667C10.9427 6.83333 11.1667 6.60933 11.1667 6.33333Z"
+                fill="currentColor"
+                id="Vector"
+              />
+            </g>
+          </svg>
           <span
             class="font_button _color-_grouptrue-hover_neutral1Hov3121676 _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh1269072494"
             data-disable-theme="true"
@@ -161,29 +154,22 @@ exports[`TokenDescription > renders token information correctly with defaults 1`
           style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: row; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; align-items: center; gap: var(--t-space-gap8); border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transform: scale(1);"
           tabindex="0"
         >
-          <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _position-relative _width-16px _height-16px"
+          <svg
+            fill="none"
+            stroke-width="8"
+            style="width: 16px; height: 16px; color: rgb(19, 19, 19);"
+            viewBox="0 0 16 16"
           >
-            <div
-              class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _position-absolute _top-0px _left-0px"
+            <g
+              id="page"
             >
-              <div
-                style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; opacity: 1; width: 100%; flex-grow: 1; transform: translateX(0px); transition: all 300ms ease-in-out;"
-              >
-                <svg
-                  fill="none"
-                  stroke-width="8"
-                  style="width: 16px; height: 16px; color: rgb(19, 19, 19);"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M18.375 6.25H9.625C7.448 6.25 6.25 7.448 6.25 9.625V18.375C6.25 20.552 7.448 21.75 9.625 21.75H18.375C20.552 21.75 21.75 20.552 21.75 18.375V9.625C21.75 7.448 20.552 6.25 18.375 6.25ZM20.25 18.375C20.25 19.707 19.707 20.25 18.375 20.25H9.625C8.293 20.25 7.75 19.707 7.75 18.375V9.625C7.75 8.293 8.293 7.75 9.625 7.75H18.375C19.707 7.75 20.25 8.293 20.25 9.625V18.375ZM3.75 5.62V14.38C3.75 15.578 4.23309 15.873 4.39209 15.971C4.74609 16.187 4.85589 16.649 4.63989 17.002C4.49789 17.233 4.25202 17.36 3.99902 17.36C3.86602 17.36 3.72991 17.324 3.60791 17.25C2.70691 16.698 2.25 15.733 2.25 14.38V5.62C2.25 3.478 3.47912 2.25 5.62012 2.25H14.3799C16.0649 2.25 16.87 2.98897 17.25 3.60797C17.466 3.96097 17.355 4.42298 17.002 4.63898C16.648 4.85598 16.1879 4.74399 15.9709 4.39099C15.8739 4.23199 15.5779 3.74902 14.3799 3.74902H5.62012C4.29212 3.75002 3.75 4.292 3.75 5.62Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
+              <path
+                d="M11.2533 10H13.48C13.44 10.06 13.3933 10.1067 13.34 10.16L10.16 13.34C10.1067 13.3933 10.06 13.44 10 13.48V11.2533C10 10.56 10.5599 10 11.2533 10ZM14 4.24666V8.56665C14 8.71332 13.9866 8.86 13.9533 9H11.2533C10.0066 9 9 10.0067 9 11.2533V13.9534C8.86 13.9867 8.7134 14 8.56673 14H4.25326C2.74659 14 2 13.2467 2 11.7467V4.24666C2 2.74666 2.74659 2 4.25326 2H11.7467C13.2534 2 14 2.74666 14 4.24666ZM8.5 9.33333C8.5 9.05733 8.276 8.83333 8 8.83333H5.33333C5.05733 8.83333 4.83333 9.05733 4.83333 9.33333C4.83333 9.60933 5.05733 9.83333 5.33333 9.83333H8C8.276 9.83333 8.5 9.60933 8.5 9.33333ZM11.1667 6.33333C11.1667 6.05733 10.9427 5.83333 10.6667 5.83333H5.33333C5.05733 5.83333 4.83333 6.05733 4.83333 6.33333C4.83333 6.60933 5.05733 6.83333 5.33333 6.83333H10.6667C10.9427 6.83333 11.1667 6.60933 11.1667 6.33333Z"
+                fill="currentColor"
+                id="Vector"
+              />
+            </g>
+          </svg>
           <span
             class="font_button _color-_grouptrue-hover_neutral1Hov3121676 _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh1269072494"
             data-disable-theme="true"
@@ -336,29 +322,22 @@ exports[`TokenDescription > truncates description and shows more 1`] = `
           style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: row; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; align-items: center; gap: var(--t-space-gap8); border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transform: scale(1);"
           tabindex="0"
         >
-          <div
-            class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _position-relative _width-16px _height-16px"
+          <svg
+            fill="none"
+            stroke-width="8"
+            style="width: 16px; height: 16px; color: rgb(19, 19, 19);"
+            viewBox="0 0 16 16"
           >
-            <div
-              class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _position-absolute _top-0px _left-0px"
+            <g
+              id="page"
             >
-              <div
-                style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; opacity: 1; width: 100%; flex-grow: 1; transform: translateX(0px); transition: all 300ms ease-in-out;"
-              >
-                <svg
-                  fill="none"
-                  stroke-width="8"
-                  style="width: 16px; height: 16px; color: rgb(19, 19, 19);"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M18.375 6.25H9.625C7.448 6.25 6.25 7.448 6.25 9.625V18.375C6.25 20.552 7.448 21.75 9.625 21.75H18.375C20.552 21.75 21.75 20.552 21.75 18.375V9.625C21.75 7.448 20.552 6.25 18.375 6.25ZM20.25 18.375C20.25 19.707 19.707 20.25 18.375 20.25H9.625C8.293 20.25 7.75 19.707 7.75 18.375V9.625C7.75 8.293 8.293 7.75 9.625 7.75H18.375C19.707 7.75 20.25 8.293 20.25 9.625V18.375ZM3.75 5.62V14.38C3.75 15.578 4.23309 15.873 4.39209 15.971C4.74609 16.187 4.85589 16.649 4.63989 17.002C4.49789 17.233 4.25202 17.36 3.99902 17.36C3.86602 17.36 3.72991 17.324 3.60791 17.25C2.70691 16.698 2.25 15.733 2.25 14.38V5.62C2.25 3.478 3.47912 2.25 5.62012 2.25H14.3799C16.0649 2.25 16.87 2.98897 17.25 3.60797C17.466 3.96097 17.355 4.42298 17.002 4.63898C16.648 4.85598 16.1879 4.74399 15.9709 4.39099C15.8739 4.23199 15.5779 3.74902 14.3799 3.74902H5.62012C4.29212 3.75002 3.75 4.292 3.75 5.62Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
+              <path
+                d="M11.2533 10H13.48C13.44 10.06 13.3933 10.1067 13.34 10.16L10.16 13.34C10.1067 13.3933 10.06 13.44 10 13.48V11.2533C10 10.56 10.5599 10 11.2533 10ZM14 4.24666V8.56665C14 8.71332 13.9866 8.86 13.9533 9H11.2533C10.0066 9 9 10.0067 9 11.2533V13.9534C8.86 13.9867 8.7134 14 8.56673 14H4.25326C2.74659 14 2 13.2467 2 11.7467V4.24666C2 2.74666 2.74659 2 4.25326 2H11.7467C13.2534 2 14 2.74666 14 4.24666ZM8.5 9.33333C8.5 9.05733 8.276 8.83333 8 8.83333H5.33333C5.05733 8.83333 4.83333 9.05733 4.83333 9.33333C4.83333 9.60933 5.05733 9.83333 5.33333 9.83333H8C8.276 9.83333 8.5 9.60933 8.5 9.33333ZM11.1667 6.33333C11.1667 6.05733 10.9427 5.83333 10.6667 5.83333H5.33333C5.05733 5.83333 4.83333 6.05733 4.83333 6.33333C4.83333 6.60933 5.05733 6.83333 5.33333 6.83333H10.6667C10.9427 6.83333 11.1667 6.60933 11.1667 6.33333Z"
+                fill="currentColor"
+                id="Vector"
+              />
+            </g>
+          </svg>
           <span
             class="font_button _color-_grouptrue-hover_neutral1Hov3121676 _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh1269072494"
             data-disable-theme="true"

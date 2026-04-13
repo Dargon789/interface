@@ -1,11 +1,13 @@
 import * as d3 from 'd3'
-import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/constants'
+import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityChartShared/constants'
+import { getColorForTick } from '~/components/Charts/D3LiquidityChartShared/utils/colorUtils'
 import type {
   ChartActions,
   ChartState,
   Renderer,
   RenderingContext,
 } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/types'
+import { getCurrentTickDotY } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/utils/tickToY'
 
 const BACKGROUND_CLASSES = {
   RANGE_INDICATOR: 'range-indicator',
@@ -34,8 +36,8 @@ export function createMinMaxPriceIndicatorsRenderer({
   const minMaxPriceIndicatorsGroup = g.append('g').attr('class', 'min-max-price-indicators-group')
 
   const draw = (): void => {
-    const { colors, dimensions, tickToY } = context
-    const { minTick, maxTick, isFullRange } = getState()
+    const { chartId, colors, dimensions, tickToY, currentTick, token0Color, token1Color, tickScale } = context
+    const { minTick, maxTick, isFullRange, renderedBuckets } = getState()
 
     if (minTick === undefined || maxTick === undefined) {
       return
@@ -55,27 +57,13 @@ export function createMinMaxPriceIndicatorsRenderer({
     const isPastMaxHandle = tickToY({ tick: maxTick, tickAlignment: 'top' }) < 0
     const isPastMinHandle = tickToY({ tick: minTick, tickAlignment: 'bottom' }) > dimensions.height
 
-    // Check if the range is partially visible (use white) vs completely out of view (use pink)
+    // Check if the range is partially visible (use white) vs completely out of view
     const isRangePartiallyVisible =
       tickToY({ tick: maxTick, tickAlignment: 'top' }) < dimensions.height &&
       tickToY({ tick: minTick, tickAlignment: 'bottom' }) > 0
-    const iconColor = isRangePartiallyVisible ? colors.white.val : colors.accent1.val
 
-    // Draw dynamic range indicator line inside the border grey line
-    minMaxPriceIndicatorsGroup
-      .append('rect')
-      .attr('class', `price-range-element ${BACKGROUND_CLASSES.RANGE_INDICATOR}`)
-      .attr('x', dimensions.width + CHART_DIMENSIONS.LIQUIDITY_CHART_WIDTH - CHART_DIMENSIONS.LIQUIDITY_SECTION_OFFSET)
-      .attr('y', 0)
-      .attr('width', CHART_DIMENSIONS.RANGE_INDICATOR_WIDTH)
-      .attr('height', dimensions.height)
-      .attr('fill', colors.accent1.val)
-      .attr('rx', 4)
-      .attr('ry', 4)
-
-    if (isFullRange) {
-      return
-    }
+    const indicatorX =
+      dimensions.width + CHART_DIMENSIONS.LIQUIDITY_CHART_WIDTH - CHART_DIMENSIONS.LIQUIDITY_SECTION_OFFSET
 
     // Calculate range positions with minimum height constraint
     const maxY = tickToY({ tick: maxTick, tickAlignment: 'top' })
@@ -90,14 +78,78 @@ export function createMinMaxPriceIndicatorsRenderer({
     const constrainedMaxY = maxY - heightDiff / 2
     const constrainedMinY = minY + heightDiff / 2
 
-    minMaxPriceIndicatorsGroup
-      .selectAll(`.${BACKGROUND_CLASSES.RANGE_INDICATOR}`)
-      .attr('y', constrainedMaxY)
-      .attr('height', constrainedHeight)
-      .attr('cursor', 'move')
-      .attr('rx', 8)
-      .attr('ry', 8)
-      .call(tickBasedDragBehavior)
+    // Determine range indicator color based on currentTick position
+    const rangeEntirelyAbove = minTick >= currentTick && maxTick >= currentTick
+    const rangeEntirelyBelow = minTick < currentTick && maxTick < currentTick
+
+    if (rangeEntirelyAbove || rangeEntirelyBelow) {
+      minMaxPriceIndicatorsGroup
+        .append('rect')
+        .attr('class', `price-range-element ${BACKGROUND_CLASSES.RANGE_INDICATOR}`)
+        .attr('x', indicatorX)
+        .attr('y', constrainedMaxY)
+        .attr('width', CHART_DIMENSIONS.RANGE_INDICATOR_WIDTH)
+        .attr('height', constrainedHeight)
+        .attr('fill', rangeEntirelyAbove ? token0Color : token1Color)
+        .attr('rx', 8)
+        .attr('ry', 8)
+        .attr('cursor', 'move')
+        .call(tickBasedDragBehavior)
+    } else {
+      // Spans currentTick → split into two rects clipped to the overall rounded shape
+      const currentTickY = getCurrentTickDotY({ currentTick, renderedBuckets, tickScale })
+      const clampedSplitY = Math.max(constrainedMaxY, Math.min(currentTickY, constrainedMinY))
+
+      const defs = minMaxPriceIndicatorsGroup.append('defs')
+      defs
+        .append('clipPath')
+        .attr('id', `${chartId}-indicator-clip`)
+        .append('rect')
+        .attr('x', indicatorX)
+        .attr('y', constrainedMaxY)
+        .attr('width', CHART_DIMENSIONS.RANGE_INDICATOR_WIDTH)
+        .attr('height', constrainedHeight)
+        .attr('rx', 8)
+        .attr('ry', 8)
+
+      const clippedGroup = minMaxPriceIndicatorsGroup
+        .append('g')
+        .attr('clip-path', `url(#${chartId}-indicator-clip)`)
+        .attr('cursor', 'move')
+        .call(tickBasedDragBehavior)
+
+      // Token0 portion (above currentTick) — no radius, clipped by parent
+      clippedGroup
+        .append('rect')
+        .attr('class', `price-range-element ${BACKGROUND_CLASSES.RANGE_INDICATOR}`)
+        .attr('x', indicatorX)
+        .attr('y', constrainedMaxY)
+        .attr('width', CHART_DIMENSIONS.RANGE_INDICATOR_WIDTH)
+        .attr('height', clampedSplitY - constrainedMaxY)
+        .attr('fill', token0Color)
+
+      // Token1 portion (below currentTick) — no radius, clipped by parent
+      clippedGroup
+        .append('rect')
+        .attr('class', `price-range-element ${BACKGROUND_CLASSES.RANGE_INDICATOR}`)
+        .attr('x', indicatorX)
+        .attr('y', clampedSplitY)
+        .attr('width', CHART_DIMENSIONS.RANGE_INDICATOR_WIDTH)
+        .attr('height', constrainedMinY - clampedSplitY)
+        .attr('fill', token1Color)
+    }
+
+    if (isFullRange) {
+      return
+    }
+
+    // Arrow icon colors based on the handle's tick position
+    const maxArrowColor = isRangePartiallyVisible
+      ? colors.white.val
+      : (getColorForTick({ tick: maxTick, currentTick, token0Color, token1Color }) ?? token0Color)
+    const minArrowColor = isRangePartiallyVisible
+      ? colors.white.val
+      : (getColorForTick({ tick: minTick, currentTick, token0Color, token1Color }) ?? token1Color)
 
     // Add max price indicator - show fast-forward icon if scrolled past, otherwise show drag handle
     if (isPastMaxHandle) {
@@ -119,7 +171,7 @@ export function createMinMaxPriceIndicatorsRenderer({
           'd',
           'M-3 -4.875L3 -4.875C3.207 -4.875 3.375 -4.707 3.375 -4.5C3.375 -4.293 3.207 -4.125 3 -4.125L0.77295 -4.125L2.78955 -1.57202C3.29355 -0.93402 2.83555 0 2.01855 0L0.00952 0C0.29402 0.0025 0.577 0.127 0.771 0.3725L2.78955 2.92798C3.29355 3.56598 2.83555 4.5 2.01855 4.5L-2.01855 4.5C-2.83555 4.5 -3.29355 3.56648 -2.78955 2.92798L-0.77148 0.3725C-0.57748 0.127 -0.29353 0.0025 -0.00903 0L-2.01855 0C-2.83555 0 -3.29355 -0.93352 -2.78955 -1.57202L-0.77295 -4.125L-3 -4.125C-3.207 -4.125 -3.375 -4.293 -3.375 -4.5C-3.375 -4.707 -3.207 -4.875 -3 -4.875Z',
         )
-        .attr('fill', iconColor)
+        .attr('fill', maxArrowColor)
         .attr('opacity', 0.65)
     } else {
       // Show normal drag handle when not scrolled past
@@ -160,7 +212,7 @@ export function createMinMaxPriceIndicatorsRenderer({
           'd',
           'M-3 4.875L3 4.875C3.207 4.875 3.375 4.707 3.375 4.5C3.375 4.293 3.207 4.125 3 4.125L0.77295 4.125L2.78955 1.57202C3.29355 0.93402 2.83555 0 2.01855 0L0.00952 0C0.29402 -0.0025 0.577 -0.127 0.771 -0.3725L2.78955 -2.92798C3.29355 -3.56598 2.83555 -4.5 2.01855 -4.5L-2.01855 -4.5C-2.83555 -4.5 -3.29355 -3.56648 -2.78955 -2.92798L-0.77148 -0.3725C-0.57748 -0.127 -0.29353 -0.0025 -0.00903 0L-2.01855 0C-2.83555 0 -3.29355 0.93352 -2.78955 1.57202L-0.77295 4.125L -3 4.125C-3.207 4.125 -3.375 4.293 -3.375 4.5C-3.375 4.707 -3.207 4.875 -3 4.875Z',
         )
-        .attr('fill', iconColor)
+        .attr('fill', minArrowColor)
         .attr('opacity', 0.65)
     } else {
       // Show normal drag handle when not scrolled past

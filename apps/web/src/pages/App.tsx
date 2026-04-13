@@ -10,6 +10,7 @@ import { useFeatureFlagUrlOverrides } from '~/featureFlags/useFeatureFlagUrlOver
 import { Body } from '~/pages/App/Body'
 import { AppLayout } from '~/pages/App/Layout'
 import { ResetPageScrollEffect } from '~/pages/App/utils/ResetPageScroll'
+import { ResetPortfolioChainOnEntryEffect } from '~/pages/App/utils/ResetPortfolioChainOnEntry'
 import { UserPropertyUpdater } from '~/pages/App/utils/UserPropertyUpdater'
 import { useDynamicMetatags } from '~/pages/metatags'
 import { findRouteByPath } from '~/pages/RouteDefinitions'
@@ -83,6 +84,7 @@ export default function App() {
         </Helmet>
         <UserPropertyUpdater />
         <ResetPageScrollEffect />
+        <ResetPortfolioChainOnEntryEffect />
         {shouldOverridePageLayout ? <Body shouldRenderAppChrome={false} /> : <AppLayout />}
       </Trace>
     </ErrorBoundary>

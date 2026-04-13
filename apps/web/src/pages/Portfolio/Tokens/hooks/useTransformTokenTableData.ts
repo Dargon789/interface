@@ -6,8 +6,8 @@ import { DEFAULT_NATIVE_ADDRESS } from 'uniswap/src/features/chains/evm/rpc'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { isStablecoinAddress } from 'uniswap/src/features/chains/utils'
 import { useSortedPortfolioBalancesMultichain } from 'uniswap/src/features/dataApi/balances/balances'
-import type { PortfolioMultichainBalance } from 'uniswap/src/features/dataApi/types'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
+import type { PortfolioMultichainBalance } from 'uniswap/src/features/dataApi/types'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { currencyAddress } from 'uniswap/src/utils/currencyId'
 import { usePortfolioAddresses } from '~/pages/Portfolio/hooks/usePortfolioAddresses'
@@ -63,7 +63,7 @@ export function useTransformTokenTableData({
   networkStatus: NetworkStatus
 } {
   const { evmAddress, svmAddress } = usePortfolioAddresses()
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const {
     data: sortedBalances,
@@ -76,7 +76,7 @@ export function useTransformTokenTableData({
     svmAddress,
     chainIds,
     // Flag OFF: legacy data from backend, transform to multichain shape on client. Flag ON: multichain (mock) data from backend.
-    requestMultichainFromBackend: isMultichainTokenUx,
+    requestMultichainFromBackend: multichainTokenUxEnabled,
   })
 
   return useMemo(() => {

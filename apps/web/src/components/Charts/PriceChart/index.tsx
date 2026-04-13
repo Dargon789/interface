@@ -12,12 +12,9 @@ import {
   UTCTimestamp,
 } from 'lightweight-charts'
 import { ReactNode, useMemo } from 'react'
-import { Trans } from 'react-i18next'
-import { Flex, styled, Text } from 'ui/src'
+import { Flex } from 'ui/src'
 import { opacify } from 'ui/src/theme'
 import { isLowVarianceRange } from 'uniswap/src/components/charts/utils'
-import { useFormatChartFiatDelta } from 'uniswap/src/features/fiatCurrency/hooks/useFormatChartFiatDelta'
-import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
 import { ChartHeader } from '~/components/Charts/ChartHeader'
 import {
@@ -28,13 +25,14 @@ import {
   DEFAULT_BOTTOM_PRICE_SCALE_MARGIN,
   DEFAULT_TOP_PRICE_SCALE_MARGIN,
 } from '~/components/Charts/ChartModel'
+import { CandlestickTooltip } from '~/components/Charts/PriceChart/CandlestickTooltip'
+import { PriceChartDelta } from '~/components/Charts/PriceChart/PriceChartDelta'
 import {
   RoundedCandleSeries,
   RoundedCandleSeriesOptions,
 } from '~/components/Charts/PriceChart/RoundedCandlestickSeries/rounded-candles-series'
 import { getCandlestickPriceBounds } from '~/components/Charts/PriceChart/utils'
 import { PriceChartType } from '~/components/Charts/utils'
-import { calculateDelta, DeltaArrow } from '~/components/DeltaArrow/DeltaArrow'
 
 export type PriceChartData = CandlestickData<UTCTimestamp> & AreaData<UTCTimestamp>
 
@@ -299,87 +297,6 @@ export class PriceChartModel extends ChartModel<PriceChartData> {
   }
 }
 
-interface PriceChartDeltaProps {
-  startingPrice: number
-  endingPrice: number
-  noColor?: boolean
-  shouldIncludeFiatDelta?: boolean
-  shouldTreatAsStablecoin?: boolean
-  /** Optional price change % for the selected duration (used when not hovering) */
-  pricePercentChange?: number
-  /** Whether the user is currently hovering over the chart */
-  isHovering?: boolean
-}
-
-export function PriceChartDelta({
-  startingPrice,
-  endingPrice,
-  noColor,
-  shouldIncludeFiatDelta = false,
-  shouldTreatAsStablecoin = false,
-  pricePercentChange,
-  isHovering = false,
-}: PriceChartDeltaProps) {
-  const { formatPercent, convertFiatAmount } = useLocalizationContext()
-  const { formatChartFiatDelta } = useFormatChartFiatDelta()
-
-  // When not hovering and we have a percent change, use it
-  // When hovering, calculate change from starting price to current hover point
-  const calculatedDelta = calculateDelta(startingPrice, endingPrice)
-  const delta = !isHovering && pricePercentChange !== undefined ? pricePercentChange : calculatedDelta
-
-  const formattedDelta = useMemo(() => {
-    return delta !== undefined ? formatPercent(Math.abs(delta)) : '-'
-  }, [delta, formatPercent])
-
-  const fiatDelta = useMemo(() => {
-    if (!shouldIncludeFiatDelta) {
-      return null
-    }
-
-    // When using percent change (not hovering), calculate fiat delta from that percentage
-    // This avoids mixing aggregated chart prices with per-chain current prices
-    if (!isHovering && pricePercentChange !== undefined) {
-      const convertedEnd = convertFiatAmount(endingPrice)
-      const percentAsDecimal = pricePercentChange / 100
-      const historicalPrice = convertedEnd.amount / (1 + percentAsDecimal)
-      const fiatChange = convertedEnd.amount - historicalPrice
-
-      return formatChartFiatDelta({
-        startingPrice: convertedEnd.amount - fiatChange,
-        endingPrice: convertedEnd.amount,
-        isStablecoin: shouldTreatAsStablecoin,
-      })
-    }
-
-    // When hovering, use chart prices for consistent calculation
-    const convertedStart = convertFiatAmount(startingPrice)
-    const convertedEnd = convertFiatAmount(endingPrice)
-
-    return formatChartFiatDelta({
-      startingPrice: convertedStart.amount,
-      endingPrice: convertedEnd.amount,
-      isStablecoin: shouldTreatAsStablecoin,
-    })
-  }, [
-    shouldIncludeFiatDelta,
-    formatChartFiatDelta,
-    startingPrice,
-    endingPrice,
-    convertFiatAmount,
-    shouldTreatAsStablecoin,
-    pricePercentChange,
-    isHovering,
-  ])
-
-  return (
-    <Text variant="body2" color="$neutral2" display="flex" alignItems="center" gap="$gap4">
-      {delta !== undefined && <DeltaArrow delta={delta} formattedDelta={formattedDelta} noColor={noColor} />}
-      {fiatDelta ? `${fiatDelta.formatted} (${formattedDelta})` : formattedDelta}
-    </Text>
-  )
-}
-
 interface PriceChartProps {
   type: PriceChartType
   height: number
@@ -390,41 +307,11 @@ interface PriceChartProps {
   overrideColor?: string
   headerTotalValueOverride?: number
   hideYAxis?: boolean
+  hidePercentDelta?: boolean
   yAxisFormatter?: (price: number) => string
-  /** Additional content rendered next to the price delta in the chart header */
-  additionalHeaderContent?: ReactNode
-}
-
-const CandlestickTooltipRow = styled(Flex, {
-  row: true,
-  justifyContent: 'space-between',
-  gap: '$sm',
-})
-
-function CandlestickTooltip({ data }: { data: PriceChartData }) {
-  const { convertFiatAmountFormatted } = useLocalizationContext()
-  return (
-    <>
-      <Text variant="body3" color="$neutral1">
-        <CandlestickTooltipRow>
-          <Trans i18nKey="chart.price.label.open" />
-          <Flex>{convertFiatAmountFormatted(data.open, NumberType.FiatTokenPrice)}</Flex>
-        </CandlestickTooltipRow>
-        <CandlestickTooltipRow>
-          <Trans i18nKey="chart.price.label.high" />
-          <Flex>{convertFiatAmountFormatted(data.high, NumberType.FiatTokenPrice)}</Flex>
-        </CandlestickTooltipRow>
-        <CandlestickTooltipRow>
-          <Trans i18nKey="chart.price.label.low" />
-          <Flex>{convertFiatAmountFormatted(data.low, NumberType.FiatTokenPrice)}</Flex>
-        </CandlestickTooltipRow>
-        <CandlestickTooltipRow>
-          <Trans i18nKey="chart.price.label.close" />
-          <Flex>{convertFiatAmountFormatted(data.close, NumberType.FiatTokenPrice)}</Flex>
-        </CandlestickTooltipRow>
-      </Text>
-    </>
-  )
+  /** Additional content rendered next to the price delta in the chart header.
+   *  Can be a ReactNode or a render function receiving { isHovering }. */
+  additionalHeaderContent?: ReactNode | (({ isHovering }: { isHovering: boolean }) => ReactNode)
 }
 
 export function PriceChart({
@@ -439,6 +326,7 @@ export function PriceChart({
   hideYAxis,
   yAxisFormatter,
   additionalHeaderContent,
+  hidePercentDelta,
 }: PriceChartProps) {
   const startingPrice = data[0]
   const lastPrice = data[data.length - 1]
@@ -471,7 +359,7 @@ export function PriceChart({
           <ChartHeader
             value={headerValue}
             additionalFields={
-              <>
+              <Flex row gap="$gap8" alignItems="center">
                 <PriceChartDelta
                   startingPrice={startingPrice.close}
                   endingPrice={(crosshairData ?? lastPrice).close}
@@ -479,9 +367,12 @@ export function PriceChart({
                   shouldTreatAsStablecoin={shouldTreatAsStablecoin}
                   pricePercentChange={pricePercentChange}
                   isHovering={!!crosshairData}
+                  hidePercent={hidePercentDelta}
                 />
-                {additionalHeaderContent}
-              </>
+                {typeof additionalHeaderContent === 'function'
+                  ? additionalHeaderContent({ isHovering: !!crosshairData })
+                  : additionalHeaderContent}
+              </Flex>
             }
             valueFormatterType={NumberType.FiatTokenPrice}
             time={crosshairData?.time}

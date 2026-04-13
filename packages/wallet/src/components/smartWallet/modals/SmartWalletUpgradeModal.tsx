@@ -27,6 +27,7 @@ interface SmartWalletUpgradeModalsProps {
   isHomeScreenFocused?: boolean
 }
 
+// oxlint-disable-next-line typescript/consistent-return -- biome-parity: oxlint is stricter here
 export function SmartWalletUpgradeModals({
   account,
   onEnableSmartWallet,

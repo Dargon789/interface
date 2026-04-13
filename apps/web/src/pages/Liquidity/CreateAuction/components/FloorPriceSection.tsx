@@ -298,7 +298,6 @@ export function FloorPriceSection({
     setInputCurrency(next)
   }, [inputCurrency, denomination, hasValidFloorPrice, floorPriceNum, totalSupplyNum, usdPriceNum])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: active input value is the trigger to re-measure the mirror span after it re-renders
   useLayoutEffect(() => {
     if (mirrorRef.current) {
       setInputWidth(mirrorRef.current.offsetWidth)

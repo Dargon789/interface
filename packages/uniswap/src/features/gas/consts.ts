@@ -59,9 +59,11 @@ export const CHAIN_GAS_STRATEGY_OVERRIDES: Record<number, Partial<GasStrategy>> 
     maxPriorityFeeGwei: 0,
   },
   // Tempo uses a fixed base fee and payment lanes for congestion management instead of priority fee bidding.
+  // Because the base fee is fixed, price inflation and priority fee bidding are unnecessary.
   // https://docs.tempo.xyz/quickstart/evm-compatibility
   // https://docs.tempo.xyz/protocol/blockspace/payment-lane-specification
   [UniverseChainId.Tempo]: {
+    priceInflationFactor: 1,
     minPriorityFeeGwei: 0,
     maxPriorityFeeGwei: 0,
   },

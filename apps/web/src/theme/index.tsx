@@ -24,6 +24,7 @@ const deprecated_mediaWidthTemplates: { [width in keyof typeof MEDIA_WIDTHS]: ty
       ${css(a, b, c)}
     }
   `
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   return acc
 }, {} as any)
 

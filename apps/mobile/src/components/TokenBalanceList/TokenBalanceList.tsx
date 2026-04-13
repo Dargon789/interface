@@ -298,7 +298,13 @@ const TokenBalanceItemRow = memo(function TokenBalanceItemRow({ item }: { item: 
       }
       onPressToken={handlePressToken}
     >
-      <TokenBalanceItem padded isHidden={isHidden} isLoading={isWarmLoading} currencyInfo={currencyInfo} />
+      <TokenBalanceItem
+        padded
+        isHidden={isHidden}
+        isLoading={isWarmLoading}
+        currencyInfo={currencyInfo}
+        portfolioBalance={balance}
+      />
     </TokenBalanceItemContextMenu>
   )
 })

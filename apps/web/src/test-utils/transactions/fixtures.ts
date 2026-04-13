@@ -43,7 +43,7 @@ export function createMockUniswapXOrder(overrides?: Partial<UniswapXOrderDetails
     ...overrides,
     typeInfo: {
       ...defaults.typeInfo,
-      ...(overrides?.typeInfo || {}),
+      ...overrides?.typeInfo,
     },
   } as UniswapXOrderDetails
 }

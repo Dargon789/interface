@@ -99,14 +99,14 @@ export const createGroups = (activities: Array<Activity> = [], hideSpam = false)
  * @returns the nonce as BigNumber if available, undefined otherwise
  */
 export function getActivityNonce(activity: Activity): BigNumber | undefined {
+  /* oxlint-disable typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here */
   if (
     // sometime the nonce is being sent in as null value
     // when creating a limit order (should be undefined or BigNumberish)
-    // oxlint-disable-next-line typescript/no-unnecessary-condition
     activity.options?.request?.nonce !== undefined &&
-    // oxlint-disable-next-line typescript/no-unnecessary-condition
     activity.options.request.nonce !== null
   ) {
+    /* oxlint-enable typescript/no-unnecessary-condition */
     return BigNumber.from(activity.options.request.nonce)
   }
 

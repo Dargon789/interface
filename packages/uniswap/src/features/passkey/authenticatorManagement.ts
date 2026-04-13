@@ -1,3 +1,7 @@
+import {
+  Action,
+  AuthenticationTypes,
+} from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
 import type {
   Authenticator,
   RegistrationOptions_AuthenticatorAttachment as AuthenticatorAttachment,
@@ -14,7 +18,7 @@ import {
   setDeviceSession,
   signWithDeviceKey,
 } from 'uniswap/src/features/passkey/deviceSession'
-import { authenticateWithPasskey, loadPrivyPbModule } from 'uniswap/src/features/passkey/embeddedWallet'
+import { authenticateWithPasskey } from 'uniswap/src/features/passkey/embeddedWallet'
 import { authenticatePasskey, registerPasskey } from 'uniswap/src/features/passkey/passkey'
 import { logger } from 'utilities/src/logger/logger'
 
@@ -36,7 +40,6 @@ export async function listAuthenticators(
 }
 
 export async function startAddAuthenticatorSession(walletId?: string): Promise<string> {
-  const { AuthenticationTypes, Action } = await loadPrivyPbModule()
   const { privateKey, publicKeyBase64: devicePublicKey } = await generateDeviceKeyPair()
 
   const challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
@@ -79,7 +82,6 @@ export async function registerNewAuthenticator({
   username?: string
   walletId?: string
 }): Promise<void> {
-  const { Action, AuthenticationTypes } = await loadPrivyPbModule()
   const session = getDeviceSession()
   if (!session) {
     throw new Error('No active device session — call startAddAuthenticatorSession first')
@@ -141,7 +143,6 @@ export async function registerNewAuthenticator({
 }
 
 export async function deleteRecoveryMethod(walletId: string): Promise<boolean> {
-  const { Action } = await loadPrivyPbModule()
   try {
     const credential = await authenticateWithPasskey(Action.DELETE_RECOVERY, { walletId })
     if (!credential) {

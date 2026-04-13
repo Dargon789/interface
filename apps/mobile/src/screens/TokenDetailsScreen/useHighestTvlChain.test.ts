@@ -5,7 +5,6 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 const mockFragmentData = jest.fn()
 
 jest.mock('uniswap/src/data/graphql/uniswap-data-api/fragments', () => ({
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   useTokenProjectTokensTvlPartsFragment: () => ({ data: mockFragmentData() }),
 }))
 

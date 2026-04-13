@@ -283,6 +283,7 @@ query Token($chain: Chain!, $address: String) {
 query TokenDetailsScreen(
   $chain: Chain!
   $address: String
+  $multichain: Boolean = false
 ) {
   token(chain: $chain, address: $address) {
     ...TokenParts
@@ -291,6 +292,12 @@ query TokenDetailsScreen(
     ...TokenProjectUrlsParts
     ...TokenProjectMarketsParts
     ...TokenProjectTokensTvlParts
+    multichainMarket: market(currency: USD, multichain: $multichain) {
+      id
+      volume24H: volume(duration: DAY, multichain: $multichain) {
+        value
+      }
+    }
   }
 }
 

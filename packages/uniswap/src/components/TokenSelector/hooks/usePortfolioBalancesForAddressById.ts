@@ -4,9 +4,9 @@ import type { AddressGroup } from 'uniswap/src/features/accounts/store/types/Acc
 import { usePortfolioBalances } from 'uniswap/src/features/dataApi/balances/balances'
 import { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
 
-export function usePortfolioBalancesForAddressById(
-  addresses: AddressGroup,
-): GqlResult<Record<Address, PortfolioBalance> | undefined> {
+export type PortfolioBalancesResult = GqlResult<Record<Address, PortfolioBalance> | undefined>
+
+export function usePortfolioBalancesForAddressById(addresses: AddressGroup): PortfolioBalancesResult {
   const {
     data: portfolioBalancesById,
     error,

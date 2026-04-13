@@ -1,5 +1,5 @@
 import { GraphQLApi } from '@universe/api'
-import { useContext, useEffect, useRef } from 'react'
+import { useContext, useEffect } from 'react'
 import { useParams } from 'react-router'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import type { createTDPStore } from '~/pages/TokenDetails/context/createTDPStore'
@@ -12,16 +12,6 @@ import { validTokenProjectResponse } from '~/test-utils/tokens/fixtures'
 
 const TOKEN_A = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
 const TOKEN_B = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
-
-const mockChartState = {
-  timePeriod: '1D' as const,
-  setTimePeriod: vi.fn(),
-  setChartType: vi.fn(),
-  priceChartType: 'LINE' as const,
-  setPriceChartType: vi.fn(),
-  activeQuery: { chartType: 'PRICE' as const, entries: [], loading: false },
-  disableCandlestickUI: false,
-}
 
 function createDerivedState(overrides: {
   address: string
@@ -36,8 +26,8 @@ function createDerivedState(overrides: {
       loading: false,
       data: validTokenProjectResponse.data,
     },
-    chartState: mockChartState,
     multiChainMap: {},
+    selectedMultichainChainId: undefined,
     tokenColor: overrides.tokenColor,
     currency: undefined,
   }

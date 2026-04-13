@@ -45,6 +45,19 @@ const LEGACY_HOOKS: TokenPriceHooks = {
   useTokenSpotPrice: useTokenSpotPriceLegacy,
 }
 
+// Metrics phase: USDC hooks go through centralized (for TAPI comparison logging),
+// but spot price stays on GQL legacy until Aurora data quality is validated.
+// GQL prices come from The Graph subgraphs (derivedETH × ethPriceUSD) — a different
+// data source than Aurora's hub-and-spoke DAG. Once Aurora is validated against TAPI,
+// this becomes CENTRALIZED_HOOKS (all hooks migrated to centralized price service).
+const METRICS_PHASE_HOOKS: TokenPriceHooks = {
+  useUSDCPrice: useUSDCPriceCentralized,
+  useUSDCValue: useUSDCValueCentralized,
+  useUSDCValueWithStatus: useUSDCValueWithStatusCentralized,
+  useTokenSpotPrice: useTokenSpotPriceLegacy,
+}
+
+// Full rollout: all hooks go through centralized price service
 const CENTRALIZED_HOOKS: TokenPriceHooks = {
   useUSDCPrice: useUSDCPriceCentralized,
   useUSDCValue: useUSDCValueCentralized,
@@ -56,7 +69,17 @@ const TokenPriceContext = createContext<TokenPriceHooks>(LEGACY_HOOKS)
 
 export function TokenPriceProvider({ children }: { children: ReactNode }): JSX.Element {
   const useCentralized = useFeatureFlag(FeatureFlags.CentralizedPrices)
-  const hooks = useCentralized ? CENTRALIZED_HOOKS : LEGACY_HOOKS
+  const useWs = useFeatureFlag(FeatureFlags.CentralizedPricesWs)
+
+  let hooks: TokenPriceHooks
+  if (!useCentralized) {
+    hooks = LEGACY_HOOKS
+  } else if (!useWs) {
+    hooks = METRICS_PHASE_HOOKS
+  } else {
+    hooks = CENTRALIZED_HOOKS
+  }
+
   return <TokenPriceContext.Provider value={hooks}>{children}</TokenPriceContext.Provider>
 }
 

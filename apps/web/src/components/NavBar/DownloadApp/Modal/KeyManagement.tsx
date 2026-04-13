@@ -8,6 +8,7 @@ import { Trace } from 'uniswap/src/features/telemetry/Trace'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { Page } from '~/components/NavBar/DownloadApp/Modal'
 import { ModalContent } from '~/components/NavBar/DownloadApp/Modal/Content'
+import { ExternalLink } from '~/theme/components/Links'
 
 export function KeyManagementModal({
   setPage,
@@ -37,9 +38,11 @@ export function KeyManagementModal({
             <Text variant="body3" color="$neutral3">
               {t('onboarding.keyManagement.securedBy')}
             </Text>
-            <Flex height={14} overflow="hidden" justifyContent="center" mt="$spacing4">
-              <PrivyLogo size={63} color="$neutral1" />
-            </Flex>
+            <ExternalLink href="https://www.privy.io/user-help-center" style={{ stroke: 'none' }}>
+              <Flex height={14} overflow="hidden" justifyContent="center" mt="$spacing4">
+                <PrivyLogo size={63} color="$neutral1" />
+              </Flex>
+            </ExternalLink>
           </Flex>
         }
       >

@@ -55,7 +55,7 @@ interface SwapLeg {
 
 export function TransactionsTable({ chainId, referenceToken }: { chainId: UniverseChainId; referenceToken: Token }) {
   const { t } = useTranslation()
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const activeLocalCurrency = useAppFiatCurrency()
   const { convertFiatAmountFormatted, formatNumberOrString } = useLocalizationContext()
   const [filterModalIsOpen, toggleFilterModal] = useReducer((s) => !s, false)
@@ -65,7 +65,7 @@ export function TransactionsTable({ chainId, referenceToken }: { chainId: Univer
     address: referenceToken.address,
     chainId,
     filter,
-    multichain: isMultichainTokenUx,
+    multichain: multichainTokenUxEnabled,
   })
 
   // Only show full error state when ALL versions fail
@@ -247,7 +247,7 @@ export function TransactionsTable({ chainId, referenceToken }: { chainId: Univer
                   type: NumberType.TokenQuantityStats,
                 })}
               </EllipsisText>
-              <TokenLinkCell token={nonReferenceSwapLeg.token} showMainnetNetworkLogo={isMultichainTokenUx} />
+              <TokenLinkCell token={nonReferenceSwapLeg.token} showMainnetNetworkLogo={multichainTokenUxEnabled} />
             </Flex>
           )
         },
@@ -317,7 +317,7 @@ export function TransactionsTable({ chainId, referenceToken }: { chainId: Univer
     chainId,
     filterModalIsOpen,
     filter,
-    isMultichainTokenUx,
+    multichainTokenUxEnabled,
     referenceToken.address,
     unwrappedReferenceToken.symbol,
     formatNumberOrString,
@@ -331,7 +331,7 @@ export function TransactionsTable({ chainId, referenceToken }: { chainId: Univer
         data={data}
         loading={allDataStillLoading}
         error={combinedError}
-        v2={isMultichainTokenUx}
+        v2={multichainTokenUxEnabled}
         loadMore={loadMore}
         maxHeight={600}
         defaultPinnedColumns={['timestamp', 'swap-type']}

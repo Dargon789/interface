@@ -1,6 +1,6 @@
 import { isDevEnv } from 'utilities/src/environment/env'
-import type { StoreApi, UseBoundStore } from 'zustand'
 import { create } from 'zustand'
+import type { StoreApi, UseBoundStore } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { LoadedTDPContext, PendingTDPContext } from '~/pages/TokenDetails/context/TDPContext'
 
@@ -10,13 +10,13 @@ export type TDPState = PendingTDPContext | LoadedTDPContext
 type TDPActions = {
   setTokenQuery: (v: TDPState['tokenQuery']) => void
   setMultiChainMap: (v: TDPState['multiChainMap']) => void
-  setChartState: (v: TDPState['chartState']) => void
   setTokenColor: (v: TDPState['tokenColor']) => void
   setCurrency: (v: TDPState['currency']) => void
   setAddress: (v: TDPState['address']) => void
+  setSelectedMultichainChainId: (v: TDPState['selectedMultichainChainId']) => void
 }
 
-type TDPStoreState = TDPState & { actions: TDPActions }
+export type TDPStoreState = TDPState & { actions: TDPActions }
 
 type TDPStore = UseBoundStore<StoreApi<TDPStoreState>>
 
@@ -28,10 +28,10 @@ export const createTDPStore = (initial: TDPState): TDPStore =>
         actions: {
           setTokenQuery: (tokenQuery) => set({ tokenQuery }),
           setMultiChainMap: (multiChainMap) => set({ multiChainMap }),
-          setChartState: (chartState) => set({ chartState }),
           setTokenColor: (tokenColor) => set({ tokenColor }),
           setCurrency: (currency) => set({ currency }),
           setAddress: (address) => set({ address }),
+          setSelectedMultichainChainId: (selectedMultichainChainId) => set({ selectedMultichainChainId }),
         },
       }),
       {

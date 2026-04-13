@@ -80,6 +80,7 @@ function SharedExtensionNavigationProvider({
   const navigateToTokenDetails = useNavigateToTokenDetails()
   const navigateToFiatOnRamp = useNavigateToFiatOnRamp()
   const navigateToExternalProfile = useCallback(({ address }: NavigateToExternalProfileArgs) => {
+    // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
     focusOrCreateUniswapInterfaceTab({ url: getPortfolioUrl(address) })
   }, [])
   const navigateToPoolDetails = useNavigateToPoolDetails()

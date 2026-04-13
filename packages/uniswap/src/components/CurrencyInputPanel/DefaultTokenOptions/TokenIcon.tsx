@@ -1,9 +1,13 @@
 import { memo, useMemo } from 'react'
 import type { GestureResponderEvent } from 'react-native'
 import { Flex, TouchableArea } from 'ui/src'
-import { get200MsAnimationDelayFromIndex } from 'ui/src/theme/animations/delay200ms'
 import { logoSize, WEB_HOVER_SCALE } from 'uniswap/src/components/CurrencyInputPanel/DefaultTokenOptions/constants'
 import { useSendSelectCurrencyEvent } from 'uniswap/src/components/CurrencyInputPanel/DefaultTokenOptions/TokenOptions/useSendSelectCurrencyEvent'
+import {
+  getStaggeredGroupHoverStyle,
+  HOVER_REVEAL_EXIT_TRANSITION,
+  HOVER_REVEAL_TRANSFORM,
+} from 'uniswap/src/components/CurrencyInputPanel/hoverStyles'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import type { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
@@ -12,13 +16,6 @@ import { useOnSelectCurrency } from 'uniswap/src/features/transactions/swap/form
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { isHoverable } from 'utilities/src/platform'
 import { useEvent } from 'utilities/src/react/hooks'
-
-const TRANSFORM = [{ translateY: -4 }, { scale: 0.95 }] as const
-const GROUP_HOVER_STYLE = {
-  opacity: 1,
-  transform: [{ translateY: 0 }],
-  scale: 1,
-} as const
 
 const TOUCHABLE_HOVER_STYLE = { backgroundColor: '$surface3Hovered', scale: WEB_HOVER_SCALE } as const
 
@@ -55,13 +52,6 @@ export const TokenIcon = memo(
       })
     })
 
-    const animation = useMemo(() => {
-      if (!isHoverable) {
-        return undefined
-      }
-      return get200MsAnimationDelayFromIndex(animationIndex)
-    }, [animationIndex])
-
     const traceProperties = useMemo(() => {
       return {
         chain_id: currency.chainId,
@@ -71,10 +61,10 @@ export const TokenIcon = memo(
 
     return (
       <Flex
-        $group-hover={isHoverable ? GROUP_HOVER_STYLE : undefined}
+        $group-hover={isHoverable ? getStaggeredGroupHoverStyle(animationIndex) : undefined}
         opacity={isHoverable ? 0 : undefined}
-        transform={isHoverable ? TRANSFORM : undefined}
-        animation={animation}
+        transform={isHoverable ? HOVER_REVEAL_TRANSFORM : undefined}
+        transition={isHoverable ? HOVER_REVEAL_EXIT_TRANSITION : undefined}
       >
         <Trace logPress element={ElementName.PreselectAsset} properties={traceProperties}>
           <TouchableArea

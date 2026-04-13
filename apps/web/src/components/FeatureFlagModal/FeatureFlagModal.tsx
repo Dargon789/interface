@@ -323,6 +323,7 @@ export default function FeatureFlagModal(): JSX.Element {
             <FeatureFlagOption flag={FeatureFlags.ArbitrumDutchV3} label="Enable Dutch V3 on Arbitrum" />
           </FeatureFlagGroup>
           <FeatureFlagGroup name="LP">
+            <FeatureFlagOption flag={FeatureFlags.LpPdpD3RangeChart} label="Enable LP PDP D3 Range Chart" />
             <FeatureFlagOption
               flag={FeatureFlags.LiquidityBatchedTransactions}
               label="Enable Batched Transactions for LP flow"
@@ -364,8 +365,8 @@ export default function FeatureFlagModal(): JSX.Element {
             <FeatureFlagOption flag={FeatureFlags.AATestWeb} label="A/A Test for Web" />
             {isPlaywrightEnv() && <FeatureFlagOption flag={FeatureFlags.DummyFlagTest} label="Dummy Flag Test" />}
           </FeatureFlagGroup>
-          <FeatureFlagGroup name="New Wallet Connectors">
-            <FeatureFlagOption flag={FeatureFlags.PortoWalletConnector} label="Enable Porto Wallet Connector" />
+          <FeatureFlagGroup name="Unitags">
+            <FeatureFlagOption flag={FeatureFlags.UnitagsServiceV2} label="New Unitags Service" />
           </FeatureFlagGroup>
           <FeatureFlagGroup name="Portfolio">
             <FeatureFlagOption flag={FeatureFlags.PortfolioDefiTab} label="Enable Portfolio DeFi Tab" />
@@ -381,6 +382,7 @@ export default function FeatureFlagModal(): JSX.Element {
           </FeatureFlagGroup>
           <FeatureFlagGroup name="Prices">
             <FeatureFlagOption flag={FeatureFlags.CentralizedPrices} label="Enable Centralized Prices" />
+            <FeatureFlagOption flag={FeatureFlags.CentralizedPricesWs} label="Enable Centralized Prices WebSocket" />
           </FeatureFlagGroup>
           <FeatureFlagGroup name="Experiments" />
           <FeatureFlagGroup name="Layers">

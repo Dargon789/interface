@@ -206,6 +206,7 @@ function WarningSection({
 }
 
 /** Helper component to render appropriate scanning content based on request type */
+// oxlint-disable-next-line typescript/consistent-return -- biome-parity: oxlint is stricter here
 function ScanningContent({
   request,
   chainId,

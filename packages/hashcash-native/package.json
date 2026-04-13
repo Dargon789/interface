@@ -33,22 +33,18 @@
   "scripts": {
     "postinstall": "tsc || exit 0;",
     "typecheck": "nx typecheck hashcash-native",
-    "typecheck:tsgo": "nx typecheck:tsgo hashcash-native",
     "build": "nx build hashcash-native",
     "clean": "nx clean hashcash-native",
-    "lint": "nx lint hashcash-native",
-    "lint:fix": "nx lint:fix hashcash-native",
-    "lint:eslint": "nx lint:eslint hashcash-native",
-    "lint:eslint:fix": "nx lint:eslint:fix hashcash-native",
+    "check": "nx check hashcash-native",
+    "check:fast": "nx check:fast hashcash-native",
     "check:deps:usage": "nx check:deps:usage hashcash-native",
-    "lint-ci": "nx lint-ci hashcash-native",
     "specs": "nx specs hashcash-native",
     "codegen": "nx codegen hashcash-native",
     "codegen:clean": "nx codegen:clean hashcash-native",
-    "oxlint": "nx oxlint hashcash-native",
-    "oxlint:fix": "nx oxlint:fix hashcash-native",
-    "oxfmt": "nx oxfmt hashcash-native",
-    "oxfmt:fix": "nx oxfmt:fix hashcash-native"
+    "format": "nx format hashcash-native",
+    "format:check": "nx format:check hashcash-native",
+    "lint": "nx lint hashcash-native",
+    "lint:fix": "nx lint:fix hashcash-native"
   },
   "nx": {
     "includedScripts": []
@@ -58,8 +54,6 @@
   },
   "devDependencies": {
     "@typescript/native-preview": "7.0.0-dev.20260311.1",
-    "@uniswap/eslint-config": "workspace:^",
-    "eslint": "10.0.2",
     "nitrogen": "0.31.10",
     "react": "19.0.3",
     "react-native": "0.79.5",

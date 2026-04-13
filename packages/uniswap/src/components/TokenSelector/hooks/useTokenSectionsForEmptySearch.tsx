@@ -4,6 +4,7 @@ import { TokenOption } from 'uniswap/src/components/lists/items/types'
 import { type OnchainItemSection, OnchainItemSectionName } from 'uniswap/src/components/lists/OnchainItemList/types'
 import { useOnchainItemListSection } from 'uniswap/src/components/lists/utils'
 import { MAX_DEFAULT_TRENDING_TOKEN_RESULTS_AMOUNT } from 'uniswap/src/components/TokenSelector/constants'
+import { usePortfolioBalancesForAddressById } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
 import { useRecentlySearchedTokens } from 'uniswap/src/components/TokenSelector/hooks/useRecentlySearchedTokens'
 import { useTrendingTokensOptions } from 'uniswap/src/components/TokenSelector/hooks/useTrendingTokensOptions'
 import { TokenSectionsHookProps } from 'uniswap/src/components/TokenSelector/types'
@@ -13,7 +14,8 @@ export function useTokenSectionsForEmptySearch({
   addresses,
   chainFilter,
 }: Omit<TokenSectionsHookProps, 'oppositeSelectedToken'>): GqlResult<OnchainItemSection<TokenOption>[]> {
-  const { data: trendingTokenOptions, loading } = useTrendingTokensOptions({ addresses, chainFilter })
+  const portfolioData = usePortfolioBalancesForAddressById(addresses)
+  const { data: trendingTokenOptions, loading } = useTrendingTokensOptions({ chainFilter, portfolioData })
 
   const recentlySearchedTokenOptions = useRecentlySearchedTokens(chainFilter)
 

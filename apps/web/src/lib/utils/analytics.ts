@@ -188,6 +188,7 @@ export const formatSwapSignedAnalyticsEventProperties = ({
   // measures the amount of time the user took to sign the permit message or swap tx in their wallet
   time_to_sign_since_request_ms: timeToSignSinceRequestMs,
   ...planAnalyticsToSnakeCase(planAnalytics),
+  // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
   ...['routing' in trade ? getRouteAnalyticsData(trade) : undefined],
   ...formatCommonPropertiesForTrade({
     trade,

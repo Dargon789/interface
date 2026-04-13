@@ -31,6 +31,7 @@ export function useGetWalletProfitLossQuery({
       input?.chainIds,
       input?.since?.toString(),
       input?.till?.toString(),
+      input?.modifier,
     ] as const,
     queryFn: () =>
       transformedInput ? profitLossClient.getWalletProfitLoss(transformedInput) : Promise.resolve(undefined),

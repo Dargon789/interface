@@ -5,14 +5,21 @@ import { GraphQLApi } from '@universe/api'
 import { ColorTokens } from 'ui/src'
 import { nativeOnChain, WRAPPED_NATIVE_CURRENCY } from 'uniswap/src/constants/tokens'
 import { GqlChainId, UniverseChainId } from 'uniswap/src/features/chains/types'
-import { isUniverseChainId, toGraphQLChain, toSupportedChainId } from 'uniswap/src/features/chains/utils'
+import {
+  isBackendSupportedChain,
+  isUniverseChainId,
+  toGraphQLChain,
+  toSupportedChainId,
+} from 'uniswap/src/features/chains/utils'
 import { buildCurrency } from 'uniswap/src/features/dataApi/utils/buildCurrency'
 import { FORSupportedToken } from 'uniswap/src/features/fiatOnRamp/types'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
+import { isNativeCurrencyAddress } from 'uniswap/src/utils/currencyId'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { getChainIdFromBackendChain, getChainIdFromChainUrlParam } from '~/features/params/chainParams'
+import { CHAIN_SEARCH_PARAM } from '~/features/params/chainQueryParam'
 import { ExploreTab } from '~/pages/Explore/constants'
 import { TokenStat } from '~/state/explore/types'
-import { getChainIdFromBackendChain, getChainIdFromChainUrlParam } from '~/utils/chainParams'
 import { getNativeTokenDBAddress } from '~/utils/nativeTokens'
 
 export enum TimePeriod {
@@ -116,18 +123,42 @@ export function getTokenDetailsURL({
   chainUrlParam,
   inputAddress,
   outputAddress,
+  chainQueryParam,
 }: {
   address?: string | null
   chain?: GraphQLApi.Chain
-  chainUrlParam?: string
+  chainUrlParam?: string | undefined
   inputAddress?: string | null
   outputAddress?: string | null
+  chainQueryParam?: string
 }) {
   const chainName = chainUrlParam || chain?.toLowerCase() || GraphQLApi.Chain.Ethereum.toLowerCase()
-  const tokenAddress = address ?? NATIVE_CHAIN_ID
-  const inputAddressSuffix = inputAddress ? `?inputCurrency=${inputAddress}` : ''
-  const outputAddressSuffix = outputAddress ? `&outputCurrency=${outputAddress}` : ''
-  return `/explore/tokens/${chainName}/${tokenAddress}${inputAddressSuffix}${outputAddressSuffix}`
+  const tokenChainId = chain && isBackendSupportedChain(chain) ? getChainIdFromBackendChain(chain) : undefined
+  const selectedChainId = tokenChainId ?? getChainIdFromChainUrlParam(chainName)
+
+  const toTokenPathSegment = (addr: string | null | undefined): string => {
+    if (addr === null || addr === undefined) {
+      return NATIVE_CHAIN_ID
+    }
+    if (selectedChainId !== undefined && isNativeCurrencyAddress(selectedChainId, addr)) {
+      return NATIVE_CHAIN_ID
+    }
+    return addr
+  }
+
+  const tokenAddress = toTokenPathSegment(address)
+  const params = new URLSearchParams()
+  if (inputAddress) {
+    params.set('inputCurrency', inputAddress)
+  }
+  if (outputAddress) {
+    params.set('outputCurrency', outputAddress)
+  }
+  if (chainQueryParam) {
+    params.set(CHAIN_SEARCH_PARAM, chainQueryParam)
+  }
+  const query = params.toString()
+  return `/explore/tokens/${chainName}/${tokenAddress}${query ? `?${query}` : ''}`
 }
 
 export function unwrapToken<
@@ -155,6 +186,7 @@ export function unwrapToken<
 
   return {
     ...token,
+    // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
     ...nativeToken,
     project: {
       ...token.project,

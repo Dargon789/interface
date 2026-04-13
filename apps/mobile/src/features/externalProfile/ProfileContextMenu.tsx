@@ -117,6 +117,7 @@ export function ProfileContextMenu({ address }: { address: Address }): JSX.Eleme
       actions={menuActions}
       dropdownMenuMode={true}
       onPress={async (e: NativeSyntheticEvent<ContextMenuOnPressNativeEvent>): Promise<void> => {
+        // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
         await menuActions[e.nativeEvent.index]?.action()
       }}
     >

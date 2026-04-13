@@ -130,6 +130,7 @@ export function FiatOnRampConnectingScreen({ navigation }: Props): JSX.Element |
           {
             externalTransactionId,
             serviceProvider: serviceProvider.serviceProvider,
+            // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
             preselectedServiceProvider: quotesSections[0]?.data?.[0]?.serviceProviderDetails?.serviceProvider,
             countryCode,
             countryState,

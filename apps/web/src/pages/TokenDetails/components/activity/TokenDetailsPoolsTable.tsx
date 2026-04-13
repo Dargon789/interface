@@ -16,7 +16,7 @@ const HIDDEN_COLUMNS = [PoolSortFields.VolOverTvl, PoolSortFields.RewardApr]
 
 function TokenDetailsPoolsTableContent({ referenceCurrency }: { referenceCurrency: Currency }): JSX.Element {
   const { chainId, wrapped: referenceToken, isNative } = referenceCurrency
-  const isMultichainTokenUx = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { sortMethod, sortAscending } = usePoolTableStore((s) => ({
     sortMethod: s.sortMethod,
     sortAscending: s.sortAscending,
@@ -30,7 +30,7 @@ function TokenDetailsPoolsTableContent({ referenceCurrency }: { referenceCurrenc
     sortState,
     chainId: referenceCurrency.chainId,
     isNative,
-    multichain: isMultichainTokenUx,
+    multichain: multichainTokenUxEnabled,
   })
   const combinedError =
     errorV2 && errorV3

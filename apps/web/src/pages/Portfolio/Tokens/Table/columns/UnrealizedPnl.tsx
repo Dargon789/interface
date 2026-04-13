@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react'
-import { ColorTokens, Flex, Text } from 'ui/src'
+import { Flex, Text } from 'ui/src'
 import { Caret } from 'ui/src/components/icons/Caret'
-import { MAX_REASONABLE_USD_VALUE } from 'uniswap/src/components/ProfitLoss/constants'
+import { getValueSignInfo } from 'uniswap/src/components/ProfitLoss/constants'
 import { useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
@@ -23,10 +23,7 @@ export const UnrealizedPnl = memo(function UnrealizedPnl({
   const { formatNumberOrString, formatPercent } = useLocalizationContext()
   const currency = useAppFiatCurrencyInfo()
 
-  const hasReasonableValue = value !== undefined && Math.abs(value) <= MAX_REASONABLE_USD_VALUE
-  const isPositive = hasReasonableValue ? value >= 0 : undefined
-  const arrowColor: ColorTokens | undefined =
-    isPositive === undefined ? undefined : isPositive ? '$statusSuccess' : '$statusCritical'
+  const { hasReasonableValue, isPositive, arrowColor } = getValueSignInfo(value)
 
   const formattedValue = useMemo(() => {
     if (isStablecoin) {
@@ -39,8 +36,14 @@ export const UnrealizedPnl = memo(function UnrealizedPnl({
     if (!hasReasonableValue) {
       return undefined
     }
+    // 0.005 is the smallest absolute value that rounds up to 0.01 at 2 decimal
+    // places. Anything below it rounds to 0.00 — but Intl.NumberFormat preserves
+    // the sign, producing "-0.00" for tiny negatives. Coerce to zero instead.
+    const NEGATIVE_ZERO_THRESHOLD = 0.005
+    const safeValue = value ?? 0
+    const displayValue = Math.abs(safeValue) < NEGATIVE_ZERO_THRESHOLD ? 0 : safeValue
     return formatNumberOrString({
-      value,
+      value: displayValue,
       type: NumberType.PortfolioBalance,
       currencyCode: currency.code,
     })

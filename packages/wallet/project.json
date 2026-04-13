@@ -3,13 +3,17 @@
   "targets": {
     "check:deps:usage": {},
     "typecheck": {},
+    "typecheck:tsc": {},
     "typecheck:tsgo": {},
-    "lint:eslint": {},
-    "lint:eslint:fix": {},
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
     "lint": {},
     "lint:fix": {},
     "check": {},
-    "check:fix": {},
+    "check:fast": {},
     "test": {
       "command": "jest",
       "options": {
@@ -21,11 +25,6 @@
       "options": {
         "cwd": "{projectRoot}"
       }
-    },
-    "oxfmt": {},
-    "oxfmt:fix": {},
-    "oxlint": {},
-    "oxlint:fix": {},
-    "oxlint:type-aware": {}
+    }
   }
 }

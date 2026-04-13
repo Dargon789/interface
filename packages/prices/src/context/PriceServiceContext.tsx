@@ -5,7 +5,7 @@ import type { WebSocketClient } from '@universe/websocket'
 import { createContext, type ReactElement, type ReactNode, useContext, useMemo } from 'react'
 
 interface PricesContextValue {
-  wsClient: WebSocketClient<TokenSubscriptionParams, TokenPriceMessage['data']>
+  wsClient?: WebSocketClient<TokenSubscriptionParams, TokenPriceMessage['data']>
   queryClient: QueryClient
   restBatcher?: RestPriceBatcher
 }
@@ -18,7 +18,7 @@ export function PriceServiceProvider({
   restBatcher,
   children,
 }: {
-  wsClient: WebSocketClient<TokenSubscriptionParams, TokenPriceMessage['data']>
+  wsClient?: WebSocketClient<TokenSubscriptionParams, TokenPriceMessage['data']>
   queryClient: QueryClient
   restBatcher?: RestPriceBatcher
   children: ReactNode

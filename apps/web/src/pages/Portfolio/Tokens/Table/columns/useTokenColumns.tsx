@@ -22,8 +22,8 @@ import { RelativeChange1D } from '~/pages/Portfolio/Tokens/Table/columns/Relativ
 import { TokenDisplay } from '~/pages/Portfolio/Tokens/Table/columns/TokenDisplay'
 import { UnrealizedPnl } from '~/pages/Portfolio/Tokens/Table/columns/UnrealizedPnl'
 import { Value } from '~/pages/Portfolio/Tokens/Table/columns/Value'
-import type { TokenTableRow } from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
 import { getTokenDataForRow } from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
+import type { TokenTableRow } from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
 
 export enum TokenColumns {
   Token = 'token',
@@ -47,7 +47,7 @@ export function useTokenColumns({
   showUnrealizedPnlPercent?: boolean
 }) {
   const { t } = useTranslation()
-  const multichainExpandable = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   return useMemo(() => {
     const columnHelper = createColumnHelper<TokenTableRow>()
@@ -190,6 +190,7 @@ export function useTokenColumns({
             cell: (info) => {
               const row = hasRow<TokenTableRow>(info) ? info.row.original : null
 
+              // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
               const balance = info.getValue?.()
               if (!row) {
                 return (
@@ -225,6 +226,7 @@ export function useTokenColumns({
           cell: (info) => {
             const row = hasRow<TokenTableRow>(info) ? info.row.original : null
 
+            // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
             const value = info.getValue?.()
             if (!row) {
               return (
@@ -321,7 +323,7 @@ export function useTokenColumns({
                 </Cell>
               )
             }
-            const canExpand = multichainExpandable && tableRow?.getCanExpand()
+            const canExpand = multichainTokenUxEnabled && tableRow?.getCanExpand()
             if (row.type === 'parent' && canExpand) {
               const isExpanded = tableRow?.getIsExpanded() ?? false
               return (
@@ -358,5 +360,5 @@ export function useTokenColumns({
     }
 
     return columns
-  }, [t, showLoadingSkeleton, hiddenColumns, multichainExpandable, showUnrealizedPnlPercent])
+  }, [t, showLoadingSkeleton, hiddenColumns, multichainTokenUxEnabled, showUnrealizedPnlPercent])
 }

@@ -98,7 +98,7 @@ export function createBundledDelegationTransactionSignerService(ctx: {
 
   const signTransaction: TransactionSigner['signTransaction'] = async (input) => {
     const signer = await getSigner()
-    const account = await ctx.getAccount()
+    const account = ctx.getAccount()
     const chainId = input.chainId
 
     if (!chainId) {

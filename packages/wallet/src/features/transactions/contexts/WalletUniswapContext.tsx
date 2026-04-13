@@ -118,7 +118,6 @@ function WalletUniswapProviderInner({ children }: PropsWithChildren): JSX.Elemen
 
   const getCanSignPermits = useGetCanSignPermits()
   const getSwapDelegationInfo = useGetSwapDelegationInfoForActiveAccount()
-  const getCanPayGasInAnyToken = useCallback(() => false, [])
 
   return (
     <UniswapProvider
@@ -140,7 +139,6 @@ function WalletUniswapProviderInner({ children }: PropsWithChildren): JSX.Elemen
       getCanSignPermits={getCanSignPermits}
       getSwapDelegationInfo={getSwapDelegationInfo}
       useAccountsStoreContextHook={useAccountsStoreContext}
-      getCanPayGasInAnyToken={getCanPayGasInAnyToken}
       onSwapChainsChanged={showSwapNetworkNotification}
     >
       {children}

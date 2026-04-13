@@ -22,6 +22,7 @@ export function createUniswapFetchClient({
     'x-uniquote-enabled'?: string
   }
 }): FetchClient {
+  // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
   const headers = includeBaseUniswapHeaders ? { ...BASE_UNISWAP_HEADERS, ...additionalHeaders } : additionalHeaders
 
   return createFetchClient({

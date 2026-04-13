@@ -1,5 +1,4 @@
 import { getWagmiConnectorV2 } from '@binance/w3w-wagmi-connector-v2'
-import { porto } from 'porto/wagmi'
 import { UNISWAP_LOGO } from 'ui/src/assets'
 import { UNISWAP_WEB_URL } from 'uniswap/src/constants/urls'
 import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
@@ -20,6 +19,10 @@ import { PLAYWRIGHT_CONNECT_ADDRESS } from '~/components/Web3Provider/constants'
 import { createRejectableMockConnector } from '~/components/Web3Provider/rejectableConnector'
 import { WC_PARAMS } from '~/components/Web3Provider/walletConnect'
 import { embeddedWallet } from '~/connection/EmbeddedWalletConnector'
+
+// Only accept Safe Apps SDK messages from the canonical Safe web app.
+// Tested against bypass patterns in wagmiConfig.test.ts.
+export const SAFE_ALLOWED_ORIGIN = /^https:\/\/app\.safe\.global$/
 
 // Get the appropriate Binance connector based on the environment
 const getBinanceConnector = () => {
@@ -47,9 +50,7 @@ const getBinanceConnector = () => {
 
   // Otherwise, use the Binance connector with QR modal for mobile connection
   const BinanceConnector = getWagmiConnectorV2()
-  return BinanceConnector({
-    showQrCodeModal: true,
-  })
+  return BinanceConnector()
 }
 
 export const orderedTransportUrls = (chain: ReturnType<typeof getChainInfo>): string[] => {
@@ -72,7 +73,6 @@ function createWagmiConnectors(params: {
   const { includeMockConnector } = params
 
   const baseConnectors = [
-    porto(),
     // Binance connector - uses injected for extension, QR code for mobile
     getBinanceConnector(),
     // There are no unit tests that expect WalletConnect to be included here,
@@ -86,7 +86,9 @@ function createWagmiConnectors(params: {
       appLogoUrl: `${UNISWAP_WEB_URL}${UNISWAP_LOGO}`,
       reloadOnDisconnect: false,
     }),
-    safe(),
+    safe({
+      allowedDomains: [SAFE_ALLOWED_ORIGIN],
+    }),
   ]
 
   return includeMockConnector

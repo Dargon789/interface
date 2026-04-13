@@ -6,6 +6,7 @@ import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 import { useCreateTDPContext } from '~/pages/TokenDetails/context/useCreateTDPContext'
 import { mocked } from '~/test-utils/mocked'
 import { renderHook as renderHookWithProviders } from '~/test-utils/render'
+import { createMockTDPChartState } from '~/test-utils/tokenDetails/fixtures'
 import { validTokenProjectResponse } from '~/test-utils/tokens/fixtures'
 
 vi.mock('react-router', async (importOriginal) => {
@@ -35,23 +36,15 @@ vi.mock('@universe/gating', async (importOriginal) => {
   }
 })
 
-vi.mock('~/utils/chainParams', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('~/utils/chainParams')>()
+vi.mock('~/features/params/chainParams', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('~/features/params/chainParams')>()
   return {
     ...actual,
     useChainIdFromUrlParam: vi.fn(() => UniverseChainId.Mainnet),
   }
 })
 
-const mockChartState = {
-  timePeriod: '1D' as const,
-  setTimePeriod: vi.fn(),
-  setChartType: vi.fn(),
-  priceChartType: 'LINE' as const,
-  setPriceChartType: vi.fn(),
-  activeQuery: { chartType: 'PRICE' as const, entries: [], loading: false },
-  disableCandlestickUI: false,
-}
+const mockChartState = createMockTDPChartState()
 
 vi.mock('~/pages/TokenDetails/components/chart/TDPChartState', () => ({
   useCreateTDPChartState: vi.fn(() => mockChartState),
@@ -127,8 +120,8 @@ describe('useCreateTDPContext', () => {
       currencyChainId: UniverseChainId.Mainnet,
       address: expect.any(String),
       tokenQuery: expect.anything(),
-      chartState: mockChartState,
       multiChainMap: expect.any(Object),
+      selectedMultichainChainId: undefined,
     })
     expect(Object.keys(result.current)).toContain('tokenColor')
   })

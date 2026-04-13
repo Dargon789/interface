@@ -5,6 +5,7 @@ const PHANTOM_SINGLE_PLATFORM_MESSAGE = 'Requested resource not available'
 
 const IGNOREABLE_ERROR_RULES = [
   (error: any) => didUserReject(error),
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   (error: any) => error?.message?.includes?.(PHANTOM_SINGLE_PLATFORM_MESSAGE),
 ]
 

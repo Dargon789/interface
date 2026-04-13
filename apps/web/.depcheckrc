@@ -24,7 +24,6 @@ ignores: [
     '@datadog/datadog-ci',
     # Dependencies that depcheck thinks are missing but are actually present or never used
     'stories',
-    'porto',
     ## package.json scripts
     'esbuild-register',
     ## GraphQL
@@ -39,7 +38,6 @@ ignores: [
     'resize-observer-polyfill',
     ## Linting and Babel
     '@babel/preset-env',
-    'eslint-plugin-import',
     'terser-webpack-plugin',
     ## Storybook
     '@svgr/webpack',
@@ -54,7 +52,6 @@ ignores: [
     'storybook-addon-pseudo-states',
     'wait-on',
     'detect-package-manager',
-    'eslint-plugin-storybook',
     'prop-types',
     # Storybook requires react-scripts
     'react-scripts',

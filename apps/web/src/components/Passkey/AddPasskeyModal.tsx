@@ -10,9 +10,8 @@ import { ShieldCheck } from 'ui/src/components/icons/ShieldCheck'
 import { colors } from 'ui/src/theme'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { useUnitagsAddressQuery } from 'uniswap/src/data/apiClients/unitagsApi/useUnitagsAddressQuery'
-import type { AuthenticatorAttachment } from 'uniswap/src/features/passkey/embeddedWallet'
 import {
-  getPrivyEnums,
+  AuthenticatorAttachment,
   listAuthenticators,
   registerNewAuthenticator,
   startAddAuthenticatorSession,
@@ -131,10 +130,7 @@ export function AddPasskeyModal() {
             </Flex>
             <Trace logPress element={ElementName.AddPasskeyPlatform}>
               <TouchableArea
-                onPress={async () => {
-                  const { AuthenticatorAttachment } = await getPrivyEnums()
-                  registerAuthenticator(AuthenticatorAttachment.PLATFORM)
-                }}
+                onPress={() => registerAuthenticator(AuthenticatorAttachment.PLATFORM)}
                 width="100%"
                 disabled={unitagLoading}
               >
@@ -158,10 +154,7 @@ export function AddPasskeyModal() {
             </Trace>
             <Trace logPress element={ElementName.AddPasskeyCrossPlatform}>
               <TouchableArea
-                onPress={async () => {
-                  const { AuthenticatorAttachment } = await getPrivyEnums()
-                  registerAuthenticator(AuthenticatorAttachment.CROSS_PLATFORM)
-                }}
+                onPress={() => registerAuthenticator(AuthenticatorAttachment.CROSS_PLATFORM)}
                 width="100%"
                 disabled={unitagLoading}
               >

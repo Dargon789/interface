@@ -1,3 +1,4 @@
+import { usePrivy } from '@privy-io/react-auth'
 import { renderHook } from '@testing-library/react'
 import { useDispatch } from 'react-redux'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
@@ -5,6 +6,10 @@ import { MenuStateVariant, useSetMenu } from '~/components/AccountDrawer/menuSta
 import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
 import { useOAuthRedirectRouter } from '~/components/Passkey/useOAuthRedirectRouter'
 import { setOpenModal } from '~/state/application/reducer'
+
+vi.mock('@privy-io/react-auth', () => ({
+  usePrivy: vi.fn(),
+}))
 
 vi.mock('react-redux', () => ({
   useDispatch: vi.fn(),
@@ -27,7 +32,8 @@ const mockDispatch = vi.fn()
 const mockOpen = vi.fn()
 const mockSetMenu = vi.fn()
 
-function setupMocks() {
+function setupMocks({ ready = true }: { ready?: boolean } = {}) {
+  vi.mocked(usePrivy).mockReturnValue({ ready } as unknown as ReturnType<typeof usePrivy>)
   vi.mocked(useDispatch).mockReturnValue(mockDispatch)
   vi.mocked(useAccountDrawer).mockReturnValue({ open: mockOpen } as unknown as ReturnType<typeof useAccountDrawer>)
   vi.mocked(useSetMenu).mockReturnValue(mockSetMenu)
@@ -37,12 +43,6 @@ describe('useOAuthRedirectRouter', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorage.clear()
-
-    // Reset window.location.search
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { ...window.location, search: '' },
-    })
   })
 
   it('does nothing when no pending provider in sessionStorage', () => {
@@ -54,35 +54,17 @@ describe('useOAuthRedirectRouter', () => {
     expect(mockDispatch).not.toHaveBeenCalled()
   })
 
-  it('does nothing when pending provider exists but no privy_oauth_code param', () => {
+  it('does nothing when Privy is not ready yet', () => {
     sessionStorage.setItem('addBackupLogin:oauthProvider', 'google')
-    setupMocks()
+    setupMocks({ ready: false })
     renderHook(() => useOAuthRedirectRouter())
 
     expect(mockOpen).not.toHaveBeenCalled()
-    expect(mockSetMenu).not.toHaveBeenCalled()
-    expect(mockDispatch).not.toHaveBeenCalled()
-  })
-
-  it('does nothing when privy_oauth_code exists but no pending provider', () => {
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { ...window.location, search: '?privy_oauth_code=abc123' },
-    })
-    setupMocks()
-    renderHook(() => useOAuthRedirectRouter())
-
-    expect(mockOpen).not.toHaveBeenCalled()
-    expect(mockSetMenu).not.toHaveBeenCalled()
     expect(mockDispatch).not.toHaveBeenCalled()
   })
 
   it('opens drawer, sets menu, and dispatches AddBackupLogin modal when add-backup key is set', () => {
     sessionStorage.setItem('addBackupLogin:oauthProvider', 'google')
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { ...window.location, search: '?privy_oauth_code=abc123' },
-    })
     setupMocks()
     renderHook(() => useOAuthRedirectRouter())
 
@@ -93,10 +75,6 @@ describe('useOAuthRedirectRouter', () => {
 
   it('dispatches RecoverWallet modal without opening drawer when recover key is set', () => {
     sessionStorage.setItem('recoverWallet:oauthProvider', 'google')
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { ...window.location, search: '?privy_oauth_code=abc123' },
-    })
     setupMocks()
     renderHook(() => useOAuthRedirectRouter())
 
@@ -105,26 +83,26 @@ describe('useOAuthRedirectRouter', () => {
     expect(mockDispatch).toHaveBeenCalledWith(setOpenModal({ name: ModalName.RecoverWallet }))
   })
 
-  it('does nothing when recover key is set but no privy_oauth_code param', () => {
-    sessionStorage.setItem('recoverWallet:oauthProvider', 'apple')
-    setupMocks()
-    renderHook(() => useOAuthRedirectRouter())
-
-    expect(mockOpen).not.toHaveBeenCalled()
-    expect(mockSetMenu).not.toHaveBeenCalled()
-    expect(mockDispatch).not.toHaveBeenCalled()
-  })
-
   it('prefers add-backup key when both keys are set', () => {
     sessionStorage.setItem('addBackupLogin:oauthProvider', 'google')
     sessionStorage.setItem('recoverWallet:oauthProvider', 'apple')
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { ...window.location, search: '?privy_oauth_code=abc123' },
-    })
     setupMocks()
     renderHook(() => useOAuthRedirectRouter())
 
     expect(mockDispatch).toHaveBeenCalledWith(setOpenModal({ name: ModalName.AddBackupLogin }))
+  })
+
+  it('fires when ready transitions from false to true', () => {
+    sessionStorage.setItem('recoverWallet:oauthProvider', 'google')
+    setupMocks({ ready: false })
+
+    const { rerender } = renderHook(() => useOAuthRedirectRouter())
+
+    expect(mockDispatch).not.toHaveBeenCalled()
+
+    vi.mocked(usePrivy).mockReturnValue({ ready: true } as unknown as ReturnType<typeof usePrivy>)
+    rerender()
+
+    expect(mockDispatch).toHaveBeenCalledWith(setOpenModal({ name: ModalName.RecoverWallet }))
   })
 })

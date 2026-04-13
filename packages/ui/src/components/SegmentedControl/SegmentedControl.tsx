@@ -184,6 +184,7 @@ interface SegmentedControlProps<T extends string = string> {
   options: readonly SegmentedControlOption<T>[]
   selectedOption: T
   onSelectOption: (option: T) => void
+  onHoverOption?: (option: T) => void
   size?: SegmentedControlSize
   disabled?: boolean
   fullWidth?: boolean
@@ -215,6 +216,7 @@ export function SegmentedControl<T extends string = string>({
   options,
   selectedOption,
   onSelectOption,
+  onHoverOption,
   size = 'default',
   disabled,
   fullWidth,
@@ -285,7 +287,10 @@ export function SegmentedControl<T extends string = string>({
               size={size}
               value={value}
               onInteraction={handleOnInteraction}
-              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseEnter={() => {
+                setHoveredIndex(index)
+                onHoverOption?.(value)
+              }}
               onMouseLeave={() => setHoveredIndex(undefined)}
               onPress={(e) => {
                 if (href && 'preventDefault' in e) {

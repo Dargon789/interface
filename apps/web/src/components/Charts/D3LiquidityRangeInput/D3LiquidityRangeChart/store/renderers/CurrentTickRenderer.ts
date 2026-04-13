@@ -1,10 +1,10 @@
-import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/constants'
+import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityChartShared/constants'
 import type {
   ChartState,
   Renderer,
   RenderingContext,
 } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/types'
-import { getColorForTick } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/utils/colorUtils'
+import { getCurrentTickDotY } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/utils/tickToY'
 
 const CURRENT_PRICE_CLASSES = {
   LINE: 'current-price-line',
@@ -27,13 +27,9 @@ export function createCurrentTickRenderer({
     // Clear previous current tick elements
     currentTickGroup.selectAll('*').remove()
 
-    const { colors, dimensions, tickToY, currentTick } = context
-    const { minTick, maxTick, renderedBuckets } = getState()
-    // Find the bucket containing the current tick and center the line within it
-    const currentBucket = renderedBuckets?.find((b) => currentTick >= b.startTick && currentTick < b.endTick)
-    const centerY = currentBucket
-      ? (tickToY({ tick: currentBucket.startTick }) + tickToY({ tick: currentBucket.endTick })) / 2
-      : tickToY({ tick: currentTick })
+    const { chartId, colors, dimensions, currentTick, tickScale } = context
+    const { renderedBuckets } = getState()
+    const centerY = getCurrentTickDotY({ currentTick, renderedBuckets, tickScale })
 
     // Draw dotted line across the entire chart for current price
     currentTickGroup
@@ -49,14 +45,17 @@ export function createCurrentTickRenderer({
       .attr('stroke-dasharray', '0,6') // Dotted line pattern
       .attr('opacity', 0.8)
 
-    // Draw a circle at the current price position on the price line
-    const dotColor = getColorForTick({
-      tick: currentTick,
-      minTick,
-      maxTick,
-      getActiveColor: () => colors.accent1.val,
-      getInactiveColor: () => colors.neutral2.val,
-    })
+    // Create a gradient so the dot is a blend of both token colors
+    const defs = currentTickGroup.append('defs')
+    const grad = defs
+      .append('linearGradient')
+      .attr('id', `${chartId}-current-tick-dot-gradient`)
+      .attr('x1', '0')
+      .attr('x2', '0')
+      .attr('y1', '0')
+      .attr('y2', '1')
+    grad.append('stop').attr('offset', '0%').attr('stop-color', context.token0Color)
+    grad.append('stop').attr('offset', '100%').attr('stop-color', context.token1Color)
 
     currentTickGroup
       .append('circle')
@@ -64,7 +63,7 @@ export function createCurrentTickRenderer({
       .attr('cx', dimensions.width)
       .attr('cy', centerY)
       .attr('r', CHART_DIMENSIONS.PRICE_DOT_RADIUS)
-      .attr('fill', dotColor)
+      .attr('fill', `url(#${chartId}-current-tick-dot-gradient)`)
       .attr('opacity', 1)
   }
 

@@ -1,8 +1,8 @@
 import * as pulumi from '@pulumi/pulumi'
-import { createDashboards } from './dashboard-factory'
-import { devPortalDashboards } from './definitions'
 import { settings } from './config'
+import { createDashboards } from './dashboard-factory'
 import { DashboardDefinition } from './dashboard-types'
+import { devPortalDashboards } from './definitions'
 
 // Log configuration
 pulumi.log.info(`Environment: ${settings.environment}`)

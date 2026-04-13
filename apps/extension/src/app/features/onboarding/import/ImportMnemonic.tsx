@@ -160,6 +160,7 @@ export function ImportMnemonic(): JSX.Element {
 
     if (isResetting) {
       // Remove all accounts before importing mnemonic.
+      // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
       await dispatch(
         editAccountActions.trigger({
           type: EditAccountAction.Remove,

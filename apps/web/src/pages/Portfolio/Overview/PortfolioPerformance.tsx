@@ -1,5 +1,5 @@
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text } from 'ui/src'
 import {
@@ -11,6 +11,9 @@ import {
 import { WalletProfitLoss } from 'uniswap/src/components/WalletProfitLoss/WalletProfitLoss'
 import { useGetWalletProfitLossQuery } from 'uniswap/src/data/rest/getWalletProfitLoss'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
+import { useRestPortfolioValueModifier } from 'uniswap/src/features/dataApi/balances/balancesRest'
+import { UniswapEventName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { Dropdown, InternalMenuItem } from '~/components/Dropdowns/Dropdown'
 import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
 import { usePortfolioAddresses } from '~/pages/Portfolio/hooks/usePortfolioAddresses'
@@ -23,6 +26,7 @@ export const PortfolioPerformance = memo(function PortfolioPerformance() {
   const { chainId } = usePortfolioRoutes()
   const { evmAddress, svmAddress } = usePortfolioAddresses()
   const { chains: allChainIds } = useEnabledChains()
+  const modifier = useRestPortfolioValueModifier(evmAddress ?? svmAddress)
 
   const [selectedPeriod, setSelectedPeriod] = useState<ProfitLossPeriod>(ProfitLossPeriod.ALL)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -37,6 +41,7 @@ export const PortfolioPerformance = memo(function PortfolioPerformance() {
       svmAddress,
       chainIds: filterChainIds,
       since,
+      modifier,
     },
     enabled: isProfitLossEnabled && !isDemoView,
   })
@@ -46,18 +51,33 @@ export const PortfolioPerformance = memo(function PortfolioPerformance() {
     setIsDropdownOpen(false)
   }, [])
 
+  const profitLoss = data?.profitLoss
+
+  useEffect(() => {
+    if (!profitLoss) {
+      return
+    }
+
+    sendAnalyticsEvent(UniswapEventName.PnlPortfolioReport, {
+      unrealized_return_usd: profitLoss.unrealizedReturnUsd,
+      unrealized_return_percent: profitLoss.unrealizedReturnPercent,
+      realized_return_usd: profitLoss.realizedReturnUsd,
+      total_return_usd: profitLoss.totalReturnUsd,
+      period: selectedPeriod,
+    })
+  }, [profitLoss, selectedPeriod])
+
   if (!isProfitLossEnabled || isDemoView || isError) {
     return null
   }
 
-  const profitLoss = data?.profitLoss
   const showDisclaimer = !chainId && !!svmAddress
 
   const periodSelector = (
     <Dropdown
       isOpen={isDropdownOpen}
       toggleOpen={setIsDropdownOpen}
-      menuLabel={<Text variant="buttonLabel4">{getProfitLossPeriodLabel(selectedPeriod, t)}</Text>}
+      menuLabel={<Text variant="buttonLabel4">{getProfitLossPeriodLabel({ period: selectedPeriod, t })}</Text>}
       buttonStyle={{ height: 28, borderRadius: '$rounded12', borderWidth: '$spacing1', borderColor: '$surface3' }}
       containerStyle={{ width: 'fit-content' }}
       dropdownStyle={{ minWidth: 100 }}
@@ -67,7 +87,7 @@ export const PortfolioPerformance = memo(function PortfolioPerformance() {
       {PROFIT_LOSS_PERIODS.map((period) => (
         <InternalMenuItem key={period} onPress={() => handlePeriodSelect(period)}>
           <Text variant="buttonLabel4" color={period === selectedPeriod ? '$accent1' : '$neutral1'}>
-            {getProfitLossPeriodLabel(period, t)}
+            {getProfitLossPeriodLabel({ period, t })}
           </Text>
         </InternalMenuItem>
       ))}

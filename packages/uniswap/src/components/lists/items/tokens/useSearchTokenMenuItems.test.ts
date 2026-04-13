@@ -70,7 +70,6 @@ const ALL_ACTIONS: TokenContextMenuAction[] = [
   TokenContextMenuAction.ViewDetails,
 ]
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function renderUseSearchTokenMenuItems(overrides: Partial<UseSearchTokenMenuItemsParams> = {}) {
   const defaultParams: UseSearchTokenMenuItemsParams = {
     currency: USDC_TOKEN as Currency,

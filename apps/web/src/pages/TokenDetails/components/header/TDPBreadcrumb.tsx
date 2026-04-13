@@ -17,6 +17,7 @@ export function TDPBreadcrumb() {
       pt="$spacing48"
       mb="$spacing8"
       $lg={{ px: '$padding20' }}
+      $md={{ pt: '$none' }}
     >
       <BreadcrumbNavLink to={state?.from ?? '/explore/tokens'}>
         {t('common.tokens')}

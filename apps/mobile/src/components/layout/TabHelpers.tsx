@@ -151,6 +151,7 @@ export const useScrollSync = ({
   scrollPairs: ScrollPair[]
   headerConfig: HeaderConfig
 }): { sync: (event: NativeSyntheticEvent<NativeScrollEvent>) => void } => {
+  // oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
   const sync: FlatListProps<unknown>['onMomentumScrollEnd'] | FlashListProps<unknown>['onMomentumScrollEnd'] =
     useCallback(
       (event: { nativeEvent: NativeScrollEvent }) => {

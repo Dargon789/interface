@@ -32,7 +32,7 @@ export async function positionImageHandler(c: Context) {
       versionBadge: data.poolData?.protocolVersion,
     })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error)
-    return new Response(message, { status: 500 })
+    console.error('positionImageHandler failed', error)
+    return new Response('Internal server error.', { status: 500 })
   }
 }

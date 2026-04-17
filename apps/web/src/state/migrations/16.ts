@@ -26,7 +26,9 @@ export const migration16 = (state: PersistAppStateV16 | undefined) => {
   }
 
   // remove old tokens slice
-  delete newState.user.tokens
+  if (newState.user) {
+    delete newState.user.tokens
+  }
 
   return { ...newState, _persist: { ...state._persist, version: 16 } }
 }

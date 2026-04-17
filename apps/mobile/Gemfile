@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-gem 'fastlane', '2.216.0'
+gem 'fastlane', '2.217.0'
 # Exclude problematic versions of cocoapods and activesupport that causes build failures.
 gem 'cocoapods', '1.15.1'
 gem 'activesupport', '7.2.3.1'

@@ -1,38 +1,41 @@
-import { uniswapUrls } from 'uniswap/src/constants/urls'
-import { createApiClient } from 'uniswap/src/data/apiClients/createApiClient'
+import { createPromiseClient } from '@connectrpc/connect'
 import {
-  UnitagAddressRequest,
-  UnitagAddressResponse,
-  UnitagAddressesRequest,
-  UnitagAddressesResponse,
-  UnitagClaimEligibilityRequest,
-  UnitagClaimEligibilityResponse,
-  UnitagUsernameRequest,
-  UnitagUsernameResponse,
-} from 'uniswap/src/features/unitags/types'
+  createFetchClient,
+  createUnitagsApiClient,
+  createUnitagsServiceApiClient,
+  getCloudflareApiBaseUrl,
+  provideSessionService,
+  UnitagService,
+  UnitagsServiceApiClient,
+} from '@universe/api'
+import { TrafficFlows } from '@universe/api/src/clients/base/urls'
+import { UnitagsApiClientType } from '@universe/api/src/clients/unitags/createUnitagsApiClient'
+import { getConfig } from '@universe/config'
+import { FeatureFlags, getIsSessionServiceEnabled, useFeatureFlag } from '@universe/gating'
+import { useMemo } from 'react'
+import { uniswapUrls } from 'uniswap/src/constants/urls'
+import { entryGatewayProdPostTransport } from 'uniswap/src/data/rest/base'
 
-export const UNITAGS_API_CACHE_KEY = 'UnitagsApi'
-
-const UnitagsApiClient = createApiClient({
-  baseUrl: uniswapUrls.unitagsApiUrl,
+const UnitagsApiFetchClient = createFetchClient({
+  baseUrl:
+    getConfig().unitagsApiUrlOverride || getCloudflareApiBaseUrl({ flow: TrafficFlows.Unitags, postfix: 'v2/unitags' }),
+  getSessionService: () =>
+    provideSessionService({ getBaseUrl: () => uniswapUrls.apiBaseUrlV2, getIsSessionServiceEnabled }),
 })
 
-export async function fetchUsername(params: UnitagUsernameRequest): Promise<UnitagUsernameResponse> {
-  return await UnitagsApiClient.get<UnitagUsernameResponse>('/username', { params })
-}
+export function useUnitagsApiClient(): UnitagsApiClientType | UnitagsServiceApiClient {
+  const newServiceEnabled = useFeatureFlag(FeatureFlags.UnitagsServiceV2)
 
-export async function fetchAddress(params: UnitagAddressRequest): Promise<UnitagAddressResponse> {
-  return await UnitagsApiClient.get<UnitagAddressResponse>('/address', { params })
-}
-
-export async function fetchAddresses({ addresses }: UnitagAddressesRequest): Promise<UnitagAddressesResponse> {
-  return await UnitagsApiClient.get<UnitagAddressesResponse>(
-    `/addresses?addresses=${encodeURIComponent(addresses.join(','))}`,
-  )
-}
-
-export async function fetchClaimEligibility(
-  params: UnitagClaimEligibilityRequest,
-): Promise<UnitagClaimEligibilityResponse> {
-  return await UnitagsApiClient.get<UnitagClaimEligibilityResponse>('/claim/eligibility', { params })
+  return useMemo(() => {
+    if (newServiceEnabled) {
+      return createUnitagsServiceApiClient({
+        // Always use production calls unless overridden locally to ensure stable name mapping
+        rpcClient: createPromiseClient(UnitagService, entryGatewayProdPostTransport),
+      })
+    } else {
+      return createUnitagsApiClient({
+        fetchClient: UnitagsApiFetchClient,
+      })
+    }
+  }, [newServiceEnabled])
 }

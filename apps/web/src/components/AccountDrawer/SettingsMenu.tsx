@@ -1,125 +1,121 @@
-import { AnalyticsToggle } from 'components/AccountDrawer/AnalyticsToggle'
-import { GitVersionRow } from 'components/AccountDrawer/GitVersionRow'
-import { SlideOutMenu } from 'components/AccountDrawer/SlideOutMenu'
-import { SmallBalanceToggle } from 'components/AccountDrawer/SmallBalanceToggle'
-import { SpamToggle } from 'components/AccountDrawer/SpamToggle'
-import { TestnetsToggle } from 'components/AccountDrawer/TestnetsToggle'
-import Column from 'components/deprecated/Column'
-import Row from 'components/deprecated/Row'
-import { useAccount } from 'hooks/useAccount'
-import styled from 'lib/styled-components'
-import { ReactNode } from 'react'
-import { ChevronRight } from 'react-feather'
-import { Trans } from 'react-i18next'
-import { useOpenModal } from 'state/application/hooks'
-import { ClickableStyle, ThemedText } from 'theme/components'
-import ThemeToggle from 'theme/components/ThemeToggle'
-import { LockedDocument } from 'ui/src/components/icons/LockedDocument'
+import { useTranslation } from 'react-i18next'
+import { Button, Flex, Text } from 'ui/src'
+import { ChartBar } from 'ui/src/components/icons/ChartBar'
+import { Coins } from 'ui/src/components/icons/Coins'
+import { DocumentList } from 'ui/src/components/icons/DocumentList'
+import { Language } from 'ui/src/components/icons/Language'
+import { Power } from 'ui/src/components/icons/Power'
+import { ShieldCheck } from 'ui/src/components/icons/ShieldCheck'
 import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
 import { useAppFiatCurrency } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useCurrentLanguage, useLanguageInfo } from 'uniswap/src/features/language/hooks'
-import { ModalName } from 'uniswap/src/features/telemetry/constants'
+import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import Trace from 'uniswap/src/features/telemetry/Trace'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { AnalyticsToggle } from '~/components/AccountDrawer/AnalyticsToggle'
+import { useOnDisconnect } from '~/components/AccountDrawer/DisconnectButton'
+import { SettingsButton } from '~/components/AccountDrawer/SettingsButton'
+import { SlideOutMenu } from '~/components/AccountDrawer/SlideOutMenu'
+import { TestnetsToggle } from '~/components/AccountDrawer/TestnetsToggle'
+import { useAccount } from '~/hooks/useAccount'
+import { ThemeToggleWithLabel } from '~/theme/components/ThemeToggle'
 
-const Container = styled(Column)`
-  height: 100%;
-  justify-content: space-between;
-`
-
-const ToggleWrapper = styled.div<{ currencyConversionEnabled?: boolean }>`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: '10px';
-`
-
-const SettingsButtonWrapper = styled(Row)`
-  ${ClickableStyle}
-  padding: 16px 0px;
-`
-
-const StyledChevron = styled(ChevronRight)`
-  color: ${({ theme }) => theme.neutral2};
-`
-
-const LanguageLabel = styled(Row)`
-  white-space: nowrap;
-`
-
-const SettingsButton = ({
-  title,
-  currentState,
-  onClick,
-  testId,
-  showArrow = true,
-}: {
-  title: ReactNode
-  currentState: ReactNode
-  onClick: () => void
-  testId?: string
-  showArrow?: boolean
-}) => (
-  <SettingsButtonWrapper data-testid={testId} align="center" justify="space-between" onClick={onClick}>
-    <ThemedText.SubHeaderSmall color="textPrimary">{title}</ThemedText.SubHeaderSmall>
-    <LanguageLabel gap="xs" align="center" width="min-content">
-      <ThemedText.LabelSmall color="textPrimary">{currentState}</ThemedText.LabelSmall>
-      {showArrow && <StyledChevron size={20} />}
-    </LanguageLabel>
-  </SettingsButtonWrapper>
-)
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <Text variant="subheading2" color="$neutral2">
+      {title}
+    </Text>
+  )
+}
 
 export default function SettingsMenu({
   onClose,
   openLanguageSettings,
   openLocalCurrencySettings,
+  openPasskeySettings,
+  openPortfolioBalanceSettings,
+  openStorageSettings,
 }: {
   onClose: () => void
   openLanguageSettings: () => void
   openLocalCurrencySettings: () => void
+  openPasskeySettings: () => void
+  openPortfolioBalanceSettings: () => void
+  openStorageSettings: () => void
 }) {
+  const { t } = useTranslation()
   const activeLanguage = useCurrentLanguage()
   const activeLocalCurrency = useAppFiatCurrency()
   const languageInfo = useLanguageInfo(activeLanguage)
-  const openRecoveryPhraseModal = useOpenModal({ name: ModalName.RecoveryPhrase })
   const connectedWithEmbeddedWallet =
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     useAccount().connector?.id === CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID
+  const onLogOut = useOnDisconnect()
 
   return (
-    <SlideOutMenu title={<Trans i18nKey="common.settings" />} onClose={onClose}>
-      <Container>
-        <div>
-          <ToggleWrapper>
-            <ThemeToggle />
-            <SmallBalanceToggle />
-            <SpamToggle />
-            <AnalyticsToggle />
-            <TestnetsToggle />
-          </ToggleWrapper>
+    <SlideOutMenu title={t('common.settings')} onClose={onClose} height="100%">
+      <Flex gap="$gap24" px="$padding12">
+        <Flex gap="$gap8">
+          <SectionHeader title={t('settings.section.preferences')} />
+          <ThemeToggleWithLabel />
+          <SettingsButton
+            icon={<Coins size="$icon.24" color="$neutral2" />}
+            title={t('settings.setting.currency.title')}
+            currentState={activeLocalCurrency}
+            onClick={openLocalCurrencySettings}
+            testId="local-currency-settings-button"
+          />
+          <SettingsButton
+            icon={<Language size="$icon.24" color="$neutral2" />}
+            title={t('common.language')}
+            currentState={languageInfo.displayName}
+            onClick={openLanguageSettings}
+            testId={TestID.LanguageSettingsButton}
+          />
+          <SettingsButton
+            icon={<ChartBar size="$icon.24" color="$neutral2" />}
+            title={t('settings.setting.balancesActivity.title')}
+            onClick={openPortfolioBalanceSettings}
+            testId="portfolio-balance-settings-button"
+          />
+        </Flex>
 
-          <Column>
+        <Flex gap="$gap8">
+          <SectionHeader title={t('settings.section.privacyAndSecurity')} />
+          {connectedWithEmbeddedWallet && (
             <SettingsButton
-              title={<Trans i18nKey="common.language" />}
-              currentState={languageInfo.displayName}
-              onClick={openLanguageSettings}
-              testId="language-settings-button"
+              icon={<ShieldCheck size="$icon.24" color="$neutral2" />}
+              title={t('settings.setting.loginMethods')}
+              onClick={openPasskeySettings}
+              testId={TestID.PasskeySettings}
             />
-            <SettingsButton
-              title={<Trans i18nKey="common.currency" />}
-              currentState={activeLocalCurrency}
-              onClick={openLocalCurrencySettings}
-              testId="local-currency-settings-button"
-            />
-            {connectedWithEmbeddedWallet && (
-              <SettingsButton
-                title="View Recovery Phrase"
-                currentState={<LockedDocument size="$icon.24" />}
-                onClick={openRecoveryPhraseModal}
-                showArrow={false}
-              />
-            )}
-          </Column>
-        </div>
-        <GitVersionRow />
-      </Container>
+          )}
+          <AnalyticsToggle />
+        </Flex>
+
+        <Flex gap="$gap8">
+          <SectionHeader title={t('common.advanced')} />
+          <SettingsButton
+            icon={<DocumentList size="$icon.24" color="$neutral2" />}
+            title={t('settings.setting.storage.title')}
+            onClick={openStorageSettings}
+          />
+          <TestnetsToggle />
+        </Flex>
+
+        <Trace logPress element={ElementName.SignOut}>
+          <Flex row alignSelf="stretch" display={connectedWithEmbeddedWallet ? 'flex' : 'none'} mb="$padding8">
+            <Button
+              size="medium"
+              emphasis="secondary"
+              icon={<Power size="$icon.20" color="$neutral2" />}
+              onPress={onLogOut}
+            >
+              {t('settings.logOut')}
+            </Button>
+          </Flex>
+        </Trace>
+      </Flex>
     </SlideOutMenu>
   )
 }

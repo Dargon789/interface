@@ -1,0 +1,66 @@
+{
+  "tags": ["scope:ui", "type:lib"],
+  "targets": {
+    "prepare": {
+      "dependsOn": ["build:icons"]
+    },
+    "build:icons": {
+      "command": "bunx tsx ./src/scripts/componentize-icons.ts && nx run ui:format:generated",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/src/scripts/componentize-icons.ts",
+        "{projectRoot}/src/assets/icons/**",
+        "{projectRoot}/src/assets/logos/**"
+      ],
+      "outputs": ["{projectRoot}/src/components/icons/**", "{projectRoot}/src/components/logos/**"]
+    },
+    "build:icons:missing": {
+      "command": "bunx tsx ./src/scripts/componentize-icons.ts --skip-existing && nx run ui:format:generated",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/src/scripts/componentize-icons.ts",
+        "{projectRoot}/src/assets/icons/**",
+        "{projectRoot}/src/assets/logos/**"
+      ],
+      "outputs": ["{projectRoot}/src/components/icons/**", "{projectRoot}/src/components/logos/**"]
+    },
+    "typecheck": {},
+    "typecheck:tsc": {},
+    "typecheck:tsgo": {},
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
+    "lint": {},
+    "lint:fix": {},
+    "check": {},
+    "check:fast": {},
+    "check:deps:usage": {},
+    "test": {
+      "command": "vitest run",
+      "options": {
+        "cwd": "{projectRoot}"
+      }
+    },
+    "watch": {
+      "command": "bun run build --watch",
+      "options": {
+        "cwd": "{projectRoot}"
+      }
+    },
+    "format:generated": {
+      "command": "for i in 1 2 3; do oxlint --silent --fix --fix-suggestions --fix-dangerously -D sort-imports --threads=1 src/components/icons src/components/logos; done; oxfmt --threads=4 src/components/icons src/components/logos",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "cache": false
+    }
+  }
+}

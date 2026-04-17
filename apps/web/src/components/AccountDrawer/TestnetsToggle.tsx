@@ -1,21 +1,23 @@
-import { SettingsToggle } from 'components/AccountDrawer/SettingsToggle'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
-import { useOpenModal } from 'state/application/hooks'
+import { Wrench } from 'ui/src/components/icons/Wrench'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { setIsTestnetModeEnabled } from 'uniswap/src/features/settings/slice'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
-
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { SettingsToggle } from '~/components/AccountDrawer/SettingsToggle'
+import { useModalState } from '~/hooks/useModalState'
 export function TestnetsToggle() {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const { isTestnetModeEnabled } = useEnabledChains()
-  const openTestnetModal = useOpenModal({ name: ModalName.TestnetMode })
+  const { openModal: openTestnetModal } = useModalState(ModalName.TestnetMode)
 
   return (
     <SettingsToggle
+      icon={<Wrench size="$icon.24" color="$neutral2" />}
       title={t('settings.setting.wallet.testnetMode.title')}
-      dataid="testnets-toggle"
+      dataid={TestID.TestnetsToggle}
       isActive={isTestnetModeEnabled}
       toggle={() => {
         const nextIsTestnetModeEnabled = !isTestnetModeEnabled

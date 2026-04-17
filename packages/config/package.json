@@ -1,0 +1,30 @@
+{
+  "name": "@universe/config",
+  "version": "0.0.0",
+  "dependencies": {
+    "react-native-dotenv": "3.2.0",
+    "utilities": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.1",
+    "@typescript/native-preview": "7.0.0-dev.20260311.1",
+    "depcheck": "1.4.7",
+    "typescript": "5.8.3"
+  },
+  "scripts": {
+    "typecheck": "nx typecheck config",
+    "check": "nx check config",
+    "check:fast": "nx check:fast config",
+    "check:deps:usage": "nx check:deps:usage config",
+    "format": "nx format config",
+    "format:check": "nx format:check config",
+    "lint": "nx lint config",
+    "lint:fix": "nx lint:fix config"
+  },
+  "nx": {
+    "includedScripts": []
+  },
+  "main": "src/index.ts",
+  "private": true,
+  "sideEffects": false
+}

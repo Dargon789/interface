@@ -1,22 +1,35 @@
-import { UseQueryResult, skipToken, useQuery } from '@tanstack/react-query'
-import { UseQueryApiHelperHookArgs } from 'uniswap/src/data/apiClients/types'
-import { UNITAGS_API_CACHE_KEY, fetchClaimEligibility } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
-import { UnitagClaimEligibilityRequest, UnitagClaimEligibilityResponse } from 'uniswap/src/features/unitags/types'
+import { PlainMessage } from '@bufbuild/protobuf'
+import { skipToken, type UseQueryResult, useQuery } from '@tanstack/react-query'
+import {
+  CanClaimUsernameRequest,
+  CanClaimUsernameResponse,
+  type UseQueryApiHelperHookArgs,
+  ensureNewErrorCode,
+} from '@universe/api'
+import { useUnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
+import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { ONE_MINUTE_MS } from 'utilities/src/time/time'
 
 export function useUnitagsClaimEligibilityQuery({
   params,
   ...rest
 }: UseQueryApiHelperHookArgs<
-  UnitagClaimEligibilityRequest,
-  UnitagClaimEligibilityResponse
->): UseQueryResult<UnitagClaimEligibilityResponse> {
-  const queryKey = [UNITAGS_API_CACHE_KEY, 'claim/eligibility', params]
+  PlainMessage<CanClaimUsernameRequest>,
+  CanClaimUsernameResponse
+>): UseQueryResult<CanClaimUsernameResponse> {
+  const queryKey = [ReactQueryCacheKey.UnitagsApi, 'claim/eligibility', params]
+  const unitagsApiClient = useUnitagsApiClient()
 
-  return useQuery<UnitagClaimEligibilityResponse>({
+  return useQuery<CanClaimUsernameResponse>({
     queryKey,
     queryFn: params
-      ? async (): ReturnType<typeof fetchClaimEligibility> => await fetchClaimEligibility(params)
+      ? async (): Promise<CanClaimUsernameResponse> => {
+          const response = await unitagsApiClient.fetchClaimEligibility(params)
+          return new CanClaimUsernameResponse({
+            canClaim: response.canClaim,
+            errorCode: response.errorCode ? ensureNewErrorCode(response.errorCode) : undefined,
+          })
+        }
       : skipToken,
     staleTime: 2 * ONE_MINUTE_MS,
     ...rest,

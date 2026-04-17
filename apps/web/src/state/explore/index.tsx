@@ -1,46 +1,40 @@
-// eslint-disable-next-line no-restricted-imports
-import { ExploreStatsResponse, ProtocolStatsResponse } from '@uniswap/client-explore/dist/uniswap/explore/v1/service_pb'
-import { createContext, useMemo } from 'react'
-import { ALL_NETWORKS_ARG } from 'uniswap/src/data/rest/base'
+import { ExploreStatsResponse } from '@uniswap/client-explore/dist/uniswap/explore/v1/service_pb'
+import { ALL_NETWORKS_ARG } from '@universe/api'
+import { createContext, useContext, useMemo } from 'react'
 import { useExploreStatsQuery } from 'uniswap/src/data/rest/exploreStats'
 import { useProtocolStatsQuery } from 'uniswap/src/data/rest/protocolStats'
 import { useIsSupportedChainId } from 'uniswap/src/features/chains/hooks/useSupportedChainId'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { useExploreBackendSortingEnabled } from '~/state/explore/useExploreBackendSortingEnabled'
 
-interface QueryResult<T> {
-  data?: T
-  isLoading: boolean
-  error: boolean
-}
-
-/**
- * ExploreContextType
- * @property exploreStatsData - Data for the Explore Tokens and Pools table
- * @property protocolStatsData - Data for the Protocol Stats Graphs
- */
-interface ExploreContextType {
-  exploreStats: QueryResult<ExploreStatsResponse>
-  protocolStats: QueryResult<ProtocolStatsResponse>
-}
+export const TABLE_PAGE_SIZE = 20
 
 export const giveExploreStatDefaultValue = (value: number | undefined, defaultValue = 0): number => {
   return value ?? defaultValue
 }
 
-export const ExploreContext = createContext<ExploreContextType>({
-  exploreStats: {
-    data: undefined,
-    isLoading: false,
-    error: false,
-  },
-  protocolStats: {
-    data: undefined,
-    isLoading: false,
-    error: false,
-  },
-})
+/** Resolved chain ID string for explore queries (from provider prop). */
+const ExploreChainIdContext = createContext<string>(ALL_NETWORKS_ARG)
 
-export const TABLE_PAGE_SIZE = 20
+function useExploreChainId(): string {
+  return useContext(ExploreChainIdContext)
+}
+
+/** Hook that runs the explore-stats query. Deduplicated by React Query. */
+export function useExploreStats() {
+  const chainId = useExploreChainId()
+  const isExploreBackendSortingEnabled = useExploreBackendSortingEnabled()
+  return useExploreStatsQuery<ExploreStatsResponse>({
+    input: { chainId },
+    enabled: !isExploreBackendSortingEnabled,
+  })
+}
+
+/** Hook that runs the protocol-stats query. Deduplicated by React Query. */
+export function useProtocolStats() {
+  const chainId = useExploreChainId()
+  return useProtocolStatsQuery({ chainId })
+}
 
 export function ExploreContextProvider({
   chainId,
@@ -51,41 +45,10 @@ export function ExploreContextProvider({
 }) {
   const isSupportedChain = useIsSupportedChainId(chainId)
 
-  const {
-    data: exploreStatsData,
-    isLoading: exploreStatsLoading,
-    error: exploreStatsError,
-  } = useExploreStatsQuery({
-    chainId: isSupportedChain ? chainId?.toString() : ALL_NETWORKS_ARG,
-  })
-  const {
-    data: protocolStatsData,
-    isLoading: protocolStatsLoading,
-    error: protocolStatsError,
-  } = useProtocolStatsQuery({
-    chainId: isSupportedChain ? chainId?.toString() : ALL_NETWORKS_ARG,
-  })
+  const chainIdStr = useMemo(() => {
+    const chainIdOpt: UniverseChainId | undefined = chainId
+    return !isSupportedChain || chainIdOpt === undefined ? ALL_NETWORKS_ARG : chainIdOpt.toString()
+  }, [chainId, isSupportedChain])
 
-  const exploreContext = useMemo(() => {
-    return {
-      exploreStats: {
-        data: exploreStatsData,
-        isLoading: exploreStatsLoading,
-        error: !!exploreStatsError,
-      },
-      protocolStats: {
-        data: protocolStatsData,
-        isLoading: protocolStatsLoading,
-        error: !!protocolStatsError,
-      },
-    }
-  }, [
-    exploreStatsData,
-    exploreStatsError,
-    exploreStatsLoading,
-    protocolStatsData,
-    protocolStatsError,
-    protocolStatsLoading,
-  ])
-  return <ExploreContext.Provider value={exploreContext}>{children}</ExploreContext.Provider>
+  return <ExploreChainIdContext.Provider value={chainIdStr}>{children}</ExploreChainIdContext.Provider>
 }

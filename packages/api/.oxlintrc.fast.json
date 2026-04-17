@@ -1,0 +1,4 @@
+{
+  "extends": ["./.oxlintrc.json", "../../.oxlintrc.fast.json"],
+  "ignorePatterns": [".eslintrc.js", "codegen.ts", "scripts/**", "src/**/__generated__/**"]
+}

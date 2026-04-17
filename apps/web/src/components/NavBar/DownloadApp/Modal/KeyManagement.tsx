@@ -1,0 +1,64 @@
+import { Dispatch, SetStateAction } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Button, Flex, Text } from 'ui/src'
+import { Key } from 'ui/src/components/icons/Key'
+import { PrivyLogo } from 'ui/src/components/logos/PrivyLogo'
+import { ModalName } from 'uniswap/src/features/telemetry/constants'
+import { Trace } from 'uniswap/src/features/telemetry/Trace'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { Page } from '~/components/NavBar/DownloadApp/Modal'
+import { ModalContent } from '~/components/NavBar/DownloadApp/Modal/Content'
+import { ExternalLink } from '~/theme/components/Links'
+
+export function KeyManagementModal({
+  setPage,
+  onClose,
+  goBack,
+}: {
+  setPage: Dispatch<SetStateAction<Page>>
+  onClose: () => void
+  goBack: () => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <Trace logImpression modal={ModalName.KeyManagement}>
+      <ModalContent
+        title={t('onboarding.keyManagement.title')}
+        subtext={t('onboarding.keyManagement.description')}
+        header={
+          <Flex p="$padding12" backgroundColor="$surface3" borderRadius="$rounded12">
+            <Key color="$neutral1" size="$icon.24" />
+          </Flex>
+        }
+        onClose={onClose}
+        goBack={goBack}
+        footer={
+          <Flex row alignItems="center" justifyContent="center" gap="$spacing8" pb="$spacing24">
+            <Text variant="body3" color="$neutral3">
+              {t('onboarding.keyManagement.securedBy')}
+            </Text>
+            <ExternalLink href="https://www.privy.io/user-help-center" style={{ stroke: 'none' }}>
+              <Flex height={14} overflow="hidden" justifyContent="center" mt="$spacing4">
+                <PrivyLogo size={63} color="$neutral1" />
+              </Flex>
+            </ExternalLink>
+          </Flex>
+        }
+      >
+        <Flex px="$spacing32" mb="$spacing32" width="100%">
+          <Flex row alignSelf="stretch">
+            <Button
+              testID={TestID.Continue}
+              variant="branded"
+              size="large"
+              onPress={() => setPage(Page.PasskeyGeneration)}
+            >
+              {t('common.button.continue')}
+            </Button>
+          </Flex>
+        </Flex>
+      </ModalContent>
+    </Trace>
+  )
+}

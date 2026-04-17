@@ -4,11 +4,10 @@ import { memo } from 'react'
 import { Flex, ScrollView } from 'ui/src'
 import { extraMarginForHoverAnimation } from 'uniswap/src/components/CurrencyInputPanel/DefaultTokenOptions/constants'
 import { TokenOptions } from 'uniswap/src/components/CurrencyInputPanel/DefaultTokenOptions/TokenOptions/TokenOptions'
-
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { isHoverable, isWebAppDesktop } from 'utilities/src/platform'
 
-function _DefaultTokenOptions({ currencyField }: { currencyField: CurrencyField }): JSX.Element {
+function DefaultTokenOptionsInner({ currencyField }: { currencyField: CurrencyField }): JSX.Element {
   return (
     <ScrollView horizontal showsVerticalScrollIndicator={false}>
       <Flex
@@ -19,11 +18,13 @@ function _DefaultTokenOptions({ currencyField }: { currencyField: CurrencyField 
         {...(isHoverable
           ? {
               opacity: 0,
-              transform: [{ translateY: -4 }],
-              '$group-hover': { opacity: 1, transform: [{ translateY: 0 }] },
+              transition: 'opacity 100ms ease-in-out, transform 100ms ease-in-out',
+              '$group-hover': {
+                opacity: 1,
+                transition: 'opacity 100ms ease-in-out, transform 100ms ease-in-out',
+              },
             }
           : {})}
-        animation="100ms"
       >
         <TokenOptions currencyField={currencyField} />
       </Flex>
@@ -31,4 +32,4 @@ function _DefaultTokenOptions({ currencyField }: { currencyField: CurrencyField 
   )
 }
 
-export const DefaultTokenOptions = memo(_DefaultTokenOptions)
+export const DefaultTokenOptions = memo(DefaultTokenOptionsInner)

@@ -4,7 +4,7 @@ import { RefObject, useCallback, useEffect, useRef } from 'react'
 export function usePrevious<T>(value: T): T | undefined {
   // The ref object is a generic container whose current property is mutable ...
   // ... and can hold any value, similar to an instance property on a class
-  const ref = useRef<T>()
+  const ref = useRef<T>(undefined)
 
   // Store current value in ref
   useEffect(() => {
@@ -18,7 +18,7 @@ export function usePrevious<T>(value: T): T | undefined {
 // modified from https://usehooks.com/useMemoCompare/
 export function useMemoCompare<T>(next: () => T, compare: (a: T | undefined, b: T) => boolean): T {
   // Ref for storing previous value
-  const previousRef = useRef<T>()
+  const previousRef = useRef<T>(undefined)
   const previous = previousRef.current
   const nextValue = next()
 
@@ -42,11 +42,14 @@ export function useOnClickOutside<T extends HTMLElement>({
   handler,
   ignoredNodes = [],
   event = 'mousedown',
+  capture = false,
 }: {
-  node: RefObject<T | undefined>
+  node: RefObject<T | undefined | null>
   handler?: () => void
-  ignoredNodes?: Array<RefObject<HTMLElement | undefined>>
+  ignoredNodes?: Array<RefObject<HTMLElement | undefined | null>>
   event?: 'mousedown' | 'mouseup'
+  /** When true, listen in capture phase so the handler runs before inner elements (e.g. modal overlays) that call stopPropagation. Use when the trigger/content may be inside a modal. */
+  capture?: boolean
 }): void {
   const handlerRef = useRef<undefined | (() => void)>(handler)
 
@@ -71,12 +74,12 @@ export function useOnClickOutside<T extends HTMLElement>({
       }
     }
 
-    document.addEventListener(event, handleClickOutside)
+    document.addEventListener(event, handleClickOutside, capture)
 
     return () => {
-      document.removeEventListener(event, handleClickOutside)
+      document.removeEventListener(event, handleClickOutside, capture)
     }
-  }, [node, ignoredNodes, event])
+  }, [node, ignoredNodes, event, capture])
 }
 
 /**

@@ -78,18 +78,18 @@ function attemptPageRefresh(): void {
     const now = Date.now()
 
     if (lastRefresh && now - parseInt(lastRefresh, 10) < REFRESH_COOLDOWN_DURATION) {
-      // biome-ignore lint/suspicious/noConsole: Need console for debugging retry cooldown logic
+      // oxlint-disable-next-line no-console -- Need console for debugging retry cooldown logic
       console.warn('Page refresh skipped due to recent refresh (cooldown active)')
       return
     }
 
     localStorage.setItem(REFRESH_COOLDOWN_KEY, now.toString())
-    // biome-ignore lint/suspicious/noConsole: Need console for debugging import failure refresh
+    // oxlint-disable-next-line no-console -- Need console for debugging import failure refresh
     console.log('Dynamic import failed after all retries, refreshing page...')
     window.location.reload()
   } catch (error) {
     // If localStorage fails, still try to refresh but log the issue
-    // biome-ignore lint/suspicious/noConsole: Need console for debugging refresh fallback logic
+    // oxlint-disable-next-line no-console -- Need console for debugging refresh fallback logic
     console.warn('Failed to set refresh cooldown, refreshing anyway:', error)
     window.location.reload()
   }
@@ -144,7 +144,7 @@ function createRetryableImport<T extends ComponentType<any>>(
         // Calculate delay and wait before retrying
         const delay = calculateDelay(attempt, { baseDelay: options.baseDelay, maxDelay: options.maxDelay })
 
-        // biome-ignore lint/suspicious/noConsole: Need console for debugging import retry attempts
+        // oxlint-disable-next-line no-console -- Need console for debugging import retry attempts
         console.warn(
           `Dynamic import failed (attempt ${attempt}/${options.maxRetries}), retrying in ${Math.round(delay)}ms:`,
           lastError.message,

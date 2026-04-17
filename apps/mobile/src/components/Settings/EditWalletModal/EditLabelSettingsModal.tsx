@@ -104,10 +104,8 @@ export function EditLabelSettingsModal({
                   px="$none"
                   py="$spacing12"
                   returnKeyType="done"
-                  value={nickname}
-                  placeholder={
-                    sanitizeAddressText(shortenAddress({ address, chars: 6 })) ?? t('settings.setting.wallet.label')
-                  }
+                  defaultValue={nickname}
+                  placeholder={sanitizeAddressText(shortenAddress({ address })) ?? t('settings.setting.wallet.label')}
                   onBlur={onFinishEditing}
                   onChangeText={setNickname}
                   onSubmitEditing={onFinishEditing}

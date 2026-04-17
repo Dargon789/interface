@@ -1,15 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { Currency } from '@uniswap/sdk-core'
-import { calculateTokensLockedV3, calculateTokensLockedV4 } from 'components/Charts/LiquidityChart'
-import { ChartEntry } from 'components/Charts/LiquidityRangeInput/types'
-import { usePoolActiveLiquidity } from 'hooks/usePoolTickData'
+import JSBI from 'jsbi'
 import { useMemo } from 'react'
-import { PositionField } from 'types/position'
-import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
-import { TickProcessed } from 'utils/computeSurroundingTicks'
+import { calculateTokensLocked } from '~/components/Charts/LiquidityChart/utils/calculateTokensLocked'
+import { ChartEntry } from '~/components/Charts/LiquidityRangeInput/types'
+import { usePoolActiveLiquidity } from '~/hooks/usePoolTickData'
+import { PositionField } from '~/types/position'
+import { TickProcessed } from '~/utils/computeSurroundingTicks'
 
 /**
  * Currency A and B should be sorted to get accurate data, but you can pass invertPrices = true
@@ -36,7 +36,7 @@ export function useDensityChartData({
   hooks?: string
   skip?: boolean
 }) {
-  const { isLoading, error, data } = usePoolActiveLiquidity({
+  const { isLoading, error, data, activeTick, liquidity, sqrtPriceX96 } = usePoolActiveLiquidity({
     sdkCurrencies,
     version,
     poolId,
@@ -48,7 +48,11 @@ export function useDensityChartData({
   })
 
   const fetcher = async () => {
-    if (!data?.length || !sdkCurrencies.TOKEN0 || !sdkCurrencies.TOKEN1 || feeAmount === undefined || !tickSpacing) {
+    if (!sdkCurrencies.TOKEN0 || !sdkCurrencies.TOKEN1 || feeAmount === undefined || !tickSpacing) {
+      return null
+    }
+
+    if (!data || activeTick === undefined || !liquidity) {
       return null
     }
 
@@ -59,33 +63,27 @@ export function useDensityChartData({
 
       const price0 = priceInverted ? t.sdkPrice.invert().toSignificant(8) : t.sdkPrice.toSignificant(8)
 
-      const { amount0Locked, amount1Locked } = await (version === ProtocolVersion.V3
-        ? calculateTokensLockedV3({
-            token0: sdkCurrencies.TOKEN0.wrapped,
-            token1: sdkCurrencies.TOKEN1.wrapped,
-            feeTier: feeAmount,
-            tick: t,
-          })
-        : calculateTokensLockedV4({
-            token0: sdkCurrencies.TOKEN0,
-            token1: sdkCurrencies.TOKEN1,
-            feeTier: feeAmount,
-            tickSpacing,
-            hooks: hooks ?? ZERO_ADDRESS,
-            tick: t,
-          }))
+      const { amount0Locked, amount1Locked } = calculateTokensLocked({
+        token0: sdkCurrencies.TOKEN0,
+        token1: sdkCurrencies.TOKEN1,
+        tickSpacing,
+        currentTick: activeTick,
+        nextTick: data[i + 1]?.tick,
+        amount: JSBI.BigInt(t.liquidityActive.toString()),
+        tick: t,
+        sqrtPriceX96,
+      })
 
       const chartEntry = {
-        activeLiquidity: parseFloat(t.liquidityActive.toString()),
+        liquidityActive: parseFloat(t.liquidityActive.toString()),
+        liquidityNet: parseFloat(t.liquidityNet.toString()),
         price0: parseFloat(price0),
         tick: t.tick,
         amount0Locked: priceInverted ? amount0Locked : amount1Locked,
         amount1Locked: priceInverted ? amount1Locked : amount0Locked,
       }
 
-      if (chartEntry.activeLiquidity > 0) {
-        newData.push(chartEntry)
-      }
+      newData.push(chartEntry)
     }
 
     return newData

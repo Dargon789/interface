@@ -1,25 +1,13 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { ReportedActivityToggle } from 'components/AccountDrawer/ReportedActivityToggle'
-import { SlideOutMenu } from 'components/AccountDrawer/SlideOutMenu'
-import { SmallBalanceToggle } from 'components/AccountDrawer/SmallBalanceToggle'
-import { SpamTokensToggle } from 'components/AccountDrawer/SpamTokensToggle'
-import { MenuColumn } from 'components/AccountDrawer/shared'
 import { useTranslation } from 'react-i18next'
-import { Flex } from 'ui/src'
+import { PortfolioBalanceSettingsContent } from 'uniswap/src/features/settings/balances/PortfolioBalanceSettingsContent'
+import { SlideOutMenu } from '~/components/AccountDrawer/SlideOutMenu'
 
 export default function PortfolioBalanceMenu({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
-  const isDataReportingAbilitiesEnabled = useFeatureFlag(FeatureFlags.DataReportingAbilities)
 
   return (
     <SlideOutMenu title={t('settings.setting.balancesActivity.title')} onClose={onClose}>
-      <MenuColumn>
-        <Flex justifyContent="space-between">
-          <SmallBalanceToggle />
-          <SpamTokensToggle />
-          {isDataReportingAbilitiesEnabled && <ReportedActivityToggle />}
-        </Flex>
-      </MenuColumn>
+      <PortfolioBalanceSettingsContent />
     </SlideOutMenu>
   )
 }

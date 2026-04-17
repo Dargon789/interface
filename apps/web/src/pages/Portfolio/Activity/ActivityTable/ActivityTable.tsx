@@ -1,15 +1,19 @@
-import { createColumnHelper, Row } from '@tanstack/react-table'
-import { Table } from 'components/Table'
-import { Cell } from 'components/Table/Cell'
-import { HeaderCell } from 'components/Table/styled'
-import { ActivityAddressCell } from 'pages/Portfolio/Activity/ActivityTable/ActivityAddressCell'
-import { ActivityAmountCell } from 'pages/Portfolio/Activity/ActivityTable/ActivityAmountCell'
-import { TimeCell } from 'pages/Portfolio/Activity/ActivityTable/TimeCell'
-import { TransactionTypeCell } from 'pages/Portfolio/Activity/ActivityTable/TransactionTypeCell'
+import { ColumnDef, createColumnHelper, Row } from '@tanstack/react-table'
 import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Text } from 'ui/src'
+import { Flex, Text, useIsTouchDevice } from 'ui/src'
+import { ArrowRight } from 'ui/src/components/icons/ArrowRight'
 import { TransactionDetails } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { Table } from '~/components/Table'
+import { Cell } from '~/components/Table/Cell'
+import { HeaderCell } from '~/components/Table/styled'
+import { ActivityAddressCell } from '~/pages/Portfolio/Activity/ActivityTable/ActivityAddressCell'
+import { useActivityAddressLookup } from '~/pages/Portfolio/Activity/ActivityTable/ActivityAddressLookupStore'
+import { ActivityAmountCell } from '~/pages/Portfolio/Activity/ActivityTable/ActivityAmountCell/ActivityAmountCell'
+import { TimeCell } from '~/pages/Portfolio/Activity/ActivityTable/TimeCell'
+import { TransactionTypeCell } from '~/pages/Portfolio/Activity/ActivityTable/TransactionTypeCell'
+import { PORTFOLIO_TABLE_ROW_HEIGHT } from '~/pages/Portfolio/constants'
 
 interface ActivityTableProps {
   data: TransactionDetails[]
@@ -18,17 +22,17 @@ interface ActivityTableProps {
   rowWrapper?: (row: Row<TransactionDetails>, content: JSX.Element) => JSX.Element
 }
 
-function _ActivityTable({ data, loading = false, error = false, rowWrapper }: ActivityTableProps): JSX.Element {
+export function useActivityTableColumns(showLoadingSkeleton: boolean): ColumnDef<TransactionDetails, any>[] {
   const { t } = useTranslation()
+  const isTouchDevice = useIsTouchDevice()
   const columnHelper = useMemo(() => createColumnHelper<TransactionDetails>(), [])
-  const showLoadingSkeleton = loading || error
 
-  const columns = useMemo(
+  return useMemo(
     () => [
       // Time Column
       columnHelper.accessor('addedTime', {
         header: () => (
-          <HeaderCell justifyContent="flex-start">
+          <HeaderCell testId={TestID.PortfolioActivityTableHeaderTime} justifyContent="flex-start">
             <Text variant="body3" color="$neutral2" fontWeight="500">
               {t('portfolio.activity.table.column.time')}
             </Text>
@@ -36,13 +40,18 @@ function _ActivityTable({ data, loading = false, error = false, rowWrapper }: Ac
         ),
         cell: (info) => {
           if (showLoadingSkeleton) {
-            return <Cell loading={true} justifyContent="flex-start" />
+            return <Cell loading={true} justifyContent="flex-start" alignItems="flex-start" />
           }
           return (
-            <Cell justifyContent="flex-start">
-              <TimeCell timestamp={info.row.original.addedTime} />
+            <Cell justifyContent="flex-start" alignItems="flex-start">
+              <TimeCell timestamp={info.row.original.addedTime} showFullDateOnHover={true} />
             </Cell>
           )
+        },
+        minSize: 160,
+        size: 160,
+        meta: {
+          flexGrow: 0,
         },
       }),
 
@@ -50,7 +59,7 @@ function _ActivityTable({ data, loading = false, error = false, rowWrapper }: Ac
       columnHelper.accessor((row) => row.typeInfo.type, {
         id: 'type',
         header: () => (
-          <HeaderCell justifyContent="flex-start">
+          <HeaderCell testId={TestID.PortfolioActivityTableHeaderType} justifyContent="flex-start">
             <Text variant="body3" color="$neutral2" fontWeight="500">
               {t('portfolio.activity.table.column.type')}
             </Text>
@@ -66,13 +75,18 @@ function _ActivityTable({ data, loading = false, error = false, rowWrapper }: Ac
             </Cell>
           )
         },
+        minSize: 180,
+        size: 180,
+        meta: {
+          flexGrow: 0,
+        },
       }),
 
       // Amount Column
       columnHelper.display({
         id: 'amount',
         header: () => (
-          <HeaderCell justifyContent="flex-start" minWidth="280px">
+          <HeaderCell testId={TestID.PortfolioActivityTableHeaderAmount} justifyContent="flex-start" minWidth="280px">
             <Text variant="body3" color="$neutral2" fontWeight="500">
               {t('portfolio.activity.table.column.amount')}
             </Text>
@@ -88,15 +102,18 @@ function _ActivityTable({ data, loading = false, error = false, rowWrapper }: Ac
             </Cell>
           )
         },
-        minSize: 280,
-        size: 300,
+        minSize: 384,
+        size: 384,
+        meta: {
+          flexGrow: 1,
+        },
       }),
 
       // Address Column
       columnHelper.display({
         id: 'address',
         header: () => (
-          <HeaderCell justifyContent="flex-start">
+          <HeaderCell testId={TestID.PortfolioActivityTableHeaderAddress} justifyContent="flex-start">
             <Text variant="body3" color="$neutral2" fontWeight="500">
               {t('portfolio.activity.table.column.address')}
             </Text>
@@ -112,12 +129,60 @@ function _ActivityTable({ data, loading = false, error = false, rowWrapper }: Ac
             </Cell>
           )
         },
+        minSize: 250,
+        size: 250,
+        meta: {
+          flexGrow: 0,
+        },
+      }),
+
+      columnHelper.display({
+        id: 'open-arrow',
+        size: 40,
+        header: () => <HeaderCell />,
+        cell: () => {
+          return (
+            <Cell loading={showLoadingSkeleton} justifyContent="center">
+              <Flex
+                opacity={isTouchDevice ? 1 : 0}
+                transition="opacity 0.2s ease"
+                centered
+                $group-hover={{ opacity: 1 }}
+              >
+                <ArrowRight color="$neutral2" size="$icon.16" />
+              </Flex>
+            </Cell>
+          )
+        },
       }),
     ],
-    [t, columnHelper, showLoadingSkeleton],
+    [t, columnHelper, showLoadingSkeleton, isTouchDevice],
   )
-
-  return <Table columns={columns} data={data} loading={loading} error={error} v2={true} rowWrapper={rowWrapper} />
 }
 
-export const ActivityTable = memo(_ActivityTable)
+function ActivityTableInner({ data, loading = false, error = false, rowWrapper }: ActivityTableProps): JSX.Element {
+  const showLoadingSkeleton = loading || error
+
+  // Initialize address lookup for batch fetching
+  useActivityAddressLookup(data)
+
+  const columns = useActivityTableColumns(showLoadingSkeleton)
+
+  return (
+    <Table
+      columns={columns}
+      data={data}
+      loading={loading}
+      error={error}
+      v2={true}
+      rowWrapper={rowWrapper}
+      rowHeight={PORTFOLIO_TABLE_ROW_HEIGHT}
+      compactRowHeight={PORTFOLIO_TABLE_ROW_HEIGHT}
+      defaultPinnedColumns={['addedTime']}
+      maxWidth={1200}
+      headerTestId={TestID.PortfolioActivityTableHeader}
+    />
+  )
+}
+
+export const ActivityTable = memo(ActivityTableInner)

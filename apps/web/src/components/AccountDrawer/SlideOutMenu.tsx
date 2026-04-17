@@ -1,20 +1,14 @@
-import { ArrowLeft } from 'react-feather'
-import { Flex, Text, useScrollbarStyles } from 'ui/src'
+import { Flex, FlexProps, Text, TouchableArea, useScrollbarStyles } from 'ui/src'
+import { ArrowLeft } from 'ui/src/components/icons/ArrowLeft'
 
-export const SlideOutMenu = ({
-  children,
-  onClose,
-  title,
-  rightIcon,
-  versionComponent,
-}: {
+type SlideOutMenuProps = {
+  children: React.ReactNode
   onClose: () => void
   title: React.ReactNode
-  children: React.ReactNode
-  onClear?: () => void
   rightIcon?: React.ReactNode
-  versionComponent?: React.ReactNode
-}) => {
+} & FlexProps
+
+export const SlideOutMenu = ({ children, onClose, title, rightIcon, ...flexProps }: SlideOutMenuProps) => {
   const scrollbarStyles = useScrollbarStyles()
 
   const updatedScrollbarStyles = {
@@ -33,24 +27,24 @@ export const SlideOutMenu = ({
         style={updatedScrollbarStyles}
         mt="$spacing4"
         py="$padding12"
-        px="$padding16"
-        minHeight="85vh"
-        $md={{
-          minHeight: '0px',
-        }}
+        px="$padding12"
+        {...flexProps}
       >
         <Flex grow justifyContent="space-between">
           <Flex grow>
-            <Flex row mb="$spacing20" justifyContent="space-between" width="100%" alignItems="center">
-              <ArrowLeft data-testid="wallet-back" onClick={onClose} size={24} cursor="pointer" />
-              <Text color="$neutral1"> {title}</Text>
-              {rightIcon ? <>{rightIcon}</> : <Flex />}
+            <Flex row mb="$spacing24" justifyContent="space-between" width="100%" alignItems="center">
+              <TouchableArea width="15%" data-testid="wallet-back" onPress={onClose}>
+                <ArrowLeft color="$neutral2" size="$icon.24" />
+              </TouchableArea>
+              <Text color="$neutral1" variant="subheading1">
+                {title}
+              </Text>
+              <Flex width="15%">{rightIcon}</Flex>
             </Flex>
             {children}
           </Flex>
         </Flex>
       </Flex>
-      {versionComponent}
     </>
   )
 }

@@ -26,7 +26,7 @@ import {
 } from 'src/app/features/dappRequests/types/DappRequestTypes'
 import { AnimatePresence, Flex, Text, TouchableArea, useSporeColors } from 'ui/src'
 import { ReceiptText, RotatableChevron } from 'ui/src/components/icons'
-import { iconSizes, zIndexes } from 'ui/src/theme'
+import { zIndexes } from 'ui/src/theme'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 
@@ -40,6 +40,7 @@ export function DappRequestQueue(): JSX.Element {
     <Modal
       alignment="top"
       backgroundColor="$transparent"
+      borderWidth={0}
       isModalOpen={requestsExist}
       name={ModalName.DappRequest}
       padding="$none"
@@ -115,10 +116,9 @@ function DappRequestQueueContent(): JSX.Element {
       <Flex
         animation="200ms"
         backgroundColor="$surface1"
-        borderRadius="$rounded24"
+        borderRadius="$rounded16"
         gap="$spacing12"
-        mb="$spacing12"
-        top={totalRequestCount > 1 ? 12 : 0}
+        mt={totalRequestCount > 1 ? '$spacing12' : '$none'}
         width="100%"
         py="$spacing12"
       >
@@ -145,12 +145,7 @@ function DappRequestQueueContent(): JSX.Element {
               }}
               onPress={onPressPrevious}
             >
-              <RotatableChevron
-                color={disabledPrevious ? '$neutral3' : '$neutral2'}
-                direction="left"
-                height={iconSizes.icon16}
-                width={iconSizes.icon16}
-              />
+              <RotatableChevron color={disabledPrevious ? '$neutral3' : '$neutral2'} direction="left" size="$icon.16" />
             </TouchableArea>
             <Text color="$neutral2" variant="buttonLabel4">
               {currentIndex + 1}
@@ -174,12 +169,7 @@ function DappRequestQueueContent(): JSX.Element {
               }}
               onPress={onPressNext}
             >
-              <RotatableChevron
-                color={disabledNext ? '$neutral3' : '$neutral2'}
-                direction="right"
-                height={iconSizes.icon16}
-                width={iconSizes.icon16}
-              />
+              <RotatableChevron color={disabledNext ? '$neutral3' : '$neutral2'} direction="right" size="$icon.16" />
             </TouchableArea>
           </Flex>
         )}
@@ -190,7 +180,7 @@ function DappRequestQueueContent(): JSX.Element {
   )
 }
 
-const DappRequest = memo(function _DappRequest(): JSX.Element | null {
+const DappRequest = memo(function DappRequestInner(): JSX.Element | null {
   const { t } = useTranslation()
   const { request } = useDappRequestQueueContext()
 

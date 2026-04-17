@@ -1,40 +1,40 @@
-/* eslint-disable-next-line no-restricted-imports, no-restricted-syntax */
-import { useAccount } from 'hooks/useAccount'
-import { useScroll } from 'hooks/useScroll'
-import { useEffect, useState } from 'react'
-import { AddressDisplay } from 'uniswap/src/components/accounts/AddressDisplay'
+import { useMemo } from 'react'
+import { Flex } from 'ui/src'
+import { iconSizes } from 'ui/src/theme/iconSizes'
+import { Platform } from 'uniswap/src/features/platforms/types/Platform'
+import { MultiBlockchainAddressDisplay } from '~/components/AccountDetails/MultiBlockchainAddressDisplay'
+import StatusIcon from '~/components/StatusIcon'
+import { useResolvedAddresses } from '~/pages/Portfolio/hooks/useResolvedAddresses'
 
-export function ConnectedAddressDisplay() {
-  const { height: scrollHeight } = useScroll()
-  const [isCompact, setIsCompact] = useState(false)
-  // Use connected address rather than usePortfolioAddress because this is only for the connected view
-  const account = useAccount()
+interface ConnectedAddressDisplayProps {
+  isCompact: boolean
+}
 
-  useEffect(() => {
-    setIsCompact((prevIsCompact) => {
-      if (!prevIsCompact && scrollHeight > 120) {
-        return true
-      }
-      if (prevIsCompact && scrollHeight < 80) {
-        return false
-      }
-      return prevIsCompact
-    })
-  }, [scrollHeight])
+export function ConnectedAddressDisplay({ isCompact }: ConnectedAddressDisplayProps) {
+  const { evmAddress, svmAddress, isExternalWallet } = useResolvedAddresses()
 
-  if (!account.address) {
+  const primaryAddress = evmAddress ?? svmAddress
+
+  const externalAddress = useMemo(() => {
+    if (!isExternalWallet || !primaryAddress) {
+      return undefined
+    }
+    return {
+      address: primaryAddress,
+      platform: evmAddress ? Platform.EVM : Platform.SVM,
+    }
+  }, [isExternalWallet, primaryAddress, evmAddress])
+
+  if (!primaryAddress) {
     return null
   }
 
+  const iconSize = isCompact ? iconSizes.icon24 : iconSizes.icon48
+
   return (
-    <AddressDisplay
-      size={isCompact ? 24 : 48}
-      showCopy
-      address={account.address}
-      hideAddressInSubtitle={isCompact}
-      addressNumVisibleCharacters={4}
-      accountIconTransition="all 0.3s ease"
-      animateAddressSubtitleHeight
-    />
+    <Flex row alignItems="center" gap="$spacing12" shrink>
+      <StatusIcon address={primaryAddress} size={iconSize} showMiniIcons={false} />
+      <MultiBlockchainAddressDisplay hideAddressInSubtitle={isCompact} externalAddress={externalAddress} />
+    </Flex>
   )
 }

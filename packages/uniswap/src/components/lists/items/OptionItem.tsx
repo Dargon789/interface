@@ -1,8 +1,8 @@
 import { memo, useCallback } from 'react'
 import { Flex, FlexProps, Text, TextProps, TouchableArea } from 'ui/src'
-import useIsKeyboardOpen from 'uniswap/src/hooks/useIsKeyboardOpen'
 import { dismissNativeKeyboard } from 'utilities/src/device/keyboard/dismissNativeKeyboard'
 import { KeyAction } from 'utilities/src/device/keyboard/types'
+import { useIsKeyboardOpen } from 'utilities/src/device/keyboard/useIsKeyboardOpen'
 import { useKeyDown } from 'utilities/src/device/keyboard/useKeyDown'
 import { isWebApp, isWebPlatform } from 'utilities/src/platform'
 import { noop } from 'utilities/src/react/noop'
@@ -34,7 +34,7 @@ export interface OptionItemProps {
   focusedRowControl?: FocusedRowControl
 }
 
-function _OptionItem({
+function OptionItemInner({
   image,
   title,
   subtitle,
@@ -158,4 +158,4 @@ function _OptionItem({
   )
 }
 
-export const OptionItem = memo(_OptionItem)
+export const OptionItem = memo(OptionItemInner)

@@ -2,6 +2,7 @@ import { Token } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
 import { BLAST_LOGO, ETH_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import {
   DEFAULT_NATIVE_ADDRESS_LEGACY,
   DEFAULT_RETRY_OPTIONS,
@@ -42,7 +43,7 @@ export const BLAST_CHAIN_INFO = {
   docs: 'https://docs.blast.io',
   elementName: ElementName.ChainBlast,
   explorer: {
-    name: 'BlastScan',
+    name: 'Blastscan',
     url: 'https://blastscan.io/',
     apiURL: 'https://api.blastscan.io',
   },
@@ -51,11 +52,13 @@ export const BLAST_CHAIN_INFO = {
   label: 'Blast',
   logo: BLAST_LOGO,
   networkLayer: NetworkLayer.L2,
+  blockTimeMs: 2000,
   pendingTransactionsRetryOptions: DEFAULT_RETRY_OPTIONS,
   tokens,
   statusPage: undefined,
   supportsV4: true,
-  urlParam: 'blast',
+  supportsNFTs: true,
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Blast],
   nativeCurrency: {
     name: 'Blast ETH',
     symbol: 'ETH',
@@ -76,4 +79,5 @@ export const BLAST_CHAIN_INFO = {
   },
   gasConfig: GENERIC_L2_GAS_CONFIG,
   tradingApiPollingIntervalMs: 200,
+  acrossProtocolAddress: '0x2D509190Ed0172ba588407D4c2df918F955Cc6E1',
 } as const satisfies UniverseChainInfo

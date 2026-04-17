@@ -1,25 +1,27 @@
 import { TransactionRequest } from '@ethersproject/abstract-provider'
 import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
+import type { GasFeeResult } from '@universe/api'
 import { useWeb3React } from '@web3-react/core'
-import { NATIVE_CHAIN_ID } from 'constants/tokens'
-import { useCurrency } from 'hooks/Tokens'
-import { useAccount } from 'hooks/useAccount'
-import { GasFeeResult, GasSpeed, useTransactionGasFee } from 'hooks/useTransactionGasFee'
-import { useUSDTokenUpdater } from 'hooks/useUSDTokenUpdater'
-import { useCurrencyBalances } from 'lib/hooks/useCurrencyBalance'
-import tryParseCurrencyAmount from 'lib/utils/tryParseCurrencyAmount'
 import { useMemo } from 'react'
-import { useMultichainContext } from 'state/multichain/useMultichainContext'
-import { SendState } from 'state/send/SendContext'
 import { nativeOnChain } from 'uniswap/src/constants/tokens'
 import { useUnitagsAddressQuery } from 'uniswap/src/data/apiClients/unitagsApi/useUnitagsAddressQuery'
 import { useUnitagsUsernameQuery } from 'uniswap/src/data/apiClients/unitagsApi/useUnitagsUsernameQuery'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useAddressFromEns, useENSName } from 'uniswap/src/features/ens/api'
+import { GasSpeed } from 'uniswap/src/features/gas/utils'
 import { chainIdToPlatform } from 'uniswap/src/features/platforms/utils/chains'
 import { getValidAddress } from 'uniswap/src/utils/addresses'
 import { isEVMAddressWithChecksum } from 'utilities/src/addresses/evm/evm'
-import { useCreateTransferTransaction } from 'utils/transfer'
+import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { useCurrency } from '~/hooks/Tokens'
+import { useAccount } from '~/hooks/useAccount'
+import { useTransactionGasFee } from '~/hooks/useTransactionGasFee'
+import { useUSDTokenUpdater } from '~/hooks/useUSDTokenUpdater'
+import { useCurrencyBalances } from '~/lib/hooks/useCurrencyBalance'
+import tryParseCurrencyAmount from '~/lib/utils/tryParseCurrencyAmount'
+import { useMultichainContext } from '~/state/multichain/useMultichainContext'
+import { SendState } from '~/state/send/SendContext'
+import { useCreateTransferTransaction } from '~/utils/transfer'
 export interface RecipientData {
   address: string
   ensName?: string
@@ -68,7 +70,7 @@ export function useDerivedSendInfo(state: SendState): SendInfo {
   const { data: recipientInputUnitag } = useUnitagsUsernameQuery({
     params: userInput ? { username: userInput } : undefined,
   })
-  const recipientInputUnitagAddress = recipientInputUnitag?.address?.address
+  const recipientInputUnitagAddress = recipientInputUnitag?.address
   const recipientInputUnitagUsername = validatedRecipientData?.unitag ?? recipientInputUnitag?.username
 
   const validatedRecipientAddress = useMemo(() => {
@@ -165,7 +167,7 @@ export function useDerivedSendInfo(state: SendState): SendInfo {
       totalAmount = totalAmount.add(parsedTokenAmount)
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (!totalAmount || nativeCurrencyBalance.lessThan(totalAmount)) {
       return SendInputError.INSUFFICIENT_FUNDS_FOR_GAS
     }

@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* oxlint-disable typescript/no-unnecessary-condition */
+/* oxlint-disable typescript/explicit-function-return-type */
 import { Signer } from 'ethers'
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from 'react'
 import { call, getContext } from 'typed-redux-saga'
@@ -41,7 +41,7 @@ export function WalletContextProvider({ children }: PropsWithChildren<unknown>):
   // This state allows the managers to trigger re-renders when relevant values change (i.e. new provider ready)
   // Probably not strictly necessary but more robust than relying on 'organic' re-renders
   const [contextVersion, updateContextVersion] = useState(0)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -updateContextVersion
+  // oxlint-disable-next-line react/exhaustive-deps -- -updateContextVersion
   const incrementContextVersion = useCallback(() => {
     logger.debug('walletContext', 'WalletContextProvider', `Context update count: ${contextVersion + 1}`)
     updateContextVersion(contextVersion + 1)

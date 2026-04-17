@@ -12,7 +12,7 @@ import { currencyIdToChain } from 'uniswap/src/utils/currencyId'
 
 export type TokenSpotData = {
   value: SharedValue<number>
-  relativeChange: SharedValue<number>
+  relativeChange: SharedValue<number | undefined>
 }
 
 export type PriceNumberOfDigits = {
@@ -23,6 +23,7 @@ export type PriceNumberOfDigits = {
 /**
  * @returns Token price history for requested duration
  */
+// oxlint-disable-next-line complexity -- biome-parity: oxlint is stricter here
 export function useTokenPriceHistory({
   currencyId,
   initialDuration = GraphQLApi.HistoryDuration.Day,
@@ -85,13 +86,29 @@ export function useTokenPriceHistory({
   // Prefer per-chain price history so multi-chain tokens render the correct chart for the selected chain
   const priceHistory = onChainData?.priceHistory ?? offChainData?.priceHistory
 
-  // Use aggregated 24hr change (project-level change is more reliable)
   const pricePercentChange24h =
     offChainData?.pricePercentChange24h?.value ?? onChainData?.pricePercentChange24h?.value ?? 0
 
-  const spotValue = useDerivedValue(() => price ?? 0)
-  const spotRelativeChange = useDerivedValue(() => pricePercentChange24h)
+  // Calculate percentage change from price history for the selected duration
+  const calculatedPriceChange = useMemo(() => {
+    if (!priceHistory || priceHistory.length === 0) {
+      return undefined
+    }
+    const openPrice = priceHistory[0]?.value
+    const closePrice = priceHistory[priceHistory.length - 1]?.value
+    if (openPrice === undefined || closePrice === undefined || openPrice === 0) {
+      return undefined
+    }
+    return ((closePrice - openPrice) / openPrice) * 100
+  }, [priceHistory])
 
+  // Use API's 24hr change for 1d, calculated change for other durations
+  const priceChange = duration === GraphQLApi.HistoryDuration.Day ? pricePercentChange24h : calculatedPriceChange
+
+  const spotValue = useDerivedValue(() => price ?? 0)
+  const spotRelativeChange = useDerivedValue(() => priceChange)
+
+  // oxlint-disable-next-line react/exhaustive-deps -- ensure spot updates when price changes
   const spot = useMemo(
     () =>
       price !== undefined
@@ -100,7 +117,8 @@ export function useTokenPriceHistory({
             relativeChange: spotRelativeChange,
           }
         : undefined,
-    [price],
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
+    [price, priceChange, spotValue, spotRelativeChange],
   )
 
   const formattedPriceHistory = useMemo(() => {

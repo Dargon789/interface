@@ -136,7 +136,7 @@ export function PresetAmountButton({
   )
 }
 
-const PresetButtonContent = memo(function _PresetButtonContent({
+const PresetButtonContent = memo(function PresetButtonContentInner({
   percentage,
   disabled,
   onPress,

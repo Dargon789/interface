@@ -1,5 +1,6 @@
 import { PropsWithChildren } from 'react'
 import { Flex, type PopperProps, Text, Tooltip, useMedia } from 'ui/src'
+import { zIndexes } from 'ui/src/theme'
 import { InfoTooltipProps } from 'uniswap/src/components/tooltip/InfoTooltipProps'
 import { isWebPlatform } from 'utilities/src/platform'
 
@@ -39,30 +40,37 @@ export function InfoTooltip({
         restMs={TOOLTIP_REST_MS}
         onOpenChange={onOpenChange}
       >
-        <Tooltip.Trigger>{trigger}</Tooltip.Trigger>
-        {text && (
-          <Tooltip.Content pointerEvents="auto" maxWidth={maxWidth ?? (isWebPlatform ? 280 : '100%')} mx="$spacing24">
-            <Flex row alignItems="center" gap="$spacing8">
-              {icon && <Flex grow>{icon}</Flex>}
-              <Flex shrink gap="$spacing4">
-                {title && (
-                  <Text alignSelf="flex-start" variant="body4">
-                    {title}
+        <Flex shrink>
+          <Tooltip.Trigger>{trigger}</Tooltip.Trigger>
+          {text && (
+            <Tooltip.Content
+              zIndex={zIndexes.overlay}
+              pointerEvents="auto"
+              maxWidth={maxWidth ?? (isWebPlatform ? 280 : '100%')}
+              mx="$spacing24"
+            >
+              <Flex row alignItems="center" gap="$spacing8">
+                {icon && <Flex grow>{icon}</Flex>}
+                <Flex shrink gap="$spacing4">
+                  {title && (
+                    <Text alignSelf="flex-start" variant="body4">
+                      {title}
+                    </Text>
+                  )}
+                  <Text color="$neutral2" variant="body4">
+                    {text}
                   </Text>
-                )}
-                <Text color="$neutral2" variant="body4">
-                  {text}
-                </Text>
-                {button && (
-                  <Flex alignSelf="flex-start" width="100%">
-                    {button}
-                  </Flex>
-                )}
+                  {button && (
+                    <Flex alignSelf="flex-start" width="100%">
+                      {button}
+                    </Flex>
+                  )}
+                </Flex>
               </Flex>
-            </Flex>
-            <Tooltip.Arrow />
-          </Tooltip.Content>
-        )}
+              <Tooltip.Arrow />
+            </Tooltip.Content>
+          )}
+        </Flex>
       </Tooltip>
       {triggerPlacement === 'start' && children}
     </Flex>

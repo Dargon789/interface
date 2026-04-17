@@ -1,8 +1,9 @@
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 function onlyUnique<T>(value: T, index: number, self: T[]): boolean {
   return self.indexOf(value) === index
 }
 
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 export function unique<T>(array: T[], isUnique: (value: T, index: number, self: T[]) => boolean = onlyUnique): T[] {
   return array.filter(isUnique)
 }
@@ -17,7 +18,7 @@ export function next<T>(array: T[], current: T): T | undefined {
 
 // get items in `array` that are not in `without`
 // e.g. difference([B, C, D], [A, B, C]) would return ([D])
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 export function differenceWith<T>(array: T[], without: T[], comparator: (item1: T, item2: T) => boolean): T[] {
   return array.filter((item: T) => {
     const inWithout = Boolean(without.find((otherItem: T) => comparator(item, otherItem)))
@@ -93,4 +94,25 @@ export function getNonEmptyArrayOrThrow<T>(array: T[]): NonEmptyArray<T> {
  */
 export function pipe<T>(value: T, fns: Array<(arg: T) => T>): T {
   return fns.reduce((acc, fn) => fn(acc), value)
+}
+
+/**
+ * Removes duplicate items from an array of objects based on a given key.
+ * @param array - The array of objects to remove duplicates from.
+ * @param key - The key of each item to use for determining uniqueness.
+ * @returns The array with duplicates removed.
+ */
+export function removeDuplicatesBy<T, K extends keyof T>(array: T[], key: K): T[] {
+  const seen = new Set<T[K]>()
+
+  return array.filter((item) => {
+    const value = item[key]
+
+    if (seen.has(value)) {
+      return false
+    }
+
+    seen.add(value)
+    return true
+  })
 }

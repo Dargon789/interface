@@ -16,6 +16,13 @@ setup_permissions([
 $RNFirebaseAsStaticFramework = true
 $RNFirebaseAnalyticsWithoutAdIdSupport=true
 
+project 'Uniswap',
+  'Debug' => :debug,
+  'DebugOptimized' => :debug,
+  'Release' => :release,
+  'Dev' => :release,
+  'Beta' => :release
+
 target 'Uniswap' do
   use_frameworks! :linkage => :static
   use_expo_modules!
@@ -26,11 +33,27 @@ target 'Uniswap' do
       Pod::UI.warn e
     end
   end
-  use_expo_modules!(exclude: ['expo-constants','expo-file-system', 'expo-font', 'expo-keep-awake', 'expo-error-recovery'])
-  config = use_native_modules!(['bunx', 'rnef', 'config', '-p', 'ios'])
+
+  if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
+    config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
+  else
+    config_command = [
+      'node',
+      '--no-warnings',
+      '--eval',
+      'require(require.resolve(\'expo-modules-autolinking\', { paths: [require.resolve(\'expo/package.json\')] }))(process.argv.slice(1))',
+      'react-native-config',
+      '--json',
+      '--platform',
+      'ios'
+    ]
+  end
+
+  config = use_native_modules!(config_command)
 
   use_react_native!(
     :path => config[:reactNativePath],
+    :fabric_enabled => false,
     # to enable hermes on iOS, change `false` to `true` and then install pods
     :hermes_enabled => true
   )
@@ -50,6 +73,38 @@ target 'Uniswap' do
       target.build_configurations.each do |config|
         config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
         config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'No'
+
+        # Optimize native code in DebugOptimized for faster Simulator runtime.
+        # Hermes ships pre-compiled and is unaffected. Source-compiled pods
+        # (Yoga, React-Core, RNScreens, RNReanimated, RNGestureHandler, etc.)
+        # run dramatically faster with optimization enabled.
+        # RN dev tools (Metro, React DevTools) work over the network and are unaffected.
+        if config.name == 'DebugOptimized'
+          config.build_settings['GCC_OPTIMIZATION_LEVEL'] = 's'
+          config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-O'
+          config.build_settings['MTL_ENABLE_DEBUG_INFO'] = 'NO'
+        end
+      end
+    end
+
+    # Xcode 26+ has a stricter module verifier that requires the consuming target
+    # to resolve transitive C module dependencies. Argon2Swift depends on an internal
+    # 'argon2' C module — add its modulemap path so the Uniswap target (the only
+    # target declaring Argon2Swift) can find it.
+    argon2_srcroot = installer.sandbox.pod_dir('Argon2Swift')
+    argon2_module_paths = [
+      "#{argon2_srcroot}/Sources/Modules",
+      "#{argon2_srcroot}/Sources/Argon2",
+      "#{argon2_srcroot}/Sources/Argon2/include",
+    ]
+    uniswap_aggregate = installer.aggregate_targets.find { |t| t.label == 'Pods-Uniswap' }
+    if uniswap_aggregate
+      uniswap_aggregate.xcconfigs.each do |config_name, xcconfig|
+        existing = xcconfig.attributes['SWIFT_INCLUDE_PATHS'] || ''
+        new_paths = argon2_module_paths.map { |p| "\"#{p}\"" }.join(' ')
+        xcconfig.attributes['SWIFT_INCLUDE_PATHS'] = "$(inherited) #{new_paths} #{existing}".strip
+        xcconfig_path = uniswap_aggregate.xcconfig_path(config_name)
+        xcconfig.save_as(xcconfig_path)
       end
     end
   end

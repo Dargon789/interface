@@ -31,11 +31,11 @@ export function retry<T>(
   const totalAttempts = n
   let completed = false
   let rejectCancelled: (error: Error) => void
-  // biome-ignore lint/suspicious/noAsyncPromiseExecutor: We need to use async/await in the executor
+  // oxlint-disable-next-line no-async-promise-executor -- We need to use async/await in the executor
   const promise = new Promise<T>(async (resolve, reject) => {
     let currentAttempt = 0
     rejectCancelled = reject
-    // eslint-disable-next-line no-constant-condition
+    // oxlint-disable-next-line no-constant-condition
     while (true) {
       currentAttempt++
       let result: T

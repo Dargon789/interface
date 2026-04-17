@@ -4,9 +4,9 @@ import { FlatList } from 'react-native'
 import { useAnimatedRef, useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated'
 import { TokenBalanceListRow } from 'uniswap/src/features/portfolio/types'
 
-// biome-ignore lint/suspicious/noExplicitAny: Generic type needed for scroll ref
+// oxlint-disable-next-line typescript/no-explicit-any -- Generic type needed for scroll ref
 type FlashListAnyType = FlashList<any>
-// biome-ignore lint/suspicious/noExplicitAny: Generic type needed for scroll ref
+// oxlint-disable-next-line typescript/no-explicit-any -- Generic type needed for scroll ref
 type FlatListAnyType = FlatList<any>
 type ScrollRefType = FlashListAnyType | FlatListAnyType
 

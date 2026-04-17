@@ -1,9 +1,9 @@
-import Popover, { PopoverProps } from 'components/Popover'
-import styled from 'lib/styled-components'
 import { transparentize } from 'polished'
 import { Fragment, memo, PropsWithChildren, ReactNode, useEffect, useState } from 'react'
-import { Flex } from 'ui/src'
+import { Flex, Text } from 'ui/src'
 import { noop } from 'utilities/src/react/noop'
+import Popover, { PopoverProps } from '~/components/Popover'
+import { deprecatedStyled } from '~/lib/deprecated-styled'
 
 export enum TooltipSize {
   ExtraSmall = '200px',
@@ -12,7 +12,7 @@ export enum TooltipSize {
   Max = 'max-content',
 }
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 const getPaddingForSize = (size: TooltipSize) => {
   switch (size) {
     case TooltipSize.ExtraSmall:
@@ -25,7 +25,7 @@ const getPaddingForSize = (size: TooltipSize) => {
   }
 }
 
-const TooltipContainer = styled.div<{ size: TooltipSize; padding?: number }>`
+const TooltipContainer = deprecatedStyled.div<{ size: TooltipSize; padding?: number }>`
   max-width: ${({ size }) => size};
   width: ${({ size }) => (size === TooltipSize.Max ? 'auto' : `calc(100vw - 16px)`)};
   cursor: default;
@@ -101,8 +101,12 @@ export const MouseoverTooltip = memo(function MouseoverTooltip(props: MouseoverT
       show={forceShow || show}
       {...rest}
     >
-      <Flex onMouseEnter={open} onMouseLeave={timeout ? noop : close}>
-        {children}
+      <Flex cursor="default" onMouseEnter={open} onMouseLeave={timeout ? noop : close}>
+        {typeof children === 'string' || typeof children === 'number' ? (
+          <Text variant="body3">{children}</Text>
+        ) : (
+          children
+        )}
       </Flex>
     </Popover>
   )

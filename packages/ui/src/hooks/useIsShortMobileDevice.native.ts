@@ -1,6 +1,6 @@
 import { useSafeAreaFrame } from 'react-native-safe-area-context'
 import { DEFAULT_BOTTOM_INSET, MobileDeviceHeight } from 'ui/src/hooks/constants'
-// biome-ignore lint/style/noRestrictedImports: Use `useAppInsets` instead
+// oxlint-disable-next-line no-restricted-imports -- Use `useAppInsets` instead
 import { useDeviceInsets } from 'ui/src/hooks/useDeviceInsets'
 
 /**

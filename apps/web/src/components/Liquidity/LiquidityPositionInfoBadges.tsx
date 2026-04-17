@@ -1,17 +1,18 @@
 import { ProtocolVersion as RestProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { GraphQLApi } from '@universe/api'
-import { FeeData } from 'components/Liquidity/Create/types'
-import { isDynamicFeeTier } from 'components/Liquidity/utils/feeTiers'
-import { getProtocolVersionLabel } from 'components/Liquidity/utils/protocolVersion'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CopyHelper } from 'theme/components/CopyHelper'
 import { Flex, styled, Text, Tooltip } from 'ui/src'
 import { DocumentList } from 'ui/src/components/icons/DocumentList'
+import { zIndexes } from 'ui/src/theme'
 import { BIPS_BASE, ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { V2_DEFAULT_FEE_TIER } from 'uniswap/src/constants/pools'
 import { shortenAddress } from 'utilities/src/addresses'
 import { isEVMAddress } from 'utilities/src/addresses/evm/evm'
+import { FeeData } from '~/components/Liquidity/Create/types'
+import { isDynamicFeeTier } from '~/components/Liquidity/utils/feeTiers'
+import { getProtocolVersionLabel } from '~/components/Liquidity/utils/protocolVersion'
+import { CopyHelper } from '~/theme/components/CopyHelper'
 
 const PositionInfoBadge = styled(Text, {
   display: 'flex',
@@ -120,6 +121,7 @@ export function LiquidityPositionInfoBadges({
         const key = label + index
         const content = (
           <PositionInfoBadge
+            gap="$spacing4"
             cursor={copyable || badge.onPress ? 'pointer' : 'unset'}
             color={badge.onPress ? '$neutral1' : '$neutral2'}
             placement={getPlacement(index, badges.length)}
@@ -136,10 +138,14 @@ export function LiquidityPositionInfoBadges({
             {icon}
             {copyable ? (
               <CopyHelper toCopy={label} iconSize={12} iconPosition="right">
-                {displayLabel}
+                <Text variant={size === 'small' ? 'body4' : 'body3'} color="$neutral2">
+                  {displayLabel}
+                </Text>
               </CopyHelper>
             ) : (
-              displayLabel
+              <Text variant={size === 'small' ? 'body4' : 'body3'} color={badge.onPress ? '$neutral1' : '$neutral2'}>
+                {displayLabel}
+              </Text>
             )}
             {iconAfter}
           </PositionInfoBadge>
@@ -152,7 +158,7 @@ export function LiquidityPositionInfoBadges({
         return (
           <Tooltip allowFlip stayInFrame placement="top" key={key}>
             <Tooltip.Trigger>{content}</Tooltip.Trigger>
-            <Tooltip.Content maxWidth="fit-content">
+            <Tooltip.Content maxWidth="fit-content" zIndex={zIndexes.overlay}>
               <Tooltip.Arrow />
               <Text variant="body4" color="$neutral2">
                 {tooltipContent}

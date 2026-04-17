@@ -1,18 +1,17 @@
-import { ArrowContainer, ArrowWrapper } from 'components/swap/styled'
-import styled, { useTheme } from 'lib/styled-components'
-import { ArrowDown } from 'react-feather'
-import { Trans } from 'react-i18next'
-import { ThemedText } from 'theme/components'
-import { styled as TamaguiStyled } from 'ui/src'
+import { useTranslation } from 'react-i18next'
+import { Flex, styled, Text } from 'ui/src'
+import { ArrowDown } from 'ui/src/components/icons/ArrowDown'
+import { ArrowContainer, ArrowWrapper } from '~/components/swap/styled'
+import { deprecatedStyled } from '~/lib/deprecated-styled'
 
-const StyledArrowWrapper = TamaguiStyled(ArrowWrapper, {
+const StyledArrowWrapper = styled(ArrowWrapper, {
   position: 'absolute',
   left: '50%',
   transform: 'translate(-50%, -50%)',
   margin: 0,
 })
 
-const LoadingWrapper = styled.div`
+const LoadingWrapper = deprecatedStyled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -24,29 +23,19 @@ const LoadingWrapper = styled.div`
   background-color: ${({ theme }) => theme.surface1};
 `
 
-const Blob = styled.div<{ width?: number; radius?: number }>`
+const Blob = deprecatedStyled.div<{ width?: number; radius?: number }>`
   background-color: ${({ theme }) => theme.surface2};
   border-radius: ${({ radius }) => (radius ?? 4) + 'px'};
   height: 56px;
   width: ${({ width }) => (width ? width + 'px' : '100%')};
 `
 
-const ModuleBlob = styled(Blob)`
+const ModuleBlob = deprecatedStyled(Blob)`
   background-color: ${({ theme }) => theme.surface3};
   height: 36px;
 `
 
-const TitleColumn = styled.div`
-  padding: 8px;
-`
-
-const Row = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-`
-
-const InputColumn = styled.div`
+const InputColumn = deprecatedStyled.div`
   display: flex;
   flex-flow: column;
   background-color: ${({ theme }) => theme.surface2};
@@ -56,26 +45,25 @@ const InputColumn = styled.div`
   padding: 48px 12px;
 `
 
-const OutputWrapper = styled.div`
+const OutputWrapper = deprecatedStyled.div`
   position: relative;
 `
 
 function Title() {
+  const { t } = useTranslation()
   return (
-    <TitleColumn>
-      <ThemedText.SubHeader>
-        <Trans i18nKey="common.swap" />
-      </ThemedText.SubHeader>
-    </TitleColumn>
+    <Flex p="$spacing8">
+      <Text variant="subheading1">{t('common.swap')}</Text>
+    </Flex>
   )
 }
 
 function FloatingInput() {
   return (
-    <Row>
+    <Flex row justifyContent="space-between" alignItems="center">
       <ModuleBlob width={60} />
       <ModuleBlob width={100} radius={16} />
-    </Row>
+    </Flex>
   )
 }
 
@@ -84,8 +72,6 @@ function FloatingButton() {
 }
 
 export function SwapSkeleton() {
-  const theme = useTheme()
-
   return (
     <LoadingWrapper>
       <Title />
@@ -95,7 +81,7 @@ export function SwapSkeleton() {
       <OutputWrapper>
         <StyledArrowWrapper clickable={false}>
           <ArrowContainer>
-            <ArrowDown size="16" color={theme.neutral3} />
+            <ArrowDown size="$icon.16" color="$neutral3" />
           </ArrowContainer>
         </StyledArrowWrapper>
         <InputColumn>

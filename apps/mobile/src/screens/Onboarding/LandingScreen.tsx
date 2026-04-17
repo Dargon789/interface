@@ -39,6 +39,7 @@ export function LandingScreen({ navigation }: Props): JSX.Element {
   useEffect(() => {
     // disables looping animation during e2e tests which was preventing js thread from idle
     actionButtonsOpacity.value = withDelay(LANDING_ANIMATION_DURATION, withTiming(1, { duration: ONE_SECOND_MS }))
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   // Disables testnet mode on mount if enabled (eg upon removing a wallet)

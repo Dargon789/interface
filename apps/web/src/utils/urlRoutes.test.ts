@@ -1,5 +1,5 @@
 import { InterfacePageName } from 'uniswap/src/features/telemetry/constants'
-import { getCanonicalUrl, getCurrentPageFromLocation } from 'utils/urlRoutes'
+import { getCanonicalUrl, getCurrentPageFromLocation } from '~/utils/urlRoutes'
 
 describe('getCurrentPageFromLocation', () => {
   it('should return LANDING_PAGE when location pathname is "/"', () => {
@@ -49,26 +49,6 @@ describe('getCurrentPageFromLocation', () => {
   it('should return TOKENS_PAGE when location pathname starts with "/tokens"', () => {
     const result = getCurrentPageFromLocation('/tokens/xyz')
     expect(result).toBe(InterfacePageName.TokensPage)
-  })
-
-  it('should return NFT_PROFILE_PAGE when location pathname starts with "/nfts/profile"', () => {
-    const result = getCurrentPageFromLocation('/nfts/profile/def')
-    expect(result).toBe(InterfacePageName.NftProfilePage)
-  })
-
-  it('should return NFT_DETAILS_PAGE when location pathname starts with "/nfts/asset"', () => {
-    const result = getCurrentPageFromLocation('/nfts/asset/ghi')
-    expect(result).toBe(InterfacePageName.NftDetailsPage)
-  })
-
-  it('should return NFT_COLLECTION_PAGE when location pathname starts with "/nfts/collection"', () => {
-    const result = getCurrentPageFromLocation('/nfts/collection/jkl')
-    expect(result).toBe(InterfacePageName.NftCollectionPage)
-  })
-
-  it('should return NFT_EXPLORE_PAGE when location pathname starts with "/nfts"', () => {
-    const result = getCurrentPageFromLocation('/nfts/mno')
-    expect(result).toBe(InterfacePageName.NftExplorePage)
   })
 
   it('should return undefined for unknown location pathnames', () => {

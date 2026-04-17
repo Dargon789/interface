@@ -6,7 +6,7 @@ import { ExpandoRow } from 'uniswap/src/components/ExpandoRow/ExpandoRow'
 import { useTokenBalanceListContext } from 'uniswap/src/features/portfolio/TokenBalanceListContext'
 import { isMobileApp } from 'utilities/src/platform'
 
-function _HiddenTokensRow({ onPressLearnMore }: { onPressLearnMore: () => void }): JSX.Element {
+function HiddenTokensRowInner({ onPressLearnMore }: { onPressLearnMore: () => void }): JSX.Element {
   const { t } = useTranslation()
 
   const { hiddenTokensCount, hiddenTokensExpanded, setHiddenTokensExpanded } = useTokenBalanceListContext()
@@ -30,4 +30,4 @@ function _HiddenTokensRow({ onPressLearnMore }: { onPressLearnMore: () => void }
   )
 }
 
-export const HiddenTokensRow = memo(_HiddenTokensRow)
+export const HiddenTokensRow = memo(HiddenTokensRowInner)

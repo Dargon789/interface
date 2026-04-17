@@ -1,6 +1,7 @@
-import { createFetchClient, type FetchClient } from '@universe/api'
+import { createFetchClient, type FetchClient, provideSessionService } from '@universe/api'
+import { getIsSessionServiceEnabled } from '@universe/gating'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
-import { getVersionHeader } from 'uniswap/src/data/constants'
+import { getVersionHeader } from 'uniswap/src/data/getVersionHeader'
 import { isMobileApp, isWebApp } from 'utilities/src/platform'
 import { REQUEST_SOURCE } from 'utilities/src/platform/requestSource'
 
@@ -21,11 +22,13 @@ export function createUniswapFetchClient({
     'x-uniquote-enabled'?: string
   }
 }): FetchClient {
+  // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
   const headers = includeBaseUniswapHeaders ? { ...BASE_UNISWAP_HEADERS, ...additionalHeaders } : additionalHeaders
 
   return createFetchClient({
     baseUrl,
-    headers,
-    getSessionServiceBaseUrl: () => uniswapUrls.apiBaseUrlV2,
+    getHeaders: () => headers,
+    getSessionService: () =>
+      provideSessionService({ getBaseUrl: () => uniswapUrls.apiBaseUrlV2, getIsSessionServiceEnabled }),
   })
 }

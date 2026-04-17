@@ -76,7 +76,7 @@ export function useEnabledPaymentMethodFilters(quotes?: Maybe<FORQuote[]>): Paym
 
   return useMemo(() => {
     const useablePaymentMethods = quotes
-      ?.flatMap((quote) => quote.serviceProviderDetails.paymentMethods)
+      ?.flatMap((quote) => quote.serviceProviderDetails?.paymentMethods ?? [])
       .flatMap((paymentMethod) => {
         const mappedFilter = FORFiltersMap[paymentMethod]
         return mappedFilter
@@ -125,7 +125,7 @@ export function PaymentMethodItem({
         pl="$spacing4"
         backgroundColor={isSelected ? '$surface3' : '$surface1'}
         borderColor="$surface3"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderRadius="$rounded12"
       >
         <Icon size={iconSizes.icon20} color="$neutral1" />

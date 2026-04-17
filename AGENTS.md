@@ -44,7 +44,7 @@ bun extension build:production   # Extension production
 
 ```bash
 bun g:test                      # Run all tests
-bun g:test:coverage             # With coverage
+bun g:test:changed              # Run tests for changed packages
 bun web playwright:test         # Web E2E tests
 bun mobile e2e                  # Mobile E2E tests
 ```
@@ -87,7 +87,7 @@ bun i18n:extract                # Extract localized strings (run after changing 
 #### State Management
 
 - **Redux** for complex global state
-- **Jotai** for simple state
+- **Zustand** for simple global/shared state — do not use Jotai, we are migrating away from it. Flag any new Jotai usage in PRs and require Zustand instead.
 - Keep state as local as possible
 - No custom hooks for simple data fetching - use `useQuery`/`useMutation` directly
 

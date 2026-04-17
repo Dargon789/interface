@@ -1,10 +1,14 @@
+import { TradingApi } from '@universe/api/src'
+import { TransactionDetailsContent } from 'uniswap/src/components/activity/details/TransactionDetailsContent'
+import { TransactionDetailsHeader } from 'uniswap/src/components/activity/details/TransactionDetailsHeader'
 import { TransactionDetailsInfoRows } from 'uniswap/src/components/activity/details/TransactionDetailsInfoRows'
-import {
-  TransactionDetailsContent,
-  TransactionDetailsHeader,
-} from 'uniswap/src/components/activity/details/TransactionDetailsModal'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
-import { TransactionDetails } from 'uniswap/src/features/transactions/types/transactionDetails'
+import {
+  TransactionDetails,
+  TransactionOriginType,
+  TransactionStatus,
+  TransactionType,
+} from 'uniswap/src/features/transactions/types/transactionDetails'
 import {
   ARBITRUM_DAI_CURRENCY_INFO,
   BASE_CURRENCY,
@@ -16,28 +20,29 @@ import {
 } from 'uniswap/src/test/fixtures'
 import { render } from 'uniswap/src/test/test-utils'
 
-jest.mock('uniswap/src/components/menus/ContextMenuV2', () => ({
-  ...jest.requireActual('uniswap/src/components/menus/ContextMenuV2.web'),
-}))
+vi.mock('uniswap/src/components/menus/ContextMenu', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('uniswap/src/components/menus/ContextMenu.web')>()
+  return { ...actual }
+})
 
-const mockWalletAddress = (): Address => SAMPLE_SEED_ADDRESS_1
-jest.mock('uniswap/src/features/wallet/hooks/useWallet', () => ({
-  useWallet: jest.fn().mockReturnValue({
-    evmAccount: { address: mockWalletAddress },
+vi.mock('uniswap/src/features/wallet/hooks/useWallet', () => ({
+  useWallet: vi.fn().mockReturnValue({
+    evmAccount: { address: '0x82D56A352367453f74FC0dC7B071b311da373Fa6', accountType: 'signerMnemonic' },
   }),
 }))
 
-const mockTransaction = {
+const mockTransaction: TransactionDetails = {
   id: '9920dbad-ff24-47c8-814a-094566fc45ff',
   chainId: 81457,
-  routing: 'CLASSIC',
-  from: '0xee814caea14f6cccfeae34fea11d9a2ca6aabb11',
+  routing: TradingApi.Routing.CLASSIC,
+  from: SAMPLE_SEED_ADDRESS_1,
+  transactionOriginType: TransactionOriginType.Internal,
   typeInfo: {
-    type: 'approve',
+    type: TransactionType.Approve,
     tokenAddress: '0x2e8b8dafe7faa3aa2bbcd27cda50ebcdfbd8710c',
     spender: '0xf097e7bed97db1bccd9b067a564aca3d4e5da1f4',
   },
-  status: 'confirmed',
+  status: TransactionStatus.Success,
   addedTime: 1719911758204,
   options: { request: {} },
   hash: 'b568a9e9-bbe7-42fc-ab00-5070186c0600',
@@ -49,7 +54,7 @@ const mockTransaction = {
     gasUsed: 27844,
     effectiveGasPrice: 2941,
   },
-} as TransactionDetails
+}
 
 // Function to set up mocks
 const getCurrencyInfoForChain = (chainId: number): CurrencyInfo => {
@@ -69,7 +74,7 @@ const getCurrencyInfoForChain = (chainId: number): CurrencyInfo => {
   }
 }
 
-jest.mock('uniswap/src/features/tokens/useCurrencyInfo', () => ({
+vi.mock('uniswap/src/features/tokens/useCurrencyInfo', () => ({
   useCurrencyInfo: (currencyIdString: string | undefined): Maybe<CurrencyInfo> => {
     if (!currencyIdString) {
       return null
@@ -83,24 +88,27 @@ jest.mock('uniswap/src/features/tokens/useCurrencyInfo', () => ({
   },
 }))
 
-jest.mock('@universe/gating', () => ({
-  ...jest.requireActual('@universe/gating'),
-  useDynamicConfigValue: jest
-    .fn()
-    .mockImplementation(({ defaultValue }: { config: unknown; key: unknown; defaultValue: unknown }) => {
-      return defaultValue
-    }),
-  useFeatureFlag: jest.fn().mockReturnValue(true),
-  getFeatureFlag: jest.fn().mockReturnValue(true),
-  useExperimentValue: jest.fn().mockReturnValue('CLASSIC'),
-}))
+vi.mock('@universe/gating', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@universe/gating')>()
+  return {
+    ...actual,
+    useDynamicConfigValue: vi
+      .fn()
+      .mockImplementation(({ defaultValue }: { config: unknown; key: unknown; defaultValue: unknown }) => {
+        return defaultValue
+      }),
+    useFeatureFlag: vi.fn().mockReturnValue(true),
+    getFeatureFlag: vi.fn().mockReturnValue(true),
+    useExperimentValue: vi.fn().mockReturnValue('CLASSIC'),
+  }
+})
 
-jest.mock('uniswap/src/features/language/localizedDayjs', () => ({
-  useFormattedDateTime: jest.fn(() => 'January 1, 2023 12:00 AM'),
+vi.mock('uniswap/src/features/language/localizedDayjs', () => ({
+  useFormattedDateTime: vi.fn(() => 'January 1, 2023 12:00 AM'),
   FORMAT_DATE_TIME_MEDIUM: 'MMMM D, YYYY h:mm A',
 }))
 
-jest.mock('ui/src/loading/Skeleton', () => ({
+vi.mock('ui/src/loading/Skeleton', () => ({
   Skeleton: (): JSX.Element => <></>,
 }))
 
@@ -109,7 +117,7 @@ describe('TransactionDetails Components', () => {
     const transactionActions = [
       {
         label: 'Cancel',
-        onPress: jest.fn(),
+        onPress: vi.fn(),
       },
     ]
 
@@ -121,7 +129,7 @@ describe('TransactionDetails Components', () => {
   })
 
   it('renders TransactionDetailsContent without error', () => {
-    const onClose = jest.fn()
+    const onClose = vi.fn()
 
     const tree = render(<TransactionDetailsContent transactionDetails={mockTransaction} onClose={onClose} />)
 
@@ -129,20 +137,30 @@ describe('TransactionDetails Components', () => {
   })
 
   it('renders TransactionDetailsInfoRows without error with isShowingMore false', () => {
-    const onClose = jest.fn()
+    const onClose = vi.fn()
 
     const tree = render(
-      <TransactionDetailsInfoRows isShowingMore={false} transactionDetails={mockTransaction} onClose={onClose} />,
+      <TransactionDetailsInfoRows
+        isShowingMore={false}
+        transactionDetails={mockTransaction}
+        openPlanView={vi.fn()}
+        onClose={onClose}
+      />,
     )
 
     expect(tree).toMatchSnapshot()
   })
 
   it('renders TransactionDetailsInfoRows without error with isShowingMore true', () => {
-    const onClose = jest.fn()
+    const onClose = vi.fn()
 
     const tree = render(
-      <TransactionDetailsInfoRows isShowingMore={true} transactionDetails={mockTransaction} onClose={onClose} />,
+      <TransactionDetailsInfoRows
+        isShowingMore={true}
+        transactionDetails={mockTransaction}
+        openPlanView={vi.fn()}
+        onClose={onClose}
+      />,
     )
 
     expect(tree).toMatchSnapshot()

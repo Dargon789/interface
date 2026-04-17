@@ -1,9 +1,12 @@
 // TODO(MOB-203): reduce component complexity
-/* eslint-disable complexity */
+/* oxlint-disable complexity */
 import { BigNumber } from '@ethersproject/bignumber'
 import { Direction, OnChainTransaction, OnChainTransactionLabel } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { GraphQLApi } from '@universe/api'
+import { AssetType } from 'uniswap/src/entities/assets'
+import { extractDappInfo } from 'uniswap/src/features/activity/utils/extractDappInfo'
 import {
+  AssetCase,
   deriveCurrencyAmountFromAssetResponse,
   parseUSDValueFromAssetChange,
 } from 'uniswap/src/features/activity/utils/remote'
@@ -15,8 +18,10 @@ import {
   TransactionDetailsType,
   TransactionListQueryResponse,
   TransactionType,
+  WithdrawTransactionInfo,
   WrapTransactionInfo,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { areAddressesEqual } from 'uniswap/src/utils/addresses'
 import { buildCurrencyId, buildNativeCurrencyId, buildWrappedNativeCurrencyId } from 'uniswap/src/utils/currencyId'
 
 type TransferAssetChange = Extract<
@@ -48,7 +53,7 @@ export default function parseTradeTransaction(
 
   // for detecting wraps
   const nativeCurrencyID = buildNativeCurrencyId(chainId).toLocaleLowerCase()
-  const wrappedCurrencyID = buildWrappedNativeCurrencyId(chainId).toLocaleLowerCase()
+  const wrappedCurrencyID = buildWrappedNativeCurrencyId(chainId)?.toLocaleLowerCase()
 
   const sent = txAssetChanges.find((t) => t.direction === GraphQLApi.TransactionDirection.Out)
 
@@ -136,22 +141,23 @@ export default function parseTradeTransaction(
 
     const transactedUSDValue = parseUSDValueFromAssetChange(sent.transactedValue)
 
+    if (!inputCurrencyId || !outputCurrencyId) {
+      return undefined
+    }
+
     // Data API marks wrap as a swap.
     if (
-      (inputCurrencyId?.toLocaleLowerCase() === nativeCurrencyID &&
-        outputCurrencyId?.toLocaleLowerCase() === wrappedCurrencyID) ||
-      (inputCurrencyId?.toLocaleLowerCase() === wrappedCurrencyID &&
-        outputCurrencyId?.toLocaleLowerCase() === nativeCurrencyID)
+      wrappedCurrencyID &&
+      ((inputCurrencyId.toLocaleLowerCase() === nativeCurrencyID &&
+        outputCurrencyId.toLocaleLowerCase() === wrappedCurrencyID) ||
+        (inputCurrencyId.toLocaleLowerCase() === wrappedCurrencyID &&
+          outputCurrencyId.toLocaleLowerCase() === nativeCurrencyID))
     ) {
       return {
         type: TransactionType.Wrap,
         unwrapped: outputCurrencyId.toLocaleLowerCase() === nativeCurrencyID.toLocaleLowerCase(),
         currencyAmountRaw: inputCurrencyAmountRaw,
       }
-    }
-
-    if (!inputCurrencyId || !outputCurrencyId) {
-      return undefined
     }
 
     return {
@@ -226,12 +232,49 @@ export default function parseTradeTransaction(
 }
 
 /**
+ * Type guard to validate transactedValue structure from REST API
+ */
+function isTransactedValueResponse(value: unknown): value is { currency: string; value: number } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'currency' in value &&
+    'value' in value &&
+    typeof (value as { currency?: unknown }).currency === 'string' &&
+    typeof (value as { value?: unknown }).value === 'number'
+  )
+}
+
+/**
  * Helper function to calculate total amount for a specific token
  */
 function getTotalAmountForToken(transfers: OnChainTransaction['transfers'], tokenAddress: string): BigNumber {
   return transfers
     .filter((t) => t.asset.value?.address === tokenAddress)
     .reduce((sum, t) => sum.add(BigNumber.from(t.amount?.raw ?? '0')), BigNumber.from(0))
+}
+
+/**
+ * Filters out FOT (Fee-on-Transfer) fee transfers that don't go to/from the owner.
+ * FOT tokens cause Zerion to return multiple transfers - one for the actual amount
+ * (to/from the owner) and one for the fee (to a different address).
+ */
+function excludeFOTFeeTransfers(
+  transfers: OnChainTransaction['transfers'],
+  { ownerAddress, chainId, direction }: { ownerAddress: string; chainId: number; direction: 'sent' | 'received' },
+): OnChainTransaction['transfers'] {
+  return transfers.filter((t) => {
+    // Only filter FOT tokens
+    if (t.asset.case !== 'token' || !t.asset.value.metadata?.feeData?.feeDetector?.feeTakenOnTransfer) {
+      return true
+    }
+    // For FOT tokens, only keep transfers to/from the owner
+    const addressToCheck = direction === 'received' ? t.to : t.from
+    return areAddressesEqual({
+      addressInput1: { address: addressToCheck, chainId },
+      addressInput2: { address: ownerAddress, chainId },
+    })
+  })
 }
 
 /**
@@ -270,7 +313,7 @@ function findPrimaryTokenAndAmount(
  * Parse a swap or on-chain uniswapX transaction from the REST API
  */
 export function parseRestSwapTransaction(transaction: OnChainTransaction): ConfirmedSwapTransactionInfo | undefined {
-  const { transfers, chainId } = transaction
+  const { transfers, chainId, from: ownerAddress } = transaction
   if (transfers.length < 2) {
     return undefined
   }
@@ -282,14 +325,32 @@ export function parseRestSwapTransaction(transaction: OnChainTransaction): Confi
     return undefined
   }
 
-  const primarySent = findPrimaryTokenAndAmount(sentTransfers)
+  // Filter out FOT fee transfers before finding primary amounts
+  const filteredSentTransfers = excludeFOTFeeTransfers(sentTransfers, { ownerAddress, chainId, direction: 'sent' })
+  const filteredReceivedTransfers = excludeFOTFeeTransfers(receivedTransfers, {
+    ownerAddress,
+    chainId,
+    direction: 'received',
+  })
+
+  const primarySent = findPrimaryTokenAndAmount(filteredSentTransfers)
   if (!primarySent) {
     return undefined
   }
 
-  const primaryReceived = findPrimaryTokenAndAmount(receivedTransfers, primarySent.tokenAddress)
+  const primaryReceived = findPrimaryTokenAndAmount(filteredReceivedTransfers, primarySent.tokenAddress)
   if (!primaryReceived) {
     return undefined
+  }
+
+  // Try to parse transactedValue from the sent transfer if available
+  // Note: REST API transfers may not have transactedValue, but we check for it
+  let transactedUSDValue: number | undefined
+  const primarySentTransfer = sentTransfers.find((t) => t.asset.value?.address === primarySent.tokenAddress)
+  // @ts-expect-error - transactedValue may not be in type definition but could exist at runtime
+  const tv = primarySentTransfer?.transactedValue
+  if (isTransactedValueResponse(tv) && tv.currency === 'USD') {
+    transactedUSDValue = tv.value
   }
 
   return {
@@ -298,7 +359,8 @@ export function parseRestSwapTransaction(transaction: OnChainTransaction): Confi
     outputCurrencyId: buildCurrencyId(chainId, primaryReceived.tokenAddress),
     inputCurrencyAmountRaw: primarySent.amount.toString(),
     outputCurrencyAmountRaw: primaryReceived.amount.toString(),
-    transactedUSDValue: undefined,
+    transactedUSDValue,
+    dappInfo: extractDappInfo(transaction),
   }
 }
 
@@ -315,7 +377,31 @@ export function parseRestWrapTransaction(transaction: OnChainTransaction): WrapT
 
   return {
     type: TransactionType.Wrap,
-    unwrapped: label === OnChainTransactionLabel.WITHDRAW || label === OnChainTransactionLabel.UNWRAP,
+    unwrapped: label === OnChainTransactionLabel.UNWRAP,
     currencyAmountRaw: firstTransfer?.amount?.raw ?? '',
+    dappInfo: extractDappInfo(transaction),
+  }
+}
+
+/**
+ * Parse a Withdraw transaction from the REST API (e.g., unstaking, lending withdrawals).
+ * Uses the actual token data from transfers rather than assuming native/wrapped-native tokens.
+ */
+export function parseRestWithdrawTransaction(transaction: OnChainTransaction): WithdrawTransactionInfo | undefined {
+  const receiveTransfer = transaction.transfers.find(
+    (t) => t.direction === Direction.RECEIVE && t.asset.case === AssetCase.Token,
+  )
+
+  const tokenAddress = receiveTransfer?.asset.value?.address
+  if (!tokenAddress) {
+    return undefined
+  }
+
+  return {
+    type: TransactionType.Withdraw,
+    assetType: AssetType.Currency,
+    tokenAddress,
+    currencyAmountRaw: receiveTransfer.amount?.raw,
+    dappInfo: extractDappInfo(transaction),
   }
 }

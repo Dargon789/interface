@@ -1,7 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, SpinningLoader, useIsShortMobileDevice } from 'ui/src'
-import { InfoCircleFilled } from 'ui/src/components/icons'
+import { InfoCircleFilled } from 'ui/src/components/icons/InfoCircleFilled'
 
 interface FiatOnRampCtaButtonProps {
   onPress: () => void
@@ -29,7 +29,7 @@ export function FiatOnRampCtaButton({
         isLoading ? <SpinningLoader color="$white" /> : !eligible ? <InfoCircleFilled color="$neutral3" /> : undefined
       }
       iconPosition="after"
-      size={isShortMobileDevice ? 'small' : 'large'}
+      size={isShortMobileDevice ? 'medium' : 'large'}
       emphasis={isLoading ? 'secondary' : buttonAvailable ? 'primary' : 'secondary'}
       loading={isLoading}
       variant="branded"

@@ -80,6 +80,7 @@ export function useLineChartFiatDelta({
     (index: number) => {
       scrubbingDeltaSharedValue.value = calculateCurrentDelta(index)
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     [calculateCurrentDelta],
   )
 
@@ -98,6 +99,7 @@ export function useLineChartFiatDelta({
   )
 
   // Create a derived value that decides which delta to show
+  /* oxlint-disable react/exhaustive-deps -- isActive and scrubbingDeltaSharedValue are Reanimated shared values tracked automatically */
   const formatted = useDerivedValue(() => {
     if (!data || data.length === 0) {
       return ''
@@ -110,7 +112,8 @@ export function useLineChartFiatDelta({
 
     // When not scrubbing, use the pre-calculated last point delta
     return lastPointDelta
-  })
+  }, [lastPointDelta, data])
+  /* oxlint-enable react/exhaustive-deps */
 
   return { formatted }
 }

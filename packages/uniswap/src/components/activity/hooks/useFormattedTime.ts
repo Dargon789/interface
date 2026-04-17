@@ -20,7 +20,7 @@ export function useFormattedTimeForActivity(time: number): string {
   const unixTime = useForceUpdateEveryMinute()
   const localizedDayjs = useLocalizedDayjs()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +unixTime (needed to update every minute)
+  // oxlint-disable-next-line react/exhaustive-deps -- +unixTime (needed to update every minute)
   return useMemo(() => {
     const wrappedAddedTime = localizedDayjs(time)
     return localizedDayjs().isBefore(wrappedAddedTime.add(59, 'minute'), 'minute')
@@ -30,5 +30,6 @@ export function useFormattedTimeForActivity(time: number): string {
       : localizedDayjs().isBefore(wrappedAddedTime.add(24, 'hour'))
         ? wrappedAddedTime.format(FORMAT_TIME_SHORT) // within last 24 hours
         : wrappedAddedTime.format(FORMAT_DATE_MONTH_DAY) // current year
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [time, unixTime, localizedDayjs])
 }

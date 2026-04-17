@@ -1,14 +1,16 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: Migration functions handle arbitrary state shapes from different versions */
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* oxlint-disable typescript/no-explicit-any -- Migration functions handle arbitrary state shapes from different versions */
+/* oxlint-disable typescript/explicit-function-return-type */
 
 import {
   migratePendingDappRequestsToRecord,
   migrateUnknownBackupAccountsToMaybeManualBackup,
   removeDappInfoToChromeLocalStorage,
+  setLanguageToNavigatorLanguage,
 } from 'src/store/extensionMigrations'
 import {
   addActivityVisibility,
   addDismissedBridgedAndCompatibleWarnings,
+  migrateDismissedTokenWarnings,
   migrateSearchHistory,
   removeThaiBahtFromFiatCurrency,
   unchecksumDismissedTokenWarningKeys,
@@ -69,6 +71,8 @@ export const migrations = {
   27: migrateSearchHistory,
   28: addDismissedBridgedAndCompatibleWarnings,
   29: addActivityVisibility,
+  30: migrateDismissedTokenWarnings,
+  31: setLanguageToNavigatorLanguage,
 }
 
-export const EXTENSION_STATE_VERSION = 29
+export const EXTENSION_STATE_VERSION = 31

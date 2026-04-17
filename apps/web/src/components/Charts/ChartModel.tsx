@@ -1,13 +1,5 @@
-import { CustomHoverMarker } from 'components/Charts/CustomHoverMarker'
-import { useApplyChartTextureEffects } from 'components/Charts/hooks/useApplyChartTextureEffects'
-import { ChartModelWithLiveDot, LiveDotRenderer } from 'components/Charts/LiveDotRenderer'
-import { PROTOCOL_LEGEND_ELEMENT_ID, SeriesDataItemType } from 'components/Charts/types'
-import { formatTickMarks } from 'components/Charts/utils'
-import { MissingDataBars } from 'components/Table/icons'
-import { useOnClickOutside } from 'hooks/useOnClickOutside'
 import { atom } from 'jotai'
 import { useUpdateAtom } from 'jotai/utils'
-import { DefaultTheme, useTheme } from 'lib/styled-components'
 import {
   BarPrice,
   CrosshairMode,
@@ -20,13 +12,19 @@ import {
   TimeChartOptions,
 } from 'lightweight-charts'
 import { ReactElement, TouchEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { Trans } from 'react-i18next'
-import { ThemedText } from 'theme/components'
-import { assertWebElement, ColorTokens, Flex, styled, TamaguiElement, useMedia } from 'ui/src'
+import { assertWebElement, ColorTokens, Flex, TamaguiElement, useMedia, useSporeColors } from 'ui/src'
 import { useCurrentLocale } from 'uniswap/src/features/language/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
 import { v4 as uuidv4 } from 'uuid'
+import { ChartTooltip } from '~/components/Charts/ChartTooltip'
+import { CustomHoverMarker } from '~/components/Charts/CustomHoverMarker'
+import { useApplyChartTextureEffects } from '~/components/Charts/hooks/useApplyChartTextureEffects'
+import { ChartModelWithLiveDot, LiveDotRenderer } from '~/components/Charts/LiveDotRenderer'
+import { StaleBanner } from '~/components/Charts/StaleBanner'
+import { PROTOCOL_LEGEND_ELEMENT_ID, SeriesDataItemType } from '~/components/Charts/types'
+import { formatTickMarks } from '~/components/Charts/utils'
+import { useOnClickOutside } from '~/hooks/useOnClickOutside'
 
 export const refitChartContentAtom = atom<(() => void) | undefined>(undefined)
 
@@ -35,7 +33,7 @@ export const DEFAULT_BOTTOM_PRICE_SCALE_MARGIN = 0.15
 
 interface ChartUtilParams<TDataType extends SeriesDataItemType> {
   locale: string
-  theme: DefaultTheme
+  colors: ReturnType<typeof useSporeColors>
   format: ReturnType<typeof useLocalizationContext>
   isLargeScreen: boolean
   onCrosshairMove?: (data: TDataType | undefined) => void
@@ -74,6 +72,22 @@ export abstract class ChartModel<TDataType extends SeriesDataItemType> {
   private _hoverData?: ChartHoverData<TDataType> | undefined
   private _lastTooltipWidth: number | null = null
 
+  // Store handler reference for cleanup
+  private wheelHandler = (event: WheelEvent): void => {
+    if (event.ctrlKey) {
+      event.preventDefault()
+      event.stopPropagation()
+      const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1
+      const timeScale = this.api.timeScale()
+      const visibleRange = timeScale.getVisibleLogicalRange()
+      if (visibleRange) {
+        const center = (visibleRange.from + visibleRange.to) / 2
+        const newHalfRange = ((visibleRange.to - visibleRange.from) / 2) * (1 / zoomFactor)
+        timeScale.setVisibleLogicalRange({ from: center - newHalfRange, to: center + newHalfRange })
+      }
+    }
+  }
+
   public tooltipId = `chart-tooltip-${uuidv4()}`
 
   /** Get current hover coordinates for custom marker rendering */
@@ -88,12 +102,37 @@ export abstract class ChartModel<TDataType extends SeriesDataItemType> {
     }
   }
 
+  /** Check if chart is zoomed in (visible range is smaller than total data range) */
+  public isZoomed(): boolean {
+    const visibleRange = this.api.timeScale().getVisibleLogicalRange()
+    if (!visibleRange || this.data.length === 0) {
+      return false
+    }
+    const totalDataPoints = this.data.length
+    const visibleDataPoints = visibleRange.to - visibleRange.from
+    // Consider zoomed if showing less than 95% of data (small buffer for edge cases)
+    return visibleDataPoints < totalDataPoints * 0.95
+  }
+
+  /** Subscribe to visible range changes (for zoom detection) */
+  public subscribeToVisibleRangeChange(callback: () => void): () => void {
+    this.api.timeScale().subscribeVisibleLogicalRangeChange(callback)
+    return () => this.api.timeScale().unsubscribeVisibleLogicalRangeChange(callback)
+  }
+
   constructor(chartDiv: HTMLDivElement, params: ChartModelParams<TDataType>) {
     this.chartDiv = chartDiv
     this.onCrosshairMove = params.onCrosshairMove
     this.data = params.data
 
-    this.api = createChart(chartDiv)
+    // Disable mouse wheel to allow page scrolling; pinch handled via custom wheel listener below
+    this.api = createChart(chartDiv, {
+      handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+      handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: false },
+    })
+
+    // Custom wheel handler: pinch-to-zoom (Ctrl+wheel) while allowing page scroll
+    chartDiv.addEventListener('wheel', this.wheelHandler, { passive: false, capture: true })
 
     this.api.subscribeCrosshairMove((param) => {
       let newHoverData: ChartHoverData<TDataType> | undefined
@@ -190,7 +229,7 @@ export abstract class ChartModel<TDataType extends SeriesDataItemType> {
 
   /** Updates the chart without re-creating it or resetting pan/zoom. */
   public updateOptions(
-    { locale, theme, format, isLargeScreen, onCrosshairMove }: ChartModelParams<TDataType>,
+    { locale, colors, format, isLargeScreen, onCrosshairMove }: ChartModelParams<TDataType>,
     nonDefaultChartOptions?: DeepPartial<TimeChartOptions>,
   ) {
     this.onCrosshairMove = onCrosshairMove
@@ -203,7 +242,7 @@ export abstract class ChartModel<TDataType extends SeriesDataItemType> {
         priceFormatter: (price: BarPrice) => format.convertFiatAmountFormatted(price, NumberType.FiatTokenPrice),
       },
       autoSize: true,
-      layout: { textColor: theme.neutral2, background: { color: 'transparent' } },
+      layout: { textColor: colors.neutral2.val, background: { color: 'transparent' } },
       timeScale: {
         tickMarkFormatter: formatTickMarks,
         borderVisible: false,
@@ -234,7 +273,7 @@ export abstract class ChartModel<TDataType extends SeriesDataItemType> {
           visible: true,
           style: LineStyle.Solid,
           width: 1,
-          color: theme.surface3,
+          color: colors.surface3.val,
           labelVisible: false,
         },
         mode: CrosshairMode.Magnet,
@@ -242,15 +281,13 @@ export abstract class ChartModel<TDataType extends SeriesDataItemType> {
           visible: true,
           style: LineStyle.Solid,
           width: 1,
-          color: theme.surface3,
+          color: colors.surface3.val,
           labelVisible: false,
         },
       },
-      // Enable scrolling vertically when onTouchMove is enabled on mobile devices (when chart is not focused)
-      handleScroll: {
-        horzTouchDrag: true,
-        vertTouchDrag: false,
-      },
+      // Disable mouse wheel to allow page scrolling; pinch handled by custom wheel listener
+      handleScroll: { mouseWheel: false, horzTouchDrag: true, vertTouchDrag: false },
+      handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: false },
     }
 
     this.api.applyOptions({ ...defaultOptions, ...nonDefaultChartOptions })
@@ -263,11 +300,12 @@ export abstract class ChartModel<TDataType extends SeriesDataItemType> {
 
   /** Removes the injected canvas from the chartDiv. */
   public remove() {
+    this.chartDiv.removeEventListener('wheel', this.wheelHandler, { capture: true })
     this.api.remove()
   }
 }
 
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 function isBetween(num: number, lower: number, upper: number): boolean {
   return num > lower && num < upper
 }
@@ -284,6 +322,7 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
   showDottedBackground = false,
   showLeftFadeOverlay = false,
   showCustomHoverMarker = false,
+  overrideColor,
 }: {
   Model: new (chartDiv: HTMLDivElement, params: TParamType & ChartUtilParams<TDataType>) => ChartModel<TDataType>
   TooltipBody?: ChartTooltipBodyComponent<TDataType>
@@ -295,6 +334,7 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
   showDottedBackground?: boolean
   showLeftFadeOverlay?: boolean
   showCustomHoverMarker?: boolean
+  overrideColor?: string // Optional token color override for accent1
 }) {
   const setRefitChartContent = useUpdateAtom(refitChartContentAtom)
   // Lightweight-charts injects a canvas into the page through the div referenced below
@@ -302,11 +342,13 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
   const [chartDivElement, setChartDivElement] = useState<TamaguiElement | null>(null)
   const [crosshairData, setCrosshairData] = useState<TDataType | undefined>(undefined)
   const [hoverCoordinates, setHoverCoordinates] = useState<{ x: number; y: number } | null>(null)
+  const [isZoomed, setIsZoomed] = useState(false)
   const format = useLocalizationContext()
-  const theme = useTheme()
+  const sporeColors = useSporeColors()
   const locale = useCurrentLocale()
   const media = useMedia()
   const isLargeScreen = !media.lg
+
   const handleCrosshairMove = useMemo(
     () => (data: TDataType | undefined) => {
       setCrosshairData(data)
@@ -320,13 +362,38 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
     [],
   )
 
+  const colors = useMemo(() => {
+    const accent1Overrides = overrideColor
+      ? { val: overrideColor as ColorTokens, get: () => overrideColor as ColorTokens }
+      : {}
+
+    return {
+      ...sporeColors,
+      accent1: {
+        ...sporeColors.accent1,
+        ...accent1Overrides,
+      },
+    }
+  }, [sporeColors, overrideColor])
+
   const modelParams = useMemo(
-    () => ({ ...params, format, theme, locale, isLargeScreen, onCrosshairMove: handleCrosshairMove }),
-    [format, isLargeScreen, locale, params, theme, handleCrosshairMove],
+    () => ({ ...params, format, colors, locale, isLargeScreen, onCrosshairMove: handleCrosshairMove }),
+    [format, isLargeScreen, locale, params, colors, handleCrosshairMove],
   )
 
+  // Create a stable key that changes when chart data changes (e.g., time period change)
+  const dataKey = useMemo(() => {
+    if (params.data.length === 0) {
+      return undefined
+    }
+    const lastItem = params.data[params.data.length - 1]
+    return JSON.stringify(lastItem)
+  }, [params.data])
+
   // Chart model state should not affect React render cycles since the chart canvas is drawn outside of React, so we store via ref
-  const chartModelRef = useRef<ChartModel<TDataType>>()
+  const chartModelRef = useRef<ChartModel<TDataType>>(undefined)
+  // Track when chart model is ready to trigger re-render for LiveDotRenderer
+  const [isChartModelReady, setIsChartModelReady] = useState(false)
 
   useApplyChartTextureEffects({ chartDivElement, showDottedBackground, showLeftFadeOverlay })
 
@@ -337,8 +404,22 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
       chartModelRef.current = new Model(chartDivElement, modelParams)
       // Providers the time period selector with a handle to refit the chart
       setRefitChartContent(() => () => chartModelRef.current?.fitContent())
+      // Trigger re-render so LiveDotRenderer can access the chart model
+      setIsChartModelReady(true)
     }
   }, [Model, chartDivElement, modelParams, setRefitChartContent])
+
+  // Track zoom state changes to hide live dot when zoomed
+  useEffect(() => {
+    if (!chartModelRef.current || !isChartModelReady) {
+      return undefined
+    }
+    const updateZoomState = (): void => {
+      setIsZoomed(chartModelRef.current?.isZoomed() ?? false)
+    }
+    updateZoomState()
+    return chartModelRef.current.subscribeToVisibleRangeChange(updateZoomState)
+  }, [isChartModelReady])
 
   // Keeps the chart up-to-date with latest data/params, without re-creating the entire chart
   useEffect(() => {
@@ -352,12 +433,13 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
       // This ref's value will persist when being initially remounted in React.StrictMode.
       // The persisted IChartApi would err if utilized after calling remove(), so we manually clear the ref here.
       chartModelRef.current = undefined
+      setIsChartModelReady(false)
       setRefitChartContent(undefined)
     }
   }, [setRefitChartContent])
 
   useOnClickOutside({
-    node: { current: chartDivElement } as React.RefObject<HTMLDivElement>,
+    node: { current: chartDivElement } as React.RefObject<HTMLDivElement | null>,
     handler: () => {
       setCrosshairData(undefined)
       setHoverCoordinates(null)
@@ -400,64 +482,19 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
       {params.stale && <StaleBanner />}
       {/* Custom hover marker */}
       {showCustomHoverMarker && hoverCoordinates && chartDivElement && chartModelRef.current && (
-        <CustomHoverMarker coordinates={hoverCoordinates} lineColor={theme.accent1} />
+        <CustomHoverMarker coordinates={hoverCoordinates} lineColor={colors.accent1.val} />
       )}
-      {/* Live dot indicator at the end of line charts */}
-      {chartModelRef.current && chartDivElement && 'getLastPointCoordinates' in chartModelRef.current && (
+      {/* Live dot indicator at the end of line charts - hidden when zoomed */}
+      {chartDivElement && isChartModelReady && chartModelRef.current && (
         <LiveDotRenderer
           chartModel={chartModelRef.current as ChartModelWithLiveDot}
           isHovering={!!crosshairData}
+          isZoomed={isZoomed}
           chartContainer={chartDivElement as HTMLDivElement}
+          overrideColor={overrideColor}
+          dataKey={dataKey}
         />
       )}
     </Flex>
-  )
-}
-
-const ChartTooltip = styled(Flex, {
-  alignItems: 'center',
-  position: 'absolute',
-  left: 0,
-  top: 0,
-  zIndex: '$tooltip',
-  borderWidth: 0,
-  borderStyle: 'solid',
-  pointerEvents: 'none', // Prevent tooltip from interfering with mouse events
-  variants: {
-    includeBorder: {
-      true: {
-        backgroundColor: '$surface5',
-        backdropFilter: 'blur(8px)',
-        borderRadius: '$rounded8',
-        borderColor: '$surface3',
-        borderWidth: 1,
-        p: '$spacing8',
-      },
-    },
-  },
-})
-
-const StaleBannerWrapper = styled(ChartTooltip, {
-  borderRadius: '$rounded16',
-  left: 'unset',
-  top: 'unset',
-  right: '$spacing12',
-  bottom: '$spacing40',
-  p: '$spacing12',
-  backgroundColor: '$surface4',
-})
-
-function StaleBanner() {
-  const theme = useTheme()
-  // TODO(WEB-3739): Update Chart UI to grayscale when data is stale
-  return (
-    <StaleBannerWrapper data-testid="chart-stale-banner">
-      <Flex row gap="$gap8">
-        <MissingDataBars color={theme.neutral1} />
-        <ThemedText.BodySmall>
-          <Trans i18nKey="common.dataOutdated" />
-        </ThemedText.BodySmall>
-      </Flex>
-    </StaleBannerWrapper>
   )
 }

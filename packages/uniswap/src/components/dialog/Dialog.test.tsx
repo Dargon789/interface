@@ -1,23 +1,27 @@
-import { fireEvent } from '@testing-library/react-native'
+import { fireEvent, waitFor } from '@testing-library/react-native'
+import { SharedQueryClient } from '@universe/api'
 import { Flex, Text } from 'ui/src'
 import { Dialog } from 'uniswap/src/components/dialog/Dialog.web'
+import type { DialogPreferencesService } from 'uniswap/src/dialog-preferences'
+import { DialogVisibilityId } from 'uniswap/src/dialog-preferences/types'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { renderWithProviders } from 'uniswap/src/test/render'
+import type { Mocked } from 'vitest'
 
 // Mock the Modal component to avoid BottomSheetModal context issues
-jest.mock('uniswap/src/components/modals/Modal', () => ({
+vi.mock('uniswap/src/components/modals/Modal', () => ({
   Modal: ({ children, isModalOpen }: { children: React.ReactNode; isModalOpen: boolean }): JSX.Element | null => {
     return isModalOpen ? <>{children}</> : null
   },
 }))
 
-const mockOnClose = jest.fn()
-const mockPrimaryClick = jest.fn()
-const mockSecondaryClick = jest.fn()
+const mockOnClose = vi.fn()
+const mockPrimaryClick = vi.fn()
+const mockSecondaryClick = vi.fn()
 
 describe('Dialog component', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   const renderDialog = (props = {}): ReturnType<typeof renderWithProviders> => {
@@ -28,10 +32,8 @@ describe('Dialog component', () => {
         title="Mock Title"
         subtext="Mock Subtext"
         modalName={ModalName.Dialog}
-        primaryButtonText="Primary Button"
-        primaryButtonOnPress={mockPrimaryClick}
-        secondaryButtonText="Close"
-        secondaryButtonOnPress={mockOnClose}
+        primaryButton={{ text: 'Primary Button', onPress: mockPrimaryClick }}
+        secondaryButton={{ text: 'Close', onPress: mockOnClose }}
         onClose={mockOnClose}
         {...props}
       />,
@@ -62,8 +64,7 @@ describe('Dialog component', () => {
 
   it('handles secondary button click when provided', () => {
     const { getByText } = renderDialog({
-      secondaryButtonText: 'Secondary Button',
-      secondaryButtonOnPress: mockSecondaryClick,
+      secondaryButton: { text: 'Secondary Button', onPress: mockSecondaryClick },
     })
 
     fireEvent.press(getByText('Secondary Button'))
@@ -71,7 +72,7 @@ describe('Dialog component', () => {
   })
 
   it('does not render secondary button when not provided', () => {
-    const { queryByText } = renderDialog({ secondaryButtonText: undefined })
+    const { queryByText } = renderDialog({ secondaryButton: undefined })
     expect(queryByText('Close')).toBeFalsy()
   })
 
@@ -108,5 +109,138 @@ describe('Dialog component', () => {
 
     expect(getByTestId('custom-title')).toBeTruthy()
     expect(getByTestId('custom-subtext')).toBeTruthy()
+  })
+
+  describe('dialog visibility preferences', () => {
+    let mockService: Mocked<DialogPreferencesService>
+
+    beforeEach(() => {
+      mockService = {
+        shouldShowDialog: vi.fn(),
+        markDialogHidden: vi.fn(),
+        resetDialog: vi.fn(),
+      }
+      vi.clearAllMocks()
+      // Clear React Query cache to prevent test pollution
+      SharedQueryClient.clear()
+    })
+
+    it('automatically closes when shouldShow is false', async () => {
+      // This service returns false, indicating the user has saved a preference to "don't show again"
+      mockService.shouldShowDialog.mockResolvedValue(false)
+      const onCloseSpy = vi.fn()
+
+      const { queryByText } = renderWithProviders(
+        <Dialog
+          isOpen={true}
+          icon={<Text>Icon</Text>}
+          title="Test Title"
+          subtext="Test Subtext"
+          modalName={ModalName.Dialog}
+          primaryButton={{ text: 'Primary', onPress: mockPrimaryClick }}
+          visibilityId={DialogVisibilityId.StorybookExample}
+          dialogPreferencesService={mockService}
+          onClose={onCloseSpy}
+        />,
+      )
+
+      // onClose should be called once when shouldShow is false
+      await waitFor(() => {
+        expect(onCloseSpy).toHaveBeenCalledTimes(1)
+      })
+
+      // Dialog should not render when shouldShow is false
+      expect(queryByText('Test Title')).toBeFalsy()
+    })
+
+    it('does not call onClose multiple times if shouldShow remains false', async () => {
+      mockService.shouldShowDialog.mockResolvedValue(false)
+      const onCloseSpy = vi.fn()
+
+      const { rerender } = renderWithProviders(
+        <Dialog
+          isOpen={true}
+          icon={<Text>Icon</Text>}
+          title="Test Title"
+          subtext="Test Subtext"
+          modalName={ModalName.Dialog}
+          primaryButton={{ text: 'Primary', onPress: mockPrimaryClick }}
+          visibilityId={DialogVisibilityId.StorybookExample}
+          dialogPreferencesService={mockService}
+          onClose={onCloseSpy}
+        />,
+      )
+
+      await waitFor(() => {
+        expect(onCloseSpy).toHaveBeenCalledTimes(1)
+      })
+
+      // Force a re-render with same props
+      rerender(
+        <Dialog
+          isOpen={true}
+          icon={<Text>Icon</Text>}
+          title="Test Title"
+          subtext="Test Subtext"
+          modalName={ModalName.Dialog}
+          primaryButton={{ text: 'Primary', onPress: mockPrimaryClick }}
+          visibilityId={DialogVisibilityId.StorybookExample}
+          dialogPreferencesService={mockService}
+          onClose={onCloseSpy}
+        />,
+      )
+
+      // onClose should still only be called once
+      expect(onCloseSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('renders normally when shouldShow is true', async () => {
+      mockService.shouldShowDialog.mockResolvedValue(true)
+      const onCloseSpy = vi.fn()
+
+      const { getByText } = renderWithProviders(
+        <Dialog
+          isOpen={true}
+          icon={<Text>Icon</Text>}
+          title="Test Title"
+          subtext="Test Subtext"
+          modalName={ModalName.Dialog}
+          primaryButton={{ text: 'Primary', onPress: mockPrimaryClick }}
+          visibilityId={DialogVisibilityId.StorybookExample}
+          dialogPreferencesService={mockService}
+          onClose={onCloseSpy}
+        />,
+      )
+
+      // Dialog should render when shouldShow is true
+      await waitFor(() => {
+        expect(getByText('Test Title')).toBeTruthy()
+      })
+
+      // onClose should NOT be called automatically
+      expect(onCloseSpy).not.toHaveBeenCalled()
+    })
+
+    it('does not call onClose when dialog is already closed (isOpen=false)', async () => {
+      mockService.shouldShowDialog.mockResolvedValue(false)
+      const onCloseSpy = vi.fn()
+
+      renderWithProviders(
+        <Dialog
+          isOpen={false}
+          icon={<Text>Icon</Text>}
+          title="Test Title"
+          subtext="Test Subtext"
+          modalName={ModalName.Dialog}
+          primaryButton={{ text: 'Primary', onPress: mockPrimaryClick }}
+          visibilityId={DialogVisibilityId.StorybookExample}
+          dialogPreferencesService={mockService}
+          onClose={onCloseSpy}
+        />,
+      )
+
+      // onClose should not be called since the dialog is already closed
+      expect(onCloseSpy).not.toHaveBeenCalled()
+    })
   })
 })

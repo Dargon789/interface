@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { Flex } from 'ui/src'
-import { ContextMenu } from 'uniswap/src/components/menus/ContextMenuV2'
+import { ContextMenu } from 'uniswap/src/components/menus/ContextMenu'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
 import { NftView, NftViewProps } from 'uniswap/src/components/nfts/NftView'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
@@ -42,7 +42,7 @@ export function NftViewWithContextMenu(props: NftViewWithContextMenuProps): JSX.
   const nftViewWithTriggers = useMemo(() => {
     const nftView = <NftView {...props} openContextMenu={openContextMenuWithHaptics} />
     return isWebPlatform ? (
-      // biome-ignore  lint/correctness/noRestrictedElements: needed here
+      // oxlint-disable-next-line react/forbid-elements -- needed here
       <div onContextMenu={onOpenContextMenu}>{nftView}</div>
     ) : (
       nftView

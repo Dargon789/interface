@@ -14,6 +14,7 @@ import { PriceNumberOfDigits, TokenSpotData, useTokenPriceHistory } from 'src/co
 import { useTokenDetailsContext } from 'src/components/TokenDetails/TokenDetailsContext'
 import { useIsScreenNavigationReady } from 'src/utils/useIsScreenNavigationReady'
 import { Flex, SegmentedControl, Text } from 'ui/src'
+import { useLayoutAnimationOnChange } from 'ui/src/animations'
 import GraphCurve from 'ui/src/assets/backgrounds/graph-curve.svg'
 import { spacing } from 'ui/src/theme'
 import { isLowVarianceRange } from 'uniswap/src/components/charts/utils'
@@ -32,7 +33,7 @@ const LOW_VARIANCE_Y_PADDING = 100
 
 type PriceTextProps = {
   loading: boolean
-  relativeChange?: SharedValue<number>
+  relativeChange?: SharedValue<number | undefined>
   numberOfDigits: PriceNumberOfDigits
   spotPrice?: SharedValue<number>
   startingPrice?: number
@@ -90,7 +91,7 @@ function TimeRangeTraceWrapper({
   )
 }
 
-export const PriceExplorer = memo(function _PriceExplorer(): JSX.Element {
+export const PriceExplorer = memo(function PriceExplorerInner(): JSX.Element {
   const { isTestnetModeEnabled } = useEnabledChains()
   const { chartHeight, chartWidth } = useChartDimensions()
 
@@ -98,10 +99,10 @@ export const PriceExplorer = memo(function _PriceExplorer(): JSX.Element {
     return <GraphCurve height={chartHeight} width={chartWidth} opacity={0.25} />
   }
 
-  return <PriceExplorerInner />
+  return <PriceExplorerContent />
 })
 
-const PriceExplorerInner = memo(function _PriceExplorerInner(): JSX.Element {
+const PriceExplorerContent = memo(function PriceExplorerContentInner(): JSX.Element {
   const { currencyId, tokenColor, navigation } = useTokenDetailsContext()
   const isScreenNavigationReady = useIsScreenNavigationReady({ navigation })
 
@@ -146,6 +147,8 @@ const PriceExplorerInner = memo(function _PriceExplorerInner(): JSX.Element {
     return { lastPricePoint: priceHistory.length - 1, convertedPriceHistory: priceHistory }
   }, [data, conversionRate])
 
+  useLayoutAnimationOnChange(convertedPriceHistory.length)
+
   const convertedSpotValue = useDerivedValue(() => conversionRate * (data?.spot?.value.value ?? 0))
   const convertedSpot = useMemo((): TokenSpotData | undefined => {
     return (
@@ -154,6 +157,7 @@ const PriceExplorerInner = memo(function _PriceExplorerInner(): JSX.Element {
         value: convertedSpotValue,
       }
     )
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [data])
 
   // Zoom out y-axis for low variance assets

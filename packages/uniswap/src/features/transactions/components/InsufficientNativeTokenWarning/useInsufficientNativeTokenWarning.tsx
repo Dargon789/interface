@@ -5,15 +5,19 @@ import { Text } from 'ui/src'
 import { Warning, WarningLabel } from 'uniswap/src/components/modals/WarningModal/types'
 import { nativeOnChain } from 'uniswap/src/constants/tokens'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
+import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { getChainLabel, toSupportedChainId } from 'uniswap/src/features/chains/utils'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
+import { getChainGasToken } from 'uniswap/src/features/gas/hooks/useChainGasToken'
+import { convertTempoGasFeeForDisplay } from 'uniswap/src/features/gas/tempo'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { getCurrencyAmount, ValueType } from 'uniswap/src/features/tokens/getCurrencyAmount'
-import { useNativeCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
+import { useCurrencyInfo, useNativeCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { INSUFFICIENT_NATIVE_TOKEN_TEXT_VARIANT } from 'uniswap/src/features/transactions/components/InsufficientNativeTokenWarning/constants'
 import { InsufficientNativeTokenWarning } from 'uniswap/src/features/transactions/components/InsufficientNativeTokenWarning/InsufficientNativeTokenWarning'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
 import { useNetworkColors } from 'uniswap/src/utils/colors'
+import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { NumberType } from 'utilities/src/format/types'
 import { logger } from 'utilities/src/logger/logger'
 
@@ -54,19 +58,27 @@ export function useInsufficientNativeTokenWarning({
   const nativeCurrency = warning?.currency
   const chainId = nativeCurrency?.chainId ?? defaultChainId
 
-  const nativeCurrencyInfo = useNativeCurrencyInfo(chainId)
+  const gasToken = getChainGasToken(chainId)
+
+  const defaultNativeCurrencyInfo = useNativeCurrencyInfo(chainId)
+  // On chains where gas is paid in a non-native token (e.g. pathUSD on Tempo), use its currency info
+  const gasTokenCurrencyId = gasToken.isToken ? buildCurrencyId(chainId, gasToken.address) : undefined
+  const gasTokenInfo = useCurrencyInfo(gasTokenCurrencyId)
+  const nativeCurrencyInfo = gasTokenInfo ?? defaultNativeCurrencyInfo
 
   const networkColors = useNetworkColors(chainId)
 
-  const gasAmount = useMemo(
-    () =>
-      getCurrencyAmount({
-        value: gasFee.value,
-        valueType: ValueType.Raw,
-        currency: nativeCurrency?.chainId ? nativeOnChain(nativeCurrency.chainId) : undefined,
-      }),
-    [gasFee.value, nativeCurrency?.chainId],
-  )
+  const gasAmount = useMemo(() => {
+    if (!gasFee.value || !nativeCurrency?.chainId) {
+      return undefined
+    }
+    // For Tempo: use warning.currency directly (pathUSD from upstream) and convert
+    // the 18-decimal gas fee to 6-decimal pathUSD units
+    const isTempo = nativeCurrency.chainId === UniverseChainId.Tempo
+    const currency = isTempo ? nativeCurrency : nativeOnChain(nativeCurrency.chainId)
+    const value = isTempo ? convertTempoGasFeeForDisplay(gasFee.value) : gasFee.value
+    return getCurrencyAmount({ value, valueType: ValueType.Raw, currency })
+  }, [gasFee.value, nativeCurrency])
 
   const gasAmountUsd = useUSDCValue(gasAmount)
 

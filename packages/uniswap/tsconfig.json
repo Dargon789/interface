@@ -1,6 +1,6 @@
 {
   "extends": "../../config/tsconfig/app.json",
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.json", "src/**/*.mts"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.json", "src/**/*.mts", "env.d.ts"],
   "references": [
     {
       "path": "../utilities"
@@ -9,16 +9,25 @@
       "path": "../ui"
     },
     {
-      "path": "../api"
+      "path": "../prices"
+    },
+    {
+      "path": "../notifications"
+    },
+    {
+      "path": "../gating"
     },
     {
       "path": "../config"
     },
     {
-      "path": "../gating"
+      "path": "../api"
+    },
+    {
+      "path": "../../config/vitest-presets"
     }
   ],
   "compilerOptions": {
-    "types": ["chrome", "jest"]
+    "types": ["chrome", "vitest/globals"]
   }
 }

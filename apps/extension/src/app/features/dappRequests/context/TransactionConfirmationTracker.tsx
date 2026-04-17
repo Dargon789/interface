@@ -31,6 +31,7 @@ export function useTransactionConfirmationTracker(): TransactionConfirmationStat
   return context
 }
 
+// oxlint-disable-next-line typescript/no-empty-interface -- biome-parity: oxlint is stricter here
 interface TransactionConfirmationTrackerProviderProps extends PropsWithChildren {}
 
 export function TransactionConfirmationTrackerProvider({

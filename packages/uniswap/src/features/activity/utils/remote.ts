@@ -111,7 +111,7 @@ export function deriveCurrencyAmountFromAssetResponse({
   return currencyAmount?.quotient.toString() ?? ''
 }
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 export function remoteTxStatusToLocalTxStatus(
   type: GraphQLApi.TransactionType,
   status: GraphQLApi.TransactionStatus,

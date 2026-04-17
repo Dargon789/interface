@@ -8,6 +8,7 @@ import { useLocalizationContext } from 'uniswap/src/features/language/Localizati
 import { SlippageInfoProps } from 'uniswap/src/features/transactions/swap/components/MaxSlippageRow/SlippageInfo/types'
 import { useFormatSlippageAmount } from 'uniswap/src/features/transactions/swap/components/MaxSlippageRow/SlippageInfo/useFormatSlippageAmount'
 import { TradeWithSlippage } from 'uniswap/src/features/transactions/swap/types/trade'
+import { isChained } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { isMobileApp, isWebPlatform } from 'utilities/src/platform'
 
 function SlippageWarningText(): JSX.Element {
@@ -67,15 +68,33 @@ export function SlippageInfoCaption({
   const showSlippageWarning = Boolean(autoSlippageTolerance && slippageTolerance > autoSlippageTolerance)
   const formattedSlippageAmount = useFormatSlippageAmount(trade)
 
+  // For chained actions, slippage is applied per step, not as a total.
+  // This means compound slippage can exceed what the user set (e.g. 6% per step → 11.64% total for 2 steps).
+  // We show an explanatory message when the user has set custom slippage so they understand this behavior.
+  const isChainedTrade = isChained(trade)
+  const swapStepCount = isChainedTrade
+    ? (trade.quote.quote.steps?.filter((s) => s.slippage !== undefined).length ?? 0)
+    : 0
+  const showChainedMessage = isChainedTrade && isCustomSlippage && swapStepCount > 1
+
   return (
     <Flex gap="$spacing12" width="100%">
+      {showChainedMessage && (
+        <Text
+          color="$neutral2"
+          textAlign={isWebPlatform ? 'left' : 'center'}
+          variant={isWebPlatform ? 'body4' : 'body2'}
+        >
+          {t('swap.settings.slippage.chained.message', { count: swapStepCount })}
+        </Text>
+      )}
       <Text color="$neutral2" textAlign={isWebPlatform ? 'left' : 'center'} variant={isWebPlatform ? 'body4' : 'body2'}>
         {[TradeType.EXACT_INPUT, 'EXACT_INPUT'].includes(tradeType)
           ? t('swap.settings.slippage.input.message')
           : t('swap.settings.slippage.output.message')}{' '}
         {isWebPlatform && (
           <Flex display="inline-flex">
-            <LearnMoreLink url={uniswapUrls.helpArticleUrls.swapSlippage} textVariant="body4" />
+            <LearnMoreLink url={uniswapUrls.helpArticleUrls.swapSlippage} textVariant="body4" textColor="$neutral1" />
           </Flex>
         )}
       </Text>

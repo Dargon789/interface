@@ -1,39 +1,69 @@
 import { NetworkStatus } from '@apollo/client'
-import { usePortfolioAddress } from 'pages/Portfolio/hooks/usePortfolioAddress'
+import { GetWalletTokensProfitLossResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
+import { DEFAULT_NATIVE_ADDRESS } from 'uniswap/src/features/chains/evm/rpc'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { useSortedPortfolioBalances } from 'uniswap/src/features/dataApi/balances/balances'
-import type { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
+import { isStablecoinAddress } from 'uniswap/src/features/chains/utils'
+import { useSortedPortfolioBalancesMultichain } from 'uniswap/src/features/dataApi/balances/balances'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
-import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { NumberType } from 'utilities/src/format/types'
+import type { PortfolioMultichainBalance } from 'uniswap/src/features/dataApi/types'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { currencyAddress } from 'uniswap/src/utils/currencyId'
+import { usePortfolioAddresses } from '~/pages/Portfolio/hooks/usePortfolioAddresses'
+import { createChainFilter } from '~/pages/Portfolio/Tokens/utils/filterMultichainBalancesByChain'
+
+/** Per-chain token instance (use TokenData['tokens'][number] in other modules) */
+interface TokenDataToken {
+  chainId: number
+  currencyInfo: CurrencyInfo
+  quantity: number
+  valueUsd: number
+  symbol: string | undefined
+}
 
 export interface TokenData {
   id: string
-  currencyInfo: CurrencyInfo | null // Full currency info including logoUrl
-  price: string
+  testId: string
+  chainId: number
+  currencyInfo: CurrencyInfo
+  quantity: number
+  symbol: string | undefined
+  price: number | undefined
   change1d: number | undefined
-  balance: {
-    value: string
-    symbol: string | undefined
-  }
-  value: string
-  rawValue: Maybe<number>
+  tokens: TokenDataToken[]
+  totalValue: number
   allocation: number
+  isHidden: boolean | null | undefined
+  avgCost?: number
+  unrealizedPnl?: number
+  unrealizedPnlPercent?: number
+  isStablecoin: boolean
 }
 
 // Custom hook to format portfolio data
-export function useTransformTokenTableData({ chainIds }: { chainIds?: UniverseChainId[] }): {
+// When flag OFF: do not request multichain from backend → backend returns legacy → we transform to multichain shape for the table.
+// When flag ON: request multichain from backend → backend returns portfolio.multichainBalances → no transform needed.
+export function useTransformTokenTableData({
+  chainIds,
+  limit,
+  tokenProfitLossData,
+}: {
+  chainIds?: UniverseChainId[]
+  limit?: number
+  tokenProfitLossData?: GetWalletTokensProfitLossResponse
+}): {
   visible: TokenData[] | null
   hidden: TokenData[] | null
+  totalCount: number | null
   loading: boolean
   refetching: boolean
   error: Error | undefined
   refetch: (() => void) | undefined
   networkStatus: NetworkStatus
 } {
-  const portfolioAddress = usePortfolioAddress()
-  const { convertFiatAmountFormatted, formatNumberOrString } = useLocalizationContext()
+  const { evmAddress, svmAddress } = usePortfolioAddresses()
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
   const {
     data: sortedBalances,
@@ -41,59 +71,135 @@ export function useTransformTokenTableData({ chainIds }: { chainIds?: UniverseCh
     error,
     refetch,
     networkStatus,
-  } = useSortedPortfolioBalances({
-    evmAddress: portfolioAddress,
+  } = useSortedPortfolioBalancesMultichain({
+    evmAddress,
+    svmAddress,
     chainIds,
+    // Flag OFF: legacy data from backend, transform to multichain shape on client. Flag ON: multichain (mock) data from backend.
+    requestMultichainFromBackend: multichainTokenUxEnabled,
   })
 
   return useMemo(() => {
-    // Only show empty state on initial load, not during refetch
-    const isInitialLoading = loading && !sortedBalances
+    // Only show empty state on initial load, not during refetch.
+    // networkStatus === NetworkStatus.loading means the query has never completed.
+    // This is synchronously true from the very first render when there is no cached data, even before isFetching is set.
+    const isInitialLoading = networkStatus === NetworkStatus.loading && !sortedBalances
     const isRefetching = loading && !!sortedBalances
 
     if (isInitialLoading) {
-      return { visible: null, hidden: null, loading, refetching: false, error, refetch, networkStatus }
-    }
-
-    if (!sortedBalances) {
-      return { visible: [], hidden: [], loading, refetching: false, error, refetch, networkStatus }
-    }
-
-    // Compute total USD across visible balances to determine allocation per token
-    const totalUSDVisible = sortedBalances.balances.reduce((sum, b) => sum + (b.balanceUSD ?? 0), 0)
-
-    const mapBalanceToTokenData = (balance: PortfolioBalance, allocationFromTotal?: number): TokenData => {
-      const price =
-        balance.balanceUSD && balance.quantity > 0
-          ? convertFiatAmountFormatted(balance.balanceUSD / balance.quantity, NumberType.FiatTokenPrice)
-          : '$0.00'
-
-      const formattedBalance = formatNumberOrString({ value: balance.quantity, type: NumberType.TokenNonTx })
-      const value = convertFiatAmountFormatted(balance.balanceUSD, NumberType.PortfolioBalance)
-
       return {
-        id: balance.id,
-        currencyInfo: balance.currencyInfo,
-        price,
-        change1d: balance.relativeChange24 || undefined,
-        balance: {
-          value: formattedBalance,
-          symbol: balance.currencyInfo.currency.symbol,
-        },
-        value,
-        rawValue: balance.balanceUSD,
-        allocation: allocationFromTotal ?? 0,
+        visible: null,
+        hidden: null,
+        totalCount: null,
+        loading: true,
+        refetching: false,
+        error,
+        refetch,
+        networkStatus,
       }
     }
 
-    const visible = sortedBalances.balances.map((b) => {
-      const balanceUSD = b.balanceUSD ?? 0
-      const allocation = totalUSDVisible > 0 ? (balanceUSD / totalUSDVisible) * 100 : 0
-      return mapBalanceToTokenData(b, allocation)
-    })
+    if (!sortedBalances) {
+      return { visible: [], hidden: [], totalCount: 0, loading, refetching: false, error, refetch, networkStatus }
+    }
 
-    const hidden = sortedBalances.hiddenBalances.map((b) => mapBalanceToTokenData(b, 0))
+    const chainFilter = createChainFilter(chainIds)
+    const { filterBalances, getValueUsdForBalance, getTokensForRow } = chainFilter
+    const visibleBalances = filterBalances(sortedBalances.balances)
+    const hiddenBalancesFiltered = filterBalances(sortedBalances.hiddenBalances)
 
-    return { visible, hidden, loading, refetching: isRefetching, refetch, networkStatus, error }
-  }, [loading, sortedBalances, convertFiatAmountFormatted, formatNumberOrString, error, refetch, networkStatus])
+    const totalUSDVisible = visibleBalances.reduce((sum, b) => sum + getValueUsdForBalance(b), 0)
+
+    const pnlLookup = new Map<string, { avgCost: number; unrealizedPnl: number; unrealizedPnlPercent: number }>()
+    if (tokenProfitLossData?.tokenProfitLosses) {
+      for (const entry of tokenProfitLossData.tokenProfitLosses) {
+        if (entry.token) {
+          const key = `${entry.token.address.toLowerCase()}-${entry.token.chainId}`
+          pnlLookup.set(key, {
+            avgCost: entry.averageCostUsd,
+            unrealizedPnl: entry.unrealizedReturnUsd,
+            unrealizedPnlPercent: entry.unrealizedReturnPercent,
+          })
+        }
+      }
+    }
+
+    const mapBalanceToTokenData = (
+      balance: PortfolioMultichainBalance,
+      allocationFromTotal?: number,
+    ): TokenData | null => {
+      const tokensForRow = getTokensForRow(balance)
+      const tokens: TokenData['tokens'] = tokensForRow
+        .map((t) => ({
+          chainId: t.chainId,
+          currencyInfo: t.currencyInfo,
+          quantity: t.quantity,
+          valueUsd: t.valueUsd ?? 0,
+          symbol: t.currencyInfo.currency.symbol,
+        }))
+        .sort((a, b) => b.valueUsd - a.valueUsd)
+      const first = tokens[0]
+      // useTransformTokenTableData already ensures that there is at least one token, but adding check for safety
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
+      if (!first) {
+        throw new Error('Invariant violation: tokens array is empty after filtering')
+      }
+      const totalValue = getValueUsdForBalance(balance)
+      const price =
+        first.valueUsd > 0 && first.quantity > 0 ? first.valueUsd / first.quantity : (balance.priceUsd ?? undefined)
+
+      // currencyAddress() returns the legacy native address (0xeeee...) for native tokens,
+      // but the backend returns the canonical zero address (0x0000...). Normalize for lookup.
+      const rawAddr = currencyAddress(first.currencyInfo.currency).toLowerCase()
+      const addr = first.currencyInfo.currency.isNative ? DEFAULT_NATIVE_ADDRESS : rawAddr
+      const pnl = pnlLookup.get(`${addr}-${first.chainId}`)
+      const isStablecoin = isStablecoinAddress(first.chainId as UniverseChainId, addr)
+
+      return {
+        id: balance.id,
+        testId: `${TestID.TokenTableRowPrefix}${balance.id}`,
+        chainId: first.chainId,
+        currencyInfo: first.currencyInfo,
+        quantity: first.quantity,
+        symbol: first.symbol,
+        price,
+        tokens,
+        totalValue,
+        allocation: allocationFromTotal ?? 0,
+        change1d: balance.pricePercentChange1d ?? undefined,
+        isHidden: balance.isHidden,
+        avgCost: pnl?.avgCost,
+        unrealizedPnl: pnl?.unrealizedPnl,
+        unrealizedPnlPercent: pnl?.unrealizedPnlPercent,
+        isStablecoin,
+      }
+    }
+
+    const visible = visibleBalances
+      .map((b) => {
+        const valueUSD = getValueUsdForBalance(b)
+        const allocation = totalUSDVisible > 0 ? (valueUSD / totalUSDVisible) * 100 : 0
+        return mapBalanceToTokenData(b, allocation)
+      })
+      .filter((d): d is TokenData => d !== null)
+
+    const hidden = hiddenBalancesFiltered
+      .map((b) => mapBalanceToTokenData(b, 0))
+      .filter((d): d is TokenData => d !== null)
+
+    // Apply limit to visible tokens if specified
+    const limitedVisible = limit ? visible.slice(0, limit) : visible
+    const totalCount = visible.length
+
+    return {
+      visible: limitedVisible,
+      hidden,
+      totalCount,
+      loading,
+      refetching: isRefetching,
+      refetch,
+      networkStatus,
+      error,
+    }
+  }, [loading, sortedBalances, error, refetch, networkStatus, limit, chainIds, tokenProfitLossData])
 }

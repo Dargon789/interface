@@ -1,6 +1,5 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { providers } from 'ethers/lib/ethers'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { Eye, Flag } from 'ui/src/components/icons'
@@ -8,8 +7,10 @@ import { Clear } from 'ui/src/components/icons/Clear'
 import { CopySheets } from 'ui/src/components/icons/CopySheets'
 import { HelpCenter } from 'ui/src/components/icons/HelpCenter'
 import { X } from 'ui/src/components/icons/X'
-import { MenuOptionItem } from 'uniswap/src/components/menus/ContextMenuV2'
+import { MenuOptionItem } from 'uniswap/src/components/menus/ContextMenu'
 import { Modal } from 'uniswap/src/components/modals/Modal'
+import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
+import { WarningModal } from 'uniswap/src/components/modals/WarningModal/WarningModal'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { AccountType } from 'uniswap/src/features/accounts/types'
 import { AuthTrigger } from 'uniswap/src/features/auth/types'
@@ -17,25 +18,35 @@ import { pushNotification } from 'uniswap/src/features/notifications/slice/slice
 import { AppNotificationType, CopyNotificationType } from 'uniswap/src/features/notifications/slice/types'
 import { submitActivitySpamReport } from 'uniswap/src/features/reporting/reports'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
-import { CancelConfirmationView } from 'uniswap/src/features/transactions/components/cancel/CancelConfirmationView'
+import {
+  CancelConfirmationView,
+  PlanCancellationInfo,
+} from 'uniswap/src/features/transactions/components/cancel/CancelConfirmationView'
 import { useIsCancelable } from 'uniswap/src/features/transactions/hooks/useIsCancelable'
-import { cancelTransaction, finalizeTransaction } from 'uniswap/src/features/transactions/slice'
-import { isBridge, isClassic } from 'uniswap/src/features/transactions/swap/utils/routing'
+import { useSelectTransaction } from 'uniswap/src/features/transactions/hooks/useSelectTransaction'
+import {
+  cancelPlanStep,
+  cancelRemoteUniswapXOrder,
+  cancelTransaction,
+  finalizeTransaction,
+} from 'uniswap/src/features/transactions/slice'
+import { isBridge, isClassic, isUniswapX } from 'uniswap/src/features/transactions/swap/utils/routing'
 import {
   TransactionDetails,
   TransactionStatus,
   TransactionType,
+  UniswapXOrderDetails,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { isFinalizedTx } from 'uniswap/src/features/transactions/types/utils'
 import { useIsActivityHidden } from 'uniswap/src/features/visibility/hooks/useIsActivityHidden'
 import { setActivityVisibility } from 'uniswap/src/features/visibility/slice'
 import { useWallet } from 'uniswap/src/features/wallet/hooks/useWallet'
-import { setClipboard } from 'uniswap/src/utils/clipboard'
 import { openFORSupportLink, openUri } from 'uniswap/src/utils/linking'
+import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { logger } from 'utilities/src/logger/logger'
 import { isWebPlatform } from 'utilities/src/platform'
 import { useEvent } from 'utilities/src/react/hooks'
-import { noop } from 'utilities/src/react/noop'
+import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { ONE_SECOND_MS } from 'utilities/src/time/time'
 
 enum SupportLinkParams {
@@ -49,101 +60,167 @@ export function useTransactionActions({
   transaction,
   authTrigger,
   onClose,
-  onReportTransaction,
+  onReportSuccess,
   onUnhideTransaction,
+  onCopySuccess,
 }: {
   transaction: TransactionDetails
   authTrigger?: AuthTrigger
   onClose?: () => void
-  onReportTransaction?: () => void
+  onReportSuccess?: () => void
   onUnhideTransaction?: () => void
+  onCopySuccess?: () => void
 }): {
   renderModals: () => JSX.Element
   openCancelModal: () => void
   menuItems: MenuOptionItem[]
 } {
   const { t } = useTranslation()
+  const dispatch = useDispatch()
+
   const { evmAccount } = useWallet()
   const readonly = !evmAccount || evmAccount.accountType === AccountType.Readonly
 
-  const [showCancelModal, setShowCancelModal] = useState(false)
-  const dispatch = useDispatch()
+  const { value: isCancelModalVisible, setTrue: showCancelModal, setFalse: hideCancelModal } = useBooleanState(false)
+  const { value: isReportModalVisible, setTrue: showReportModal, setFalse: hideReportModal } = useBooleanState(false)
 
   const { status } = transaction
 
   const isCancelable = useIsCancelable(transaction) && !readonly
 
+  // Check if this transaction exists in local Redux state (vs only in remote activity feed)
+  const isInLocalState =
+    useSelectTransaction({
+      address: transaction.from,
+      chainId: transaction.chainId,
+      txId: transaction.id,
+    }) !== undefined
+
   const baseActionItems = useTransactionActionItems({
     transactionDetails: transaction,
-    onClose: onClose ?? noop,
-    onReportTransaction,
     onUnhideTransaction,
+    showReportModal,
+    onCopySuccess,
   })
 
-  const handleCancel = useEvent((txRequest: providers.TransactionRequest): void => {
+  const handleCancel = useEvent(
+    (txRequest: providers.TransactionRequest, planCancellationInfo?: PlanCancellationInfo): void => {
+      if (planCancellationInfo?.isPlanCancellation) {
+        dispatch(
+          cancelPlanStep({
+            chainId: transaction.chainId,
+            id: transaction.id,
+            address: transaction.from,
+            cancelRequest: txRequest,
+            planId: planCancellationInfo.planId,
+            cancelableStepInfo: planCancellationInfo.cancelableStepInfo,
+          }),
+        )
+      } else if (!isInLocalState && isUniswapX(transaction)) {
+        // Remote UniswapX order (e.g. submitted from web app) — bypass Redux cancelTransaction
+        // reducer and directly submit the Permit2 nonce invalidation transaction via saga.
+        dispatch(
+          cancelRemoteUniswapXOrder({
+            chainId: transaction.chainId,
+            address: transaction.from,
+            orderHash: (transaction as UniswapXOrderDetails).orderHash ?? transaction.id,
+            cancelRequest: txRequest,
+          }),
+        )
+      } else {
+        dispatch(
+          cancelTransaction({
+            chainId: transaction.chainId,
+            id: transaction.id,
+            address: transaction.from,
+            cancelRequest: txRequest,
+          }),
+        )
+      }
+      hideCancelModal()
+      onClose?.()
+    },
+  )
+
+  const onReportTransaction = useEvent((): void => {
+    // Send analytics report
+    submitActivitySpamReport({ transactionDetails: transaction })
+    // Set visibility to false
+    dispatch(setActivityVisibility({ transactionId: transaction.id, isVisible: false }))
+    // Report success
+    onReportSuccess?.()
     dispatch(
-      cancelTransaction({
-        chainId: transaction.chainId,
-        id: transaction.id,
-        address: transaction.from,
-        cancelRequest: txRequest,
+      pushNotification({
+        type: AppNotificationType.Success,
+        title: t('common.reported'),
       }),
     )
-    setShowCancelModal(false)
-  })
-
-  const handleCancelModalClose = useEvent((): void => {
-    setShowCancelModal(false)
-  })
-
-  const handleCancelConfirmationBack = useEvent((): void => {
-    setShowCancelModal(false)
+    // close modal
+    onClose?.()
   })
 
   useEffect(() => {
     if (status !== TransactionStatus.Pending) {
-      setShowCancelModal(false)
+      hideCancelModal()
     }
-  }, [status])
-
-  const openCancelModal = useEvent((): void => {
-    setShowCancelModal(true)
-  })
+  }, [status, hideCancelModal])
 
   const menuItems = useMemo(() => {
     const items = [...baseActionItems]
     if (isCancelable) {
       items.push({
         label: t('transaction.action.cancel.button'),
-        onPress: () => setShowCancelModal(true),
+        onPress: showCancelModal,
         Icon: X,
         iconColor: '$statusCritical',
         textColor: '$statusCritical',
       })
     }
     return items
-  }, [baseActionItems, isCancelable, t])
+  }, [baseActionItems, isCancelable, t, showCancelModal])
 
   const renderModals = useCallback(
     (): JSX.Element => (
       <>
-        {showCancelModal && (
-          <Modal hideHandlebar={false} name={ModalName.TransactionCancellation} onClose={handleCancelModalClose}>
+        {isCancelModalVisible && (
+          <Modal hideHandlebar={false} name={ModalName.TransactionCancellation} onClose={hideCancelModal}>
             <CancelConfirmationView
               authTrigger={authTrigger}
               transactionDetails={transaction}
-              onBack={handleCancelConfirmationBack}
+              onBack={hideCancelModal}
               onCancel={handleCancel}
             />
           </Modal>
         )}
+        <WarningModal
+          caption={t('reporting.activity.confirm.subtitle')}
+          rejectText={t('common.button.cancel')}
+          acknowledgeText={t('common.report')}
+          icon={<Flag color="$neutral1" size="$icon.24" />}
+          isOpen={isReportModalVisible}
+          modalName={ModalName.ReportActivityConfirmation}
+          severity={WarningSeverity.None}
+          title={t('reporting.activity.confirm.title')}
+          onClose={hideReportModal}
+          onAcknowledge={onReportTransaction}
+        />
       </>
     ),
-    [showCancelModal, authTrigger, transaction, handleCancelConfirmationBack, handleCancel, handleCancelModalClose],
+    [
+      isCancelModalVisible,
+      authTrigger,
+      transaction,
+      handleCancel,
+      hideReportModal,
+      isReportModalVisible,
+      onReportTransaction,
+      hideCancelModal,
+      t,
+    ],
   )
 
   return {
-    openCancelModal,
+    openCancelModal: showCancelModal,
     renderModals,
     menuItems,
   }
@@ -151,18 +228,18 @@ export function useTransactionActions({
 
 function useTransactionActionItems({
   transactionDetails,
-  onClose,
-  onReportTransaction,
   onUnhideTransaction,
+  showReportModal,
+  onCopySuccess,
 }: {
   transactionDetails: TransactionDetails
-  onClose: () => void
-  onReportTransaction?: () => void
   onUnhideTransaction?: () => void
+  showReportModal: () => void
+  onCopySuccess?: () => void
 }): MenuOptionItem[] {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const transactionId = getTransactionId(transactionDetails)
+  const transactionIds = getTransactionId(transactionDetails)
 
   const isHiddenActivity = useIsActivityHidden(transactionDetails.id)
 
@@ -173,29 +250,34 @@ function useTransactionActionItems({
       ? transactionDetails.typeInfo.serviceProvider.name
       : undefined
 
-  const isDataReportingAbilitiesEnabled = useFeatureFlag(FeatureFlags.DataReportingAbilities)
-
   const transactionActionItems: MenuOptionItem[] = useMemo(() => {
     const items: MenuOptionItem[] = []
-
-    if (transactionId) {
-      const copyLabel = onRampProviderName
-        ? t('transaction.action.copyProvider', {
-            providerName: onRampProviderName,
-          })
-        : t('transaction.action.copy')
+    if (transactionIds && transactionIds.length > 0) {
+      const { copyString = transactionIds.toString(), copyLabel } =
+        transactionIds.length > 1
+          ? {
+              copyString: t('transaction.action.multipleHashes', { hashes: transactionIds.join(', ') }),
+              copyLabel: t('transaction.action.copyPlural'),
+            }
+          : {
+              copyString: transactionIds[0],
+              copyLabel: onRampProviderName
+                ? t('transaction.action.copyProvider', { providerName: onRampProviderName })
+                : t('transaction.action.copy'),
+            }
 
       items.push({
         label: copyLabel,
         Icon: CopySheets,
         onPress: async (): Promise<void> => {
-          await setClipboard(transactionId)
+          await setClipboard(copyString)
           dispatch(
             pushNotification({
               type: AppNotificationType.Copied,
               copyType: CopyNotificationType.TransactionId,
             }),
           )
+          onCopySuccess?.()
         },
       })
     }
@@ -223,50 +305,33 @@ function useTransactionActionItems({
       })
     }
 
-    if (isDataReportingAbilitiesEnabled) {
-      if (isHiddenActivity) {
-        items.push({
-          label: t('reporting.activity.unhide.action'),
-          Icon: Eye,
-          onPress: async (): Promise<void> => {
-            // Set visibility to true
-            dispatch(setActivityVisibility({ transactionId: transactionDetails.id, isVisible: true }))
+    if (isHiddenActivity) {
+      items.push({
+        label: t('reporting.activity.unhide.action'),
+        Icon: Eye,
+        onPress: async (): Promise<void> => {
+          // Set visibility to true
+          dispatch(setActivityVisibility({ transactionId: transactionDetails.id, isVisible: true }))
 
-            // Show unhiding success
-            onUnhideTransaction?.()
-            dispatch(
-              pushNotification({
-                type: AppNotificationType.AssetVisibility,
-                visible: false,
-                hideDelay: 2 * ONE_SECOND_MS,
-                assetName: t('common.activity'),
-              }),
-            )
-          },
-        })
-      } else {
-        items.push({
-          label: t('nft.reportSpam'),
-          Icon: Flag,
-          destructive: true,
-          onPress: async (): Promise<void> => {
-            // Send analytics report
-            submitActivitySpamReport({ transactionDetails })
-            // Set visibility to false
-            dispatch(setActivityVisibility({ transactionId: transactionDetails.id, isVisible: false }))
-            // Report success
-            onReportTransaction?.()
-            dispatch(
-              pushNotification({
-                type: AppNotificationType.Success,
-                title: t('common.reported'),
-              }),
-            )
-            // close modal
-            onClose()
-          },
-        })
-      }
+          // Show unhiding success
+          onUnhideTransaction?.()
+          dispatch(
+            pushNotification({
+              type: AppNotificationType.AssetVisibility,
+              visible: false,
+              hideDelay: 2 * ONE_SECOND_MS,
+              assetName: t('common.activity'),
+            }),
+          )
+        },
+      })
+    } else {
+      items.push({
+        label: t('nft.reportSpam'),
+        Icon: Flag,
+        destructive: true,
+        onPress: showReportModal,
+      })
     }
 
     return items
@@ -275,12 +340,11 @@ function useTransactionActionItems({
     onRampProviderName,
     t,
     transactionDetails,
-    transactionId,
-    onClose,
-    isDataReportingAbilitiesEnabled,
-    onReportTransaction,
+    transactionIds,
     onUnhideTransaction,
     isHiddenActivity,
+    showReportModal,
+    onCopySuccess,
   ])
 
   return transactionActionItems
@@ -304,14 +368,22 @@ async function openSupportLink(transactionDetails: TransactionDetails): Promise<
   }
 }
 
-function getTransactionId(transactionDetails: TransactionDetails): string | undefined {
+function getTransactionId(transactionDetails: TransactionDetails): string[] | undefined {
   switch (transactionDetails.typeInfo.type) {
     case TransactionType.OnRampPurchase:
     case TransactionType.OnRampTransfer:
-      return transactionDetails.typeInfo.id
+      return [transactionDetails.typeInfo.id]
     case TransactionType.OffRampSale:
       return transactionDetails.typeInfo.providerTransactionId
+        ? [transactionDetails.typeInfo.providerTransactionId]
+        : undefined
+    case TransactionType.Plan: {
+      return (
+        transactionDetails.typeInfo.transactionHashes ??
+        transactionDetails.typeInfo.stepDetails.map((step) => step.hash).filter((hash) => hash !== undefined)
+      )
+    }
     default:
-      return transactionDetails.hash
+      return transactionDetails.hash ? [transactionDetails.hash] : undefined
   }
 }

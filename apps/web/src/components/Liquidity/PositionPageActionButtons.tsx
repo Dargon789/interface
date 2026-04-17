@@ -1,18 +1,19 @@
 import { PositionStatus, ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import { PositionInfo } from 'components/Liquidity/types'
-import { MobileBottomBar } from 'components/NavBar/MobileBottomBar'
-import { MouseoverTooltip } from 'components/Tooltip'
-import { ScrollDirection, useScroll } from 'hooks/useScroll'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { setOpenModal } from 'state/application/reducer'
-import { useAppDispatch } from 'state/hooks'
 import { Button, DropdownMenuSheetItem, Flex, IconButton, Popover, useIsTouchDevice, useMedia } from 'ui/src'
 import { GridView } from 'ui/src/components/icons/GridView'
 import { X } from 'ui/src/components/icons/X'
-import { MenuOptionItem } from 'uniswap/src/components/menus/ContextMenuV2'
+import { zIndexes } from 'ui/src/theme'
+import { MenuOptionItem } from 'uniswap/src/components/menus/ContextMenu'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
-import { isV4UnsupportedChain } from 'utils/networkSupportsV4'
+import { PositionInfo } from '~/components/Liquidity/types'
+import { MobileBottomBar } from '~/components/NavBar/MobileBottomBar'
+import { MouseoverTooltip } from '~/components/Tooltip'
+import { ScrollDirection, useScroll } from '~/hooks/useScroll'
+import { setOpenModal } from '~/state/application/reducer'
+import { useAppDispatch } from '~/state/hooks'
+import { isV4UnsupportedChain } from '~/utils/networkSupportsV4'
 
 export function PositionPageActionButtons({
   buttonFill = false,
@@ -172,6 +173,7 @@ function MWebActionButtons({ actionItems }: { actionItems: MenuOptionItem[] }): 
             <IconButton emphasis="secondary" icon={isOpen ? <X color="$neutral1" /> : <GridView color="$neutral1" />} />
           </Popover.Trigger>
           <Popover.Content
+            zIndex={zIndexes.popover}
             backgroundColor="transparent"
             animation="125ms"
             enterStyle={{

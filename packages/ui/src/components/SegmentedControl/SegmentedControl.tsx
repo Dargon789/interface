@@ -101,7 +101,6 @@ TabsRovingIndicator.displayName = 'TabsRovingIndicator'
 
 const OptionButton = styled(Tabs.Tab, {
   unstyled: true,
-  role: 'button',
   tabIndex: 0,
   disableActiveTheme: true,
   flexDirection: 'row',
@@ -167,10 +166,16 @@ OptionButton.displayName = 'OptionButton'
 export interface SegmentedControlOption<T extends string = string> {
   // String value to be selected/stored, used as default display value
   value: T
+  // Optional display text, different from value
+  displayText?: string
   // Optional custom display element
   display?: JSX.Element
   // Optional wrapper around the display element
   wrapper?: JSX.Element
+  // Disable the specific option
+  disabled?: boolean
+  // Optional href to render as an anchor tag for proper link semantics
+  href?: string
 }
 
 type SegmentedControlSize = 'xsmall' | 'small' | 'smallThumbnail' | 'default' | 'large' | 'largeThumbnail'
@@ -179,6 +184,7 @@ interface SegmentedControlProps<T extends string = string> {
   options: readonly SegmentedControlOption<T>[]
   selectedOption: T
   onSelectOption: (option: T) => void
+  onHoverOption?: (option: T) => void
   size?: SegmentedControlSize
   disabled?: boolean
   fullWidth?: boolean
@@ -210,6 +216,7 @@ export function SegmentedControl<T extends string = string>({
   options,
   selectedOption,
   onSelectOption,
+  onHoverOption,
   size = 'default',
   disabled,
   fullWidth,
@@ -263,20 +270,32 @@ export function SegmentedControl<T extends string = string>({
         gap={gap}
       >
         {options.map((option, index) => {
-          const { value, display, wrapper } = option
+          const { value, display, displayText, wrapper, href } = option
 
-          const optionButton = (
+          const itemDisabled = disabled || option.disabled
+
+          const optionElement = (
             <OptionButton
               key={value}
+              href={href}
+              role={href ? 'link' : 'button'}
+              tag={href ? 'a' : 'button'}
+              $platform-web={{ textDecorationLine: 'none' }}
               active={selectedOption === value}
-              disabled={disabled}
+              disabled={itemDisabled}
               fullWidth={fullWidth}
               size={size}
               value={value}
               onInteraction={handleOnInteraction}
-              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseEnter={() => {
+                setHoveredIndex(index)
+                onHoverOption?.(value)
+              }}
               onMouseLeave={() => setHoveredIndex(undefined)}
-              onPress={() => {
+              onPress={(e) => {
+                if (href && 'preventDefault' in e) {
+                  e.preventDefault()
+                }
                 onSelectOption(value)
               }}
             >
@@ -285,12 +304,12 @@ export function SegmentedControl<T extends string = string>({
                   color={getOptionTextColor({
                     active: selectedOption === value,
                     hovered: hoveredIndex === index,
-                    disabled,
+                    disabled: itemDisabled,
                   })}
                   userSelect="none"
                   variant={size === 'large' ? 'buttonLabel3' : 'buttonLabel4'}
                 >
-                  {value}
+                  {displayText ?? value}
                 </Text>
               )}
             </OptionButton>
@@ -301,10 +320,10 @@ export function SegmentedControl<T extends string = string>({
             // not a functional component. As a result we can't render it with typical JSX and need
             // to clone it here.
             return cloneElement(wrapper, {
-              children: optionButton,
+              children: optionElement,
             })
           }
-          return optionButton
+          return optionElement
         })}
         <AnimatePresence>
           {activeAt && (

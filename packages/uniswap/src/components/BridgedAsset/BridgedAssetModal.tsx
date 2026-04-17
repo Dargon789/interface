@@ -24,7 +24,7 @@ import { getChainLabel } from 'uniswap/src/features/chains/utils'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { ElementName, ModalName, ModalNameType } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
-import { useDismissedBridgedAssetWarnings } from 'uniswap/src/features/tokens/slice/hooks'
+import { useDismissedBridgedAssetWarnings } from 'uniswap/src/features/tokens/warnings/slice/hooks'
 import { openUri } from 'uniswap/src/utils/linking'
 import { isWebAppDesktop } from 'utilities/src/platform'
 import { useEvent } from 'utilities/src/react/hooks'
@@ -146,7 +146,7 @@ export function BridgedAssetModal({
     return getContrastPassingTextColor(validTokenColor ?? colors.accent1.val)
   }, [colors.accent1.val, validTokenColor])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +isOpen
+  // oxlint-disable-next-line react/exhaustive-deps -- +isOpen
   useEffect(() => {
     setShowingSecondCurrency(false)
   }, [isOpen])

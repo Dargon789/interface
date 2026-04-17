@@ -1,40 +1,41 @@
 {
+  "tags": ["scope:mobile", "type:app"],
   "targets": {
     "build": {
       "executor": "nx:noop"
     },
     "android": {
-      "command": "rnef run:android --variant=devDebug --app-id-suffix=dev && bun run start",
+      "command": "EXPO_ANDROID_LAUNCH_ACTIVITY='com.uniswap.mobile.dev/com.uniswap.MainActivity' bunx expo run:android --variant=devDebug --app-id=com.uniswap.mobile.dev",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "android:release": {
-      "command": "rnef run:android --variant=devRelease --app-id-suffix=dev",
+      "command": "EXPO_ANDROID_LAUNCH_ACTIVITY='com.uniswap.mobile.dev/com.uniswap.MainActivity' bunx expo run:android --variant=devRelease --app-id=com.uniswap.mobile.dev",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "android:beta": {
-      "command": "rnef run:android --variant=betaDebug --app-id-suffix=beta",
+      "command": "EXPO_ANDROID_LAUNCH_ACTIVITY='com.uniswap.mobile.beta/com.uniswap.MainActivity' bunx expo run:android --variant=betaDebug --app-id=com.uniswap.mobile.beta",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "android:beta:release": {
-      "command": "rnef run:android --variant=betaRelease --app-id-suffix=beta",
+      "command": "EXPO_ANDROID_LAUNCH_ACTIVITY='com.uniswap.mobile.beta/com.uniswap.MainActivity' bunx expo run:android --variant=betaRelease --app-id=com.uniswap.mobile.beta",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "android:prod": {
-      "command": "rnef run:android --variant=prodDebug",
+      "command": "EXPO_ANDROID_LAUNCH_ACTIVITY='com.uniswap.mobile/com.uniswap.MainActivity' bunx expo run:android --variant=prodDebug",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "android:prod:release": {
-      "command": "rnef run:android --variant=prodRelease",
+      "command": "EXPO_ANDROID_LAUNCH_ACTIVITY='com.uniswap.mobile/com.uniswap.MainActivity' bunx expo run:android --variant=prodRelease",
       "options": {
         "cwd": "{projectRoot}"
       }
@@ -112,40 +113,41 @@
       }
     },
     "e2e:prepare": {
-      "command": "bun run e2e:generate-ids && bun run e2e:build-js",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
+      "executor": "nx:noop",
+      "dependsOn": ["e2e:generate-ids", "e2e:build-js"]
     },
     "e2e:generate-ids": {
-      "command": "mkdir -p .maestro/scripts/dist && ts-node .maestro/scripts/tooling/generateTestIds.ts > .maestro/scripts/dist/testIds.js",
+      "command": "mkdir -p .maestro/scripts/dist && bun run .maestro/scripts/tooling/generateTestIds.ts > .maestro/scripts/dist/testIds.js",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "e2e:build-js": {
-      "command": "ts-node .maestro/scripts/tooling/buildPerformanceScripts.ts",
+      "command": "bun run .maestro/scripts/tooling/buildPerformanceScripts.ts",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "e2e": {
-      "command": "bun run e2e:prepare && maestro test .maestro/flows",
+      "command": "maestro test .maestro",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["e2e:prepare"]
     },
     "e2e:onboarding": {
-      "command": "bun run e2e:prepare && maestro test .maestro/flows/onboarding",
+      "command": "maestro test .maestro/flows/onboarding",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["e2e:prepare"]
     },
     "e2e:swap": {
-      "command": "bun run e2e:prepare && maestro test .maestro/flows/swap",
+      "command": "maestro test .maestro/flows/swap",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["e2e:prepare"]
     },
     "e2e:clear-logs": {
       "command": "rm -rf $HOME/.maestro/tests",
@@ -154,16 +156,17 @@
       }
     },
     "e2e:local:submit-metrics": {
-      "command": "cd .maestro/scripts/performance && ./submit-local.sh && cd ../../..",
+      "command": ".maestro/scripts/performance/submit-local.sh metrics.jsonl",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "e2e:local:extract-metrics": {
-      "command": "cd .maestro/scripts/performance && ./extract-metrics.sh && cd ../../..",
+      "command": "bun .maestro/scripts/performance/dist/utils/extract-metrics.js $HOME/.maestro/tests metrics.jsonl",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["e2e:build-js"]
     },
     "e2e:local:process-metrics": {
       "command": "bun run e2e:local:extract-metrics && bun run e2e:local:submit-metrics",
@@ -172,10 +175,11 @@
       }
     },
     "e2e:interactive": {
-      "command": "bun run e2e:prepare && ts-node .maestro/scripts/yarn/e2e-interactive.ts",
+      "command": "bun run .maestro/scripts/e2e-interactive.ts",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["e2e:prepare"]
     },
     "firestore:deploy:rules": {
       "command": "firebase deploy --only firestore:rules",
@@ -190,82 +194,104 @@
       }
     },
     "check:circular": {
-      "command": "../../scripts/check-circular-imports.sh ./src/app/App.tsx 0",
+      "command": "bunx madge --circular ./src/app/App.tsx",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "ios": {
-      "command": "rnef run:ios --scheme Uniswap --configuration Debug && bun run start",
+      "command": "bunx expo run:ios --scheme Uniswap --configuration DebugOptimized",
+      "options": {
+        "cwd": "{projectRoot}"
+      }
+    },
+    "ios:debug": {
+      "command": "bunx expo run:ios --scheme Uniswap --configuration Debug",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "ios:interactive": {
-      "command": "ts-node scripts/ios-build-interactive/main.ts",
+      "command": "bun run scripts/ios-build-interactive/main.ts",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "ios:smol": {
-      "command": "rnef run:ios --device=\"iPhone SE (3rd generation)\"",
+      "command": "bunx expo run:ios --device=\"iPhone SE (3rd generation)\"",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "ios:dev:release": {
-      "command": "rnef run:ios --configuration Dev",
+      "command": "bunx expo run:ios --configuration Dev",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "ios:beta": {
-      "command": "rnef run:ios --configuration Beta",
+      "command": "bunx expo run:ios --configuration Beta",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "ios:bundle": {
-      "command": "rnef bundle --entry-file='index.js' --dev false --bundle-output='./ios/main.jsbundle' --sourcemap-output ./ios/main.jsbundle.map --dev=false --platform='ios' --assets-dest='./ios'",
+      "command": "bunx react-native bundle --entry-file apps/mobile/index.js --platform ios --dev false --bundle-output ./ios/main.jsbundle --assets-dest ./ios --sourcemap-output ./ios/main.jsbundle.map",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
     "ios:release": {
-      "command": "rnef run:ios --configuration Release",
+      "command": "bunx expo run:ios --configuration Release",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
-    "lint:biome": {},
-    "lint:biome:fix": {},
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
+    "lint:typeaware-custom": {
+      "command": "bun config/oxlint-plugins/typeaware-custom.ts apps/mobile --native"
+    },
     "lint": {},
     "lint:fix": {},
-    "lint:eslint": {},
-    "lint:eslint:fix": {},
+    "check": {},
+    "check:fast": {},
     "start": {
-      "command": "NODE_ENV=development rnef start --client-logs",
+      "command": "EXPO_ANDROID_LAUNCH_ACTIVITY='com.uniswap.mobile.dev/com.uniswap.MainActivity' EXPO_BUILD_CONFIGURATION=Debug NODE_ENV=development bunx expo start --scheme uniswap",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["pod:ensure", "android:ensure"]
     },
     "start:e2e": {
-      "command": "NODE_ENV=development IS_E2E_TEST=true rnef start --client-logs",
+      "command": "NODE_ENV=development IS_E2E_TEST=true bunx expo start",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["pod:ensure", "android:ensure"]
     },
     "start:production": {
-      "command": "NODE_ENV=production rnef start --reset-cache",
+      "command": "NODE_ENV=production bunx expo start --reset-cache",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["pod:ensure", "android:ensure"]
     },
     "test": {
       "command": "node --max-old-space-size=8912 ../../node_modules/.bin/jest",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "inputs": [
+        "sourceFiles",
+        "mobileGlobals",
+        "^production",
+        "{projectRoot}/**/*.test.*",
+        "{projectRoot}/**/*.spec.*"
+      ]
     },
     "snapshots": {
       "command": "jest -u",
@@ -274,6 +300,8 @@
       }
     },
     "typecheck": {},
+    "typecheck:tsc": {},
+    "typecheck:tsgo": {},
     "unicons": {
       "command": "cd scripts && python3 populate_svgs.py && cd .. && bun run lint --fix",
       "options": {
@@ -285,6 +313,27 @@
       "options": {
         "cwd": "{projectRoot}"
       }
+    },
+    "pod:ensure": {
+      "command": "./scripts/check-podfile.sh",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "inputs": ["{projectRoot}/ios/Podfile", "{projectRoot}/ios/Podfile.lock"],
+      "cache": true
+    },
+    "android:ensure": {
+      "command": "./scripts/check-android-gradle.sh",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "inputs": [
+        "{projectRoot}/android/build.gradle",
+        "{projectRoot}/android/app/build.gradle",
+        "{projectRoot}/android/settings.gradle",
+        "{projectRoot}/android/gradle.properties"
+      ],
+      "cache": true
     },
     "pod:update": {
       "command": "./scripts/podinstall.sh -u",

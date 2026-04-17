@@ -3,7 +3,6 @@ import isEqual from 'lodash/isEqual'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParsedWarnings, Warning } from 'uniswap/src/components/modals/WarningModal/types'
-import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
 import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
 import { useTransactionGasWarning } from 'uniswap/src/features/gas/hooks'
 import type { LocalizationContextState } from 'uniswap/src/features/language/LocalizationContext'
@@ -17,12 +16,15 @@ import { getFormIncompleteWarning } from 'uniswap/src/features/transactions/swap
 import { getPriceImpactWarning } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/getPriceImpactWarning'
 import { getSwapWarningFromError } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/getSwapWarningFromError'
 import { getTokenBlockedWarning } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/getTokenBlockedWarning'
+import { useParsedActivePlanWarnings } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/useParsedActivePlanWarnings'
+import { activePlanStore } from 'uniswap/src/features/transactions/swap/review/stores/activePlan/activePlanStore'
 import { useSwapFormStore } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
 import { useSwapTxStore } from 'uniswap/src/features/transactions/swap/stores/swapTxStore/useSwapTxStore'
 import type { DerivedSwapInfo } from 'uniswap/src/features/transactions/swap/types/derivedSwapInfo'
 import { getPriceImpact } from 'uniswap/src/features/transactions/swap/utils/getPriceImpact'
 import { useIsOffline } from 'utilities/src/connection/useIsOffline'
 import { useMemoCompare } from 'utilities/src/react/hooks'
+import { useStore } from 'zustand'
 
 export function getSwapWarnings({
   t,
@@ -75,7 +77,6 @@ export function getSwapWarnings({
     t,
     priceImpact,
     formatPercent,
-    currencies: derivedSwapInfo.currencies,
   })
   if (priceImpactWarning) {
     warnings.push(priceImpactWarning)
@@ -92,7 +93,7 @@ function useSwapWarnings(derivedSwapInfo: DerivedSwapInfo): Warning[] {
   return useMemoCompare(() => getSwapWarnings({ t, formatPercent, derivedSwapInfo, offline }), isEqual)
 }
 
-export function useParsedSwapWarnings(): ParsedWarnings {
+function useParsedSwapFormWarnings(): ParsedWarnings {
   const derivedSwapInfo = useSwapFormStore((s) => s.derivedSwapInfo)
 
   const accountAddress = useActiveAddress(derivedSwapInfo.chainId)
@@ -101,15 +102,10 @@ export function useParsedSwapWarnings(): ParsedWarnings {
 
   const swapWarnings = useSwapWarnings(derivedSwapInfo)
 
-  // Check if current wallet can pay gas fees in any token
-  const { getCanPayGasInAnyToken } = useUniswapContext()
-  const skipGasCheck = getCanPayGasInAnyToken?.()
-
   const gasWarning = useTransactionGasWarning({
     accountAddress,
     derivedInfo: derivedSwapInfo,
     gasFee: gasFee.value,
-    skipGasCheck,
   })
 
   const allWarnings = useMemo(() => {
@@ -117,4 +113,13 @@ export function useParsedSwapWarnings(): ParsedWarnings {
   }, [gasWarning, swapWarnings])
 
   return useFormattedWarnings(allWarnings)
+}
+
+export function useParsedSwapWarnings(): ParsedWarnings {
+  const hasActivePlan = useStore(activePlanStore, (s) => !!s.activePlan)
+
+  const formWarnings = useParsedSwapFormWarnings()
+  const planWarnings = useParsedActivePlanWarnings()
+
+  return hasActivePlan ? planWarnings : formWarnings
 }

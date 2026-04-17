@@ -68,6 +68,7 @@ export function useLineChartPrice(currentSpot?: SharedValue<number>): ValueAndFo
       formatted: priceFormatted,
       shouldAnimate,
     }),
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     [],
   )
 }

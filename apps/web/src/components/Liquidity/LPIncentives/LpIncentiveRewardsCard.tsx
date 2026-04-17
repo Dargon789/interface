@@ -1,10 +1,4 @@
 import type { Token } from '@uniswap/sdk-core'
-import dottedBackground from 'assets/images/dotted-grid.png'
-import dottedBackgroundDark from 'assets/images/dotted-grid-dark.png'
-import tokenLogo from 'assets/images/token-logo.png'
-import { formatTokenAmount } from 'components/Liquidity/LPIncentives/utils/formatTokenAmount'
-import { LP_INCENTIVES_REWARD_TOKEN } from 'components/LpIncentives/constants'
-import { lpIncentivesLastClaimedAtom } from 'hooks/useLpIncentives'
 import { useAtom } from 'jotai'
 import ms from 'ms'
 import { useEffect, useMemo } from 'react'
@@ -37,6 +31,12 @@ import { Trace } from 'uniswap/src/features/telemetry/Trace'
 import { HexString } from 'utilities/src/addresses/hex'
 import { logger } from 'utilities/src/logger/logger'
 import { isMobileWeb } from 'utilities/src/platform'
+import dottedBackgroundDark from '~/assets/images/dotted-grid-dark.png'
+import dottedBackground from '~/assets/images/dotted-grid.png'
+import tokenLogo from '~/assets/images/token-logo.png'
+import { formatTokenAmount } from '~/components/Liquidity/LPIncentives/utils/formatTokenAmount'
+import { LP_INCENTIVES_REWARD_TOKEN } from '~/components/LpIncentives/constants'
+import { lpIncentivesLastClaimedAtom } from '~/hooks/useLpIncentives'
 
 interface LpIncentiveRewardsCardProps {
   onCollectRewards: () => void
@@ -180,7 +180,7 @@ function LpIncentiveRewardsCard({
         p={isSmallScreen ? '$spacing16' : '$spacing24'}
         justifyContent="space-between"
         backgroundColor="$surface2"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3"
         borderRadius="$rounded20"
         overflow="hidden"
@@ -261,6 +261,7 @@ function LpIncentiveRewardsCard({
           <Trace logPress eventOnTrigger={UniswapEventName.LpIncentiveLearnMoreCtaClicked}>
             <TouchableArea
               group="item"
+              animation={null}
               row
               gap="$spacing6"
               alignItems="center"
@@ -271,7 +272,7 @@ function LpIncentiveRewardsCard({
               <Text variant={isSmallScreen ? 'body4' : 'body3'} color="$neutral1">
                 {t('pool.incentives.uni.findMore')}
               </Text>
-              <Flex animation="simple" enterStyle={{ x: 0 }} x={0} $group-item-hover={{ x: 4 }}>
+              <Flex transition="all 0.1s ease-in-out" enterStyle={{ x: 0 }} x={0} $group-item-hover={{ x: 4 }}>
                 <ArrowRight color="$neutral1" size={isSmallScreen ? iconSizes.icon12 : iconSizes.icon16} />
               </Flex>
             </TouchableArea>

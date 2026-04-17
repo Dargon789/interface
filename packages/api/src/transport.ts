@@ -1,6 +1,8 @@
 import { type ConnectTransportOptions, createConnectTransport } from '@connectrpc/connect-web'
-import { getDeviceIdService } from '@universe/api/src/getDeviceIdService'
-import { getSessionStorage } from '@universe/api/src/getSessionStorage'
+
+export type Interceptors = NonNullable<ConnectTransportOptions['interceptors']>
+import { provideDeviceIdService } from '@universe/api/src/provideDeviceIdService'
+import { provideSessionStorage } from '@universe/api/src/provideSessionStorage'
 import { isWebApp } from 'utilities/src/platform'
 
 interface SessionTransportOptions {
@@ -8,6 +10,8 @@ interface SessionTransportOptions {
   getDeviceId?: () => Promise<string | null>
   getBaseUrl: () => string
   getHeaders?: () => object
+  /** Additional interceptors (run after the built-in header injection interceptor) */
+  interceptors?: Interceptors
   options?: Partial<ConnectTransportOptions>
 }
 
@@ -19,7 +23,7 @@ interface SessionTransportOptions {
  * Otherwise, you can use the getTransport util.
  */
 function createTransport(ctx: SessionTransportOptions): ReturnType<typeof createConnectTransport> {
-  const { getSessionId, getDeviceId, getBaseUrl, getHeaders, options } = ctx
+  const { getSessionId, getDeviceId, getBaseUrl, getHeaders, interceptors: extraInterceptors, options } = ctx
 
   const transportOptions: ConnectTransportOptions = {
     baseUrl: getBaseUrl(),
@@ -46,6 +50,7 @@ function createTransport(ctx: SessionTransportOptions): ReturnType<typeof create
 
         return next(request)
       },
+      ...(extraInterceptors ?? []),
     ],
     ...options,
   }
@@ -59,6 +64,7 @@ function createTransport(ctx: SessionTransportOptions): ReturnType<typeof create
 function getTransport(ctx: {
   getBaseUrl: () => string
   getHeaders?: () => object
+  interceptors?: Interceptors
   options?: Partial<ConnectTransportOptions>
 }): ReturnType<typeof createConnectTransport> {
   return createTransport({
@@ -67,7 +73,7 @@ function getTransport(ctx: {
       if (isWebApp) {
         return null
       }
-      return getSessionStorage()
+      return provideSessionStorage()
         .get()
         .then((session) => session?.sessionId ?? null)
     },
@@ -75,9 +81,10 @@ function getTransport(ctx: {
       if (isWebApp) {
         return null
       }
-      return getDeviceIdService().getDeviceId()
+      return provideDeviceIdService().getDeviceId()
     },
     getHeaders: ctx.getHeaders,
+    interceptors: ctx.interceptors,
     options: ctx.options,
   })
 }

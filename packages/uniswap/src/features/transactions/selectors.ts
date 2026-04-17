@@ -9,12 +9,13 @@ import { TransactionsState } from 'uniswap/src/features/transactions/slice'
 import { isBridge, isClassic, isUniswapX } from 'uniswap/src/features/transactions/swap/utils/routing'
 import {
   InterfaceTransactionDetails,
+  PlanTransactionDetails,
   SendTokenTransactionInfo,
   TransactionDetails,
   TransactionType,
   UniswapXOrderDetails,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
-import { isFinalizedTx } from 'uniswap/src/features/transactions/types/utils'
+import { isFinalizedTx, isPlanTransactionDetails } from 'uniswap/src/features/transactions/types/utils'
 import { isLimitOrder } from 'uniswap/src/features/transactions/utils/uniswapX.utils'
 import { selectTokensVisibility } from 'uniswap/src/features/visibility/selectors'
 import { CurrencyIdToVisibility } from 'uniswap/src/features/visibility/slice'
@@ -61,11 +62,11 @@ export function makeSelectAddressTransactions(): AddressTransactionsSelector {
 
     // Combine transactions from both addresses
     const combinedTransactions = {
-      ...(evmAddressTransactions || {}),
-      ...(svmAddressTransactions || {}),
+      ...evmAddressTransactions,
+      ...svmAddressTransactions,
     }
 
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     return unique(flattenObjectOfObjects(combinedTransactions), (tx, _, self) => {
       // Remove dummy local FOR transactions from TransactionList, notification badge, etc.
       // this is what prevents the local transactions from actually appearing in the activity tab.
@@ -181,7 +182,7 @@ export const makeSelectTransaction = (): Selector<
         return undefined
       }
 
-      const addressTxs = transactions[address]?.[chainId]
+      const addressTxs = transactions[address][chainId]
       if (!addressTxs) {
         return undefined
       }
@@ -206,6 +207,30 @@ export const makeSelectUniswapXOrder = (): Selector<
       for (const transactionsForChain of flattenObjectOfObjects(transactions)) {
         for (const tx of Object.values(transactionsForChain)) {
           if (isUniswapX(tx) && tx.orderHash === orderHash) {
+            return tx
+          }
+        }
+      }
+      return undefined
+    },
+  )
+
+interface MakeSelectPlanParams {
+  planId: string
+}
+
+export const makeSelectPlanTransaction = (): Selector<
+  UniswapState,
+  PlanTransactionDetails | undefined,
+  [MakeSelectPlanParams]
+> =>
+  createSelector(
+    selectTransactions,
+    (_: UniswapState, { planId }: MakeSelectPlanParams) => ({ planId }),
+    (transactions, { planId }): PlanTransactionDetails | undefined => {
+      for (const transactionsForChain of flattenObjectOfObjects(transactions)) {
+        for (const tx of Object.values(transactionsForChain)) {
+          if (isPlanTransactionDetails(tx) && tx.typeInfo.planId === planId) {
             return tx
           }
         }
@@ -266,4 +291,25 @@ export const selectTransaction = (
   const { address, chainId, txId } = params
 
   return transactions[address]?.[chainId]?.[txId]
+}
+
+/**
+ * Selector to get a specific transaction from the store
+ * Returns the transaction if it exists, undefined otherwise
+ */
+export const selectPlanTransaction = (
+  state: UniswapState,
+  params: {
+    address: string
+    chainId: UniverseChainId
+    planId: string
+  },
+): PlanTransactionDetails | undefined => {
+  const transactions = selectTransactions(state)
+  const { address, chainId, planId } = params
+  const planTransaction = transactions[address]?.[chainId]?.[planId]
+  if (!planTransaction || !isPlanTransactionDetails(planTransaction)) {
+    return undefined
+  }
+  return planTransaction
 }

@@ -18,6 +18,20 @@ export enum TokenDataReportOption {
   Volume = 'volume',
   PriceChart = 'price_chart',
   TokenDetails = 'token_details',
+  Performance = 'performance',
+  Other = 'other',
+}
+
+export enum PoolDataReportOption {
+  Price = 'price',
+  Volume = 'volume',
+  PriceChart = 'price_chart',
+  Liquidity = 'liquidity',
+  Other = 'other',
+}
+
+export enum PortfolioDataReportOption {
+  Performance = 'performance',
   Other = 'other',
 }
 
@@ -28,7 +42,7 @@ export function submitTokenIssueReport({
   tokenName,
   isMarkedSpam,
   reportOptions,
-  reportText,
+  reportTexts,
 }: {
   source: 'portfolio' | 'token-details'
   chainId: UniverseChainId
@@ -36,7 +50,7 @@ export function submitTokenIssueReport({
   tokenName?: string
   isMarkedSpam?: Maybe<boolean>
   reportOptions: TokenReportOption[]
-  reportText: string
+  reportTexts: Map<TokenReportOption, string>
 }): void {
   sendAnalyticsEvent(UniswapEventName.SpamReportSubmitted, {
     type: 'token',
@@ -49,7 +63,7 @@ export function submitTokenIssueReport({
     imposter_token: reportOptions.includes(TokenReportOption.Imposter),
     hidden_fees: reportOptions.includes(TokenReportOption.HiddenFees),
     something_else: reportOptions.includes(TokenReportOption.Other),
-    text: reportOptions.includes(TokenReportOption.Other) ? reportText : undefined,
+    text: reportTexts.get(TokenReportOption.Other),
   })
 }
 
@@ -59,14 +73,14 @@ export function submitTokenDataReport({
   tokenName,
   isMarkedSpam,
   reportOptions,
-  reportText,
+  reportTexts,
 }: {
   chainId: UniverseChainId
   tokenAddress?: string
   tokenName?: string
   isMarkedSpam?: Maybe<boolean>
   reportOptions: TokenDataReportOption[]
-  reportText: string
+  reportTexts: Map<TokenDataReportOption, string>
 }): void {
   sendAnalyticsEvent(UniswapEventName.DataReportSubmitted, {
     type: 'data',
@@ -78,8 +92,10 @@ export function submitTokenDataReport({
     volume: reportOptions.includes(TokenDataReportOption.Volume),
     price_chart: reportOptions.includes(TokenDataReportOption.PriceChart),
     token_details: reportOptions.includes(TokenDataReportOption.TokenDetails),
+    performance: reportOptions.includes(TokenDataReportOption.Performance),
+    performance_text: reportTexts.get(TokenDataReportOption.Performance),
     something_else: reportOptions.includes(TokenDataReportOption.Other),
-    text: reportOptions.includes(TokenDataReportOption.Other) ? reportText : undefined,
+    text: reportTexts.get(TokenDataReportOption.Other),
   })
 }
 
@@ -151,5 +167,54 @@ export function submitPoolSpamReport({
     version,
     token0: token0.isNative ? NATIVE_ANALYTICS_ADDRESS_VALUE : token0.address,
     token1: token1.isNative ? NATIVE_ANALYTICS_ADDRESS_VALUE : token1.address,
+  })
+}
+
+export function submitPoolDataReport({
+  poolId,
+  chainId,
+  version,
+  token0,
+  token1,
+  reportOptions,
+  reportTexts,
+}: {
+  poolId: string
+  chainId: UniverseChainId
+  version: ProtocolVersion
+  token0: Currency
+  token1: Currency
+  reportOptions: PoolDataReportOption[]
+  reportTexts: Map<PoolDataReportOption, string>
+}): void {
+  sendAnalyticsEvent(UniswapEventName.DataReportSubmitted, {
+    type: 'pool',
+    pool_id: poolId,
+    chain_id: chainId,
+    version,
+    token0: token0.isNative ? NATIVE_ANALYTICS_ADDRESS_VALUE : token0.address,
+    token1: token1.isNative ? NATIVE_ANALYTICS_ADDRESS_VALUE : token1.address,
+    price: reportOptions.includes(PoolDataReportOption.Price),
+    price_chart: reportOptions.includes(PoolDataReportOption.PriceChart),
+    volume: reportOptions.includes(PoolDataReportOption.Volume),
+    liquidity: reportOptions.includes(PoolDataReportOption.Liquidity),
+    something_else: reportOptions.includes(PoolDataReportOption.Other),
+    text: reportTexts.get(PoolDataReportOption.Other),
+  })
+}
+
+export function submitPortfolioDataReport({
+  reportOptions,
+  reportTexts,
+}: {
+  reportOptions: PortfolioDataReportOption[]
+  reportTexts: Map<PortfolioDataReportOption, string>
+}): void {
+  sendAnalyticsEvent(UniswapEventName.DataReportSubmitted, {
+    type: 'portfolio',
+    performance: reportOptions.includes(PortfolioDataReportOption.Performance),
+    performance_text: reportTexts.get(PortfolioDataReportOption.Performance),
+    something_else: reportOptions.includes(PortfolioDataReportOption.Other),
+    text: reportTexts.get(PortfolioDataReportOption.Other),
   })
 }

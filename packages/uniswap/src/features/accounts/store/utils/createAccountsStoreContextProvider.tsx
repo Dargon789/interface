@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* oxlint-disable typescript/explicit-function-return-type */
 import { createContext, PropsWithChildren, ReactNode, useContext, useEffect, useState } from 'react'
 import type {
   AccountsData,

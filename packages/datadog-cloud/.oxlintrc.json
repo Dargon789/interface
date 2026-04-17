@@ -1,0 +1,7 @@
+{
+  "extends": ["../../.oxlintrc.json"],
+  "rules": {
+    "typescript/no-floating-promises": "off",
+    "typescript/no-unnecessary-condition": "off"
+  }
+}

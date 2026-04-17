@@ -1,21 +1,21 @@
 import { Currency } from '@uniswap/sdk-core'
-import { SwitchNetworkAction } from 'components/Popups/types'
-import useSelectChain from 'hooks/useSelectChain'
 import { useCallback, useEffect } from 'react'
-import { useMultichainContext } from 'state/multichain/useMultichainContext'
-import { useSwapAndLimitContext } from 'state/swap/useSwapContext'
 import { Flex } from 'ui/src'
-import { TokenSelectorContent, TokenSelectorVariation } from 'uniswap/src/components/TokenSelector/TokenSelector'
-import { TokenSelectorFlow } from 'uniswap/src/components/TokenSelector/types'
+import { TokenSelectorContent } from 'uniswap/src/components/TokenSelector/TokenSelector'
+import { TokenSelectorFlow, TokenSelectorVariation } from 'uniswap/src/components/TokenSelector/types'
+import { useActiveAddresses } from 'uniswap/src/features/accounts/store/hooks'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { InterfaceEventName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
-import { useWallet } from 'uniswap/src/features/wallet/hooks/useWallet'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { SwapTab } from 'uniswap/src/types/screens/interface'
 import { usePrevious } from 'utilities/src/react/hooks'
-import { showSwitchNetworkNotification } from 'utils/showSwitchNetworkNotification'
+import { SwitchNetworkAction } from '~/components/Popups/types'
+import useSelectChain from '~/hooks/useSelectChain'
+import { useMultichainContext } from '~/state/multichain/useMultichainContext'
+import { useSwapAndLimitContext } from '~/state/swap/useSwapContext'
+import { showSwitchNetworkNotification } from '~/utils/showSwitchNetworkNotification'
 
 interface CurrencySearchProps {
   currencyField: CurrencyField
@@ -24,6 +24,7 @@ interface CurrencySearchProps {
   onDismiss: () => void
   chainIds?: UniverseChainId[]
   variation?: TokenSelectorVariation
+  flow?: TokenSelectorFlow
 }
 
 export function CurrencySearch({
@@ -33,8 +34,10 @@ export function CurrencySearch({
   onDismiss,
   chainIds,
   variation,
+  flow = TokenSelectorFlow.Swap,
 }: CurrencySearchProps) {
-  const wallet = useWallet()
+  const addresses = useActiveAddresses()
+
   const { chainId, setSelectedChainId, isUserSelectedToken, setIsUserSelectedToken, isMultichainContext } =
     useMultichainContext()
   const { currentTab } = useSwapAndLimitContext()
@@ -68,18 +71,23 @@ export function CurrencySearch({
     showSwitchNetworkNotification({ chainId, prevChainId, action: switchNetworkAction })
   }, [currentTab, chainId, prevChainId, isMultichainContext, switchNetworkAction])
 
+  const isSingleChainContext = chainIds?.length === 1
+  const resolvedChainId = isSingleChainContext
+    ? chainIds[0]
+    : !isMultichainContext || isUserSelectedToken
+      ? chainId
+      : undefined
+
   return (
     <Trace logImpression eventOnTrigger={InterfaceEventName.TokenSelectorOpened} modal={ModalName.TokenSelectorWeb}>
       <Flex width="100%" flexGrow={1} flexShrink={1} flexBasis="auto">
         <TokenSelectorContent
           renderedInModal={false}
-          evmAddress={wallet.evmAccount?.address}
-          svmAddress={wallet.svmAccount?.address}
-          isLimits={currentTab === SwapTab.Limit}
-          chainId={!isMultichainContext || isUserSelectedToken ? chainId : undefined}
+          addresses={addresses}
+          chainId={resolvedChainId}
           chainIds={chainIds ?? chains}
           currencyField={currencyField}
-          flow={TokenSelectorFlow.Swap}
+          flow={currentTab === SwapTab.Limit ? TokenSelectorFlow.Limit : flow}
           isSurfaceReady={true}
           variation={
             variation ??

@@ -1,4 +1,4 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: Third-party types not available */
+/* oxlint-disable typescript/no-explicit-any -- Third-party types not available */
 import { datadogLogs } from '@datadog/browser-logs'
 import { datadogRum } from '@datadog/browser-rum'
 import { Action, AnyAction, PreloadedState, Reducer, StoreEnhancerStoreCreator } from 'redux'
@@ -87,6 +87,7 @@ export function createDatadogReduxEnhancer({
   shouldLogReduxState,
 }: ReduxEnhancerConfig): (next: StoreEnhancerStoreCreator) => StoreEnhancerStoreCreator {
   return (next: StoreEnhancerStoreCreator): StoreEnhancerStoreCreator =>
+    // oxlint-disable-next-line typescript/no-explicit-any -- biome-parity: oxlint is stricter here
     <S = any, A extends Action = AnyAction>(reducer: Reducer<S, A>, initialState?: PreloadedState<S>) => {
       const enhancedReducer: Reducer<S, A> = (state, action): S => {
         const newState = reducer(state, action)

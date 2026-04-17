@@ -1,240 +1,123 @@
 import { Row } from '@tanstack/react-table'
-import { DropdownSelector } from 'components/Dropdowns/DropdownSelector'
-import { POPUP_MEDIUM_DISMISS_MS } from 'components/Popups/constants'
-import { popupRegistry } from 'components/Popups/registry'
-import { PopupType } from 'components/Popups/types'
-import { Cell } from 'components/Table/Cell'
-import { DataRow } from 'components/Table/styled'
-import { ActivityTable } from 'pages/Portfolio/Activity/ActivityTable/ActivityTable'
-import {
-  filterTransactionDetailsFromActivityItems,
-  getTimePeriodFilterOptions,
-  getTransactionTypeFilterOptions,
-  getTransactionTypesForFilter,
-} from 'pages/Portfolio/Activity/Filters/utils'
-import { SearchInput } from 'pages/Portfolio/components/SearchInput'
-import { usePortfolioAddress } from 'pages/Portfolio/hooks/usePortfolioAddress'
+import { SharedEventName } from '@uniswap/analytics-events'
 import { useCallback, useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Flex, TouchableArea, useMedia } from 'ui/src'
-import { Calendar } from 'ui/src/components/icons/Calendar'
-import { Filter } from 'ui/src/components/icons/Filter'
-import { TransactionDetailsModal } from 'uniswap/src/components/activity/details/TransactionDetailsModal'
-import { ActivityItem } from 'uniswap/src/components/activity/generateActivityItemRenderer'
-import { isLoadingItem } from 'uniswap/src/components/activity/utils'
-import { useActivityData } from 'uniswap/src/features/activity/hooks/useActivityData'
-import { InterfacePageName } from 'uniswap/src/features/telemetry/constants'
+import { Flex, TouchableArea } from 'ui/src'
+import { ElementName, InterfacePageName, SectionName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { TransactionDetails } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { useEvent } from 'utilities/src/react/hooks'
-import { useInfiniteScroll } from 'utilities/src/react/useInfiniteScroll'
-import { ONE_DAY_MS } from 'utilities/src/time/time'
-
-const DROPDOWN_MIN_WIDTH = {
-  transactionType: 220,
-  timePeriod: 200,
-}
-
-const SEARCH_INPUT_WIDTH = 280
-
-function isWithinTimePeriod(txTime: number, period: string): boolean {
-  if (period === 'all') {
-    return true
-  }
-
-  const now = Date.now()
-  const timeDiff = now - txTime
-
-  const PERIODS: Record<string, number> = {
-    '24h': ONE_DAY_MS,
-    '7d': 7 * ONE_DAY_MS,
-    '30d': 30 * ONE_DAY_MS,
-  }
-
-  return timeDiff <= (PERIODS[period] || Infinity)
-}
-
-function filterTransactions({
-  transactions,
-  typeFilter,
-  timeFilter,
-}: {
-  transactions: ActivityItem[]
-  typeFilter: string
-  timeFilter: string
-}): TransactionDetails[] {
-  const allowedTypes = getTransactionTypesForFilter(typeFilter)
-
-  return filterTransactionDetailsFromActivityItems(transactions)
-    .filter((tx) => allowedTypes === 'all' || allowedTypes.includes(tx.typeInfo.type))
-    .filter((tx) => isWithinTimePeriod(tx.addedTime, timeFilter))
-}
+import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import { useOpenTransactionDetailsModal } from '~/components/TopLevelModals/TransactionDetailsModalDispatcher'
+import { ActivityFilters } from '~/pages/Portfolio/Activity/ActivityFilters'
+import { ActivityTable } from '~/pages/Portfolio/Activity/ActivityTable/ActivityTable'
+import { ActivityFilterType, TimePeriod } from '~/pages/Portfolio/Activity/Filters/utils'
+import { useActivityEmptyState } from '~/pages/Portfolio/Activity/hooks/useActivityEmptyState'
+import { useActivityFiltering } from '~/pages/Portfolio/Activity/hooks/useActivityFiltering'
+import { PaginationSkeletonRow } from '~/pages/Portfolio/Activity/PaginationSkeletonRow'
+import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
+import { usePortfolioAddresses } from '~/pages/Portfolio/hooks/usePortfolioAddresses'
 
 export default function PortfolioActivity() {
-  const { t } = useTranslation()
-  const media = useMedia()
-  const transactionTypeOptions = getTransactionTypeFilterOptions(t)
-  const timePeriodOptions = getTimePeriodFilterOptions(t)
-  const [selectedTransactionType, setSelectedTransactionType] = useState('all')
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState('all')
-  const [searchValue, setSearchValue] = useState('')
-  const [filterTypeExpanded, setFilterTypeExpanded] = useState(false)
-  const [timePeriodExpanded, setTimePeriodExpanded] = useState(false)
-  const [selectedTransaction, setSelectedTransaction] = useState<TransactionDetails | null>(null)
+  const trace = useTrace()
+  const [selectedTransactionType, setSelectedTransactionType] = useState<string>(ActivityFilterType.All)
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState<string>(TimePeriod.All)
+  const [searchText, setSearchText] = useState('')
+  const openTransactionDetailsModal = useOpenTransactionDetailsModal()
 
-  const portfolioAddress = usePortfolioAddress()
+  const { evmAddress, svmAddress } = usePortfolioAddresses()
+  const { chainId, isExternalWallet } = usePortfolioRoutes()
 
-  const { sectionData, fetchNextPage, hasNextPage, isFetchingNextPage } = useActivityData({
-    evmOwner: portfolioAddress,
-    ownerAddresses: [portfolioAddress],
-    swapCallbacks: {
-      useLatestSwapTransaction: () => undefined,
-      useSwapFormTransactionState: () => undefined,
-      onRetryGenerator: () => () => {},
-    },
-    fiatOnRampParams: undefined,
+  const { transactionData, sectionData, showLoading, isFetchingNextPage, sentinelRef } = useActivityFiltering({
+    evmAddress,
+    svmAddress,
+    chainId,
+    selectedTransactionType,
+    selectedTimePeriod,
+    searchText,
   })
 
-  const { sentinelRef } = useInfiniteScroll({
-    onLoadMore: fetchNextPage,
-    hasNextPage,
-    isFetching: isFetchingNextPage,
+  // Handler to clear type and time filters
+  const handleClearFilters = useCallback(() => {
+    setSelectedTransactionType(ActivityFilterType.All)
+    setSelectedTimePeriod(TimePeriod.All)
+    setSearchText('')
+  }, [])
+
+  const { shouldShowEmptyState, emptyStateContent } = useActivityEmptyState({
+    chainId,
+    selectedTransactionType,
+    selectedTimePeriod,
+    searchText,
+    sectionData,
+    isExternalWallet,
+    showLoading,
+    transactionDataLength: transactionData.length,
+    onClearFilters: handleClearFilters,
   })
-
-  // Show loading skeleton while data is being fetched (sectionData contains loading items when loading)
-  const loading = Boolean(sectionData?.some(isLoadingItem))
-
-  // Filter out section headers and loading items to get just transaction data
-  const transactionData: TransactionDetails[] = useMemo(
-    () =>
-      filterTransactions({
-        transactions: sectionData || [],
-        typeFilter: selectedTransactionType,
-        timeFilter: selectedTimePeriod,
-      }),
-    [sectionData, selectedTransactionType, selectedTimePeriod],
-  )
 
   const error = false
 
-  const handleTransactionClick = useCallback((transaction: TransactionDetails) => {
-    setSelectedTransaction(transaction)
-  }, [])
-
-  const rowWrapper = useCallback(
-    (row: Row<TransactionDetails>, content: JSX.Element) => {
-      const transaction = row.original
-      return (
-        <TouchableArea onPress={() => handleTransactionClick(transaction)} cursor="pointer">
-          {content}
-        </TouchableArea>
-      )
-    },
-    [handleTransactionClick],
+  const tableData = useMemo(
+    () =>
+      transactionData.map((tx) => ({
+        ...tx,
+        testId: `${TestID.PortfolioActivityTableRowPrefix}${tx.hash ?? tx.id}`,
+      })),
+    [transactionData],
   )
 
-  const handleCloseTransactionDetails = () => {
-    setSelectedTransaction(null)
-  }
-
-  const onReportTransaction = useEvent(() => {
-    popupRegistry.addPopup(
-      { type: PopupType.Success, message: t('common.reported') },
-      'report-transaction-success',
-      POPUP_MEDIUM_DISMISS_MS,
-    )
+  const handleTransactionClick = useEvent((transaction: TransactionDetails) => {
+    sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
+      element: ElementName.ActivityRow,
+      section: SectionName.PortfolioActivityTab,
+      ...trace,
+    })
+    openTransactionDetailsModal(transaction, { isExternalProfile: isExternalWallet })
   })
 
-  const onUnhideTransaction = useEvent(() => {
-    popupRegistry.addPopup(
-      { type: PopupType.Unhide, assetName: t('common.activity') },
-      'unhide-transaction-success',
-      POPUP_MEDIUM_DISMISS_MS,
+  const rowWrapper = useEvent((row: Row<TransactionDetails>, content: JSX.Element) => {
+    const transaction = row.original
+    return (
+      <TouchableArea onPress={() => handleTransactionClick(transaction)} cursor="pointer" pressStyle={{ scale: 1 }}>
+        {content}
+      </TouchableArea>
     )
   })
 
   return (
-    <Trace logImpression page={InterfacePageName.PortfolioActivityPage}>
+    <Trace logImpression page={InterfacePageName.PortfolioActivityPage} properties={{ isExternal: isExternalWallet }}>
       <Flex gap="$spacing28" mt="$spacing12">
         {/* Filtering Controls */}
-        <Flex
-          row
-          justifyContent="space-between"
-          alignItems="center"
-          gap="$spacing12"
-          $md={{
-            flexDirection: 'column',
-            alignItems: 'stretch',
-            gap: '$spacing16',
-          }}
-        >
-          <Flex row gap="$spacing12" $md={{ justifyContent: 'space-between' }}>
-            {/* Transaction Type Filter */}
-            <DropdownSelector
-              options={transactionTypeOptions}
-              selectedValue={selectedTransactionType}
-              onSelect={setSelectedTransactionType}
-              isOpen={filterTypeExpanded}
-              toggleOpen={setFilterTypeExpanded}
-              ButtonIcon={Filter}
-              buttonStyle={{ width: 140, $md: { width: '100%' } }}
-              containerStyle={media.md ? { flexGrow: 1 } : undefined}
-              dropdownStyle={{ minWidth: DROPDOWN_MIN_WIDTH.transactionType }}
-            />
-
-            {/* Time Period Filter */}
-            <DropdownSelector
-              options={timePeriodOptions}
-              selectedValue={selectedTimePeriod}
-              onSelect={setSelectedTimePeriod}
-              isOpen={timePeriodExpanded}
-              toggleOpen={setTimePeriodExpanded}
-              ButtonIcon={Calendar}
-              buttonStyle={{ width: 140, $md: { width: '100%' } }}
-              containerStyle={media.md ? { flexGrow: 1 } : undefined}
-              dropdownStyle={{ minWidth: DROPDOWN_MIN_WIDTH.timePeriod }}
-            />
-          </Flex>
-
-          <SearchInput
-            value={searchValue}
-            onChangeText={setSearchValue}
-            placeholder={t('portfolio.activity.search.placeholder')}
-            width={media.md ? '100%' : SEARCH_INPUT_WIDTH}
+        <Trace section={SectionName.PortfolioActivityTab} element={ElementName.ActivityFilters}>
+          <ActivityFilters
+            selectedTransactionType={selectedTransactionType}
+            onTransactionTypeChange={setSelectedTransactionType}
+            selectedTimePeriod={selectedTimePeriod}
+            onTimePeriodChange={setSelectedTimePeriod}
+            searchText={searchText}
+            onSearchTextChange={setSearchText}
           />
-        </Flex>
+        </Trace>
 
         <Flex>
-          <ActivityTable data={transactionData} loading={loading} error={error} rowWrapper={rowWrapper} />
+          {shouldShowEmptyState ? (
+            emptyStateContent
+          ) : (
+            <Trace section={SectionName.PortfolioActivityTab} element={ElementName.PortfolioActivityTable}>
+              <>
+                <ActivityTable data={tableData} loading={showLoading} error={error} rowWrapper={rowWrapper} />
 
-          {/* Show skeleton loading indicator while fetching next page */}
-          {isFetchingNextPage && (
-            <DataRow v2={true}>
-              {[...Array(4)].map((_, index) => (
-                <Cell
-                  key={index}
-                  loading={true}
-                  justifyContent="flex-start"
-                  grow
-                  {...(index === 2 && { minWidth: '280px' })}
-                />
-              ))}
-            </DataRow>
+                {/* Show skeleton loading indicator while fetching next page */}
+                {isFetchingNextPage && <PaginationSkeletonRow />}
+
+                {/* Intersection observer sentinel for infinite scroll */}
+                <Flex ref={sentinelRef} height={1} my={10} />
+              </>
+            </Trace>
           )}
-
-          {/* Intersection observer sentinel for infinite scroll */}
-          <Flex ref={sentinelRef} height={1} my={10} />
         </Flex>
-
-        {selectedTransaction && (
-          <TransactionDetailsModal
-            transactionDetails={selectedTransaction}
-            onClose={handleCloseTransactionDetails}
-            authTrigger={undefined}
-            onReportTransaction={onReportTransaction}
-            onUnhideTransaction={onUnhideTransaction}
-          />
-        )}
       </Flex>
     </Trace>
   )

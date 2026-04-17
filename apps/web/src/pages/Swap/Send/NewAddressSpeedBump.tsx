@@ -1,13 +1,14 @@
-import { UserIcon } from 'components/Icons/UserIcon'
-import { SendModalProps } from 'pages/Swap/Send/SendReviewModal'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RecipientData } from 'state/send/hooks'
-import { useSendContext } from 'state/send/SendContext'
 import { Flex, Text, useSporeColors } from 'ui/src'
 import { Unitag } from 'ui/src/components/icons/Unitag'
 import { Dialog } from 'uniswap/src/components/dialog/Dialog'
 import { AccountIcon } from 'uniswap/src/features/accounts/AccountIcon'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
+import { UserIcon } from '~/components/Icons/UserIcon'
+import { SendModalProps } from '~/pages/Swap/Send/SendReviewModal'
+import type { RecipientData } from '~/state/send/hooks'
+import { useSendContext } from '~/state/send/SendContext'
 
 const RecipientDisplay = ({ recipientData }: { recipientData?: RecipientData }) => {
   const ensOrUnitag = recipientData?.unitag ?? recipientData?.ensName
@@ -23,7 +24,11 @@ const RecipientDisplay = ({ recipientData }: { recipientData?: RecipientData }) 
             marginRight="$spacing2"
           />
           <Text variant="body2">{ensOrUnitag}</Text>
-          {recipientData?.unitag && <Unitag size={18} />}
+          {recipientData?.unitag && (
+            <Flex pt="$spacing2">
+              <Unitag size={18} />
+            </Flex>
+          )}
         </Flex>
         <Text color="$neutral2" variant="body4">
           {recipientData?.address}
@@ -45,6 +50,26 @@ export const NewAddressSpeedBumpModal = ({ isOpen, onDismiss, onConfirm }: SendM
     derivedSendInfo: { recipientData },
   } = useSendContext()
 
+  const primaryButton = useMemo(
+    () => ({
+      text: t('common.button.continue'),
+      onPress: onConfirm,
+      variant: 'default' as const,
+      emphasis: 'primary' as const,
+    }),
+    [t, onConfirm],
+  )
+
+  const secondaryButton = useMemo(
+    () => ({
+      text: t('common.button.close'),
+      onPress: onDismiss,
+      variant: 'default' as const,
+      emphasis: 'secondary' as const,
+    }),
+    [t, onDismiss],
+  )
+
   return (
     <Dialog
       isOpen={isOpen}
@@ -54,13 +79,8 @@ export const NewAddressSpeedBumpModal = ({ isOpen, onDismiss, onConfirm }: SendM
       title={t('speedBump.newAddress.warning.title')}
       subtext={t('speedBump.newAddress.warning.description')}
       modalName={ModalName.NewAddressSpeedBump}
-      primaryButtonText={t('common.button.close')}
-      primaryButtonOnPress={onDismiss}
-      primaryButtonVariant="default"
-      primaryButtonEmphasis="secondary"
-      secondaryButtonText={t('common.button.continue')}
-      secondaryButtonOnPress={onConfirm}
-      secondaryButtonVariant="branded"
+      primaryButton={primaryButton}
+      secondaryButton={secondaryButton}
       displayHelpCTA
     >
       <RecipientDisplay recipientData={recipientData} />

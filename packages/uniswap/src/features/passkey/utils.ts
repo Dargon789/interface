@@ -1,5 +1,6 @@
 import { PlatformSplitStubError } from 'utilities/src/errors'
 
-export async function exportSeedPhrase(): Promise<string | undefined> {
+// oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
+export async function exportSeedPhrase(walletId?: string): Promise<string | undefined> {
   throw new PlatformSplitStubError('exportSeedPhrase')
 }

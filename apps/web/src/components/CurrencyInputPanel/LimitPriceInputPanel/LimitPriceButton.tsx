@@ -1,10 +1,10 @@
-import Row from 'components/deprecated/Row'
-import styled, { css } from 'lib/styled-components'
-import { X } from 'react-feather'
 import { Trans } from 'react-i18next'
-import { ThemedText } from 'theme/components'
-import { ClickableStyle } from 'theme/components/styles'
+import { X } from 'ui/src/components/icons/X'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import Row from '~/components/deprecated/Row'
+import { css, deprecatedStyled } from '~/lib/deprecated-styled'
+import { ThemedText } from '~/theme/components'
+import { ClickableStyle } from '~/theme/components/styles'
 
 interface LimitPriceButtonProps {
   priceAdjustmentPercentage: number
@@ -26,7 +26,7 @@ const highlightedBorderCss = css`
   border-right: 0px;
 `
 
-const Container = styled.button<{ $selected?: boolean; $disabled?: boolean; $highlighted: boolean }>`
+const Container = deprecatedStyled.button<{ $selected?: boolean; $disabled?: boolean; $highlighted: boolean }>`
   color: ${({ theme, $selected, $disabled, $highlighted }) => {
     if ($highlighted) {
       return theme.neutral1
@@ -51,7 +51,7 @@ const Container = styled.button<{ $selected?: boolean; $disabled?: boolean; $hig
   ${({ $disabled }) => !$disabled && ClickableStyle};
 `
 
-const HighlightedContainerXButton = styled.button`
+const HighlightedContainerXButton = deprecatedStyled.button`
   ${ClickableStyle}
   background-color: ${({ theme }) => theme.surface3};
   color: ${({ theme }) => theme.neutral2};
@@ -132,7 +132,7 @@ export function LimitCustomMarketPriceButton({
       </Container>
       {customAdjustmentPercentage && (
         <HighlightedContainerXButton onClick={onSetAdjustmentPercentage}>
-          <X size={16} />
+          <X size="$icon.16" />
         </HighlightedContainerXButton>
       )}
     </Row>

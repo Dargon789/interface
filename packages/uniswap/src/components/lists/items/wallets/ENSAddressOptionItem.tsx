@@ -40,6 +40,7 @@ export function ENSAddressOptionItem({ ensAddressOption, onPress }: ENSAddressOp
   const isPrimaryENSName = completedENSName === primaryENSName
 
   const showOwnedBy = !isFetchingPrimaryENSName && !isPrimaryENSName
+  const ownerAddress = primaryENSName || formattedAddress
   const showAddress = !showOwnedBy
 
   return (
@@ -50,8 +51,9 @@ export function ENSAddressOptionItem({ ensAddressOption, onPress }: ENSAddressOp
       subtitle={
         <Text color="$neutral2" ellipsizeMode="tail" numberOfLines={1} variant="subheading2">
           {showOwnedBy &&
+            ownerAddress &&
             t('explore.search.label.ownedBy', {
-              ownerAddress: primaryENSName || formattedAddress,
+              ownerAddress,
             })}
           {showAddress && formattedAddress}
         </Text>

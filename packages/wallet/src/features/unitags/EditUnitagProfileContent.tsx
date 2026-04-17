@@ -1,5 +1,5 @@
-import { ProfileMetadata } from '@universe/api'
-import { useEffect, useMemo, useState } from 'react'
+import { GetAddressResponse } from '@universe/api'
+import { type ComponentType, type PropsWithChildren, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import {
@@ -18,7 +18,7 @@ import { Pen } from 'ui/src/components/icons'
 import { borderRadii, fonts, iconSizes, imageSizes, spacing } from 'ui/src/theme'
 import { DisplayNameText } from 'uniswap/src/components/accounts/DisplayNameText'
 import { TextInput } from 'uniswap/src/components/input/TextInput'
-import { UnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
+import { useUnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
 import { useResetUnitagsQueries } from 'uniswap/src/data/apiClients/unitagsApi/useResetUnitagsQueries'
 import { useUnitagsAddressQuery } from 'uniswap/src/data/apiClients/unitagsApi/useUnitagsAddressQuery'
 import { DisplayNameType } from 'uniswap/src/features/accounts/types'
@@ -47,6 +47,12 @@ import { useAccount } from 'wallet/src/features/wallet/hooks'
 import { generateSignerFunc } from 'wallet/src/features/wallet/signing/utils'
 
 const PADDING_WIDTH = isExtensionApp ? '$none' : '$spacing16'
+
+type ProfileMetadata = Pick<NonNullable<GetAddressResponse['metadata']>, 'avatar' | 'description' | 'twitter'>
+
+function DefaultButtonWrapper({ children }: PropsWithChildren): JSX.Element {
+  return <>{children}</>
+}
 
 function isProfileMetadataEdited({
   loading,
@@ -82,17 +88,20 @@ export function EditUnitagProfileContent({
   entryPoint,
   onNavigate,
   onButtonClick,
+  SaveButtonWrapper: ButtonWrapper = DefaultButtonWrapper,
 }: {
   address: string
   unitag: string
   entryPoint: UnitagScreens.UnitagConfirmation | MobileScreens.SettingsWallet | UnitagScreens.EditProfile
   onNavigate?: () => void
   onButtonClick?: () => void
+  SaveButtonWrapper?: ComponentType<PropsWithChildren>
 }): JSX.Element {
   const { t } = useTranslation()
   const account = useAccount(address)
   const colors = useSporeColors()
   const signerManager = useWalletSigners()
+  const unitagsApiClient = useUnitagsApiClient()
   const dispatch = useDispatch()
 
   const { data: retrievedUnitag, isLoading: loading } = useUnitagsAddressQuery({
@@ -231,9 +240,9 @@ export function EditUnitagProfileContent({
       : updatedMetadata
 
     setUpdateResponseLoading(true)
-    const updateResponse = await UnitagsApiClient.updateUnitagMetadata({
-      username: unitag,
+    const updateResponse = await unitagsApiClient.updateUnitagMetadata({
       data: {
+        username: unitag,
         metadata,
         clearAvatar: metadata.avatar === undefined,
       },
@@ -341,7 +350,12 @@ export function EditUnitagProfileContent({
                 onPress={avatarSelectionHandler}
               >
                 <Flex backgroundColor="$surface1" borderRadius="$roundedFull">
-                  <UnitagProfilePicture address={address} size={iconSizes.icon70} unitagAvatarUri={avatarImageUri} />
+                  <UnitagProfilePicture
+                    forcePassedAvatarUri={avatarImageUri === undefined && unitagMetadata?.avatar !== undefined}
+                    address={address}
+                    size={iconSizes.icon70}
+                    unitagAvatarUri={avatarImageUri}
+                  />
                 </Flex>
                 <Flex
                   backgroundColor="$surface1"
@@ -369,7 +383,7 @@ export function EditUnitagProfileContent({
             </Flex>
 
             <Flex row gap="$spacing24" px={PADDING_WIDTH} pt="$spacing16">
-              <Flex flex={1} gap="$spacing24">
+              <Flex flex={1.5} gap="$spacing24">
                 <Text color="$neutral2" pt="$spacing4" variant="subheading1">
                   {t('unitags.profile.bio.label')}
                 </Text>
@@ -382,7 +396,7 @@ export function EditUnitagProfileContent({
                   </Text>
                 )}
               </Flex>
-              <Flex flex={3} gap="$spacing24">
+              <Flex flex={2.5} gap="$spacing24">
                 {!loading ? (
                   <TextInput
                     autoCorrect
@@ -390,9 +404,9 @@ export function EditUnitagProfileContent({
                     placeholder={t('unitags.profile.bio.placeholder')}
                     value={bioInput}
                     verticalAlign="top"
-                    onChangeText={setBioInput}
                     {...inputProps}
                     mt="$spacing4"
+                    onChangeText={setBioInput}
                   />
                 ) : null}
                 {!loading ? (
@@ -421,18 +435,20 @@ export function EditUnitagProfileContent({
           </Flex>
         </Flex>
       </ScrollView>
-      <Button
-        loading={isSaving}
-        isDisabled={!profileMetadataEdited}
-        mt="$spacing12"
-        mx={isExtensionApp ? undefined : '$spacing24'}
-        size="large"
-        variant="branded"
-        fill={false}
-        onPress={onPressSaveChanges}
-      >
-        {t('common.button.save')}
-      </Button>
+      <ButtonWrapper>
+        <Button
+          loading={isSaving}
+          isDisabled={!profileMetadataEdited}
+          mt="$spacing12"
+          mx={isExtensionApp ? undefined : '$spacing24'}
+          size="large"
+          variant="branded"
+          fill={false}
+          onPress={onPressSaveChanges}
+        >
+          {t('common.button.save')}
+        </Button>
+      </ButtonWrapper>
       {showAvatarModal && (
         <ChoosePhotoOptionsModal
           address={address}

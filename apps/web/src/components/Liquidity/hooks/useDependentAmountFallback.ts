@@ -1,59 +1,198 @@
+import {
+  CreateLPPositionRequest,
+  IncreaseLPPositionRequest,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
+import {
+  V2CreateLPPosition,
+  V3CreateLPPosition,
+  V4CreateLPPosition,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
+import {
+  CreateClassicPositionRequest,
+  CreateClassicPositionResponse,
+  CreatePositionRequest,
+  CreatePositionResponse,
+  IncreasePositionRequest as V2IncreasePositionRequest,
+  IncreasePositionResponse as V2IncreasePositionResponse,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
 import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
-import { TradingApi } from '@universe/api'
-import { DepositInfo } from 'components/Liquidity/types'
 import { useEffect, useMemo, useState } from 'react'
-import { PositionField } from 'types/position'
-import { useCreateLpPositionCalldataQuery } from 'uniswap/src/data/apiClients/tradingApi/useCreateLpPositionCalldataQuery'
-import { useIncreaseLpPositionCalldataQuery } from 'uniswap/src/data/apiClients/tradingApi/useIncreaseLpPositionCalldataQuery'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
-import { ONE_SECOND_MS } from 'utilities/src/time/time'
+import { useCreatePositionQuery } from 'uniswap/src/data/apiClients/liquidityService/useCreatePositionQuery'
+import { useIncreasePositionQuery } from 'uniswap/src/data/apiClients/liquidityService/useIncreasePositionQuery'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
+import { DepositInfo } from '~/components/Liquidity/types'
+import { PositionField } from '~/types/position'
 
-export function useIncreasePositionDependentAmountFallback(
-  queryParams: TradingApi.IncreaseLPPositionRequest | undefined,
-  isQueryEnabled: boolean,
-) {
+export function useIncreasePositionDependentAmountFallback({
+  queryParams,
+  isQueryEnabled,
+  exactField,
+}: {
+  queryParams: IncreaseLPPositionRequest | V2IncreasePositionRequest | undefined
+  isQueryEnabled: boolean
+  exactField: PositionField
+}) {
   const [hasErrorResponse, setHasErrorResponse] = useState(false)
 
-  const { data, error } = useIncreaseLpPositionCalldataQuery({
-    params: {
-      ...queryParams,
-      simulateTransaction: false,
-    },
-    refetchInterval: hasErrorResponse ? false : 5 * ONE_SECOND_MS,
-    retry: false,
-    enabled: isQueryEnabled && queryParams?.simulateTransaction,
+  const fallbackParams = useMemo(() => {
+    if (!queryParams) {
+      return undefined
+    }
+
+    if (queryParams instanceof V2IncreasePositionRequest) {
+      return new V2IncreasePositionRequest({
+        // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+        ...queryParams,
+        simulateTransaction: false,
+      })
+    }
+
+    const { increaseLpPosition } = queryParams
+    const updatedIncreaseLpPosition =
+      increaseLpPosition.case === 'v4IncreaseLpPosition'
+        ? // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+          { case: 'v4IncreaseLpPosition' as const, value: { ...increaseLpPosition.value, simulateTransaction: false } }
+        : increaseLpPosition.case === 'v3IncreaseLpPosition'
+          ? {
+              case: 'v3IncreaseLpPosition' as const,
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+              value: { ...increaseLpPosition.value, simulateTransaction: false },
+            }
+          : increaseLpPosition.case === 'v2IncreaseLpPosition'
+            ? {
+                case: 'v2IncreaseLpPosition' as const,
+                // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+                value: { ...increaseLpPosition.value, simulateTransaction: false },
+              }
+            : increaseLpPosition
+    return new IncreaseLPPositionRequest({ increaseLpPosition: updatedIncreaseLpPosition })
+  }, [queryParams])
+
+  const hasSimulateTransaction =
+    queryParams instanceof V2IncreasePositionRequest
+      ? Boolean(queryParams.simulateTransaction)
+      : Boolean(queryParams?.increaseLpPosition.value?.simulateTransaction)
+
+  const { increaseCalldata, calldataError } = useIncreasePositionQuery({
+    increaseCalldataQueryParams: fallbackParams,
+    transactionError: hasErrorResponse,
+    isQueryEnabled: isQueryEnabled && hasSimulateTransaction,
   })
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +queryParams
+  // oxlint-disable-next-line react/exhaustive-deps -- +queryParams
   useEffect(() => {
-    setHasErrorResponse(!!error)
-  }, [error, queryParams])
+    setHasErrorResponse(!!calldataError)
+  }, [calldataError, queryParams])
 
-  return data?.dependentAmount
+  if (increaseCalldata instanceof V2IncreasePositionResponse) {
+    const dependentToken = exactField === PositionField.TOKEN0 ? increaseCalldata.token1 : increaseCalldata.token0
+    return dependentToken?.amount
+  }
+
+  return increaseCalldata?.dependentAmount
 }
 
-export function useCreatePositionDependentAmountFallback(
-  queryParams: TradingApi.CreateLPPositionRequest | undefined,
-  isQueryEnabled: boolean,
-) {
-  const [hasErrorResponse, setHasErrorResponse] = useState(false)
+export function useCreatePositionDependentAmountFallback({
+  queryParams,
+  isQueryEnabled,
+  exactField,
+}: {
+  queryParams: CreateLPPositionRequest | CreateClassicPositionRequest | CreatePositionRequest | undefined
+  isQueryEnabled: boolean
+  exactField: PositionField
+}) {
+  const fallbackParams = useMemo(() => {
+    if (!queryParams) {
+      return undefined
+    }
 
-  const { data, error } = useCreateLpPositionCalldataQuery({
-    params: {
+    if (queryParams instanceof CreatePositionRequest) {
+      return new CreatePositionRequest({
+        // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+        ...queryParams,
+        simulateTransaction: false,
+      })
+    }
+
+    if (queryParams instanceof CreateLPPositionRequest) {
+      const { createLpPosition } = queryParams
+
+      if (createLpPosition.case === 'v4CreateLpPosition') {
+        return new CreateLPPositionRequest({
+          createLpPosition: {
+            case: 'v4CreateLpPosition',
+            value: new V4CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+              ...createLpPosition.value,
+              simulateTransaction: false,
+            }),
+          },
+        })
+      }
+
+      if (createLpPosition.case === 'v3CreateLpPosition') {
+        return new CreateLPPositionRequest({
+          createLpPosition: {
+            case: 'v3CreateLpPosition',
+            value: new V3CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+              ...createLpPosition.value,
+              simulateTransaction: false,
+            }),
+          },
+        })
+      }
+
+      if (createLpPosition.case === 'v2CreateLpPosition') {
+        return new CreateLPPositionRequest({
+          createLpPosition: {
+            case: 'v2CreateLpPosition',
+            value: new V2CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+              ...createLpPosition.value,
+              simulateTransaction: false,
+            }),
+          },
+        })
+      }
+
+      return new CreateLPPositionRequest({ createLpPosition })
+    }
+
+    return new CreateClassicPositionRequest({
+      // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
       ...queryParams,
       simulateTransaction: false,
-    },
-    refetchInterval: hasErrorResponse ? false : 5 * ONE_SECOND_MS,
-    retry: false,
-    enabled: isQueryEnabled && queryParams?.simulateTransaction,
+    })
+  }, [queryParams])
+
+  const [hasErrorResponse, setHasErrorResponse] = useState(false)
+
+  const hasSimulateTransaction =
+    queryParams instanceof CreateLPPositionRequest
+      ? Boolean(queryParams.createLpPosition.value?.simulateTransaction)
+      : Boolean(queryParams?.simulateTransaction)
+
+  const { createCalldata, createError } = useCreatePositionQuery({
+    createCalldataQueryParams: fallbackParams,
+    transactionError: hasErrorResponse,
+    isQueryEnabled: isQueryEnabled && hasSimulateTransaction,
   })
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +queryParams
+  // oxlint-disable-next-line react/exhaustive-deps -- +queryParams
   useEffect(() => {
-    setHasErrorResponse(!!error)
-  }, [error, queryParams])
+    setHasErrorResponse(!!createError)
+  }, [createError, queryParams])
 
-  return data?.dependentAmount
+  if (createCalldata instanceof CreateClassicPositionResponse) {
+    return createCalldata.dependentToken?.amount
+  }
+
+  if (createCalldata instanceof CreatePositionResponse) {
+    return exactField === PositionField.TOKEN0 ? createCalldata.token1?.amount : createCalldata.token0?.amount
+  }
+
+  return createCalldata?.dependentAmount
 }
 
 export function useUpdatedAmountsFromDependentAmount({

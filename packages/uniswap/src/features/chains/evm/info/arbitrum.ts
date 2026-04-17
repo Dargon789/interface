@@ -1,6 +1,7 @@
 import { GraphQLApi } from '@universe/api'
 import { ARBITRUM_LOGO, ETH_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import {
   DEFAULT_MS_BEFORE_WARNING,
   DEFAULT_NATIVE_ADDRESS_LEGACY,
@@ -51,6 +52,7 @@ export const ARBITRUM_CHAIN_INFO = {
   },
   openseaName: 'arbitrum',
   interfaceName: 'arbitrum',
+  searchAliases: ['arb', 'arbitrum one', 'arb one'],
   label: 'Arbitrum',
   logo: ARBITRUM_LOGO,
   nativeCurrency: {
@@ -62,11 +64,13 @@ export const ARBITRUM_CHAIN_INFO = {
     logo: ETH_LOGO,
   },
   networkLayer: NetworkLayer.L2,
+  blockTimeMs: 250,
   pendingTransactionsRetryOptions: DEFAULT_RETRY_OPTIONS,
   tokens,
   statusPage: undefined,
   supportsV4: true,
-  urlParam: 'arbitrum',
+  supportsNFTs: true,
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.ArbitrumOne],
   rpcUrls: {
     [RPCType.Public]: { http: [getQuicknodeEndpointUrl(UniverseChainId.ArbitrumOne)] },
     [RPCType.Default]: { http: ['https://arb1.arbitrum.io/rpc'] },
@@ -87,4 +91,5 @@ export const ARBITRUM_CHAIN_INFO = {
   },
   gasConfig: GENERIC_L2_GAS_CONFIG,
   tradingApiPollingIntervalMs: 150,
+  acrossProtocolAddress: '0xe35e9842fceaca96570b734083f4a58e8f7c5f2a',
 } as const satisfies UniverseChainInfo

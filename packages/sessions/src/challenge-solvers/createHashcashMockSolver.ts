@@ -14,7 +14,7 @@ import { sleep } from 'utilities/src/time/timing'
 function createHashcashMockSolver(): ChallengeSolver {
   async function solve(challengeData: ChallengeData): Promise<string> {
     // Extract difficulty from extra data
-    const difficulty = challengeData.extra?.bits || '20'
+    const difficulty = challengeData.extra?.['bits'] || '20'
 
     // Simulate proof-of-work computation time
     // Real implementation would iterate through nonces
@@ -26,7 +26,7 @@ function createHashcashMockSolver(): ChallengeSolver {
     // Generate mock hashcash solution
     const nonce = Math.random().toString(36).substring(2, 15)
     const mockHash = btoa(`${challengeData.challengeId}${nonce}`).slice(0, 27)
-    const timestamp = new Date().toISOString().slice(2, 8).replace(/-/g, '')
+    const timestamp = new Date().toISOString().slice(2, 10).replace(/-/g, '')
     const resource = challengeData.challengeId.slice(0, 16)
 
     // Return in hashcash format

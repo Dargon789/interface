@@ -115,7 +115,7 @@ export function createFixture<T extends object, P extends object>(
   defaultOptionsOrGetter?: Required<P> | (() => Required<P>),
 ) {
   return <V extends T>(getValues: (options?: P) => V) => {
-    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+    // oxlint-disable-next-line typescript/explicit-function-return-type
     return <O extends Partial<T> | Partial<T & P>>(overrides?: O) => {
       // Get default options (if they exist)
       const defaultOptions =
@@ -134,7 +134,7 @@ export function createFixture<T extends object, P extends object>(
         ? omit(overrides as { [key in string]: unknown }, Object.keys(defaultOptions || []))
         : {}
       return Array.isArray(values)
-        ? // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        ? // oxlint-disable-next-line typescript/no-unsafe-return
           values.map((v) => ({ ...v, ...valueOverrides }))
         : { ...values, ...valueOverrides }
     }

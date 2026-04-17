@@ -7,7 +7,7 @@ import {
   TrackingConsent,
   UploadFrequency,
 } from '@datadog/mobile-react-native'
-import { ErrorEventMapper } from '@datadog/mobile-react-native/lib/typescript/rum/eventMappers/errorEventMapper'
+import { type ErrorEventMapper } from '@datadog/mobile-react-native/lib/typescript/rum/eventMappers/errorEventMapper'
 import {
   DatadogIgnoredErrorsConfigKey,
   DatadogIgnoredErrorsValType,
@@ -69,7 +69,7 @@ async function initializeDatadog(sessionSamplingRate: number): Promise<void> {
     sessionSamplingRate,
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (localDevDatadogEnabled) {
     Object.assign(datadogConfig, {
       sessionSamplingRate: 100,

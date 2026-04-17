@@ -1,7 +1,12 @@
 import { Currency } from '@uniswap/sdk-core'
-import { useCurrencyValidation } from 'components/Liquidity/Create/hooks/useCurrencyValidation'
-import { PositionFlowStep, PositionState, PriceRangeState } from 'components/Liquidity/Create/types'
-import { applyUrlMigrations } from 'components/Liquidity/parsers/migrations'
+import { parseAsBoolean, parseAsString, useQueryState, useQueryStates } from 'nuqs'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { nativeOnChain } from 'uniswap/src/constants/tokens'
+import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
+import { useSupportedChainId } from 'uniswap/src/features/chains/hooks/useSupportedChainId'
+import { useCurrencyValidation } from '~/components/Liquidity/Create/hooks/useCurrencyValidation'
+import { PositionFlowStep, PositionState, PriceRangeState } from '~/components/Liquidity/Create/types'
+import { applyUrlMigrations } from '~/components/Liquidity/parsers/migrations'
 import {
   parseAsChainId,
   parseAsCurrencyAddress,
@@ -10,16 +15,11 @@ import {
   parseAsHookAddress,
   parseAsPositionFlowStep,
   parseAsPriceRangeState,
-} from 'components/Liquidity/parsers/urlParsers'
-import type { DepositState } from 'components/Liquidity/types'
-import { NATIVE_CHAIN_ID } from 'constants/tokens'
-import { getIsBrowserPage, MatchType, PageType } from 'hooks/useIsPage'
-import { parseAsBoolean, parseAsString, useQueryState, useQueryStates } from 'nuqs'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { nativeOnChain } from 'uniswap/src/constants/tokens'
-import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
-import { useSupportedChainId } from 'uniswap/src/features/chains/hooks/useSupportedChainId'
-import { assume0xAddress } from 'utils/wagmi'
+} from '~/components/Liquidity/parsers/urlParsers'
+import type { DepositState } from '~/components/Liquidity/types'
+import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { getIsBrowserPage, MatchType, PageType } from '~/hooks/useIsPage'
+import { assume0xAddress } from '~/utils/wagmi'
 
 // Parser for replace parameters (most params)
 const replaceStateParser = {
@@ -58,8 +58,9 @@ const replaceStateParser = {
 // without re-rendering the component (only used in the function!)
 function getIsSyncing() {
   const isCreatePosition = getIsBrowserPage(PageType.CREATE_POSITION, MatchType.STARTS_WITH)
-  const isMigrateV3 = getIsBrowserPage(PageType.MIGRATE_V3, MatchType.EXACT)
-  return isCreatePosition || isMigrateV3
+  const isMigrateV3 = getIsBrowserPage(PageType.MIGRATE_V3, MatchType.STARTS_WITH)
+  const isMigrateV2 = getIsBrowserPage(PageType.MIGRATE_V2, MatchType.STARTS_WITH)
+  return isCreatePosition || isMigrateV3 || isMigrateV2
 }
 
 export function useLiquidityUrlState() {
@@ -109,8 +110,12 @@ export function useLiquidityUrlState() {
   }, [replaceState, setReplaceState])
 
   const parsedChainId = chain ?? undefined
-  const supportedChainId = useSupportedChainId(parsedChainId) ?? defaultChainId
+  const resolvedChainId = useSupportedChainId(parsedChainId)
+  const supportedChainId = resolvedChainId ?? defaultChainId
   const defaultInitialToken = nativeOnChain(supportedChainId)
+
+  // Check if URL chain doesn't match current testnet mode - if so, clear currency params
+  const urlChainMismatch = parsedChainId !== undefined && resolvedChainId === undefined
 
   // Handle currency validation and loading
   const {
@@ -120,8 +125,8 @@ export function useLiquidityUrlState() {
     loadingB,
     loading: currencyValidationLoading,
   } = useCurrencyValidation({
-    currencyA,
-    currencyB,
+    currencyA: urlChainMismatch ? undefined : currencyA,
+    currencyB: urlChainMismatch ? undefined : currencyB,
     defaultInitialToken,
     chainId: supportedChainId,
   })

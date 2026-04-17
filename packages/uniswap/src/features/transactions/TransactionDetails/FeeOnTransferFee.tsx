@@ -30,7 +30,7 @@ export function FeeOnTransferFeeGroup({
 function FeeOnTransferFeeRow({ feeType, feeInfo }: { feeType: FoTFeeType; feeInfo: TokenFeeInfo }): JSX.Element {
   const { t } = useTranslation()
   const { severity } = getFeeSeverity(feeInfo.fee)
-  const usdAmountLoading = feeInfo.formattedUsdAmount === '-'
+  const usdAmountLoading = (feeInfo.isLoading ?? false) || feeInfo.formattedUsdAmount === '-'
 
   return (
     <Flex row alignItems="center" justifyContent="space-between">

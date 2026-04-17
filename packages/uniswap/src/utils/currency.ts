@@ -3,7 +3,7 @@ import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { LocalizationContextState } from 'uniswap/src/features/language/LocalizationContext'
 import { getCurrencyAmount, ValueType } from 'uniswap/src/features/tokens/getCurrencyAmount'
-import { SerializedToken } from 'uniswap/src/features/tokens/slice/types'
+import { SerializedToken } from 'uniswap/src/features/tokens/warnings/slice/types'
 import { getValidAddress } from 'uniswap/src/utils/addresses'
 import { shortenAddress } from 'utilities/src/addresses'
 
@@ -19,8 +19,11 @@ export function getSymbolDisplayText(symbol: Maybe<string>): Maybe<string> {
     : symbol
 }
 
-export function wrappedNativeCurrency(chainId: UniverseChainId): Token {
+export function wrappedNativeCurrency(chainId: UniverseChainId): Token | undefined {
   const wrappedCurrencyInfo = getChainInfo(chainId).wrappedNativeCurrency
+  if (!wrappedCurrencyInfo) {
+    return undefined
+  }
   return new Token(
     chainId,
     wrappedCurrencyInfo.address,

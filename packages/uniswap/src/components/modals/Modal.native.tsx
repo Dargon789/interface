@@ -3,7 +3,7 @@ import {
   BottomSheetModal as BaseModal,
   BottomSheetBackdrop,
   BottomSheetView,
-  // biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+  // oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
   BottomSheetTextInput as GorhomBottomSheetTextInput,
 } from '@gorhom/bottom-sheet'
 import { BlurView } from 'expo-blur'
@@ -17,8 +17,8 @@ import { useDeviceDimensions } from 'ui/src/hooks/useDeviceDimensions'
 import { borderRadii, spacing, zIndexes } from 'ui/src/theme'
 import { BottomSheetContextProvider } from 'uniswap/src/components/modals/BottomSheetContext'
 import { HandleBar } from 'uniswap/src/components/modals/HandleBar'
-import type { ModalProps } from 'uniswap/src/components/modals/ModalProps'
 import { BSM_ANIMATION_CONFIGS, IS_SHEET_READY_DELAY } from 'uniswap/src/components/modals/modalConstants'
+import type { ModalProps } from 'uniswap/src/components/modals/ModalProps'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { useAppInsets } from 'uniswap/src/hooks/useAppInsets'
 import { useKeyboardLayout } from 'uniswap/src/utils/useKeyboardLayout'
@@ -32,7 +32,7 @@ import { isIOS } from 'utilities/src/platform'
  * @param modalRef - ref to the modal
  * @param enabled - whether to enable the back handler
  */
-function useModalBackHandler(modalRef: React.RefObject<BaseModal>, enabled: boolean): void {
+function useModalBackHandler(modalRef: React.RefObject<BaseModal | null>, enabled: boolean): void {
   useEffect(() => {
     if (enabled) {
       const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -149,7 +149,7 @@ function BottomSheetModalContents({
   useModalBackHandler(modalRef, isDismissible && dismissOnBackPress)
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     modalRef.current?.present?.()
     // Close modal when it is unmounted
     return modalRef.current?.close
@@ -261,7 +261,9 @@ function BottomSheetModalContents({
   )
 
   const bottomSheetViewStyles: StyleProp<ViewStyle> = useMemo(() => {
-    const styles: StyleProp<ViewStyle> = [{ backgroundColor: backgroundColorValue }]
+    const styles: StyleProp<ViewStyle> = [
+      { backgroundColor: renderBehindTopInset ? 'transparent' : backgroundColorValue },
+    ]
 
     const hiddenHandlebarStyle = {
       borderTopLeftRadius: borderRadius,
@@ -366,7 +368,7 @@ export function BottomSheetDetachedModal({
   useModalBackHandler(modalRef, isDismissible && dismissOnBackPress)
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     modalRef.current?.present?.()
     // Close modal when it is unmounted
     return modalRef.current?.close

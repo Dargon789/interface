@@ -1,5 +1,5 @@
-import type { ReactNativeFirebase } from '@react-native-firebase/app'
 import '@react-native-firebase/auth'
+import type { ReactNativeFirebase } from '@react-native-firebase/app'
 import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore'
 import { isBetaEnv, isDevEnv } from 'utilities/src/environment/env'
 

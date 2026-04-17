@@ -14,10 +14,18 @@ import {
   createMockUniswapXTrade,
 } from 'uniswap/src/test/fixtures/transactions/swap'
 
-const UserAgentMock = jest.requireMock('utilities/src/platform')
-jest.mock('utilities/src/platform', () => ({
-  ...jest.requireActual('utilities/src/platform'),
-}))
+// Use vi.hoisted to create a mutable mock state that can be changed between tests
+const mockPlatformState = vi.hoisted(() => ({ isWebApp: false }))
+
+vi.mock('utilities/src/platform', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('utilities/src/platform')>()
+  return {
+    ...actual,
+    get isWebApp(): boolean {
+      return mockPlatformState.isWebApp
+    },
+  }
+})
 
 const mockTxRequest = {
   chainId: 1,
@@ -86,14 +94,16 @@ describe('Swap', () => {
           amount: '0',
           spender: '0x000000000022d473030f116ddee9f6b43ac78ba3',
           txRequest: swapTxContext.revocationTxRequest,
-          token: USDC,
+          chainId: USDC.chainId,
+          tokenAddress: USDC.address,
           type: TransactionStepType.TokenRevocationTransaction,
         },
         {
           amount: mockTrade.trade?.inputAmount.quotient.toString(),
           spender: '0x000000000022d473030f116ddee9f6b43ac78ba3',
           txRequest: swapTxContext.approveTxRequest,
-          token: USDC,
+          chainId: USDC.chainId,
+          tokenAddress: USDC.address,
           type: TransactionStepType.TokenApprovalTransaction,
         },
         {
@@ -114,7 +124,8 @@ describe('Swap', () => {
           amount: mockTrade.trade?.inputAmount.quotient.toString(),
           spender: '0x000000000022d473030f116ddee9f6b43ac78ba3',
           txRequest: swapTxContext.approveTxRequest,
-          token: USDC,
+          chainId: USDC.chainId,
+          tokenAddress: USDC.address,
           type: TransactionStepType.TokenApprovalTransaction,
         },
         {
@@ -126,7 +137,7 @@ describe('Swap', () => {
 
     it('should return steps for classic trade with approval and permit required', () => {
       // We only expect `SwapTransactionAsync` step when on interface swap (unsigned w/o a wallet interaction)
-      UserAgentMock.isWebApp = true
+      mockPlatformState.isWebApp = true
 
       const swapTxContext = {
         ...baseSwapTxContext,
@@ -140,12 +151,12 @@ describe('Swap', () => {
           amount: mockTrade.trade?.inputAmount.quotient.toString(),
           spender: '0x000000000022d473030f116ddee9f6b43ac78ba3',
           txRequest: swapTxContext.approveTxRequest,
-          token: USDC,
+          chainId: USDC.chainId,
+          tokenAddress: USDC.address,
           type: TransactionStepType.TokenApprovalTransaction,
         },
         {
           ...swapTxContext.permit.typedData,
-          token: USDC,
           type: TransactionStepType.Permit2Signature,
         },
         {
@@ -200,14 +211,16 @@ describe('Swap', () => {
           amount: '0',
           spender: '0x000000000022d473030f116ddee9f6b43ac78ba3',
           txRequest: swapTxContext.revocationTxRequest,
-          token: USDC,
+          chainId: USDC.chainId,
+          tokenAddress: USDC.address,
           type: TransactionStepType.TokenRevocationTransaction,
         },
         {
           amount: mockUniswapXTrade.inputAmount.quotient.toString(),
           spender: '0x000000000022d473030f116ddee9f6b43ac78ba3',
           txRequest: swapTxContext.approveTxRequest,
-          token: USDC,
+          chainId: USDC.chainId,
+          tokenAddress: USDC.address,
           type: TransactionStepType.TokenApprovalTransaction,
         },
         {
@@ -238,7 +251,8 @@ describe('Swap', () => {
           amount: mockUniswapXTrade.inputAmount.quotient.toString(),
           spender: '0x000000000022d473030f116ddee9f6b43ac78ba3',
           txRequest: swapTxContext.approveTxRequest,
-          token: USDC,
+          chainId: USDC.chainId,
+          tokenAddress: USDC.address,
           type: TransactionStepType.TokenApprovalTransaction,
         },
         {

@@ -1,7 +1,7 @@
 import { AnimatePresence, Flex, useIsShortMobileDevice } from 'ui/src'
+import { useSwapFormScreenStore } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/useSwapFormScreenStore'
 import { ExactOutputUnavailableWarningRow } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/SwapFormScreenDetails/SwapFormScreenFooter/ExactOutputUnavailableWarningRow'
 import { GasAndWarningRows } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/SwapFormScreenDetails/SwapFormScreenFooter/GasAndWarningRows/GasAndWarningRows'
-import { useSwapFormScreenStore } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/useSwapFormScreenStore'
 import { isWebPlatform } from 'utilities/src/platform'
 
 /**
@@ -11,14 +11,21 @@ import { isWebPlatform } from 'utilities/src/platform'
  */
 export function SwapFormScreenFooter(): JSX.Element | null {
   const isShortMobileDevice = useIsShortMobileDevice()
-  const { outputTokenHasBuyTax, showFooter, showExactOutputUnavailableWarning, exactAmountToken, currencies } =
-    useSwapFormScreenStore((state) => ({
-      outputTokenHasBuyTax: state.outputTokenHasBuyTax,
-      showFooter: state.showFooter,
-      showExactOutputUnavailableWarning: state.showExactOutputUnavailableWarning,
-      exactAmountToken: state.exactAmountToken,
-      currencies: state.currencies,
-    }))
+  const {
+    outputTokenHasBuyTax,
+    showFooter,
+    showExactOutputUnavailableWarning,
+    exactAmountToken,
+    currencies,
+    isCrossChain,
+  } = useSwapFormScreenStore((state) => ({
+    outputTokenHasBuyTax: state.outputTokenHasBuyTax,
+    showFooter: state.showFooter,
+    showExactOutputUnavailableWarning: state.showExactOutputUnavailableWarning,
+    exactAmountToken: state.exactAmountToken,
+    currencies: state.currencies,
+    isCrossChain: state.isCrossChain,
+  }))
 
   if (!showFooter) {
     return null
@@ -44,7 +51,11 @@ export function SwapFormScreenFooter(): JSX.Element | null {
     <Flex minHeight="$spacing40" pt={isShortMobileDevice ? '$spacing8' : '$spacing12'}>
       <AnimatePresence>
         {showExactOutputUnavailableWarning && (
-          <ExactOutputUnavailableWarningRow currencies={currencies} outputTokenHasBuyTax={outputTokenHasBuyTax} />
+          <ExactOutputUnavailableWarningRow
+            currencies={currencies}
+            outputTokenHasBuyTax={outputTokenHasBuyTax}
+            isCrossChain={isCrossChain}
+          />
         )}
       </AnimatePresence>
       {/* Accordion.Toggle is nested in GasAndWarningRows */}

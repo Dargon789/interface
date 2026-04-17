@@ -1,6 +1,7 @@
 import { GraphQLApi } from '@universe/api'
 import { BASE_LOGO, ETH_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import {
   DEFAULT_NATIVE_ADDRESS_LEGACY,
   DEFAULT_RETRY_OPTIONS,
@@ -63,10 +64,12 @@ export const BASE_CHAIN_INFO = {
     logo: ETH_LOGO,
   },
   networkLayer: NetworkLayer.L2,
+  blockTimeMs: 2000,
   pendingTransactionsRetryOptions: DEFAULT_RETRY_OPTIONS,
   statusPage: 'https://status.base.org/',
   supportsV4: true,
-  urlParam: 'base',
+  supportsNFTs: true,
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Base],
   rpcUrls: isPlaywrightEnv()
     ? getPlaywrightRpcUrls(LOCAL_BASE_PLAYWRIGHT_RPC_URL)
     : {
@@ -85,4 +88,5 @@ export const BASE_CHAIN_INFO = {
   },
   gasConfig: GENERIC_L2_GAS_CONFIG,
   tradingApiPollingIntervalMs: 150,
+  acrossProtocolAddress: '0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64',
 } as const satisfies UniverseChainInfo

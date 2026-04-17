@@ -10,7 +10,7 @@ export enum LockScreenVisibility {
   Hidden = 'hidden',
 }
 
-// eslint-disable-next-line import/no-unused-modules
+// oxlint-disable-next-line import/no-unused-modules
 export interface LockScreenState {
   visibility: LockScreenVisibility
   onBlur: boolean

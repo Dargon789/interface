@@ -127,6 +127,7 @@ export function getPendingResponseInfo({
     requestIdToSourceMap.delete(requestId)
 
     if (type !== DappResponseType.ErrorResponse && type !== pendingResponseInfo.type) {
+      // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
       logContentScriptError({
         errorMessage: `Response type doesn't match expected type, expected: ${pendingResponseInfo.type}, actual: ${type}`,
         fileName: 'methodHandlers/utils.ts',

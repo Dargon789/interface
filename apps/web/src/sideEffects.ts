@@ -1,19 +1,19 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-// note the reason for the setupi18n function is to avoid webpack tree shaking the file out
-import { setupi18n } from 'uniswap/src/i18n/i18n-setup-interface'
 import '@reach/dialog/styles.css'
-import 'global.css'
-import 'polyfills'
-import 'tracing'
-
+import '~/global.css'
+import '~/polyfills'
+import '~/tracing'
 // We intentionally import this to ensure that the WalletConnect provider is bundled as an entrypoint chunk,
 // because it will always be requested anyway and we don't want to have a waterfall request pattern.
 import * as WalletConnect from '@walletconnect/ethereum-provider'
-import { setupWagmiAutoConnect } from 'components/Web3Provider/wagmiAutoConnect'
-import { setupVitePreloadErrorHandler } from 'utils/setupVitePreloadErrorHandler'
+/* oxlint-disable typescript/no-unnecessary-condition */
+// note the reason for the setupi18n function is to avoid webpack tree shaking the file out
+import { setupi18n } from 'uniswap/src/i18n/i18n-setup-interface'
+import { setupWagmiAutoConnect } from '~/components/Web3Provider/wagmiAutoConnect'
+import { setupTurnstileCSPErrorFilter } from '~/utils/setupTurnstileCSPErrorFilter'
+import { setupVitePreloadErrorHandler } from '~/utils/setupVitePreloadErrorHandler'
 
 if (WalletConnect) {
-  // biome-ignore lint/suspicious/noConsole: Side effects module needs console for initialization logging
+  // oxlint-disable-next-line no-console -- Side effects module needs console for initialization logging
   console.debug('WalletConnect is defined')
 }
 
@@ -21,3 +21,4 @@ if (WalletConnect) {
 setupi18n()
 setupWagmiAutoConnect()
 setupVitePreloadErrorHandler()
+setupTurnstileCSPErrorFilter()

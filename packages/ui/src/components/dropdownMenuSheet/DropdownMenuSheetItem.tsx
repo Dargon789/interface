@@ -6,7 +6,8 @@ import { CheckCircleFilled, ExternalLink } from 'ui/src/components/icons'
 import { Flex, type FlexProps } from 'ui/src/components/layout'
 import { Text, type TextProps } from 'ui/src/components/text'
 import { TouchableArea } from 'ui/src/components/touchable'
-import { isMobileApp } from 'utilities/src/platform'
+import { spacing } from 'ui/src/theme'
+import { isMobileApp, isWebPlatform } from 'utilities/src/platform'
 import { useEvent } from 'utilities/src/react/hooks'
 
 export type DropdownMenuSheetItemProps = {
@@ -22,6 +23,7 @@ export type DropdownMenuSheetItemProps = {
   height?: number
   role?: Role
   subheader?: string
+  rightElement?: React.ReactNode
   onPress: () => void
   handleCloseMenu?: () => void
 }
@@ -39,6 +41,7 @@ export const DropdownMenuSheetItem = ({
   height,
   role = 'button',
   subheader,
+  rightElement,
   onPress,
   handleCloseMenu,
 }: DropdownMenuSheetItemProps): JSX.Element => {
@@ -68,6 +71,11 @@ export const DropdownMenuSheetItem = ({
     [destructive, textColor, disabled],
   )
 
+  // Prevents press events from bubbling to parent touchable areas (e.g., row wrappers)
+  const stopPressEventPropagation = useEvent((e: BaseSyntheticEvent): void => {
+    e.stopPropagation()
+  })
+
   return (
     <TouchableArea
       group
@@ -87,12 +95,16 @@ export const DropdownMenuSheetItem = ({
       backgroundColor="$background"
       height={height}
       hoverStyle={touchableAreaHoverStyle}
+      onPressIn={stopPressEventPropagation}
+      onPressOut={stopPressEventPropagation}
       onPress={handlePress}
     >
       <Flex shrink flexDirection={flexDirection} alignItems="center">
         {icon && <Flex flexShrink={0}>{icon}</Flex>}
         {icon && <Spacer size="$spacing8" />}
-        <Flex>
+        {/* Allow text to ellipsize and not overflow the container, because of the padding */}
+        {/* on the parent container. */}
+        <Flex maxWidth={isWebPlatform ? `calc(100% - ${spacing.spacing12}px)` : '90%'}>
           <Text
             flexShrink={1}
             numberOfLines={1}
@@ -110,14 +122,16 @@ export const DropdownMenuSheetItem = ({
           )}
         </Flex>
       </Flex>
-      {actionType === 'external-link' && (
-        <Flex grow flexShrink={0} alignItems="flex-end">
+      <Flex grow flexShrink={0} alignItems="flex-end">
+        {actionType === 'external-link' && (
           <ExternalLink
             size={isMobileApp ? (subheader ? '$icon.20' : '$icon.16') : subheader ? '$icon.16' : '$icon.12'}
             color="$neutral2"
           />
-        </Flex>
-      )}
+        )}
+        {rightElement}
+      </Flex>
+
       {isSelected !== undefined && (
         <Flex flexShrink={0}>{isSelected ? <CheckCircleFilled size="$icon.20" /> : <Spacer size="$spacing20" />}</Flex>
       )}

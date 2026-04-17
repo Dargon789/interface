@@ -21,7 +21,7 @@ export const config = createTamagui({
 type Conf = typeof config
 
 declare module '@tamagui/core' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
+  // oxlint-disable-next-line typescript/no-empty-interface
   interface TamaguiCustomConfig extends Conf {}
 
   interface TypeOverride {

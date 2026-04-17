@@ -11,9 +11,9 @@ export const useIsBlockingWithCustomMessage = (): boolean => {
 
   return Boolean(
     isTokenSelectionInvalid ||
-      isAmountSelectionInvalid ||
-      insufficientBalanceWarning ||
-      insufficientGasFundsWarning ||
-      isIndicative,
+    isAmountSelectionInvalid ||
+    insufficientBalanceWarning ||
+    insufficientGasFundsWarning ||
+    isIndicative,
   )
 }

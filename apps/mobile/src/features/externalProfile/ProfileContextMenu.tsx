@@ -4,9 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { NativeSyntheticEvent, Share } from 'react-native'
 import ContextMenu, { ContextMenuOnPressNativeEvent } from 'react-native-context-menu-view'
 import { useDispatch } from 'react-redux'
-import { TripleDot } from 'src/components/icons/TripleDot'
-import { Flex, TouchableArea } from 'ui/src'
-import { iconSizes } from 'ui/src/theme'
+import { TouchableArea } from 'ui/src'
+import { Ellipsis } from 'ui/src/components/icons'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { useUnitagsAddressQuery } from 'uniswap/src/data/apiClients/unitagsApi/useUnitagsAddressQuery'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
@@ -17,8 +16,8 @@ import { ElementName, WalletEventName } from 'uniswap/src/features/telemetry/con
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { MobileScreens } from 'uniswap/src/types/screens/mobile'
 import { ShareableEntity } from 'uniswap/src/types/sharing'
-import { setClipboard } from 'uniswap/src/utils/clipboard'
-import { ExplorerDataType, getExplorerLink, getProfileUrl, openUri } from 'uniswap/src/utils/linking'
+import { ExplorerDataType, getExplorerLink, getPortfolioUrl, openUri } from 'uniswap/src/utils/linking'
+import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { logger } from 'utilities/src/logger/logger'
 import { noop } from 'utilities/src/react/noop'
 
@@ -70,7 +69,7 @@ export function ProfileContextMenu({ address }: { address: Address }): JSX.Eleme
       return
     }
     try {
-      const url = getProfileUrl(address)
+      const url = getPortfolioUrl(address)
       await Share.share({
         message: url,
       })
@@ -118,13 +117,12 @@ export function ProfileContextMenu({ address }: { address: Address }): JSX.Eleme
       actions={menuActions}
       dropdownMenuMode={true}
       onPress={async (e: NativeSyntheticEvent<ContextMenuOnPressNativeEvent>): Promise<void> => {
+        // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
         await menuActions[e.nativeEvent.index]?.action()
       }}
     >
-      <TouchableArea backgroundColor="$surface4" borderRadius="$roundedFull" p="$spacing8" onLongPress={noop}>
-        <Flex centered grow height={iconSizes.icon16} width={iconSizes.icon16}>
-          <TripleDot color="$white" size={3.5} />
-        </Flex>
+      <TouchableArea centered backgroundColor="$surface4" borderRadius="$roundedFull" p="$spacing8" onLongPress={noop}>
+        <Ellipsis color="$neutral2" size="$icon.16" />
       </TouchableArea>
     </ContextMenu>
   )

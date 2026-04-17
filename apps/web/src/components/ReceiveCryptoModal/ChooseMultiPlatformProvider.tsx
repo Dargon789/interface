@@ -1,14 +1,6 @@
-import { useActiveAddresses } from 'features/accounts/store/hooks'
-import styled, { useTheme } from 'lib/styled-components'
-import { ProviderConnectedView } from 'pages/Swap/Buy/ProviderConnectedView'
-import { ProviderConnectionError } from 'pages/Swap/Buy/ProviderConnectionError'
-import { ConnectingViewWrapper } from 'pages/Swap/Buy/shared'
 import { useMemo } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { addFiatOnRampTransaction } from 'state/fiatOnRampTransactions/reducer'
-import { FiatOnRampTransactionStatus, FiatOnRampTransactionType } from 'state/fiatOnRampTransactions/types'
-import { ExternalLink } from 'theme/components/Links'
-import { Flex, Text, TouchableArea, useIsDarkMode } from 'ui/src'
+import { Flex, Text, TouchableArea, useIsDarkMode, useSporeColors } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
 import { NetworkLogo } from 'uniswap/src/components/CurrencyLogo/NetworkLogo'
 import { UNISWAP_WEB_URL } from 'uniswap/src/constants/urls'
@@ -16,8 +8,8 @@ import { MAINNET_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/mainnet
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { SOLANA_CHAIN_INFO } from 'uniswap/src/features/chains/svm/info/solana'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { useFiatOnRampAggregatorTransferWidgetQuery } from 'uniswap/src/features/fiatOnRamp/api'
 import { ServiceProviderLogoStyles } from 'uniswap/src/features/fiatOnRamp/constants'
+import { useFiatOnRampAggregatorTransferWidgetQuery } from 'uniswap/src/features/fiatOnRamp/hooks/useFiatOnRampQueries'
 import { FORServiceProvider } from 'uniswap/src/features/fiatOnRamp/types'
 import { getOptionalServiceProviderLogo } from 'uniswap/src/features/fiatOnRamp/utils'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
@@ -26,8 +18,16 @@ import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { shortenAddress } from 'utilities/src/addresses'
 import { useEvent } from 'utilities/src/react/hooks'
 import { v4 as uuid } from 'uuid'
+import { useActiveAddresses } from '~/features/accounts/store/hooks'
+import { deprecatedStyled } from '~/lib/deprecated-styled'
+import { ProviderConnectedView } from '~/pages/Swap/Buy/ProviderConnectedView'
+import { ProviderConnectionError } from '~/pages/Swap/Buy/ProviderConnectionError'
+import { ConnectingViewWrapper } from '~/pages/Swap/Buy/shared'
+import { addFiatOnRampTransaction } from '~/state/fiatOnRampTransactions/reducer'
+import { FiatOnRampTransactionStatus, FiatOnRampTransactionType } from '~/state/fiatOnRampTransactions/types'
+import { ExternalLink } from '~/theme/components/Links'
 
-const StyledLink = styled(ExternalLink)`
+const StyledLink = deprecatedStyled(ExternalLink)`
   font-weight: 535;
   color: ${({ theme }) => theme.neutral3};
 `
@@ -156,8 +156,8 @@ export function ChooseMultiPlatformProvider({
   setErrorProvider,
 }: ChooseMultiPlatformProviderProps) {
   const isDarkMode = useIsDarkMode()
-  const theme = useTheme()
   const { t } = useTranslation()
+  const colors = useSporeColors()
 
   const activeAddresses = useActiveAddresses()
 
@@ -212,12 +212,12 @@ export function ChooseMultiPlatformProvider({
             }}
             components={{
               tosLink: (
-                <StyledLink color={theme.neutral3} href="https://uniswap.org/terms-of-service/">
+                <StyledLink color={colors.neutral3.val} href="https://uniswap.org/terms-of-service/">
                   {t('common.termsOfService')}
                 </StyledLink>
               ),
               privacyLink: (
-                <StyledLink color={theme.neutral3} href="https://uniswap.org/privacy-policy">
+                <StyledLink color={colors.neutral3.val} href="https://uniswap.org/privacy-policy">
                   {t('common.privacyPolicy')}
                 </StyledLink>
               ),

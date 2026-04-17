@@ -1,19 +1,20 @@
-import { CardContents } from 'pages/Landing/components/cards/CardContents'
-import { PillButton } from 'pages/Landing/components/cards/PillButton'
-import ValuePropCard from 'pages/Landing/components/cards/ValuePropCard'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useTranslation } from 'react-i18next'
 import { LayerGroup } from 'ui/src/components/icons/LayerGroup'
 import { opacify } from 'ui/src/theme'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
+import { CardContents } from '~/pages/Landing/components/cards/CardContents'
+import { PillButton } from '~/pages/Landing/components/cards/PillButton'
+import ValuePropCard from '~/pages/Landing/components/cards/ValuePropCard'
 
 const primary = '#FF4D00'
 
 export function TradingApiCard() {
   const { t } = useTranslation()
+  const isUnificationCopyEnabled = useFeatureFlag(FeatureFlags.UnificationCopy)
 
   return (
     <ValuePropCard
-      smaller
       backgroundColor={opacify(4, primary)}
       $theme-dark={{
         backgroundColor: opacify(12, primary),
@@ -28,7 +29,7 @@ export function TradingApiCard() {
         />
       }
       bodyText={t('landing.tradingApiBody')}
-      subtitle={t('landing.tradingApiSubtitle')}
+      subtitle={isUnificationCopyEnabled ? t('landing.tradingApiSubtitle') : t('landing.tradingApiSubtitle.old')}
       button={<PillButton backgroundColor="$surface1" color={primary} label={t('landing.tradingApiButton')} />}
       alignTextToBottom
     >

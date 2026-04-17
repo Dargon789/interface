@@ -1,8 +1,19 @@
-import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import { Currency, CurrencyAmount, Token } from '@uniswap/sdk-core'
-import { TradingApi } from '@universe/api'
-import { PermitTransaction, PermitTypedData } from 'uniswap/src/features/transactions/swap/types/swapTxAndGasInfo'
-import { ValidatedTransactionRequest } from 'uniswap/src/features/transactions/types/transactionRequests'
+import { type ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
+import {
+  type CreateLPPositionRequest,
+  type IncreaseLPPositionRequest,
+  type MigrateV3ToV4LPPositionRequest,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
+import {
+  type CreatePositionRequest,
+  type IncreasePositionRequest,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
+import { type Currency, type CurrencyAmount, type Token } from '@uniswap/sdk-core'
+import {
+  type PermitTransaction,
+  type PermitTypedData,
+} from 'uniswap/src/features/transactions/swap/types/swapTxAndGasInfo'
+import { type ValidatedTransactionRequest } from 'uniswap/src/features/transactions/types/transactionRequests'
 
 export enum LiquidityTransactionType {
   Create = 'create',
@@ -23,13 +34,13 @@ export type LiquidityTxAndGasInfo =
   | IncreasePositionTxAndGasInfo
   | DecreasePositionTxAndGasInfo
   | CreatePositionTxAndGasInfo
-  | MigrateV3PositionTxAndGasInfo
+  | MigratePositionTxAndGasInfo
   | CollectFeesTxAndGasInfo
 export type ValidatedLiquidityTxContext =
   | ValidatedIncreasePositionTxAndGasInfo
   | ValidatedDecreasePositionTxAndGasInfo
   | ValidatedCreatePositionTxAndGasInfo
-  | ValidatedMigrateV3PositionTxAndGasInfo
+  | ValidatedMigratePositionTxAndGasInfo
   | ValidatedCollectFeesTxAndGasInfo
 
 export function isValidLiquidityTxContext(
@@ -40,7 +51,8 @@ export function isValidLiquidityTxContext(
 }
 
 interface BaseLiquidityTxAndGasInfo {
-  protocolVersion: ProtocolVersion
+  canBatchTransactions: boolean
+  delegatedAddress: string | null
   action: LiquidityAction
   approveToken0Request: ValidatedTransactionRequest | undefined
   approveToken1Request: ValidatedTransactionRequest | undefined
@@ -57,25 +69,22 @@ interface BaseLiquidityTxAndGasInfo {
 export interface IncreasePositionTxAndGasInfo extends BaseLiquidityTxAndGasInfo {
   type: LiquidityTransactionType.Increase
   unsigned: boolean
-  increasePositionRequestArgs: TradingApi.IncreaseLPPositionRequest | undefined
-  sqrtRatioX96: string | undefined
+  increasePositionRequestArgs: IncreaseLPPositionRequest | IncreasePositionRequest | undefined
 }
 
 export interface DecreasePositionTxAndGasInfo extends BaseLiquidityTxAndGasInfo {
   type: LiquidityTransactionType.Decrease
-  sqrtRatioX96: string | undefined
 }
 
 export interface CreatePositionTxAndGasInfo extends BaseLiquidityTxAndGasInfo {
   type: LiquidityTransactionType.Create
   unsigned: boolean
-  createPositionRequestArgs: TradingApi.CreateLPPositionRequest | undefined
-  sqrtRatioX96: string | undefined
+  createPositionRequestArgs: CreateLPPositionRequest | CreatePositionRequest | undefined
 }
 
-export interface MigrateV3PositionTxAndGasInfo extends BaseLiquidityTxAndGasInfo {
+export interface MigratePositionTxAndGasInfo extends BaseLiquidityTxAndGasInfo {
   type: LiquidityTransactionType.Migrate
-  migratePositionRequestArgs: TradingApi.MigrateLPPositionRequest | undefined
+  migratePositionRequestArgs: MigrateV3ToV4LPPositionRequest | undefined
 }
 
 export interface CollectFeesTxAndGasInfo {
@@ -96,7 +105,6 @@ export type ValidatedIncreasePositionTxAndGasInfo = Required<IncreasePositionTxA
         unsigned: false
         permit: PermitTransaction | undefined
         txRequest: ValidatedTransactionRequest
-        sqrtRatioX96: string | undefined
       }
   )
 
@@ -115,11 +123,10 @@ export type ValidatedCreatePositionTxAndGasInfo = Required<CreatePositionTxAndGa
         unsigned: false
         permit: PermitTransaction | undefined
         txRequest: ValidatedTransactionRequest
-        sqrtRatioX96: string | undefined
       }
   )
 
-export type ValidatedMigrateV3PositionTxAndGasInfo = Required<MigrateV3PositionTxAndGasInfo> &
+export type ValidatedMigratePositionTxAndGasInfo = Required<MigratePositionTxAndGasInfo> &
   (
     | {
         unsigned: true
@@ -135,6 +142,8 @@ export type ValidatedMigrateV3PositionTxAndGasInfo = Required<MigrateV3PositionT
 
 export type ValidatedCollectFeesTxAndGasInfo = CollectFeesTxAndGasInfo & {
   txRequest: ValidatedTransactionRequest
+  canBatchTransactions?: undefined
+  delegatedAddress?: undefined
 }
 
 function validateLiquidityTxContext(
@@ -161,6 +170,11 @@ function validateLiquidityTxContext(
     }
     return { ...liquidityTxContext, action, unsigned, txRequest: undefined, permit }
   } else if (txRequest) {
+    // Type-safe handling: Decrease type doesn't have 'unsigned' property
+    if (liquidityTxContext.type === LiquidityTransactionType.Decrease) {
+      return { ...liquidityTxContext, action, txRequest, permit: undefined }
+    }
+    // For Increase/Create/Migrate types with txRequest
     return { ...liquidityTxContext, action, unsigned, txRequest, permit: undefined }
   }
 
@@ -168,10 +182,5 @@ function validateLiquidityTxContext(
 }
 
 function isLiquidityTx(liquidityTxContext: unknown): liquidityTxContext is LiquidityTxAndGasInfo {
-  return (
-    typeof liquidityTxContext === 'object' &&
-    liquidityTxContext !== null &&
-    'action' in liquidityTxContext &&
-    'protocolVersion' in liquidityTxContext
-  )
+  return typeof liquidityTxContext === 'object' && liquidityTxContext !== null && 'action' in liquidityTxContext
 }

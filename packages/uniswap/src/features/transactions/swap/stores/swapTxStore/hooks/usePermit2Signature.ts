@@ -4,7 +4,6 @@ import { TradingApi } from '@universe/api'
 import type { TypedDataField } from 'ethers/lib/ethers'
 import { useCallback } from 'react'
 import { useSigner } from 'uniswap/src/contexts/UniswapContext'
-
 import { signTypedData } from 'uniswap/src/features/transactions/signing'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { queryWithoutCache } from 'utilities/src/reactQuery/queryOptions'

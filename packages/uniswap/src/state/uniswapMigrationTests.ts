@@ -1,5 +1,14 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: legacy code needs review */
+/**
+ * Test helpers for testing migrations run in sequence.
+ *
+ * Called by migrations.test.ts to verify migrations work correctly with realistic
+ * data that has passed through all prior migrations in the chain.
+ *
+ * For unit tests of individual migrations, see uniswapMigrations.test.ts.
+ */
+/* oxlint-disable typescript/no-explicit-any -- legacy code needs review */
 import { SearchHistoryResultType } from 'uniswap/src/features/search/SearchHistoryResult'
+import { TokenProtectionWarning } from 'uniswap/src/features/tokens/warnings/types'
 import { PreV55SearchResultType } from 'uniswap/src/state/oldTypes'
 
 // Mobile: 89
@@ -44,4 +53,21 @@ export function testMigrateSearchHistory(migration: (state: any) => any, prevSch
 export function testAddActivityVisibility(migration: (state: any) => any, prevSchema: any): void {
   const result = migration(prevSchema)
   expect(result.visibility.activity).toEqual({})
+}
+
+// Mobile: 96
+// Extension: 30
+// Web: 60
+export function testMigrateDismissedTokenWarnings(migration: (state: any) => any, prevSchema: any): void {
+  const result = migration(prevSchema)
+
+  // oxlint-disable-next-line guard-for-in -- biome-parity: oxlint is stricter here
+  for (const chainId in result.tokens.dismissedTokenWarnings) {
+    // oxlint-disable-next-line guard-for-in -- biome-parity: oxlint is stricter here
+    for (const address in result.tokens.dismissedTokenWarnings[chainId]) {
+      expect(result.tokens.dismissedTokenWarnings[chainId][address].warnings).toEqual([
+        TokenProtectionWarning.NonDefault,
+      ])
+    }
+  }
 }

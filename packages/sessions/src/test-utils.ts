@@ -1,16 +1,18 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: mock handlers */
+/* oxlint-disable typescript/no-explicit-any -- mock handlers */
 import type { PartialMessage } from '@bufbuild/protobuf'
 import type { CallOptions } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   type ChallengeRequest,
   type ChallengeResponse,
-  type DeleteSessionRequest,
-  type DeleteSessionResponse,
+  type GetChallengeTypesRequest,
+  type GetChallengeTypesResponse,
   type InitSessionRequest,
   type InitSessionResponse,
   type IntrospectSessionRequest,
   type IntrospectSessionResponse,
+  type SignoutRequest,
+  type SignoutResponse,
   type UpdateSessionRequest,
   type UpdateSessionResponse,
   type VerifyRequest,
@@ -19,6 +21,7 @@ import {
 import type { DeviceIdService } from '@universe/sessions/src/device-id/types'
 import type { SessionServiceClient } from '@universe/sessions/src/session-repository/createSessionClient'
 import type { SessionState, SessionStorage } from '@universe/sessions/src/session-storage/types'
+import type { UniswapIdentifierService } from '@universe/sessions/src/uniswap-identifier/types'
 // Types for our test transport
 export interface MockEndpointHandler {
   (request: any, headers: Record<string, string>): Promise<any>
@@ -28,9 +31,10 @@ export interface MockEndpoints {
   '/uniswap.platformservice.v1.SessionService/InitSession': MockEndpointHandler
   '/uniswap.platformservice.v1.SessionService/Challenge': MockEndpointHandler
   '/uniswap.platformservice.v1.SessionService/Verify': MockEndpointHandler
-  '/uniswap.platformservice.v1.SessionService/DeleteSession': MockEndpointHandler
   '/uniswap.platformservice.v1.SessionService/IntrospectSession': MockEndpointHandler
   '/uniswap.platformservice.v1.SessionService/UpdateSession': MockEndpointHandler
+  '/uniswap.platformservice.v1.SessionService/GetChallengeTypes': MockEndpointHandler
+  '/uniswap.platformservice.v1.SessionService/Signout': MockEndpointHandler
 }
 
 // Test transport that intercepts requests and returns mock responses
@@ -43,7 +47,7 @@ export function createTestTransport(mockEndpoints: MockEndpoints): ReturnType<ty
         const path = new URL(url).pathname
         const handler = mockEndpoints[path as keyof MockEndpoints]
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         if (!handler) {
           throw new Error(`No mock handler for ${path}`)
         }
@@ -105,8 +109,24 @@ export class InMemoryDeviceIdService implements DeviceIdService {
   }
 }
 
+export class InMemoryUniswapIdentifierService implements UniswapIdentifierService {
+  private identifier: string | null = null
+
+  async getUniswapIdentifier(): Promise<string | null> {
+    return this.identifier
+  }
+
+  async setUniswapIdentifier(id: string): Promise<void> {
+    this.identifier = id
+  }
+
+  async removeUniswapIdentifier(): Promise<void> {
+    this.identifier = null
+  }
+}
+
 // Create a mock session client for testing
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 export function createMockSessionClient(
   mockEndpoints: MockEndpoints,
   sessionStorage: SessionStorage,
@@ -151,13 +171,6 @@ export function createMockSessionClient(
       const response = await mockEndpoints['/uniswap.platformservice.v1.SessionService/Verify'](request, headers)
       return response as VerifyResponse
     },
-    deleteSession: async (
-      request: PartialMessage<DeleteSessionRequest>,
-      _options?: CallOptions,
-    ): Promise<DeleteSessionResponse> => {
-      const response = await mockEndpoints['/uniswap.platformservice.v1.SessionService/DeleteSession'](request, {})
-      return response as DeleteSessionResponse
-    },
     introspectSession: async (
       request: PartialMessage<IntrospectSessionRequest>,
       _options?: CallOptions,
@@ -171,6 +184,17 @@ export function createMockSessionClient(
     ): Promise<UpdateSessionResponse> => {
       const response = await mockEndpoints['/uniswap.platformservice.v1.SessionService/UpdateSession'](request, {})
       return response as UpdateSessionResponse
+    },
+    getChallengeTypes: async (
+      request: PartialMessage<GetChallengeTypesRequest>,
+      _options?: CallOptions,
+    ): Promise<GetChallengeTypesResponse> => {
+      const response = await mockEndpoints['/uniswap.platformservice.v1.SessionService/GetChallengeTypes'](request, {})
+      return response as GetChallengeTypesResponse
+    },
+    signout: async (request: PartialMessage<SignoutRequest>, _options?: CallOptions): Promise<SignoutResponse> => {
+      const response = await mockEndpoints['/uniswap.platformservice.v1.SessionService/Signout'](request, {})
+      return response as SignoutResponse
     },
   }
 }

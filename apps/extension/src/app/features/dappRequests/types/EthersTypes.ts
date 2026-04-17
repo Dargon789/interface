@@ -6,7 +6,7 @@ import { z } from 'zod'
  * Ethers types copied from `ethers` package
  */
 
-// eslint-disable-next-line no-restricted-syntax
+// oxlint-disable-next-line no-restricted-syntax
 export const BigNumberSchema = z.any() // TODO (EXT-831): Add schema once stable
 
 const AccessListEntrySchema = z.object({
@@ -32,7 +32,7 @@ const BytesLikeSchema = z.string().refine((data) => isHexString(data))
 const AccessListishSchema = z.union([
   AccessListSchema,
   z.array(z.tuple([z.string(), z.array(z.string())])), // Array of 2-element Arrays format
-  z.record(z.array(z.string())), // Object with addresses as keys and arrays of storage keys as values
+  z.record(z.string(), z.array(z.string())), // Object with addresses as keys and arrays of storage keys as values
 ])
 
 export const EthersTransactionRequestSchema = z.object({
@@ -44,11 +44,11 @@ export const EthersTransactionRequestSchema = z.object({
   data: BytesLikeSchema.optional(),
   value: BigNumberishSchema.optional(),
   chainId: HexadecimalNumberSchema.optional(),
-  type: z.number().optional(),
+  type: z.union([z.number(), HexadecimalNumberSchema]).optional(),
   accessList: AccessListishSchema.optional(),
   maxPriorityFeePerGas: BigNumberishSchema.optional(),
   maxFeePerGas: BigNumberishSchema.optional(),
-  // eslint-disable-next-line no-restricted-syntax
-  customData: z.record(z.any()).optional(),
+  // oxlint-disable-next-line no-restricted-syntax
+  customData: z.record(z.string(), z.any()).optional(),
   ccipReadEnabled: z.boolean().optional(),
 })

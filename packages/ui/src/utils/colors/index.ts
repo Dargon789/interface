@@ -63,7 +63,7 @@ function getSpecialCaseTokenColor(imageUrl: Maybe<string>, isDarkMode: boolean):
     return null
   }
 
-  return SPECIAL_CASE_TOKEN_COLORS[imageUrl] ?? null
+  return SPECIAL_CASE_TOKEN_COLORS[imageUrl]
 }
 /**
  * Picks a contrast-passing color from a given token image URL and background color.
@@ -103,6 +103,16 @@ export function useExtractedTokenColor({
   const [tokenColorLoading, setTokenColorLoading] = useState(true)
   const isDarkMode = useIsDarkMode()
   const { foreground } = useColorSchemeFromSeed(tokenName ?? '')
+
+  // Without this, internal state keeps the previous image's color when the URL changes and the new
+  // extraction yields no palette (the sync effect below never calls setTokenColor).
+  useEffect(() => {
+    if (!imageUrl) {
+      return
+    }
+    setTokenColor(defaultColor)
+    setTokenColorLoading(true)
+  }, [imageUrl, defaultColor])
 
   useEffect(() => {
     if (!colorsLoading) {

@@ -1,172 +1,139 @@
-import { createColumnHelper } from '@tanstack/react-table'
-import { Table } from 'components/Table'
-import { Cell } from 'components/Table/Cell'
-import { HeaderCell } from 'components/Table/styled'
-import { ValueWithFadedDecimals } from 'pages/Portfolio/components/ValueWithFadedDecimals/ValueWithFadedDecimals'
-import { TokenData } from 'pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
-import { Allocation } from 'pages/Portfolio/Tokens/Table/columns/Allocation'
-import { Balance } from 'pages/Portfolio/Tokens/Table/columns/Balance'
-import { ContextMenuButton } from 'pages/Portfolio/Tokens/Table/columns/ContextMenuButton'
-import { RelativeChange1D } from 'pages/Portfolio/Tokens/Table/columns/RelativeChange1D'
-import { TokenDisplay } from 'pages/Portfolio/Tokens/Table/columns/TokenDisplay'
-import { Value } from 'pages/Portfolio/Tokens/Table/columns/Value'
-import { TokensContextMenuWrapper } from 'pages/Portfolio/Tokens/Table/TokensContextMenuWrapper'
-import { useMemo } from 'react'
+import { type ColumnDef, Row } from '@tanstack/react-table'
+import { SharedEventName } from '@uniswap/analytics-events'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Text } from 'ui/src'
-
-const hasRow = <T,>(obj: unknown): obj is { row: { original: T } } => {
-  const maybeRow = (obj as { row?: unknown }).row
-  return typeof maybeRow === 'object' && maybeRow !== null && 'original' in maybeRow && maybeRow.original !== undefined
-}
+import { TouchableArea } from 'ui/src'
+import { InformationBanner } from 'uniswap/src/components/banners/InformationBanner'
+import { ElementName, SectionName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
+import { HiddenTokenInfoModal } from 'uniswap/src/features/transactions/modals/HiddenTokenInfoModal'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { useBooleanState } from 'utilities/src/react/useBooleanState'
+import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import { Table } from '~/components/Table'
+import { PORTFOLIO_TABLE_ROW_HEIGHT } from '~/pages/Portfolio/constants'
+import { useNavigateToTokenDetails } from '~/pages/Portfolio/Tokens/hooks/useNavigateToTokenDetails'
+import { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
+import { TokenColumns, useTokenColumns } from '~/pages/Portfolio/Tokens/Table/columns/useTokenColumns'
+import {
+  buildTokenTableRows,
+  getSubRows,
+  getTokenDataForRow,
+  getTokenTableRowId,
+} from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
+import type { TokenTableRow } from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
 
 export function TokensTableInner({
   tokenData,
   hideHeader,
+  showHiddenTokensBanner = false,
   loading = false,
   error,
+  hiddenColumns,
+  maxHeight,
+  maxWidth = 1200,
+  loadingRowsCount,
+  externalScrollSync = true,
+  scrollGroup = 'portfolio-tokens',
+  analyticsContext,
+  showUnrealizedPnlPercent = false,
 }: {
   tokenData: TokenData[]
   hideHeader?: boolean
+  showHiddenTokensBanner?: boolean
   loading?: boolean
   error?: Error | undefined
+  hiddenColumns?: TokenColumns[]
+  maxHeight?: number
+  maxWidth?: number
+  loadingRowsCount?: number
+  externalScrollSync?: boolean
+  scrollGroup?: string
+  analyticsContext?: { element: ElementName; section: SectionName }
+  showUnrealizedPnlPercent?: boolean
 }) {
   const { t } = useTranslation()
+  const { value: isModalVisible, setTrue: openModal, setFalse: closeModal } = useBooleanState(false)
   const showLoadingSkeleton = loading || !!error
+  const trace = useTrace()
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const allowMultichainExpandRows = multichainTokenUxEnabled && !showHiddenTokensBanner
+  const rows = useMemo(
+    () => buildTokenTableRows(tokenData, allowMultichainExpandRows),
+    [tokenData, allowMultichainExpandRows],
+  )
 
-  // Create table columns
-  const columns = useMemo(() => {
-    const columnHelper = createColumnHelper<TokenData>()
+  const columns = useTokenColumns({
+    hiddenColumns,
+    showLoadingSkeleton,
+    showUnrealizedPnlPercent,
+  })
 
-    return [
-      columnHelper.accessor('currencyInfo', {
-        header: () => (
-          <HeaderCell justifyContent="flex-start">
-            <Text variant="body3" color="$neutral2">
-              {t('portfolio.tokens.table.column.token')}
-            </Text>
-          </HeaderCell>
-        ),
-        cell: (info) => {
-          return (
-            <Cell loading={showLoadingSkeleton} justifyContent="flex-start">
-              <TokenDisplay currencyInfo={info.getValue()} />
-            </Cell>
-          )
-        },
-      }),
-      columnHelper.accessor('price', {
-        header: () => (
-          <HeaderCell justifyContent="flex-end">
-            <Text variant="body3" color="$neutral2">
-              {t('portfolio.tokens.table.column.price')}
-            </Text>
-          </HeaderCell>
-        ),
-        cell: (info) => {
-          return (
-            <Cell loading={showLoadingSkeleton} justifyContent="flex-end">
-              <ValueWithFadedDecimals value={info.getValue()} />
-            </Cell>
-          )
-        },
-      }),
-      columnHelper.accessor('change1d', {
-        header: () => (
-          <HeaderCell justifyContent="flex-end">
-            <Text variant="body3" color="$neutral2">
-              {t('portfolio.tokens.table.column.change1d')}
-            </Text>
-          </HeaderCell>
-        ),
-        cell: (info) => {
-          return (
-            <Cell loading={showLoadingSkeleton} justifyContent="flex-end">
-              <RelativeChange1D value={info.getValue()} />
-            </Cell>
-          )
-        },
-      }),
-      columnHelper.accessor('balance', {
-        header: () => (
-          <HeaderCell justifyContent="flex-end">
-            <Text variant="body3" color="$neutral2">
-              {t('portfolio.tokens.table.column.balance')}
-            </Text>
-          </HeaderCell>
-        ),
-        cell: (info) => {
-          return (
-            <Cell loading={showLoadingSkeleton} justifyContent="flex-end">
-              <Balance value={info.getValue().value} symbol={info.getValue().symbol} />
-            </Cell>
-          )
-        },
-      }),
-      columnHelper.accessor('value', {
-        header: () => (
-          <HeaderCell justifyContent="flex-end">
-            <Text variant="body3" color="$neutral2">
-              {t('portfolio.tokens.table.column.value')}
-            </Text>
-          </HeaderCell>
-        ),
-        cell: (info) => {
-          return (
-            <Cell loading={showLoadingSkeleton} justifyContent="flex-end">
-              <Value value={info.getValue()} />
-            </Cell>
-          )
-        },
-      }),
-      columnHelper.accessor('allocation', {
-        header: () => (
-          <HeaderCell justifyContent="flex-end">
-            <Text variant="body3" color="$neutral2">
-              {t('portfolio.tokens.table.column.allocation')}
-            </Text>
-          </HeaderCell>
-        ),
-        cell: (info) => {
-          return (
-            <Cell loading={showLoadingSkeleton} justifyContent="flex-end">
-              <Allocation value={info.getValue()} />
-            </Cell>
-          )
-        },
-      }),
-      columnHelper.display({
-        id: 'actions',
-        size: 40,
-        header: () => <HeaderCell />,
-        cell: (info) => {
-          const tokenData = hasRow<TokenData>(info) ? info.row.original : undefined
-          return (
-            <Cell loading={showLoadingSkeleton} justifyContent="center">
-              {tokenData && <ContextMenuButton tokenData={tokenData} />}
-            </Cell>
-          )
-        },
-      }),
-    ]
-  }, [t, showLoadingSkeleton])
+  const navigateToTokenDetails = useNavigateToTokenDetails()
+
+  const handleTokenRowClick = useCallback(
+    (data: TokenData) => {
+      sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
+        element: analyticsContext?.element ?? ElementName.TokenItem,
+        section: analyticsContext?.section ?? SectionName.PortfolioTokensTab,
+        ...trace,
+      })
+      navigateToTokenDetails(data.currencyInfo.currency)
+    },
+    [navigateToTokenDetails, trace, analyticsContext],
+  )
+
+  const rowWrapper = useCallback(
+    (row: Row<TokenTableRow>, content: JSX.Element) => {
+      if (loading) {
+        return content
+      }
+      const canExpand = allowMultichainExpandRows && row.getCanExpand()
+      const onPress = canExpand
+        ? () => row.toggleExpanded()
+        : () => handleTokenRowClick(getTokenDataForRow(row.original))
+      return (
+        <TouchableArea onPress={onPress} pressStyle={{ scale: 1 }}>
+          {content}
+        </TouchableArea>
+      )
+    },
+    [loading, allowMultichainExpandRows, handleTokenRowClick],
+  )
 
   return (
-    <Table
-      columns={columns}
-      data={tokenData}
-      loading={loading}
-      error={!!error}
-      v2={true}
-      hideHeader={hideHeader}
-      externalScrollSync
-      scrollGroup="portfolio-tokens"
-      getRowId={(row) => row.id}
-      rowWrapper={
-        loading
-          ? undefined
-          : (row, content) => <TokensContextMenuWrapper tokenData={row.original}>{content}</TokensContextMenuWrapper>
-      }
-    />
+    <>
+      {showHiddenTokensBanner && (
+        <InformationBanner
+          infoText={t('hidden.tokens.info.banner.text')}
+          onPress={openModal}
+          testID={TestID.HiddenTokensInfoBanner}
+        />
+      )}
+      <HiddenTokenInfoModal isOpen={isModalVisible} onClose={closeModal} />
+      <Table<TokenTableRow>
+        columns={columns as ColumnDef<TokenTableRow, unknown>[]}
+        data={rows}
+        loading={loading}
+        error={!!error}
+        v2={true}
+        hideHeader={hideHeader}
+        externalScrollSync={externalScrollSync}
+        scrollGroup={scrollGroup}
+        getRowId={(row: TokenTableRow) => getTokenTableRowId(row)}
+        getSubRows={getSubRows}
+        singleExpandedRow
+        rowWrapper={rowWrapper}
+        rowHeight={PORTFOLIO_TABLE_ROW_HEIGHT}
+        compactRowHeight={PORTFOLIO_TABLE_ROW_HEIGHT}
+        subRowHeight={40}
+        defaultPinnedColumns={['currencyInfo']}
+        maxWidth={maxWidth}
+        maxHeight={maxHeight}
+        loadingRowsCount={loadingRowsCount}
+        centerArrows
+      />
+    </>
   )
 }

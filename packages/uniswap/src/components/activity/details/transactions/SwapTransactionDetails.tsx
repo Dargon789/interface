@@ -62,12 +62,20 @@ export function SwapTransactionContent({
 }): JSX.Element {
   const colors = useSporeColors()
 
-  const { descriptor: inputDescriptor, value: inputValue } = useTokenAmountInfo({
+  const {
+    descriptor: inputDescriptor,
+    value: inputValue,
+    isLoading: isLoadingInput,
+  } = useTokenAmountInfo({
     currency: inputCurrency?.currency,
     amountRaw: inputCurrencyAmountRaw,
     isApproximateAmount: isConfirmed ? false : tradeType === TradeType.EXACT_OUTPUT,
   })
-  const { descriptor: outputDescriptor, value: outputValue } = useTokenAmountInfo({
+  const {
+    descriptor: outputDescriptor,
+    value: outputValue,
+    isLoading: isLoadingOutput,
+  } = useTokenAmountInfo({
     currency: outputCurrency?.currency,
     amountRaw: outputCurrencyAmountRaw,
     isApproximateAmount: isConfirmed ? false : tradeType === TradeType.EXACT_INPUT,
@@ -81,6 +89,8 @@ export function SwapTransactionContent({
       usdValueA={inputValue}
       tokenDescriptorB={outputDescriptor}
       usdValueB={outputValue}
+      isLoadingA={isLoadingInput}
+      isLoadingB={isLoadingOutput}
       separatorElement={<Arrow color={colors.neutral3.val} direction="s" size={iconSizes.icon20} />}
       disableClick={disableClick}
       onClose={onClose}

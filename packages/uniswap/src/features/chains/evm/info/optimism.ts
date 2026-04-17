@@ -1,6 +1,7 @@
 import { GraphQLApi } from '@universe/api'
 import { ETH_LOGO, OPTIMISM_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import {
   DEFAULT_NATIVE_ADDRESS_LEGACY,
   DEFAULT_RETRY_OPTIONS,
@@ -51,6 +52,7 @@ export const OPTIMISM_CHAIN_INFO = {
   },
   openseaName: 'optimism',
   interfaceName: 'optimism',
+  searchAliases: ['op'],
   label: 'OP Mainnet',
   logo: OPTIMISM_LOGO,
   nativeCurrency: {
@@ -62,6 +64,7 @@ export const OPTIMISM_CHAIN_INFO = {
     logo: ETH_LOGO,
   },
   networkLayer: NetworkLayer.L2,
+  blockTimeMs: 2000,
   pendingTransactionsRetryOptions: DEFAULT_RETRY_OPTIONS,
   rpcUrls: {
     [RPCType.Public]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Optimism)] },
@@ -73,7 +76,8 @@ export const OPTIMISM_CHAIN_INFO = {
   tokens,
   statusPage: 'https://optimism.io/status',
   supportsV4: true,
-  urlParam: 'optimism',
+  supportsNFTs: true,
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Optimism],
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
     symbol: 'WETH',
@@ -82,4 +86,5 @@ export const OPTIMISM_CHAIN_INFO = {
   },
   gasConfig: GENERIC_L2_GAS_CONFIG,
   tradingApiPollingIntervalMs: 200,
+  acrossProtocolAddress: '0x6f26Bf09B1C792e3228e5467807a900A503c0281',
 } as const satisfies UniverseChainInfo

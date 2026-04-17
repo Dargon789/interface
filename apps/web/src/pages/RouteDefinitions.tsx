@@ -1,54 +1,62 @@
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { getExploreDescription, getExploreTitle } from 'pages/getExploreTitle'
-import { getAddLiquidityPageTitle, getPositionPageDescription, getPositionPageTitle } from 'pages/getPositionPageTitle'
-// High-traffic pages (index and /swap) should not be lazy-loaded.
-import Landing from 'pages/Landing'
-import Swap from 'pages/Swap'
 import { lazy, ReactNode, Suspense, useMemo } from 'react'
 import { matchPath, Navigate, Route, Routes, useLocation } from 'react-router'
+import { WRAPPED_PATH } from 'uniswap/src/components/banners/shared/utils'
 import { CHROME_EXTENSION_UNINSTALL_URL_PATH } from 'uniswap/src/constants/urls'
 import { WRAPPED_SOL_ADDRESS_SOLANA } from 'uniswap/src/features/chains/svm/defaults'
 import { EXTENSION_PASSKEY_AUTH_PATH } from 'uniswap/src/features/passkey/constants'
 import i18n from 'uniswap/src/i18n'
-import { isBrowserRouterEnabled } from 'utils/env'
+import { getExploreDescription, getExploreTitle } from '~/pages/getExploreTitle'
+import { getPortfolioDescription, getPortfolioTitle } from '~/pages/getPortfolioTitle'
+import {
+  getAddLiquidityPageTitle,
+  getPositionPageDescription,
+  getPositionPageTitle,
+} from '~/pages/getPositionPageTitle'
+// High-traffic pages (index and /swap) should not be lazy-loaded.
+import Landing from '~/pages/Landing'
+import Swap from '~/pages/Swap'
+import { isBrowserRouterEnabled } from '~/utils/env'
 
-const CreatePosition = lazy(() => import('pages/CreatePosition/CreatePosition'))
-const AddLiquidityV3WithTokenRedirects = lazy(() => import('pages/AddLiquidityV3/redirects'))
-const AddLiquidityV2WithTokenRedirects = lazy(() => import('pages/AddLiquidityV2/redirects'))
-const RedirectExplore = lazy(() => import('pages/Explore/redirects'))
-const LegacyMigrateV2 = lazy(() => import('pages/MigrateV2'))
-const LegacyMigrateV2Pair = lazy(() => import('pages/MigrateV2/MigrateV2Pair'))
-const MigrateV3 = lazy(() => import('pages/MigrateV3'))
-const NotFound = lazy(() => import('pages/NotFound'))
-const Pool = lazy(() => import('pages/Positions'))
+const CreatePosition = lazy(() => import('~/pages/CreatePosition/CreatePosition'))
+const AddLiquidityV3WithTokenRedirects = lazy(() => import('~/pages/AddLiquidityV3/redirects'))
+const AddLiquidityV2WithTokenRedirects = lazy(() => import('~/pages/AddLiquidityV2/redirects'))
+const RedirectExplore = lazy(() => import('~/pages/Explore/redirects'))
+const MigrateV3 = lazy(() => import('~/pages/Migrate'))
+const NotFound = lazy(() => import('~/pages/NotFound'))
+const Pool = lazy(() => import('~/pages/Positions'))
 const LegacyPoolRedirects = lazy(() =>
-  import('pages/LegacyPool/redirects').then((module) => ({ default: module.LegacyPoolRedirects })),
+  import('~/pages/LegacyPool/redirects').then((module) => ({ default: module.LegacyPoolRedirects })),
 )
 const PoolFinderRedirects = lazy(() =>
-  import('pages/LegacyPool/redirects').then((module) => ({ default: module.PoolFinderRedirects })),
+  import('~/pages/LegacyPool/redirects').then((module) => ({ default: module.PoolFinderRedirects })),
 )
 const LegacyPositionPageRedirects = lazy(() =>
-  import('pages/LegacyPool/redirects').then((module) => ({ default: module.LegacyPositionPageRedirects })),
+  import('~/pages/LegacyPool/redirects').then((module) => ({ default: module.LegacyPositionPageRedirects })),
 )
 const RemoveLiquidityV2WithTokenRedirects = lazy(() =>
-  import('pages/LegacyPool/redirects').then((module) => ({ default: module.RemoveLiquidityV2WithTokenRedirects })),
+  import('~/pages/LegacyPool/redirects').then((module) => ({ default: module.RemoveLiquidityV2WithTokenRedirects })),
 )
-const PositionPage = lazy(() => import('pages/Positions/PositionPage'))
-const V2PositionPage = lazy(() => import('pages/Positions/V2PositionPage'))
-const PoolDetails = lazy(() => import('pages/PoolDetails'))
-const TokenDetails = lazy(() => import('pages/TokenDetails'))
-const ExtensionPasskeyAuthPopUp = lazy(() => import('pages/ExtensionPasskeyAuthPopUp'))
-const PasskeyManagement = lazy(() => import('pages/PasskeyManagement'))
-const ExtensionUninstall = lazy(() => import('pages/ExtensionUninstall/ExtensionUninstall'))
-const Portfolio = lazy(() => import('pages/Portfolio/Portfolio'))
-const ToucanToken = lazy(() => import('pages/Explore/ToucanToken'))
+const PositionPage = lazy(() => import('~/pages/Positions/PositionPage'))
+const V2PositionPage = lazy(() => import('~/pages/Positions/V2PositionPage'))
+const PoolDetails = lazy(() => import('~/pages/PoolDetails'))
+const TokenDetails = lazy(() => import('~/pages/TokenDetails/TokenDetailsPage'))
+const ExtensionPasskeyAuthPopUp = lazy(() => import('~/pages/ExtensionPasskeyAuthPopUp'))
+const PasskeyManagement = lazy(() => import('~/pages/PasskeyManagement'))
+const ExtensionUninstall = lazy(() => import('~/pages/ExtensionUninstall/ExtensionUninstall'))
+const Portfolio = lazy(() => import('~/pages/Portfolio/Portfolio'))
+const ToucanToken = lazy(() => import('~/pages/Explore/ToucanToken'))
+const CreateAuction = lazy(() => import('~/pages/Liquidity/CreateAuction/CreateAuction'))
+const XOAuthCallbackPage = lazy(() => import('~/pages/Liquidity/CreateAuction/XOAuthCallbackPage'))
+const BetaPage = lazy(() => import('~/pages/Beta'))
+const Wrapped = lazy(() => import('~/pages/Wrapped'))
 
 interface RouterConfig {
   browserRouterEnabled?: boolean
   hash?: string
   isEmbeddedWalletEnabled?: boolean
-  isPortfolioPageEnabled?: boolean
-  isToucanEnabled?: boolean
+  isWrappedEnabled?: boolean
+  isToucanLaunchAuctionEnabled?: boolean
 }
 
 /**
@@ -58,18 +66,18 @@ export function useRouterConfig(): RouterConfig {
   const browserRouterEnabled = isBrowserRouterEnabled()
   const { hash } = useLocation()
   const isEmbeddedWalletEnabled = useFeatureFlag(FeatureFlags.EmbeddedWallet)
-  const isPortfolioPageEnabled = useFeatureFlag(FeatureFlags.PortfolioPage)
-  const isToucanEnabled = useFeatureFlag(FeatureFlags.Toucan)
+  const isWrappedEnabled = useFeatureFlag(FeatureFlags.UniswapWrapped2025)
+  const isToucanLaunchAuctionEnabled = useFeatureFlag(FeatureFlags.ToucanLaunchAuction)
 
   return useMemo(
     () => ({
       browserRouterEnabled,
       hash,
       isEmbeddedWalletEnabled,
-      isPortfolioPageEnabled,
-      isToucanEnabled,
+      isWrappedEnabled,
+      isToucanLaunchAuctionEnabled,
     }),
-    [browserRouterEnabled, hash, isEmbeddedWalletEnabled, isPortfolioPageEnabled, isToucanEnabled],
+    [browserRouterEnabled, hash, isEmbeddedWalletEnabled, isWrappedEnabled, isToucanLaunchAuctionEnabled],
   )
 }
 
@@ -88,8 +96,6 @@ const StaticTitlesAndDescriptions = {
   MigrateDescriptionV4: i18n.t('title.easilyRemoveV4'),
   AddLiquidityDescription: i18n.t('title.earnFees'),
   PasskeyManagementTitle: i18n.t('title.managePasskeys'),
-  PortfolioTitle: i18n.t('portfolio.title'),
-  PortfolioDescription: i18n.t('portfolio.description'),
   // TODO(LP-295): Update after launch
   ToucanPlaceholderDescription: 'Placeholder description for Toucan page',
 }
@@ -179,13 +185,33 @@ export const routes: RouteDefinition[] = [
     ),
   }),
   createRouteDefinition({
-    path: '/explore/toucan/:id',
+    path: '/explore/auctions/:chainName/:auctionAddress',
     getTitle: () => StaticTitlesAndDescriptions.DetailsPageBaseTitle,
     getDescription: () => StaticTitlesAndDescriptions.ToucanPlaceholderDescription,
-    enabled: (args) => args.isToucanEnabled ?? false,
     getElement: () => (
       <Suspense fallback={null}>
         <ToucanToken />
+      </Suspense>
+    ),
+  }),
+  createRouteDefinition({
+    path: '/liquidity/launch-auction',
+    getTitle: () => i18n.t('toucan.createAuction.title'),
+    getDescription: () => StaticTitlesAndDescriptions.ToucanPlaceholderDescription,
+    enabled: (args) => args.isToucanLaunchAuctionEnabled ?? false,
+    getElement: () => (
+      <Suspense fallback={null}>
+        <CreateAuction />
+      </Suspense>
+    ),
+  }),
+  createRouteDefinition({
+    path: '/liquidity/launch-auction/x/callback',
+    getTitle: () => 'X Verification',
+    getDescription: () => StaticTitlesAndDescriptions.ToucanPlaceholderDescription,
+    getElement: () => (
+      <Suspense fallback={null}>
+        <XOAuthCallbackPage />
       </Suspense>
     ),
   }),
@@ -202,6 +228,7 @@ export const routes: RouteDefinition[] = [
               window.location.href = 'https://vote.uniswapfoundation.org'
               return null
             }}
+            // oxlint-disable-next-line react/self-closing-comp -- biome-parity: oxlint is stricter here
           ></Route>
         </Routes>
       )
@@ -367,18 +394,6 @@ export const routes: RouteDefinition[] = [
     getDescription: () => i18n.t('title.removev3Liquidity'),
   }),
   createRouteDefinition({
-    path: '/migrate/v2',
-    getElement: () => <LegacyMigrateV2 />,
-    getTitle: () => StaticTitlesAndDescriptions.MigrateTitle,
-    getDescription: () => StaticTitlesAndDescriptions.MigrateDescription,
-  }),
-  createRouteDefinition({
-    path: '/migrate/v2/:address',
-    getElement: () => <LegacyMigrateV2Pair />,
-    getTitle: () => StaticTitlesAndDescriptions.MigrateTitle,
-    getDescription: () => StaticTitlesAndDescriptions.MigrateDescription,
-  }),
-  createRouteDefinition({
     path: EXTENSION_PASSKEY_AUTH_PATH,
     getElement: () => <ExtensionPasskeyAuthPopUp />,
     getTitle: () => i18n.t('title.extensionPasskeyLogIn'),
@@ -393,16 +408,41 @@ export const routes: RouteDefinition[] = [
   createRouteDefinition({
     path: '/portfolio',
     getElement: () => <Portfolio />,
-    getTitle: () => StaticTitlesAndDescriptions.PortfolioTitle,
-    getDescription: () => StaticTitlesAndDescriptions.PortfolioDescription,
-    enabled: (args) => args.isPortfolioPageEnabled ?? false,
-    nestedPaths: ['tokens', 'defi', 'nfts', 'activity'],
+    getTitle: getPortfolioTitle,
+    getDescription: getPortfolioDescription,
+    nestedPaths: [
+      'tokens',
+      'defi',
+      'nfts',
+      'activity',
+      ':walletAddress',
+      ':walletAddress/tokens',
+      ':walletAddress/defi',
+      ':walletAddress/nfts',
+      ':walletAddress/activity',
+    ],
   }),
   // Uniswap Extension Uninstall Page
   createRouteDefinition({
     path: CHROME_EXTENSION_UNINSTALL_URL_PATH,
     getElement: () => <ExtensionUninstall />,
     getTitle: () => i18n.t('title.extension.uninstall'),
+  }),
+  // Uniswap Wrapped
+  createRouteDefinition({
+    path: WRAPPED_PATH,
+    getElement: () => <Wrapped />,
+    getTitle: () => 'Uniswap Wrapped',
+    enabled: (args) => args.isWrappedEnabled ?? false,
+  }),
+  createRouteDefinition({
+    path: '/preview',
+    getTitle: () => 'Uniswap Preview',
+    getElement: () => (
+      <Suspense fallback={null}>
+        <BetaPage />
+      </Suspense>
+    ),
   }),
   createRouteDefinition({ path: '*', getElement: () => <Navigate to="/not-found" replace /> }),
   createRouteDefinition({ path: '/not-found', getElement: () => <NotFound /> }),

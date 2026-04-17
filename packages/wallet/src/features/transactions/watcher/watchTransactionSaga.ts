@@ -9,12 +9,13 @@ import { toTradingApiSupportedChainId } from 'uniswap/src/features/transactions/
 import { TransactionDetails, TransactionStatus } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { POLLING_CONSTANTS, shouldCheckTransaction, withTimeout } from 'uniswap/src/utils/polling'
 import { logger } from 'utilities/src/logger/logger'
-import { ONE_MINUTE_MS } from 'utilities/src/time/time'
+import { ONE_MINUTE_MS, ONE_SECOND_MS } from 'utilities/src/time/time'
 import { processTransactionReceipt } from 'wallet/src/features/transactions/utils'
 import {
   FINALIZED_SWAP_STATUS,
   SWAP_STATUS_TO_TX_STATUS,
 } from 'wallet/src/features/transactions/watcher/transactionSagaUtils'
+import { isMaybeBridge } from 'wallet/src/features/transactions/watcher/utils'
 
 /**
  * Smart polling version of waitForReceipt that uses lastCheckedBlockNumber optimization
@@ -69,7 +70,7 @@ export function* waitForReceiptWithSmartPolling({
         transaction = refreshed
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (receipt?.blockNumber) {
         logger.debug('watchOnChainTransactionSaga', 'waitForReceiptWithSmartPolling', 'Tx receipt received', hash)
         return receipt
@@ -97,7 +98,7 @@ export async function waitForReceipt(
     errorMsg: 'Timed out waiting for transaction receipt',
   })
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (txReceipt) {
     logger.debug('watchOnChainTransactionSaga', 'waitForReceipt', 'Tx receipt received', hash)
   }
@@ -165,7 +166,15 @@ export function* waitForTransactionStatus(transaction: TransactionDetails): Saga
     return TransactionStatus.Unknown
   }
 
-  const { tradingApiPollingIntervalMs } = getChainInfo(transaction.chainId)
+  const isMaybeBridgeTransaction = isMaybeBridge(
+    'options' in transaction ? transaction.options.request.to?.toString() : undefined,
+    transaction.chainId,
+  )
+
+  const tradingApiPollingIntervalMs = isMaybeBridgeTransaction
+    ? ONE_SECOND_MS
+    : getChainInfo(transaction.chainId).tradingApiPollingIntervalMs
+
   let swapStatus: TradingApi.SwapStatus | undefined
   const maxRetries = 10
   const halfMaxRetries = Math.floor(maxRetries / 2)

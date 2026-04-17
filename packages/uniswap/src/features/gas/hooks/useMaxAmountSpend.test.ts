@@ -1,16 +1,17 @@
 import { CurrencyAmount } from '@uniswap/sdk-core'
 import JSBI from 'jsbi'
-import { DAI, nativeOnChain } from 'uniswap/src/constants/tokens'
+import { DAI, nativeOnChain, PATHUSD_TEMPO, USDC_E_TEMPO } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useMaxAmountSpend } from 'uniswap/src/features/gas/hooks/useMaxAmountSpend'
 import { TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { MAINNET_CURRENCY } from 'uniswap/src/test/fixtures/wallet/currencies'
 
-const mockUseDynamicConfigValue = jest.fn()
+const mockUseDynamicConfigValue = vi.fn()
 
-jest.mock('@universe/gating', () => {
+vi.mock('@universe/gating', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@universe/gating')>()
   return {
-    ...jest.requireActual('@universe/gating'),
+    ...actual,
     useDynamicConfigValue: (params: { config: unknown; key: unknown; defaultValue: unknown }): unknown =>
       mockUseDynamicConfigValue(params),
   }
@@ -127,6 +128,105 @@ describe(useMaxAmountSpend, () => {
     // Both should still have spendable amounts
     expect(JSBI.greaterThan(solanaSpend!.quotient, JSBI.BigInt(0))).toBe(true)
     expect(JSBI.greaterThan(ethSpend!.quotient, JSBI.BigInt(0))).toBe(true)
+  })
+
+  it('uses actualGasFee instead of static reservation when provided', () => {
+    const amount = CurrencyAmount.fromRawAmount(MAINNET_CURRENCY, '1000000000000000000') // 1 ETH
+
+    // With static reservation (default swap = 0.015 ETH = 15000000000000000 wei)
+    const staticSpend = useMaxAmountSpend({ currencyAmount: amount })
+
+    // With actual gas fee of 0.003 ETH = 3000000000000000 wei (much less than static)
+    const actualGasFee = '3000000000000000'
+    const actualSpend = useMaxAmountSpend({ currencyAmount: amount, actualGasFee })
+
+    expect(staticSpend).toBeDefined()
+    expect(actualSpend).toBeDefined()
+    // Actual gas fee is smaller, so more should be spendable
+    expect(JSBI.greaterThan(actualSpend!.quotient, staticSpend!.quotient)).toBe(true)
+  })
+
+  it('applies 10% buffer on top of actualGasFee', () => {
+    const actualGasFee = '1000000000000000' // 0.001 ETH
+    const amount = CurrencyAmount.fromRawAmount(MAINNET_CURRENCY, '1000000000000000000') // 1 ETH
+
+    const spendable = useMaxAmountSpend({ currencyAmount: amount, actualGasFee })
+
+    // Expected reservation = 0.001 ETH + 10% buffer = 0.0011 ETH = 1100000000000000 wei
+    // Spendable = 1 ETH - 0.0011 ETH = 0.9989 ETH
+    const expectedSpendable = JSBI.BigInt('998900000000000000')
+    expect(spendable).toBeDefined()
+    expect(spendable!.quotient.toString()).toBe(expectedSpendable.toString())
+  })
+
+  it('returns zero when actualGasFee exceeds balance', () => {
+    const actualGasFee = '2000000000000000000' // 2 ETH (more than balance)
+    const amount = CurrencyAmount.fromRawAmount(MAINNET_CURRENCY, '1000000000000000000') // 1 ETH
+
+    const spendable = useMaxAmountSpend({ currencyAmount: amount, actualGasFee })
+
+    expect(spendable).toBeDefined()
+    expect(spendable!.quotient.toString()).toBe('0')
+  })
+
+  it('ignores actualGasFee for non-gas tokens', () => {
+    const tokenAmount = CurrencyAmount.fromRawAmount(DAI, '100000000000000000000') // 100 DAI
+    const actualGasFee = '1000000000000000' // 0.001 ETH
+
+    const spendable = useMaxAmountSpend({ currencyAmount: tokenAmount, actualGasFee })
+
+    // Non-gas tokens are unaffected by gas reservation
+    expect(spendable).toBe(tokenAmount)
+  })
+
+  describe('Tempo (pathUSD gas token)', () => {
+    it('reserves gas for pathUSD on Tempo', () => {
+      // pathUSD has 6 decimals; 1000 pathUSD = 1_000_000_000 raw units
+      const pathUsdAmount = CurrencyAmount.fromRawAmount(PATHUSD_TEMPO, '1000000000')
+      const spendable = useMaxAmountSpend({ currencyAmount: pathUsdAmount })
+
+      expect(spendable).toBeDefined()
+      // Should have gas reserved (less than full amount)
+      expect(JSBI.lessThan(spendable!.quotient, pathUsdAmount.quotient)).toBe(true)
+      expect(JSBI.greaterThan(spendable!.quotient, JSBI.BigInt(0))).toBe(true)
+    })
+
+    it('returns unchanged amount for non-gas ERC-20 on Tempo (USDC.e)', () => {
+      const usdceAmount = CurrencyAmount.fromRawAmount(USDC_E_TEMPO, '1000000000') // 1000 USDC.e
+      const spendable = useMaxAmountSpend({ currencyAmount: usdceAmount })
+
+      // USDC.e is not the gas token on Tempo, so full balance should be returned
+      expect(spendable).toBe(usdceAmount)
+    })
+
+    it('converts actualGasFee from 18-decimal native units to 6-decimal pathUSD units', () => {
+      // 1000 pathUSD = 1_000_000_000 raw units (6 decimals)
+      const pathUsdAmount = CurrencyAmount.fromRawAmount(PATHUSD_TEMPO, '1000000000')
+
+      // actualGasFee in 18-decimal attodollars: 0.001 USD = 1_000_000_000_000_000 (1e15)
+      // Converted to 6-decimal pathUSD: 1e15 / 1e12 = 1000 raw units = 0.001000 pathUSD
+      // With 10% buffer: 1000 + 100 = 1100 raw units
+      // Spendable: 1_000_000_000 - 1100 = 999_998_900
+      const actualGasFee = '1000000000000000'
+      const spendable = useMaxAmountSpend({ currencyAmount: pathUsdAmount, actualGasFee })
+
+      expect(spendable).toBeDefined()
+      expect(spendable!.quotient.toString()).toBe('999998900')
+    })
+
+    it('applies ceiling division when converting gas fee decimals', () => {
+      const pathUsdAmount = CurrencyAmount.fromRawAmount(PATHUSD_TEMPO, '1000000000')
+
+      // A gas fee that doesn't divide evenly: 1 attodollar = 1 wei in 18-decimal
+      // ceil(1 / 1e12) = 1 in pathUSD units (ceiling division rounds up)
+      // With 10% buffer: 1 + 0 (floor of 0.1) = 1
+      // Spendable: 1_000_000_000 - 1 = 999_999_999
+      const actualGasFee = '1'
+      const spendable = useMaxAmountSpend({ currencyAmount: pathUsdAmount, actualGasFee })
+
+      expect(spendable).toBeDefined()
+      expect(spendable!.quotient.toString()).toBe('999999999')
+    })
   })
 
   it('applies both isExtraTx and txType modifiers correctly', () => {

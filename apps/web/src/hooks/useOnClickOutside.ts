@@ -1,6 +1,6 @@
 import { RefObject, useEffect, useRef } from 'react'
 
-function nodeContainsClick<T extends HTMLElement>(node: RefObject<T | undefined>, e: MouseEvent) {
+function nodeContainsClick<T extends HTMLElement>(node: RefObject<T | undefined | null>, e: MouseEvent) {
   if (node.current?.contains(e.target as Node)) {
     return true
   }
@@ -21,10 +21,12 @@ export function useOnClickOutside<T extends HTMLElement>({
   node,
   handler,
   ignoredNodes = [],
+  ignoreDialogClicks = false,
 }: {
-  node: RefObject<T | undefined>
+  node: RefObject<T | undefined | null>
   handler?: () => void
-  ignoredNodes?: Array<RefObject<HTMLElement | undefined>>
+  ignoredNodes?: Array<RefObject<HTMLElement | undefined | null>>
+  ignoreDialogClicks?: boolean
 }) {
   const handlerRef = useRef<undefined | (() => void)>(handler)
 
@@ -42,6 +44,11 @@ export function useOnClickOutside<T extends HTMLElement>({
         return
       }
 
+      // Ignore clicks on dialog/modal elements if ignoreDialogClicks is true
+      if (ignoreDialogClicks && e.target instanceof Element && e.target.closest('dialog, [role="dialog"]')) {
+        return
+      }
+
       handlerRef.current?.()
     }
 
@@ -50,5 +57,5 @@ export function useOnClickOutside<T extends HTMLElement>({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [node, ignoredNodes])
+  }, [node, ignoredNodes, ignoreDialogClicks])
 }

@@ -1,8 +1,6 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { useModalState } from 'hooks/useModalState'
-import { memo, useCallback, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flex, Text, TouchableArea, useMedia, useScrollbarStyles, useSporeColors } from 'ui/src'
+import { Flex, type Input, Text, TouchableArea, useMedia, useScrollbarStyles, useSporeColors } from 'ui/src'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { useUpdateScrollLock } from 'uniswap/src/components/modals/ScrollLock'
 import { NetworkFilter } from 'uniswap/src/components/network/NetworkFilter'
@@ -17,9 +15,9 @@ import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { Trace } from 'uniswap/src/features/telemetry/Trace'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 import { useDebounce } from 'utilities/src/time/timing'
+import { useModalState } from '~/hooks/useModalState'
 
-export const SearchModal = memo(function _SearchModal(): JSX.Element {
-  const poolSearchEnabled = useFeatureFlag(FeatureFlags.PoolSearch)
+export const SearchModal = memo(function SearchModalInner(): JSX.Element {
   const colors = useSporeColors()
   const { t } = useTranslation()
   const media = useMedia()
@@ -27,7 +25,22 @@ export const SearchModal = memo(function _SearchModal(): JSX.Element {
 
   const { isOpen: isModalOpen, toggleModal: toggleSearchModal } = useModalState(ModalName.Search)
 
-  const [activeTab, setActiveTab] = useState<SearchTab>(poolSearchEnabled ? SearchTab.All : SearchTab.Tokens)
+  // Use ref for programmatic focus instead of autoFocus prop
+  // autoFocus doesn't work reliably on first modal open in production
+  const searchInputRef = useRef<Input>(null)
+
+  useEffect(() => {
+    if (isModalOpen) {
+      // Small delay to ensure modal animation/focus trap is ready
+      const timeoutId = setTimeout(() => {
+        searchInputRef.current?.focus()
+      }, 50)
+      return () => clearTimeout(timeoutId)
+    }
+    return undefined
+  }, [isModalOpen])
+
+  const [activeTab, setActiveTab] = useState<SearchTab>(SearchTab.All)
 
   const { onChangeChainFilter, onChangeText, searchFilter, chainFilter, parsedChainFilter, parsedSearchFilter } =
     useFilterCallbacks(null, ModalName.Search)
@@ -57,7 +70,6 @@ export const SearchModal = memo(function _SearchModal(): JSX.Element {
 
   return (
     <Modal
-      extendOnKeyboardVisible
       fullScreen
       hideKeyboardOnDismiss
       hideKeyboardOnSwipeDown
@@ -73,6 +85,10 @@ export const SearchModal = memo(function _SearchModal(): JSX.Element {
       analyticsProperties={{
         search_tab: activeTab,
       }}
+      // Use percent mode to avoid Tamagui bug where 'fit' snapped
+      // modals may incorrectly resize on their own when keyboard is visible
+      snapPointsMode="percent"
+      snapPoints={[85]}
     >
       <Flex grow style={scrollbarStyles}>
         <Flex
@@ -83,10 +99,11 @@ export const SearchModal = memo(function _SearchModal(): JSX.Element {
           borderBottomWidth={1}
         >
           <SearchTextInput
-            autoFocus
+            ref={searchInputRef}
             minHeight={media.sm ? undefined : 24}
             backgroundColor={media.sm ? '$surface2' : '$none'}
-            borderColor={!media.sm ? '$none' : undefined}
+            borderColor={!media.sm ? '$transparent' : undefined}
+            borderWidth={!media.sm ? '$none' : undefined}
             py="$none"
             endAdornment={
               <Flex row alignItems="center">
@@ -98,7 +115,7 @@ export const SearchModal = memo(function _SearchModal(): JSX.Element {
                 />
               </Flex>
             }
-            placeholder={poolSearchEnabled ? t('search.input.placeholder') : t('tokens.selector.search.placeholder')}
+            placeholder={t('search.input.placeholder.withWallets')}
             px="$spacing16"
             value={searchFilter ?? ''}
             onChangeText={onChangeText}
@@ -112,19 +129,17 @@ export const SearchModal = memo(function _SearchModal(): JSX.Element {
             }}
           />
         </Flex>
-        {poolSearchEnabled && (
-          <Flex row px="$spacing20" pt="$spacing16" pb="$spacing8" gap="$spacing16">
-            {WEB_SEARCH_TABS.map((tab) => (
-              <Trace element={ElementName.SearchTab} logPress key={tab} properties={{ search_tab: tab }}>
-                <TouchableArea onPress={() => setActiveTab(tab)}>
-                  <Text color={activeTab === tab ? '$neutral1' : '$neutral2'} variant="buttonLabel2">
-                    {tab}
-                  </Text>
-                </TouchableArea>
-              </Trace>
-            ))}
-          </Flex>
-        )}
+        <Flex row px="$spacing20" pt="$spacing16" pb="$spacing8" gap="$spacing16">
+          {WEB_SEARCH_TABS.map((tab) => (
+            <Trace element={ElementName.SearchTab} logPress key={tab} properties={{ search_tab: tab }}>
+              <TouchableArea onPress={() => setActiveTab(tab)}>
+                <Text color={activeTab === tab ? '$neutral1' : '$neutral2'} variant="buttonLabel2">
+                  {tab}
+                </Text>
+              </TouchableArea>
+            </Trace>
+          ))}
+        </Flex>
         <Flex grow>
           {searchFilter && searchFilter.length > 0 ? (
             <SearchModalResultsList

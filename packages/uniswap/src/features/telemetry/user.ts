@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { analytics, UserPropertyValue } from 'utilities/src/telemetry/analytics/analytics'
 
 /**
@@ -26,6 +26,7 @@ export enum MobileUserPropertyName {
   PrivateKeyCount = 'private_key_count',
   TestnetModeEnabled = 'testnet_mode_enabled',
   TransactionAuthMethod = 'transaction_auth_method',
+  UniswapIdentifier = 'uniswap_identifier',
   WalletSignerAccounts = `wallet_signer_accounts`,
   WalletSignerCount = 'wallet_signer_count',
   WalletSwapProtectionSetting = 'wallet_swap_protection_setting',
@@ -51,6 +52,7 @@ export enum ExtensionUserPropertyName {
   IsHideSpamTokensEnabled = 'is_hide_spam_tokens_enabled',
   Language = 'language',
   TestnetModeEnabled = 'testnet_mode_enabled',
+  UniswapIdentifier = 'uniswap_identifier',
   WalletSignerAccounts = `wallet_signer_accounts`,
   WalletSignerCount = 'wallet_signer_count',
   WalletViewOnlyCount = 'wallet_view_only_count',
@@ -73,6 +75,7 @@ export enum InterfaceUserPropertyName {
   ScreenResolutionWidth = 'screen_resolution_width',
   SupportsAtomicBatching = 'supports_atomic_batching',
   TestnetModeEnabled = 'testnet_mode_enabled',
+  UniswapIdentifier = 'uniswap_identifier',
   UserAgent = 'user_agent',
   WalletAddress = 'wallet_address', // for EVM
   WalletAddressSVM = 'wallet_address_svm',
@@ -87,7 +90,7 @@ export enum UniswapUserPropertyName {
   IsDelegatedEOA = 'is_delegated_eoa',
 }
 
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 export function setUserProperty(
   property: MobileUserPropertyName | ExtensionUserPropertyName | InterfaceUserPropertyName | UniswapUserPropertyName,
   value: UserPropertyValue,

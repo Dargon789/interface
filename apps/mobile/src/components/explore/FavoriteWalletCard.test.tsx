@@ -1,5 +1,5 @@
 import { UseQueryResult } from '@tanstack/react-query'
-import type { UnitagAddressResponse } from '@universe/api'
+import { GetAddressResponse } from '@universe/api'
 import configureMockStore from 'redux-mock-store'
 import { thunk } from 'redux-thunk'
 import FavoriteWalletCard, { FavoriteWalletCardProps } from 'src/components/explore/FavoriteWalletCard'
@@ -21,7 +21,7 @@ jest.mock('@react-navigation/native', () => {
   const actualNav = jest.requireActual('@react-navigation/native')
   return {
     ...actualNav,
-    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+    // oxlint-disable-next-line typescript/explicit-function-return-type
     useNavigation: () => mockedNavigation,
   }
 })
@@ -48,7 +48,7 @@ describe('FavoriteWalletCard', () => {
 
     it('renders unitag name if available', () => {
       jest.spyOn(unitagHooks, 'useUnitagsAddressQuery').mockReturnValue({
-        data: { username: 'unitagname' },
+        data: new GetAddressResponse({ username: 'unitagname' }),
         isLoading: false,
         isFetching: false,
         isPending: false,
@@ -68,12 +68,13 @@ describe('FavoriteWalletCard', () => {
         isRefetching: false,
         isStale: false,
         isInitialLoading: false,
+        isEnabled: true,
         errorUpdateCount: 0,
         isFetched: true,
         isFetchedAfterMount: true,
         isPaused: false,
-        promise: Promise.resolve({ username: 'unitagname' }),
-      } as UseQueryResult<UnitagAddressResponse>)
+        promise: Promise.resolve(new GetAddressResponse({ username: 'unitagname' })),
+      } as UseQueryResult<GetAddressResponse>)
 
       const { queryByText } = render(<FavoriteWalletCard {...defaultProps} />)
 

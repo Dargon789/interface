@@ -1,9 +1,10 @@
-// biome-ignore lint/style/noRestrictedImports: Trading API fixtures need direct Playwright imports
-import { test as base } from '@playwright/test'
-import { type Page } from 'playwright/test'
+/* oxlint-disable react-hooks/rules-of-hooks -- Playwright fixtures use `use()` which is not a React hook */
+// oxlint-disable-next-line no-restricted-imports -- Trading API fixtures need direct Playwright imports
+import { test as base, type Page, type Route } from '@playwright/test'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
+import { Mocks } from '~/playwright/mocks/mocks'
 
-export const DEFAULT_TEST_GAS_LIMIT = '20000000'
+const DEFAULT_TEST_GAS_LIMIT = '20000000'
 
 const shouldIgnorePageError = (error: Error): { ignored: boolean } => {
   if (
@@ -20,7 +21,7 @@ const shouldIgnorePageError = (error: Error): { ignored: boolean } => {
 /**
  * Generic helper function to stub trading API endpoints and disable transaction simulation
  */
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 export async function stubTradingApiEndpoint({
   page,
   endpoint,
@@ -32,7 +33,7 @@ export async function stubTradingApiEndpoint({
   modifyRequestData?: (data: any) => any
   modifyResponseData?: (data: any) => any
 }) {
-  await page.route(`${uniswapUrls.tradingApiUrl}${endpoint}`, async (route) => {
+  const handler = async (route: Route) => {
     try {
       const request = route.request()
       const postData = request.postDataJSON()
@@ -58,9 +59,12 @@ export async function stubTradingApiEndpoint({
       try {
         responseJson = JSON.parse(responseText)
       } catch (parseError) {
-        throw new Error(`Failed to parse trading API response for ${endpoint}. Response: ${responseText}`, {
-          cause: parseError,
-        })
+        throw new Error(
+          `Failed to parse trading API response for ${endpoint}. Request: ${JSON.stringify(modifiedData)}. Response: ${responseText}`,
+          {
+            cause: parseError,
+          },
+        )
       }
 
       // Set a high gas limit to avoid OutOfGas
@@ -83,6 +87,23 @@ export async function stubTradingApiEndpoint({
 
       throw error
     }
+  }
+
+  // Match the exact endpoint path, optionally followed by query params
+  // Avoids matching longer paths (e.g., /v1/swap should not match /v1/swappable_tokens or /v1/swaps)
+  const escapedUrl = `${uniswapUrls.tradingApiUrl}${endpoint}`.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  // oxlint-disable-next-line security/detect-non-literal-regexp -- escapedUrl is sanitized via regex escaping
+  await page.route(new RegExp(`^${escapedUrl}(\\?.*)?$`), handler)
+}
+
+/**
+ * Mocks the /v1/swap endpoint with a static mock response
+ * Use this instead of stubTradingApiEndpoint when you need to avoid calling the real API
+ */
+// oxlint-disable-next-line import/no-unused-modules
+export async function mockTradingApiSwapResponse({ page }: { page: Page }) {
+  await page.route(`**/${uniswapUrls.tradingApiPaths.swap}`, async (route) => {
+    await route.fulfill({ path: Mocks.TradingApi.swap })
   })
 }
 

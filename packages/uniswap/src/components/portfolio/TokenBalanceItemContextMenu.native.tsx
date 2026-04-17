@@ -89,7 +89,9 @@ export function TokenBalanceItemContextMenu({
   openContractAddressExplainerModal,
   openReportTokenModal,
   copyAddressToClipboard,
-  onPressToken: onPressToken,
+  onPressToken,
+  disableNotifications,
+  recipient,
 }: PropsWithChildren<TokenBalanceItemContextMenuProps>): JSX.Element {
   const menuActions = useTokenContextMenuOptions({
     excludedActions,
@@ -101,6 +103,8 @@ export function TokenBalanceItemContextMenu({
     openReportTokenModal,
     copyAddressToClipboard,
     closeMenu: () => {},
+    disableNotifications,
+    recipient,
   })
 
   const { longPressGesture, handlePress } = useLongPressGesture({
@@ -116,6 +120,7 @@ export function TokenBalanceItemContextMenu({
 
   const onContextMenuPress = useCallback(
     (e: { nativeEvent: ContextMenuOnPressNativeEvent }): void => {
+      // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
       menuActions[e.nativeEvent.index]?.onPress?.()
     },
     [menuActions],

@@ -5,35 +5,48 @@ import type {
   FetchClientContext,
   StandardFetchOptions,
 } from '@universe/api/src/clients/base/types'
-import { getSessionService } from '@universe/api/src/getSessionService'
 
 export function createFetchClient({
   baseUrl,
-  headers: additionalHeaders = {},
-  getSessionServiceBaseUrl,
+  getBaseUrl,
+  getHeaders,
+  getSessionService,
+  defaultOptions = {},
 }: FetchClientContext): FetchClient {
+  // Helper to resolve the base URL - prefers getBaseUrl for dynamic resolution
+  const resolveBaseUrl = (): string => getBaseUrl?.() ?? baseUrl ?? ''
+
   return {
     get context() {
-      return () => ({
-        baseUrl,
-        headers: additionalHeaders,
-        getSessionServiceBaseUrl,
-      })
+      return () => {
+        return {
+          baseUrl: resolveBaseUrl(),
+          getBaseUrl,
+          getHeaders,
+          getSessionService,
+          defaultOptions,
+        }
+      }
     },
 
     get fetch() {
       return async <T = Response>(path: string, options: StandardFetchOptions): Promise<T> => {
-        const sessionService = getSessionService({ getBaseUrl: getSessionServiceBaseUrl })
+        const sessionService = getSessionService()
         const sessionState = await sessionService.getSessionState()
 
+        const additionalHeaders = getHeaders?.() ?? {}
+
         const headers = new Headers({
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
           ...additionalHeaders,
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
           ...options?.headers,
         })
         if (sessionState?.sessionId) {
           headers.set('x-session-id', sessionState.sessionId)
         }
-        return fetch(`${baseUrl}${path}`, {
+        return fetch(`${resolveBaseUrl()}${path}`, {
+          ...defaultOptions,
           ...options,
           headers,
         }) as Promise<T>
@@ -80,7 +93,8 @@ export function createFetchClient({
 
         _options.headers = {
           'Content-Type': 'application/json',
-          ...(options.headers ?? {}),
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
+          ...options.headers,
         }
 
         return (await this.get(path, { ..._options, method: 'POST' })) as T
@@ -93,7 +107,8 @@ export function createFetchClient({
 
         _options.headers = {
           'Content-Type': 'application/json',
-          ...(options.headers ?? {}),
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
+          ...options.headers,
         }
 
         return (await this.get(path, { ..._options, method: 'PUT' })) as T
@@ -112,7 +127,8 @@ export function createFetchClient({
 
         _options.headers = {
           'Content-Type': 'application/json',
-          ...(options.headers ?? {}),
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
+          ...options.headers,
         }
 
         return await this.get(path, { ..._options, method: 'PATCH' })

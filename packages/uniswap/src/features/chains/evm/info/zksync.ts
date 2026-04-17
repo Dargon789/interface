@@ -1,5 +1,6 @@
 import { GraphQLApi } from '@universe/api'
 import { ETH_LOGO, ZKSYNC_LOGO } from 'ui/src/assets'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import { DEFAULT_NATIVE_ADDRESS_LEGACY, getQuicknodeEndpointUrl } from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
 import { GENERIC_L2_GAS_CONFIG } from 'uniswap/src/features/chains/gasDefaults'
@@ -42,6 +43,7 @@ export const ZKSYNC_CHAIN_INFO = {
     apiURL: 'https://block-explorer-api.mainnet.zksync.io',
   },
   interfaceName: 'zksync',
+  searchAliases: ['zk sync', 'zk'],
   label: 'ZKsync',
   logo: ZKSYNC_LOGO,
   nativeCurrency: {
@@ -52,16 +54,18 @@ export const ZKSYNC_CHAIN_INFO = {
     logo: ETH_LOGO,
   },
   networkLayer: NetworkLayer.L2,
+  blockTimeMs: 1000,
   pendingTransactionsRetryOptions: undefined,
   rpcUrls: {
     [RPCType.Public]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Zksync)] },
     [RPCType.Default]: { http: ['https://mainnet.era.zksync.io/'] },
     [RPCType.Interface]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Zksync)] },
   },
-  urlParam: 'zksync',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Zksync],
   statusPage: undefined,
   tokens,
   supportsV4: false,
+  supportsNFTs: true,
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
     symbol: 'WETH',
@@ -70,4 +74,5 @@ export const ZKSYNC_CHAIN_INFO = {
   },
   gasConfig: GENERIC_L2_GAS_CONFIG,
   tradingApiPollingIntervalMs: 250,
+  acrossProtocolAddress: '0xE0B015E54d54fc84a6cB9B666099c46adE9335FF',
 } as const satisfies UniverseChainInfo

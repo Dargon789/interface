@@ -90,6 +90,7 @@ describe(submitUniswapXOrder, () => {
   })
 
   describe('with ValidatedPermit', () => {
+    // oxlint-disable-next-line jest/expect-expect -- suppressed
     it('sends a uniswapx order', async () => {
       const expectedSubmittedOrderDetails = {
         ...baseExpectedInitialOrderDetails,
@@ -134,6 +135,7 @@ describe(submitUniswapXOrder, () => {
         .isDone()
     })
 
+    // oxlint-disable-next-line jest/expect-expect -- suppressed
     it('updates an order properly if order submission fails', async () => {
       const expectedSubmittedOrderDetails = {
         ...baseExpectedInitialOrderDetails,
@@ -185,6 +187,7 @@ describe(submitUniswapXOrder, () => {
       permit: mockSignedPermit,
     }
 
+    // oxlint-disable-next-line jest/expect-expect -- suppressed
     it('sends a uniswapx order without calling signer', async () => {
       const expectedSubmittedOrderDetails = {
         ...baseExpectedInitialOrderDetails,
@@ -220,6 +223,7 @@ describe(submitUniswapXOrder, () => {
         .isDone()
     })
 
+    // oxlint-disable-next-line jest/expect-expect -- suppressed
     it('updates an order properly if order submission fails', async () => {
       const expectedSubmittedOrderDetails = {
         ...baseExpectedInitialOrderDetails,
@@ -252,6 +256,7 @@ describe(submitUniswapXOrder, () => {
   describe('blocking tx edge cases', () => {
     const approveTxHash = '0xMockApprovalTxHash'
 
+    // oxlint-disable-next-line jest/expect-expect -- suppressed
     it('waits for approval and then sends a uniswapx order', async () => {
       const expectedSubmittedOrderDetails = {
         ...baseExpectedInitialOrderDetails,
@@ -300,6 +305,7 @@ describe(submitUniswapXOrder, () => {
         .isDone()
     })
 
+    // oxlint-disable-next-line jest/expect-expect -- suppressed
     it('updates state if an approval fails', async () => {
       testSaga(submitUniswapXOrder, { ...baseSubmitOrderParams, approveTxHash })
         .next()
@@ -320,6 +326,7 @@ describe(submitUniswapXOrder, () => {
         .isDone()
     })
 
+    // oxlint-disable-next-line jest/expect-expect -- suppressed
     it('updates state if order becomes stale after waiting too long', async () => {
       let nextTimestampReturnValue = 1
       // Mock more than ORDER_STALENESS_THRESHOLD seconds passing between saga start & wrap finish

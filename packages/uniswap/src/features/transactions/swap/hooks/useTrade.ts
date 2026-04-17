@@ -56,7 +56,7 @@ function parseTradeResult(input: {
   }
 
   // If `transformTradingApiResponseToTrade` returns a `null` trade, it means we have a non-null quote, but no routes.
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (data.trade === null) {
     return {
       isLoading,

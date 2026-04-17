@@ -122,6 +122,7 @@ export function useExploreTokenContextMenu({
 
   const onContextMenuPress = useCallback(
     async (e: NativeSyntheticEvent<ContextMenuOnPressNativeEvent>): Promise<void> => {
+      // oxlint-disable-next-line typescript/await-thenable, typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
       await menuActions[e.nativeEvent.index]?.onPress?.()
     },
     [menuActions],

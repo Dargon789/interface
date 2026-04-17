@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react'
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
+// oxlint-disable-next-line typescript/no-restricted-imports
 import { I18nManager } from 'react-native'
 import { useForceRTL } from 'utilities/src/storybook/hooks/useForceRTL'
 

@@ -1,7 +1,6 @@
 import { memo } from 'react'
-import { Flex, Text, TouchableArea } from 'ui/src'
-import { Tooltip } from 'ui/src/components/tooltip/Tooltip'
-import { iconSizes } from 'ui/src/theme'
+import { Flex, Text, Tooltip, TouchableArea } from 'ui/src'
+import { iconSizes, zIndexes } from 'ui/src/theme'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { TokenOption } from 'uniswap/src/components/lists/items/types'
 import { OnchainItemSection, OnchainItemSectionName } from 'uniswap/src/components/lists/OnchainItemList/types'
@@ -9,7 +8,7 @@ import { OnSelectCurrency } from 'uniswap/src/components/TokenSelector/types'
 import { getChainLabel } from 'uniswap/src/features/chains/utils'
 import { getSymbolDisplayText } from 'uniswap/src/utils/currency'
 
-function _TokenCard({
+function TokenCardInner({
   onSelectCurrency,
   token,
   index,
@@ -65,7 +64,7 @@ function _TokenCard({
     return (
       <Tooltip placement="bottom" offset={{ mainAxis: 4 }} delay={{ close: 0, open: 750 }}>
         <Tooltip.Trigger>{tokenCard}</Tooltip.Trigger>
-        <Tooltip.Content>
+        <Tooltip.Content zIndex={zIndexes.overlay}>
           <Text variant="body3" color="$neutral1">
             {chainLabel}
           </Text>
@@ -77,4 +76,4 @@ function _TokenCard({
   return tokenCard
 }
 
-export const TokenCard = memo(_TokenCard)
+export const TokenCard = memo(TokenCardInner)

@@ -1,6 +1,7 @@
 import { NetworkStatus, QueryHookOptions } from '@apollo/client'
 import { PartialMessage } from '@bufbuild/protobuf'
 import { FiatOnRampParams } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import { TransactionTypeFilter } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { GraphQLApi } from '@universe/api'
 import isEqual from 'lodash/isEqual'
 import { useCallback, useMemo, useRef } from 'react'
@@ -10,6 +11,8 @@ import { ActivityItem } from 'uniswap/src/components/activity/generateActivityIt
 import { isLoadingItem, isSectionHeader, LoadingItem } from 'uniswap/src/components/activity/utils'
 import { formatTransactionsByDate } from 'uniswap/src/features/activity/formatTransactionsByDate'
 import { useMergeLocalAndRemoteTransactions } from 'uniswap/src/features/activity/hooks/useMergeLocalAndRemoteTransactions'
+import { useSyncRemotePlans } from 'uniswap/src/features/activity/hooks/useSyncRemotePlans'
+import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useListTransactions } from 'uniswap/src/features/dataApi/listTransactions/listTransactions'
 import { PaginationControls } from 'uniswap/src/features/dataApi/types'
 import { useLocalizedDayjs } from 'uniswap/src/features/language/localizedDayjs'
@@ -43,13 +46,20 @@ interface UseFormattedTransactionDataOptions {
   hideSpamTokens: boolean
   pageSize?: number
   skip?: boolean
+  chainIds?: UniverseChainId[]
+  filterTransactionTypes?: TransactionTypeFilter[]
+  searchText?: string
 }
 
-type FormattedTransactionInputs = UseFormattedTransactionDataOptions & TransactionListQueryArgs
+type FormattedTransactionInputs = UseFormattedTransactionDataOptions &
+  TransactionListQueryArgs & {
+    showLoadingOnRefetch?: boolean
+  }
 
 export interface FormattedTransactionDataResult extends PaginationControls {
   hasData: boolean
   isLoading: boolean
+  isFetching: boolean
   isError: Error | undefined
   sectionData: ActivityItem[] | undefined
   keyExtractor: (item: ActivityItem) => string
@@ -67,6 +77,10 @@ export function useFormattedTransactionDataForActivity({
   hideSpamTokens,
   pageSize,
   skip,
+  chainIds,
+  filterTransactionTypes,
+  searchText,
+  showLoadingOnRefetch = false,
   ...queryOptions
 }: FormattedTransactionInputs): FormattedTransactionDataResult {
   const { t } = useTranslation()
@@ -77,6 +91,7 @@ export function useFormattedTransactionDataForActivity({
   const {
     data: formattedTransactions,
     loading,
+    isFetching,
     error,
     refetch,
     networkStatus,
@@ -91,6 +106,9 @@ export function useFormattedTransactionDataForActivity({
     tokenVisibilityOverrides,
     nftVisibility,
     skip,
+    chainIds,
+    filterTransactionTypes,
+    searchText,
     ...queryOptions,
   })
 
@@ -99,14 +117,27 @@ export function useFormattedTransactionDataForActivity({
     [evmAddress, svmAddress],
   )
 
+  useSyncRemotePlans(formattedTransactions)
+
   const transactions = useMergeLocalAndRemoteTransactions({
     evmAddress,
     svmAddress,
     remoteTransactions: formattedTransactions,
+    skipLocalTransactions: !!searchText,
   })
 
-  // TODO(PORT-429): update to only TradingApi.Routing.DUTCH_V2 once limit orders can be excluded from REST query
-  const transactionsWithOutLimitOrders = useMemo(() => transactions?.filter((tx) => !isLimitOrder(tx)), [transactions])
+  // TODO(CONS-722): update to only TradingApi.Routing.DUTCH_V2 once limit orders can be excluded from REST query
+  const transactionsWithOutLimitOrders = useMemo(() => {
+    // Filter out limit orders
+    const withoutLimitOrders = transactions?.filter((tx) => !isLimitOrder(tx))
+
+    // Filter by chainIds if provided
+    const filteredByChain = chainIds?.length
+      ? withoutLimitOrders?.filter((tx) => chainIds.includes(tx.chainId))
+      : withoutLimitOrders
+
+    return filteredByChain
+  }, [transactions, chainIds])
 
   // Format transactions for section list
   const localizedDayjs = useLocalizedDayjs()
@@ -118,8 +149,16 @@ export function useFormattedTransactionDataForActivity({
   const hasTransactions = transactions && transactions.length > 0
   const hasData = Boolean(formattedTransactions?.length)
 
-  // show loading if no data and fetching, or refetching when there is error (for UX when "retry" is clicked).
-  const showLoading = (!hasData && loading) || (Boolean(error) && networkStatus === NetworkStatus.loading)
+  // show loading if:
+  // 1. Query has never completed and not intentionally skipped — this is synchronously true from render 1
+  // when there is no cached data, ensuring skeletons appear immediately on mount.
+  // 2. No data and loading (redundant when condition 1 is true, but kept as a safety net)
+  // 3. Error with a retry in progress (for UX when "retry" is clicked)
+  // 4. Explicitly showing loading on refetch
+  const showLoading =
+    (!hasData && (loading || (!skip && networkStatus === NetworkStatus.loading))) ||
+    (Boolean(error) && networkStatus === NetworkStatus.loading) ||
+    (showLoadingOnRefetch && isFetching && !isFetchingNextPage)
 
   const sectionData = useMemo(
     () =>
@@ -147,6 +186,7 @@ export function useFormattedTransactionDataForActivity({
   const memoizedSectionData = useMemoizedTransactionSectionData(sectionData, keyExtractor)
 
   const onRetry = useCallback(async () => {
+    // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
     await refetch()
   }, [refetch])
 
@@ -155,7 +195,8 @@ export function useFormattedTransactionDataForActivity({
     sectionData: memoizedSectionData,
     hasData,
     isError: error ?? undefined,
-    isLoading: loading,
+    isLoading: showLoading,
+    isFetching,
     keyExtractor,
     fetchNextPage,
     hasNextPage: hasNextPage && !hasReachedLimit(transactions),

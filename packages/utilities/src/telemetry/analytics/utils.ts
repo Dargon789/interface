@@ -1,5 +1,5 @@
 import { isWebApp } from 'utilities/src/platform'
-// biome-ignore lint/style/noRestrictedImports: Platform-specific implementation needs internal types
+// oxlint-disable-next-line no-restricted-imports -- Platform-specific implementation needs internal types
 import { type TestnetModeConfig } from 'utilities/src/telemetry/analytics/analytics'
 
 export function getProcessedEvent({

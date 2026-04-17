@@ -1,6 +1,6 @@
 import { PartialMessage } from '@bufbuild/protobuf'
 import { FiatOnRampParams, ListTransactionsResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { TransactionTypeFilter } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useListTransactionsQuery } from 'uniswap/src/data/rest/listTransactions'
@@ -16,7 +16,10 @@ import { CurrencyIdToVisibility, NFTKeyToVisibility } from 'uniswap/src/features
 
 const DEFAULT_PAGE_SIZE = 100
 
-export type TransactionListDataResult = BaseResult<TransactionDetails[]> & PaginationControls
+export type TransactionListDataResult = BaseResult<TransactionDetails[]> &
+  PaginationControls & {
+    isFetching: boolean
+  }
 type ListTransactionsQueryArgs = {
   evmAddress?: Address
   svmAddress?: Address
@@ -26,6 +29,8 @@ type ListTransactionsQueryArgs = {
   nftVisibility?: NFTKeyToVisibility
   chainIds?: UniverseChainId[]
   fiatOnRampParams?: PartialMessage<FiatOnRampParams>
+  filterTransactionTypes?: TransactionTypeFilter[]
+  searchText?: string
 }
 
 /**
@@ -41,6 +46,8 @@ export function useListTransactions({
   chainIds,
   skip,
   fiatOnRampParams,
+  filterTransactionTypes,
+  searchText,
 }: ListTransactionsQueryArgs & { skip?: boolean }): TransactionListDataResult {
   const { chains: defaultChainIds } = useEnabledChains()
   // Use provided chainIds or fallback to default chains
@@ -51,6 +58,7 @@ export function useListTransactions({
   const {
     data: infiniteData,
     isLoading,
+    isFetching,
     error,
     refetch,
     status: restStatus,
@@ -64,6 +72,8 @@ export function useListTransactions({
       chainIds: finalChainIds,
       pageSize: finalPageSize,
       fiatOnRampParams,
+      filterTransactionTypes,
+      searchText: searchText || undefined,
     },
     enabled: !!(evmAddress || svmAddress) && !skip,
   })
@@ -79,7 +89,7 @@ export function useListTransactions({
       .flatMap((page) => Array.from(page.transactions))
       // Transactions appear incomplete when the app first loads
       // Type assertion needed because protobuf types assume transaction always exists
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       .filter((transaction) => transaction.transaction !== undefined)
 
     const dedupedTransactions = dedupeTransactions(flattenedTransactions)
@@ -105,6 +115,7 @@ export function useListTransactions({
   return {
     data: filteredTransactions,
     loading: isLoading,
+    isFetching,
     networkStatus: mapRestStatusToNetworkStatus(restStatus),
     refetch,
     error: error ?? undefined,
@@ -139,12 +150,11 @@ function dedupeTransactions(
 function useFilteredTransactionsByVisibility(
   transactions: TransactionDetails[] | undefined,
 ): TransactionDetails[] | undefined {
-  const isDataReportingAbilitiesEnabled = useFeatureFlag(FeatureFlags.DataReportingAbilities)
   const activityIdToVisibility = useSelector(selectActivityVisibility)
   const hideReportedActivity = useHideReportedActivitySetting()
 
-  // Skip filtering if data reporting abilities are not enabled or there are no transactions
-  if (!hideReportedActivity || !isDataReportingAbilitiesEnabled) {
+  // Skip filtering if hide reported activity is disabled from the user's settings
+  if (!hideReportedActivity) {
     return transactions
   }
 
@@ -153,6 +163,8 @@ function useFilteredTransactionsByVisibility(
 
 function getUniqueTransactionId(transaction: ListTransactionsResponse['transactions'][0]): string | undefined {
   switch (transaction.transaction.case) {
+    case 'plan':
+      return transaction.transaction.value.planId
     case 'onChain':
       return transaction.transaction.value.transactionHash
     case 'uniswapX':

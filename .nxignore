@@ -10,6 +10,7 @@ apps/extension/dev
 apps/extension/build
 packages/*/dist
 packages/*/types
+dist/out-tsc
 
 # Ignore Generator Templates
 tools/**/generators/**/files
@@ -32,9 +33,12 @@ node_modules
 .DS_Store
 
 # Ignore CI/CD artifacts
-.github
 .circleci
 
 # Ignore documentation
 docs
 *.md
+
+# Ignore labs (experimental projects)
+labs/
+

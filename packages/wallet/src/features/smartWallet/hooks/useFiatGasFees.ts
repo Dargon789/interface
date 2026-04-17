@@ -24,7 +24,7 @@ export function useFiatGasFees(gasFees: GasFeeData[]): UseFiatGasFeesReturnType 
     setHasError(false)
   }, [])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -gasFees
+  // oxlint-disable-next-line react/exhaustive-deps -- -gasFees
   useEffect(() => {
     resetState()
   }, [gasFees, resetState])

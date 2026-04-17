@@ -53,6 +53,7 @@ export function useIsWalletUnlocked(): boolean | null {
   }, [checkWalletStatus])
 
   useEffect(() => {
+    // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
     checkWalletStatus()
   }, [checkWalletStatus])
 

@@ -1,6 +1,5 @@
 import '@tamagui/core/reset.css'
 import 'src/app/Global.css'
-
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createHashRouter, RouterProvider } from 'react-router'

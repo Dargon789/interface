@@ -1,12 +1,13 @@
-import { skipToken, type UseQueryResult, useQuery } from '@tanstack/react-query'
+import { PlainMessage } from '@bufbuild/protobuf'
+import { skipToken, useQuery, type UseQueryResult } from '@tanstack/react-query'
 import {
-  type UnitagAddressesRequest,
-  type UnitagAddressesResponse,
-  type UnitagAddressRequest,
-  type UnitagAddressResponse,
+  GetAddressesRequest,
+  GetAddressesResponse,
+  GetAddressRequest,
+  GetAddressResponse,
   type UseQueryApiHelperHookArgs,
 } from '@universe/api'
-import { UnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
+import { useUnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
 import { isEVMAddress } from 'utilities/src/addresses/evm/evm'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { MAX_REACT_QUERY_CACHE_TIME_MS, ONE_MINUTE_MS } from 'utilities/src/time/time'
@@ -14,16 +15,16 @@ import { MAX_REACT_QUERY_CACHE_TIME_MS, ONE_MINUTE_MS } from 'utilities/src/time
 export function useUnitagsAddressQuery({
   params,
   ...rest
-}: UseQueryApiHelperHookArgs<UnitagAddressRequest, UnitagAddressResponse>): UseQueryResult<UnitagAddressResponse> {
+}: UseQueryApiHelperHookArgs<PlainMessage<GetAddressRequest>, GetAddressResponse>): UseQueryResult<GetAddressResponse> {
   const queryKey = [ReactQueryCacheKey.UnitagsApi, 'address', params]
-  const isValidEVMAddress = isEVMAddress(params?.address)
+  const canFetch = params !== undefined && isEVMAddress(params.address)
+  const unitagsApiClient = useUnitagsApiClient()
 
-  return useQuery<UnitagAddressResponse>({
+  return useQuery<GetAddressResponse>({
     queryKey,
-    queryFn:
-      params && isValidEVMAddress
-        ? async (): Promise<UnitagAddressResponse> => await UnitagsApiClient.fetchAddress(params)
-        : skipToken,
+    queryFn: canFetch
+      ? async (): Promise<GetAddressResponse> => new GetAddressResponse(await unitagsApiClient.fetchAddress(params))
+      : skipToken,
     staleTime: ONE_MINUTE_MS,
     gcTime: MAX_REACT_QUERY_CACHE_TIME_MS,
     ...rest,
@@ -34,15 +35,17 @@ export function useUnitagsAddressesQuery({
   params,
   ...rest
 }: UseQueryApiHelperHookArgs<
-  UnitagAddressesRequest,
-  UnitagAddressesResponse
->): UseQueryResult<UnitagAddressesResponse> {
+  PlainMessage<GetAddressesRequest>,
+  GetAddressesResponse
+>): UseQueryResult<GetAddressesResponse> {
   const queryKey = [ReactQueryCacheKey.UnitagsApi, 'addresses', params]
+  const unitagsApiClient = useUnitagsApiClient()
 
-  return useQuery<UnitagAddressesResponse>({
+  return useQuery<GetAddressesResponse>({
     queryKey,
     queryFn: params
-      ? async (): Promise<UnitagAddressesResponse> => await UnitagsApiClient.fetchUnitagsByAddresses(params)
+      ? async (): Promise<GetAddressesResponse> =>
+          new GetAddressesResponse(await unitagsApiClient.fetchUnitagsByAddresses(params))
       : skipToken,
     staleTime: ONE_MINUTE_MS,
     gcTime: MAX_REACT_QUERY_CACHE_TIME_MS,

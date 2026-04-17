@@ -24,22 +24,23 @@ import { navNativeStackOptions, navStackOptions } from 'src/app/navigation/navSt
 import { TabsNavigator } from 'src/app/navigation/tabs/TabsNavigator'
 import { startTracking, stopTracking } from 'src/app/navigation/trackingHelpers'
 import {
-  AppStackParamList,
-  FiatOnRampStackParamList,
-  OnboardingStackParamList,
-  SettingsStackParamList,
+  type AppStackParamList,
+  type FiatOnRampStackParamList,
+  type OnboardingStackParamList,
+  type SettingsStackParamList,
   useAppStackNavigation,
 } from 'src/app/navigation/types'
+import { FiatOnRampActionModal } from 'src/components/home/FiatOnRampActionModal'
 import { FundWalletModal } from 'src/components/home/introCards/FundWalletModal'
 import { HorizontalEdgeGestureTarget } from 'src/components/layout/screens/EdgeGestureTarget'
 import { AdvancedSettingsModal } from 'src/components/modals/ReactNavigationModals/AdvancedSettingsModal'
 import { BridgedAssetModalScreen } from 'src/components/modals/ReactNavigationModals/BridgedAssetModal'
 import { HiddenTokenInfoModalScreen } from 'src/components/modals/ReactNavigationModals/HiddenTokenInfoModalScreen'
-import { LanguageSettingsScreen } from 'src/components/modals/ReactNavigationModals/LanguageSettingsScreen'
 import { PasskeyHelpModalScreen } from 'src/components/modals/ReactNavigationModals/PasskeyHelpModalScreen'
 import { PasskeyManagementModalScreen } from 'src/components/modals/ReactNavigationModals/PasskeyManagementModalScreen'
 import { PermissionsSettingsScreen } from 'src/components/modals/ReactNavigationModals/PermissionsSettingsScreen'
 import { PortfolioBalanceSettingsScreen } from 'src/components/modals/ReactNavigationModals/PortfolioBalanceSettingsScreen'
+import { ReportPortfolioDataModalScreen } from 'src/components/modals/ReactNavigationModals/ReportPortfolioDataModalScreen'
 import { ReportTokenDataModalScreen } from 'src/components/modals/ReactNavigationModals/ReportTokenDataModalScreen'
 import { ReportTokenIssueModalScreen } from 'src/components/modals/ReactNavigationModals/ReportTokenIssueModalScreen'
 import { SmartWalletEnabledModalScreen } from 'src/components/modals/ReactNavigationModals/SmartWalletEnabledModalScreen'
@@ -67,6 +68,7 @@ import { EditUnitagProfileScreen } from 'src/features/unitags/EditUnitagProfileS
 import { UnitagChooseProfilePicScreen } from 'src/features/unitags/UnitagChooseProfilePicScreen'
 import { UnitagConfirmationScreen } from 'src/features/unitags/UnitagConfirmationScreen'
 import { AppLoadingScreen } from 'src/screens/AppLoadingScreen'
+import { DebugScreensScreen } from 'src/screens/DebugScreensScreen'
 import { DevScreen } from 'src/screens/DevScreen'
 import { EducationScreen } from 'src/screens/EducationScreen'
 import { ExternalProfileScreen } from 'src/screens/ExternalProfileScreen'
@@ -85,8 +87,6 @@ import { RestoreMethodScreen } from 'src/screens/Import/RestoreMethodScreen'
 import { SeedPhraseInputScreen } from 'src/screens/Import/SeedPhraseInputScreen/SeedPhraseInputScreen'
 import { SelectWalletScreen } from 'src/screens/Import/SelectWalletScreen'
 import { WatchWalletScreen } from 'src/screens/Import/WatchWalletScreen'
-import { NFTCollectionScreen } from 'src/screens/NFTCollectionScreen'
-import { NFTItemScreen } from 'src/screens/NFTItemScreen'
 import { BackupScreen } from 'src/screens/Onboarding/BackupScreen'
 import { CloudBackupPasswordConfirmScreen } from 'src/screens/Onboarding/CloudBackupPasswordConfirmScreen'
 import { CloudBackupPasswordCreateScreen } from 'src/screens/Onboarding/CloudBackupPasswordCreateScreen'
@@ -102,13 +102,15 @@ import { SettingsCloudBackupPasswordCreateScreen } from 'src/screens/SettingsClo
 import { SettingsCloudBackupProcessingScreen } from 'src/screens/SettingsCloudBackupProcessingScreen'
 import { SettingsCloudBackupStatus } from 'src/screens/SettingsCloudBackupStatus'
 import { SettingsFiatCurrencyModal } from 'src/screens/SettingsFiatCurrencyModal'
+import { SettingsLanguageModal } from 'src/screens/SettingsLanguageModal'
 import { SettingsNotificationsScreen } from 'src/screens/SettingsNotificationsScreen'
 import { SettingsPrivacyScreen } from 'src/screens/SettingsPrivacyScreen'
 import { SettingsScreen } from 'src/screens/SettingsScreen'
 import { SettingsSmartWalletScreen } from 'src/screens/SettingsSmartWalletScreen'
+import { SettingsStorageScreen } from 'src/screens/SettingsStorageScreen'
 import { SettingsViewSeedPhraseScreen } from 'src/screens/SettingsViewSeedPhraseScreen'
 import { SettingsWalletManageConnection } from 'src/screens/SettingsWalletManageConnection'
-import { TokenDetailsScreen } from 'src/screens/TokenDetailsScreen'
+import { TokenDetailsScreen } from 'src/screens/TokenDetailsScreen/TokenDetailsScreen'
 import { ViewPrivateKeysScreen } from 'src/screens/ViewPrivateKeys/ViewPrivateKeysScreen'
 import { WebViewScreen } from 'src/screens/WebViewScreen'
 import { useSporeColors } from 'ui/src'
@@ -121,7 +123,7 @@ import {
   MobileScreens,
   OnboardingScreens,
   UnitagScreens,
-  UnitagStackParamList,
+  type UnitagStackParamList,
 } from 'uniswap/src/types/screens/mobile'
 import { OnboardingContextProvider } from 'wallet/src/features/onboarding/OnboardingContext'
 import { selectFinishedOnboarding } from 'wallet/src/features/wallet/selectors'
@@ -159,6 +161,7 @@ function SettingsStackGroup(): JSX.Element {
       />
       <SettingsStack.Screen component={WebViewScreen} name={MobileScreens.WebView} />
       <SettingsStack.Screen component={DevScreen} name={MobileScreens.Dev} />
+      <SettingsStack.Screen component={DebugScreensScreen} name={MobileScreens.DebugScreens} />
       <SettingsStack.Screen component={SettingsViewSeedPhraseScreen} name={MobileScreens.SettingsViewSeedPhrase} />
       <SettingsStack.Screen
         component={SettingsCloudBackupPasswordCreateScreen}
@@ -174,6 +177,7 @@ function SettingsStackGroup(): JSX.Element {
       />
       <SettingsStack.Screen component={SettingsCloudBackupStatus} name={MobileScreens.SettingsCloudBackupStatus} />
       <SettingsStack.Screen component={SettingsSmartWalletScreen} name={MobileScreens.SettingsSmartWallet} />
+      <SettingsStack.Screen component={SettingsStorageScreen} name={MobileScreens.SettingsStorage} />
       <SettingsStack.Screen component={SettingsPrivacyScreen} name={MobileScreens.SettingsPrivacy} />
       <SettingsStack.Screen component={SettingsNotificationsScreen} name={MobileScreens.SettingsNotifications} />
       <SettingsStack.Screen component={ViewPrivateKeysScreen} name={MobileScreens.ViewPrivateKeys} />
@@ -220,8 +224,6 @@ export function FiatOnRampStackNavigator(): JSX.Element {
 function OnboardingStackNavigator(): JSX.Element {
   const colors = useSporeColors()
 
-  const isOnboardingKeyringEnabled = useFeatureFlag(FeatureFlags.OnboardingKeyring)
-
   return (
     <OnboardingContextProvider>
       <OnboardingStack.Navigator>
@@ -236,13 +238,11 @@ function OnboardingStackNavigator(): JSX.Element {
             animation: 'slide_from_right',
           }}
         >
-          {isOnboardingKeyringEnabled && (
-            <OnboardingStack.Screen
-              component={AppLoadingScreen}
-              name={OnboardingScreens.AppLoading}
-              options={navNativeStackOptions.noHeader}
-            />
-          )}
+          <OnboardingStack.Screen
+            component={AppLoadingScreen}
+            name={OnboardingScreens.AppLoading}
+            options={navNativeStackOptions.noHeader}
+          />
           <OnboardingStack.Screen
             component={LandingScreen}
             name={OnboardingScreens.Landing}
@@ -390,8 +390,6 @@ export function AppStackNavigator(): JSX.Element {
       <AppStack.Screen component={UnitagStackNavigator} name={MobileScreens.UnitagStack} />
       <AppStack.Screen component={ExternalProfileScreen} name={MobileScreens.ExternalProfile} />
       <AppStack.Screen component={TokenDetailsScreen} name={MobileScreens.TokenDetails} />
-      <AppStack.Screen component={NFTItemScreen} name={MobileScreens.NFTItem} />
-      <AppStack.Screen component={NFTCollectionScreen} name={MobileScreens.NFTCollection} />
       <AppStack.Screen component={WebViewScreen} name={MobileScreens.WebView} />
       <AppStack.Screen component={SettingsStackGroup} name={MobileScreens.SettingsStack} />
       <AppStack.Screen component={ViewPrivateKeysScreen} name={MobileScreens.ViewPrivateKeys} />
@@ -402,6 +400,7 @@ export function AppStackNavigator(): JSX.Element {
         <AppStack.Screen component={SwapModal} name={ModalName.Swap} />
         <AppStack.Screen component={ExploreModal} name={ModalName.Explore} />
         <AppStack.Screen component={NotificationsOSSettingsModal} name={ModalName.NotificationsOSSettings} />
+        <AppStack.Screen component={FiatOnRampActionModal} name={ModalName.FiatOnRampAction} />
         <AppStack.Screen component={FundWalletModal} name={ModalName.FundWallet} />
         <AppStack.Screen component={KoreaCexTransferInfoModal} name={ModalName.KoreaCexTransferInfoModal} />
         <AppStack.Screen component={SmartWalletInfoModal} name={ModalName.SmartWalletInfoModal} />
@@ -422,12 +421,14 @@ export function AppStackNavigator(): JSX.Element {
         <AppStack.Screen component={BuyNativeTokenModal} name={ModalName.BuyNativeToken} />
         <AppStack.Screen component={HiddenTokenInfoModalScreen} name={ModalName.HiddenTokenInfoModal} />
         <AppStack.Screen component={ReportTokenIssueModalScreen} name={ModalName.ReportTokenIssue} />
+        <AppStack.Screen component={ReportPortfolioDataModalScreen} name={ModalName.ReportPortfolioData} />
         <AppStack.Screen component={ReportTokenDataModalScreen} name={ModalName.ReportTokenData} />
         <AppStack.Screen component={ScreenshotWarningModal} name={ModalName.ScreenshotWarning} />
         <AppStack.Screen component={PasskeyManagementModalScreen} name={ModalName.PasskeyManagement} />
         <AppStack.Screen component={PasskeyHelpModalScreen} name={ModalName.PasskeysHelp} />
         <AppStack.Screen component={SettingsBiometricModal} name={ModalName.BiometricsModal} />
         <AppStack.Screen component={SettingsFiatCurrencyModal} name={ModalName.FiatCurrencySelector} />
+        <AppStack.Screen component={SettingsLanguageModal} name={ModalName.LanguageSelector} />
         <AppStack.Screen component={ManageWalletsModal} name={ModalName.ManageWalletsModal} />
         <AppStack.Screen component={EditLabelSettingsModal} name={ModalName.EditLabelSettingsModal} />
         <AppStack.Screen component={EditProfileSettingsModal} name={ModalName.EditProfileSettingsModal} />
@@ -438,7 +439,6 @@ export function AppStackNavigator(): JSX.Element {
         <AppStack.Screen component={SettingsAppearanceModal} name={ModalName.SettingsAppearance} />
         <AppStack.Screen component={PermissionsSettingsScreen} name={ModalName.PermissionsModal} />
         <AppStack.Screen component={PortfolioBalanceSettingsScreen} name={ModalName.PortfolioBalanceModal} />
-        <AppStack.Screen component={LanguageSettingsScreen} name={ModalName.LanguageSelector} />
         <AppStack.Screen component={SmartWalletNudgeScreen} name={ModalName.SmartWalletNudge} />
         <AppStack.Screen component={BridgedAssetModalScreen} name={ModalName.BridgedAsset} />
         <AppStack.Screen component={WormholeModalScreen} name={ModalName.Wormhole} />
@@ -451,7 +451,15 @@ export function AppStackNavigator(): JSX.Element {
       {__DEV__ &&
         ((): JSX.Element => {
           const StorybookUIRoot = require('src/../.storybook').default
-          return <AppStack.Screen component={StorybookUIRoot} name={MobileScreens.Storybook} />
+          const { HashcashBenchmarkScreen } = require('src/screens/HashcashBenchmarkScreen')
+          const { SessionsDebugScreen } = require('src/screens/SessionsDebugScreen')
+          return (
+            <>
+              <AppStack.Screen component={StorybookUIRoot} name={MobileScreens.Storybook} />
+              <AppStack.Screen component={HashcashBenchmarkScreen} name={MobileScreens.HashcashBenchmark} />
+              <AppStack.Screen component={SessionsDebugScreen} name={MobileScreens.SessionsDebug} />
+            </>
+          )
         })()}
     </AppStack.Navigator>
   )

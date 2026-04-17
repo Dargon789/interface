@@ -1,27 +1,9 @@
-import { PrefetchBalancesWrapper } from 'appGraphql/data/apollo/AdaptiveTokenBalancesProvider'
 import type { Currency } from '@uniswap/sdk-core'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { useAccountDrawer } from 'components/AccountDrawer/MiniPortfolio/hooks'
-import { SwapBottomCard } from 'components/SwapBottomCard'
-import { SwitchLocaleLink } from 'components/SwitchLocaleLink'
-import { PageWrapper } from 'components/swap/styled'
-import { useAccount } from 'hooks/useAccount'
-import { useDeferredComponent } from 'hooks/useDeferredComponent'
-import { PageType, useIsPage } from 'hooks/useIsPage'
-import { useModalState } from 'hooks/useModalState'
-import { useResetOverrideOneClickSwapFlag } from 'pages/Swap/settings/OneClickSwap'
-import { useWebSwapSettings } from 'pages/Swap/settings/useWebSwapSettings'
-import { TDPContext } from 'pages/TokenDetails/TDPContext'
-import { useCallback, useContext, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router'
-import { MultichainContextProvider } from 'state/multichain/MultichainContext'
-import { useSwapHandlers } from 'state/sagas/transactions/useSwapHandlers'
-import { useInitialCurrencyState } from 'state/swap/hooks'
-import { SwapAndLimitContextProvider } from 'state/swap/SwapContext'
-import type { CurrencyState } from 'state/swap/types'
-import { useSwapAndLimitContext } from 'state/swap/useSwapContext'
 import type { SegmentedControlOption } from 'ui/src'
 import { Flex, SegmentedControl, styled, Text, Tooltip } from 'ui/src'
 import type { AppTFunction } from 'ui/src/i18n/types'
@@ -41,18 +23,35 @@ import type {
   SwapRedirectFn,
 } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
 import { useSwapPrefilledState } from 'uniswap/src/features/transactions/swap/form/hooks/useSwapPrefilledState'
-import { SwapFlow } from 'uniswap/src/features/transactions/swap/SwapFlow/SwapFlow'
 import { selectFilteredChainIds } from 'uniswap/src/features/transactions/swap/state/selectors'
 import { SwapDependenciesStoreContextProvider } from 'uniswap/src/features/transactions/swap/stores/swapDependenciesStore/SwapDependenciesStoreContextProvider'
 import { SwapFormStoreContextProvider } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/SwapFormStoreContextProvider'
 import type { SwapFormState } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/types'
+import { SwapFlow } from 'uniswap/src/features/transactions/swap/SwapFlow/SwapFlow'
 import { currencyToAsset } from 'uniswap/src/features/transactions/swap/utils/asset'
 import { TransactionState } from 'uniswap/src/features/transactions/types/transactionState'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { SwapTab } from 'uniswap/src/types/screens/interface'
 import { isMobileWeb } from 'utilities/src/platform'
 import { noop } from 'utilities/src/react/noop'
-import { isIFramed } from 'utils/isIFramed'
+import { PrefetchBalancesWrapper } from '~/appGraphql/data/apollo/AdaptiveTokenBalancesProvider'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
+import { PageWrapper } from '~/components/swap/styled'
+import { SwapBottomCard } from '~/components/SwapBottomCard'
+import { useAccount } from '~/hooks/useAccount'
+import { useDeferredComponent } from '~/hooks/useDeferredComponent'
+import { PageType, useIsPage } from '~/hooks/useIsPage'
+import { useModalState } from '~/hooks/useModalState'
+import { ReturnToAuctionBanner } from '~/pages/Swap/ReturnToAuctionBanner'
+import { useResetOverrideOneClickSwapFlag } from '~/pages/Swap/settings/OneClickSwap'
+import { useWebSwapSettings } from '~/pages/Swap/settings/useWebSwapSettings'
+import { MultichainContextProvider } from '~/state/multichain/MultichainContext'
+import { useSwapHandlers } from '~/state/sagas/transactions/useSwapHandlers'
+import { useInitialCurrencyState } from '~/state/swap/hooks'
+import { SwapAndLimitContextProvider } from '~/state/swap/SwapContext'
+import type { CurrencyState } from '~/state/swap/types'
+import { useSwapAndLimitContext } from '~/state/swap/useSwapContext'
+import { isIFramed } from '~/utils/isIFramed'
 
 export default function SwapPage() {
   const navigate = useNavigate()
@@ -95,7 +94,7 @@ export default function SwapPage() {
           />
         </WebFORNudgeProvider>
       </PageWrapper>
-      {location.pathname === '/swap' && <SwitchLocaleLink />}
+      <ReturnToAuctionBanner />
     </Trace>
   )
 }
@@ -138,6 +137,7 @@ export function Swap({
   swapRedirectCallback,
   tokenColor,
   usePersistedFilteredChainIds = false,
+  tdpCurrency,
 }: {
   initialInputChainId?: UniverseChainId
   onCurrencyChange?: (selected: CurrencyState) => void
@@ -153,6 +153,8 @@ export function Swap({
   tokenColor?: string
   usePersistedFilteredChainIds?: boolean
   passkeyAuthStatus?: PasskeyAuthStatus
+  /** When Swap is embedded in Token Details Page, pass the TDP token currency for Buy/Sell prefill */
+  tdpCurrency?: Currency
 }) {
   const { isSwapTokenSelectorOpen, swapOutputChainId } = useUniswapContext()
 
@@ -204,6 +206,7 @@ export function Swap({
                   onCurrencyChange={onCurrencyChange}
                   prefilledState={prefilledState}
                   tokenColor={tokenColor}
+                  tdpCurrency={tdpCurrency}
                 />
               </Flex>
             </SwapFormStoreContextProvider>
@@ -240,6 +243,7 @@ function UniversalSwapFlow({
   onCurrencyChange,
   swapRedirectCallback,
   tokenColor,
+  tdpCurrency,
 }: {
   hideHeader?: boolean
   hideFooter?: boolean
@@ -249,11 +253,11 @@ function UniversalSwapFlow({
   onCurrencyChange?: (selected: CurrencyState, isBridgePair?: boolean) => void
   swapRedirectCallback?: SwapRedirectFn
   tokenColor?: string
+  /** When Swap is embedded in TDP, the TDP token currency for Buy/Sell prefill */
+  tdpCurrency?: Currency
 }) {
   const { currentTab, setCurrentTab } = useSwapAndLimitContext()
-
-  // Get TDP currency if available (will be null if not in TDP context)
-  const tdpCurrency = currencyToAsset(useContext(TDPContext)?.currency)
+  const tdpCurrencyAsset = currencyToAsset(tdpCurrency)
 
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -261,12 +265,12 @@ function UniversalSwapFlow({
   const swapHandlers = useSwapHandlers()
 
   const LimitFormWrapper = useDeferredComponent(() =>
-    import('pages/Swap/Limit/LimitForm').then((module) => ({
+    import('~/pages/Swap/Limit/LimitForm').then((module) => ({
       default: module.LimitFormWrapper,
     })),
   )
   const BuyForm = useDeferredComponent(() =>
-    import('pages/Swap/Buy/BuyForm').then((module) => ({
+    import('~/pages/Swap/Buy/BuyForm').then((module) => ({
       default: module.BuyForm,
     })),
   )
@@ -282,7 +286,7 @@ function UniversalSwapFlow({
         openSendFormModal()
       }
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       setCurrentTab(PATHNAME_TO_TAB[pathname] ?? SwapTab.Swap)
     }
   }, [pathname, openSendFormModal, setCurrentTab])
@@ -299,32 +303,27 @@ function UniversalSwapFlow({
     [navigate, syncTabToUrl, setCurrentTab],
   )
 
-  const isFiatOffRampEnabled = useFeatureFlag(FeatureFlags.FiatOffRamp)
   const SWAP_TAB_OPTIONS: readonly SegmentedControlOption<SwapTab>[] = useMemo(() => {
-    return SWAP_TABS.filter((tab) => {
-      if (tab === SwapTab.Sell && !isFiatOffRampEnabled) {
-        return false
-      }
-
-      return true
-    }).map((tab) => ({
+    return SWAP_TABS.map((tab) => ({
       value: tab,
+      // Use href for proper link semantics when syncing to URL (SEO, accessibility, right-click menu)
+      href: syncTabToUrl ? `/${tab}` : undefined,
       display: (
         <Text
           variant="buttonLabel3"
           hoverStyle={{ color: '$neutral1' }}
           color={currentTab === tab ? '$neutral1' : '$neutral2'}
-          tag="h1"
         >
           {TAB_TYPE_TO_LABEL[tab](t)}
         </Text>
       ),
     }))
-  }, [t, currentTab, isFiatOffRampEnabled])
+  }, [t, currentTab, syncTabToUrl])
 
   const swapSettings = useWebSwapSettings()
   const resetDisableOneClickSwap = useResetOverrideOneClickSwapFlag()
 
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
   const connectorId = useAccount().connector?.id
   const passkeyAuthStatus = useGetPasskeyAuthStatus(connectorId)
 
@@ -364,16 +363,16 @@ function UniversalSwapFlow({
       {currentTab === SwapTab.Limit && LimitFormWrapper && <LimitFormWrapper onCurrencyChange={onCurrencyChange} />}
       {currentTab === SwapTab.Buy && BuyForm && (
         <BuyForm
-          rampDirection={RampDirection.ONRAMP}
+          rampDirection={RampDirection.ON_RAMP}
           disabled={disableTokenInputs}
-          initialCurrency={tdpCurrency ?? prefilledState?.output}
+          initialCurrency={tdpCurrencyAsset ?? prefilledState?.output}
         />
       )}
       {currentTab === SwapTab.Sell && BuyForm && (
         <BuyForm
-          rampDirection={RampDirection.OFFRAMP}
+          rampDirection={RampDirection.OFF_RAMP}
           disabled={disableTokenInputs}
-          initialCurrency={tdpCurrency ?? prefilledState?.output}
+          initialCurrency={tdpCurrencyAsset ?? prefilledState?.output}
         />
       )}
     </Flex>
@@ -393,7 +392,7 @@ const DisabledSwapOverlay = () => {
   return (
     <DisabledOverlay cursor="not-allowed">
       <Tooltip placement="left-start">
-        <Tooltip.Content animationDirection="left">
+        <Tooltip.Content animationDirection="left" zIndex={zIndexes.overlay}>
           <Tooltip.Arrow />
           <Text variant="body4">{t('testnet.unsupported')}</Text>
         </Tooltip.Content>

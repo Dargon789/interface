@@ -3,14 +3,26 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "packages/gating/src",
   "projectType": "library",
-  "tags": [],
+  "tags": ["scope:gating", "type:lib"],
   "targets": {
     "typecheck": {},
-    "lint:biome": {},
-    "lint:biome:fix": {},
-    "lint:eslint": {},
-    "lint:eslint:fix": {},
+    "typecheck:tsc": {},
+    "typecheck:tsgo": {},
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
     "lint": {},
-    "lint:fix": {}
+    "lint:fix": {},
+    "check": {},
+    "check:fast": {},
+    "check:deps:usage": {},
+    "test": {
+      "command": "vitest run",
+      "options": {
+        "cwd": "{projectRoot}"
+      }
+    }
   }
 }

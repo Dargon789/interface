@@ -1,20 +1,21 @@
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import Row from 'components/deprecated/Row'
-import { CompanyMenu } from 'components/NavBar/CompanyMenu'
-import { NewUserCTAButton } from 'components/NavBar/DownloadApp/NewUserCTAButton'
-import { PreferenceMenu } from 'components/NavBar/PreferencesMenu'
-import { useTabsVisible } from 'components/NavBar/ScreenSizes'
-import { SearchBar } from 'components/NavBar/SearchBar'
-import { useIsSearchBarVisible } from 'components/NavBar/SearchBar/useIsSearchBarVisible'
-import { Tabs } from 'components/NavBar/Tabs/Tabs'
-import TestnetModeTooltip from 'components/NavBar/TestnetMode/TestnetModeTooltip'
-import Web3Status from 'components/Web3Status'
-import { PageType, useIsPage } from 'hooks/useIsPage'
-import deprecatedStyled, { css } from 'lib/styled-components'
 import { Flex, styled, Nav as TamaguiNav, useMedia } from 'ui/src'
 import { breakpoints, INTERFACE_NAV_HEIGHT, zIndexes } from 'ui/src/theme'
 import { useConnectionStatus } from 'uniswap/src/features/accounts/store/hooks'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
+import Row from '~/components/deprecated/Row'
+import { CompanyMenu } from '~/components/NavBar/CompanyMenu'
+import { NewUserCTAButton } from '~/components/NavBar/DownloadApp/NewUserCTAButton'
+import { PreferenceMenu } from '~/components/NavBar/PreferencesMenu'
+import { useTabsVisible } from '~/components/NavBar/ScreenSizes'
+import { SearchBar } from '~/components/NavBar/SearchBar'
+import { useIsSearchBarVisible } from '~/components/NavBar/SearchBar/useIsSearchBarVisible'
+import { Tabs } from '~/components/NavBar/Tabs/Tabs'
+import TestnetModeTooltip from '~/components/NavBar/TestnetMode/TestnetModeTooltip'
+import { UniswapWrappedEntry } from '~/components/NavBar/UniswapWrappedEntry'
+import Web3Status from '~/components/Web3Status'
+import { PageType, useIsPage } from '~/hooks/useIsPage'
+import { css, deprecatedStyled } from '~/lib/deprecated-styled'
 
 // Flex is position relative by default, we must unset the position on every Flex
 // between the body and search component
@@ -69,11 +70,11 @@ export default function Navbar() {
         {isSearchBarVisible && <SearchBar />}
 
         <Right>
+          <UniswapWrappedEntry />
           {!isSearchBarVisible && <SearchBar />}
           {!isEmbeddedWalletEnabled && isLandingPage && !isSmallScreen && <NewUserCTAButton />}
           {!isConnected && <PreferenceMenu />}
           {isTestnetModeEnabled && <TestnetModeTooltip />}
-          {isEmbeddedWalletEnabled && !isConnected && <NewUserCTAButton />}
           <Web3Status />
         </Right>
       </UnpositionedFlex>

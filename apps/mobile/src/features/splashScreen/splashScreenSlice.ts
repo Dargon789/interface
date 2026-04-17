@@ -9,7 +9,7 @@ enum SplashScreenVisibility {
   HIDDEN = 'hidden',
 }
 
-// eslint-disable-next-line import/no-unused-modules
+// oxlint-disable-next-line import/no-unused-modules
 export interface SplashScreenState {
   visibility: SplashScreenVisibility
   dismissRequested: boolean

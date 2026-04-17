@@ -1,33 +1,33 @@
 import { Currency, Percent } from '@uniswap/sdk-core'
-import { ReactComponent as ExpandoIconClosed } from 'assets/svg/expando-icon-closed.svg'
-import { ReactComponent as ExpandoIconOpened } from 'assets/svg/expando-icon-opened.svg'
-import Column from 'components/deprecated/Column'
-import { AutoRow, RowBetween } from 'components/deprecated/Row'
-import { LimitDisclaimer } from 'components/swap/LimitDisclaimer'
-import SwapLineItem, { SwapLineItemType } from 'components/swap/SwapLineItem'
-import { SwapCallbackError, SwapShowAcceptChanges } from 'components/swap/styled'
-import { Allowance, AllowanceState } from 'hooks/usePermit2Allowance'
-import { SwapResult } from 'hooks/useSwapCallback'
-import styled from 'lib/styled-components'
 import { PropsWithChildren, ReactNode, useMemo } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { InterfaceTrade, LimitOrderTrade, RouterPreference } from 'state/routing/types'
-import { isLimitTrade } from 'state/routing/utils'
-import { useRouterPreference, useUserSlippageTolerance } from 'state/user/hooks'
-import { ThemedText } from 'theme/components'
-import { ExternalLink } from 'theme/components/Links'
 import { Button, Flex, Separator, Text } from 'ui/src'
 import { AlertTriangleFilled } from 'ui/src/components/icons/AlertTriangleFilled'
 import { ElementName, SwapEventName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
-import { formatSwapButtonClickEventProperties } from 'utils/loggingFormatters'
+import { ReactComponent as ExpandoIconClosed } from '~/assets/svg/expando-icon-closed.svg'
+import { ReactComponent as ExpandoIconOpened } from '~/assets/svg/expando-icon-opened.svg'
+import Column from '~/components/deprecated/Column'
+import { AutoRow, RowBetween } from '~/components/deprecated/Row'
+import { LimitDisclaimer } from '~/components/swap/LimitDisclaimer'
+import { SwapCallbackError, SwapShowAcceptChanges } from '~/components/swap/styled'
+import SwapLineItem, { SwapLineItemType } from '~/components/swap/SwapLineItem'
+import { Allowance, AllowanceState } from '~/hooks/usePermit2Allowance'
+import { SwapResult } from '~/hooks/useSwapCallback'
+import { deprecatedStyled } from '~/lib/deprecated-styled'
+import { InterfaceTrade, LimitOrderTrade, RouterPreference } from '~/state/routing/types'
+import { isLimitTrade } from '~/state/routing/utils'
+import { useRouterPreference, useUserSlippageTolerance } from '~/state/user/hooks'
+import { ThemedText } from '~/theme/components'
+import { ExternalLink } from '~/theme/components/Links'
+import { formatSwapButtonClickEventProperties } from '~/utils/loggingFormatters'
 
-const DetailsContainer = styled(Column)`
+const DetailsContainer = deprecatedStyled(Column)`
   padding: 0px 12px 8px;
 `
 
-const DropdownControllerWrapper = styled.div`
+const DropdownControllerWrapper = deprecatedStyled.div`
   display: flex;
   align-items: center;
   margin-right: -6px;
@@ -37,7 +37,7 @@ const DropdownControllerWrapper = styled.div`
   white-space: nowrap;
 `
 
-const DropdownButton = styled.button`
+const DropdownButton = deprecatedStyled.button`
   padding: 0px 16px;
   margin-top: 4px;
   margin-bottom: 4px;
@@ -50,7 +50,7 @@ const DropdownButton = styled.button`
   cursor: pointer;
 `
 
-const HelpLink = styled(ExternalLink)`
+const HelpLink = deprecatedStyled(ExternalLink)`
   width: 100%;
   text-align: center;
   margin-top: 16px;

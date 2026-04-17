@@ -1,33 +1,32 @@
 import { useQuery } from '@tanstack/react-query'
-import { useOpenOffchainActivityModal } from 'components/AccountDrawer/MiniPortfolio/Activity/OffchainActivityModal'
-import {
-  getFORTransactionToActivityQueryOptions,
-  getTransactionToActivityQueryOptions,
-} from 'components/AccountDrawer/MiniPortfolio/Activity/parseLocal'
-import { Activity } from 'components/AccountDrawer/MiniPortfolio/Activity/types'
-import { PortfolioLogo } from 'components/AccountDrawer/MiniPortfolio/PortfolioLogo'
-import AlertTriangleFilled from 'components/Icons/AlertTriangleFilled'
-import { LoaderV3 } from 'components/Icons/LoadingSpinner'
-import { POPUP_MAX_WIDTH } from 'components/Popups/constants'
-import { ToastRegularSimple } from 'components/Popups/ToastRegularSimple'
-import { useIsRecentFlashblocksNotification } from 'hooks/useIsRecentFlashblocksNotification'
 import { useTranslation } from 'react-i18next'
-import { useTransaction, useUniswapXOrderByOrderHash } from 'state/transactions/hooks'
-import { isPendingTx } from 'state/transactions/utils'
-import { EllipsisTamaguiStyle } from 'theme/components/styles'
 import { Flex, Text, TouchableArea, useSporeColors } from 'ui/src'
 import { X } from 'ui/src/components/icons/X'
-import { BridgeIcon } from 'uniswap/src/components/CurrencyLogo/SplitLogo'
+import { CrossChainIcon } from 'uniswap/src/components/CurrencyLogo/SplitLogo'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { useIsSupportedChainId } from 'uniswap/src/features/chains/hooks/useSupportedChainId'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { FORTransaction } from 'uniswap/src/features/fiatOnRamp/types'
+import { type UniverseChainId } from 'uniswap/src/features/chains/types'
+import { type FORTransaction } from 'uniswap/src/features/fiatOnRamp/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { isNonInstantFlashblockTransactionType } from 'uniswap/src/features/transactions/swap/components/UnichainInstantBalanceModal/utils'
 import { TransactionStatus } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { ExplorerDataType, getExplorerLink } from 'uniswap/src/utils/linking'
 import { noop } from 'utilities/src/react/noop'
+import { useOpenOffchainActivityModal } from '~/components/AccountDrawer/MiniPortfolio/Activity/OffchainActivityModal'
+import {
+  getFORTransactionToActivityQueryOptions,
+  getTransactionToActivityQueryOptions,
+} from '~/components/AccountDrawer/MiniPortfolio/Activity/parseLocal'
+import { type Activity } from '~/components/AccountDrawer/MiniPortfolio/Activity/types'
+import { PortfolioLogo } from '~/components/AccountDrawer/MiniPortfolio/PortfolioLogo'
+import AlertTriangleFilled from '~/components/Icons/AlertTriangleFilled'
+import { LoaderV3 } from '~/components/Icons/LoadingSpinner'
+import { POPUP_MAX_WIDTH } from '~/components/Popups/constants'
+import { ToastRegularSimple } from '~/components/Popups/ToastRegularSimple'
+import { useOpenTransactionDetailsModal } from '~/components/TopLevelModals/TransactionDetailsModalDispatcher'
+import { usePlanTransactions, useTransaction, useUniswapXOrderByOrderHash } from '~/state/transactions/hooks'
+import { isPendingTx } from '~/state/transactions/utils'
+import { EllipsisTamaguiStyle } from '~/theme/components/styles'
 
 export function FailedNetworkSwitchPopup({ chainId, onClose }: { chainId: UniverseChainId; onClose: () => void }) {
   const isSupportedChain = useIsSupportedChainId(chainId)
@@ -60,24 +59,25 @@ type ActivityPopupContentProps = { activity: Activity; onClick?: () => void; onC
 
 function ActivityPopupContent({ activity, onClick, onClose }: ActivityPopupContentProps) {
   const success = activity.status === TransactionStatus.Success
-  const pending = activity.status === TransactionStatus.Pending
+  const pending = activity.status === TransactionStatus.Pending || activity.status === TransactionStatus.AwaitingAction
 
   const showPortfolioLogo = success || pending || !!activity.offchainOrderDetails
   const colors = useSporeColors()
 
-  const isBridgeActivity = activity.outputChainId && activity.chainId !== activity.outputChainId
+  const isCrossChainActivity = activity.outputChainId && activity.chainId !== activity.outputChainId
   return (
     <Flex
       row
       width={POPUP_MAX_WIDTH}
       backgroundColor="$surface1"
       position="relative"
-      borderWidth={1}
+      borderWidth="$spacing1"
       borderRadius="$rounded16"
       borderColor="$surface3"
       py={2}
       px={0}
       animation="300ms"
+      data-testid={TestID.ActivityPopup}
       $sm={{
         mx: 'auto',
         width: '100%',
@@ -91,7 +91,7 @@ function ActivityPopupContent({ activity, onClick, onClose }: ActivityPopupConte
                 chainId={activity.chainId}
                 currencies={activity.currencies}
                 accountAddress={activity.otherAccount}
-                customIcon={isBridgeActivity ? BridgeIcon : undefined}
+                customIcon={isCrossChainActivity ? <CrossChainIcon status={activity.status} /> : undefined}
               />
             </Flex>
           ) : (
@@ -103,9 +103,15 @@ function ActivityPopupContent({ activity, onClick, onClose }: ActivityPopupConte
             <Text variant="body2" color="$neutral1">
               {activity.title}
             </Text>
-            <Text variant="body3" color="$neutral2" {...EllipsisTamaguiStyle}>
-              {activity.descriptor}
-            </Text>
+            {typeof activity.descriptor === 'string' ? (
+              <Text variant="body3" color="$neutral2" {...EllipsisTamaguiStyle}>
+                {activity.descriptor}
+              </Text>
+            ) : (
+              <Flex overflow="hidden" maxHeight={28}>
+                {activity.descriptor}
+              </Flex>
+            )}
           </Flex>
         </Flex>
       </TouchableArea>
@@ -126,8 +132,8 @@ function ActivityPopupContent({ activity, onClick, onClose }: ActivityPopupConte
 
 export function TransactionPopupContent({ hash, onClose }: { hash: string; onClose: () => void }) {
   const transaction = useTransaction(hash)
-
   const { formatNumberOrString } = useLocalizationContext()
+
   const { data: activity } = useQuery(
     getTransactionToActivityQueryOptions({
       transaction,
@@ -135,21 +141,11 @@ export function TransactionPopupContent({ hash, onClose }: { hash: string; onClo
     }),
   )
 
-  const isFlashblockNotification = useIsRecentFlashblocksNotification({ transaction, activity })
-
   if (!transaction || !activity) {
     return null
   }
 
-  if (
-    isFlashblockNotification &&
-    !isNonInstantFlashblockTransactionType(transaction) &&
-    activity.status === TransactionStatus.Success
-  ) {
-    return null
-  }
-
-  const onClick = () => {
+  const openExplorerLink = () => {
     if (!activity.hash) {
       return
     }
@@ -164,10 +160,27 @@ export function TransactionPopupContent({ hash, onClose }: { hash: string; onClo
   return (
     <ActivityPopupContent
       activity={activity}
-      onClick={explorerUrlUnavailable || !activity.hash ? undefined : onClick}
+      onClick={explorerUrlUnavailable || !activity.hash ? undefined : openExplorerLink}
       onClose={onClose}
     />
   )
+}
+
+export function PlanPopupContent({ planId, onClose }: { planId: string; onClose: () => void }) {
+  const plan = usePlanTransactions([planId]).at(0)
+  const openTransactionDetailsModal = useOpenTransactionDetailsModal()
+  const { formatNumberOrString } = useLocalizationContext()
+  const { data: activity } = useQuery(
+    getTransactionToActivityQueryOptions({ transaction: plan, formatNumber: formatNumberOrString }),
+  )
+
+  if (!activity || !plan) {
+    return null
+  }
+
+  const onClick = () => openTransactionDetailsModal(plan)
+
+  return <ActivityPopupContent activity={activity} onClose={onClose} onClick={onClick} />
 }
 
 export function UniswapXOrderPopupContent({ orderHash, onClose }: { orderHash: string; onClose: () => void }) {

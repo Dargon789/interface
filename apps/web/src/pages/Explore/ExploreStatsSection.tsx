@@ -1,12 +1,12 @@
-import { LoadingBubble } from 'components/Tokens/loading'
-import { DeltaArrow } from 'components/Tokens/TokenDetails/Delta'
 import { Fragment, memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { use24hProtocolVolume, useDailyTVLWithChange } from 'state/explore/protocolStats'
 import { AnimatePresence, Flex, isTouchable, Popover, Text, useMedia, useShadowPropsMedium } from 'ui/src'
 import { zIndexes } from 'ui/src/theme'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
+import { DeltaArrow } from '~/components/DeltaArrow/DeltaArrow'
+import { LoadingBubble } from '~/components/Tokens/loading'
+import { use24hProtocolVolume, useDailyTVLWithChange } from '~/state/explore/protocolStats'
 
 interface ExploreStatSectionData {
   label: string
@@ -18,7 +18,7 @@ interface ExploreStatSectionData {
   }[]
 }
 
-const ExploreStatsSection = ({ shouldHideStats = false }: { shouldHideStats?: boolean }) => {
+export const ExploreStatsSection = ({ shouldHideStats = false }: { shouldHideStats?: boolean }) => {
   const media = useMedia()
   const { t } = useTranslation()
   const { convertFiatAmountFormatted } = useLocalizationContext()
@@ -59,7 +59,7 @@ const ExploreStatsSection = ({ shouldHideStats = false }: { shouldHideStats?: bo
       { label: t('explore.v4TVL'), value: formatPrice(protocolTVL.v4), change: protocolChangePercent.v4 },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     return stats.filter((state): state is Exclude<typeof state, null> => state !== null)
   }, [
     t,
@@ -79,6 +79,8 @@ const ExploreStatsSection = ({ shouldHideStats = false }: { shouldHideStats?: bo
     protocolChangePercent.v4,
   ])
 
+  const visibleStats = media.md ? exploreStatsSectionData.slice(0, 2) : exploreStatsSectionData
+
   return (
     <AnimatePresence>
       {!shouldHideStats && (
@@ -91,7 +93,7 @@ const ExploreStatsSection = ({ shouldHideStats = false }: { shouldHideStats?: bo
           exitStyle={{ opacity: 0, y: -10 }}
           transition="opacity 0.3s ease, transform 0.3s ease"
         >
-          {exploreStatsSectionData.map((data, index) => (
+          {visibleStats.map((data, index) => (
             <Flex
               key={data.label}
               borderLeftWidth={index === 0 ? 0 : '$spacing1'}
@@ -100,7 +102,6 @@ const ExploreStatsSection = ({ shouldHideStats = false }: { shouldHideStats?: bo
               flex={1}
               cursor={data.protocolPopoverFormattedData ? 'pointer' : 'default'}
               transition="opacity 0.3s ease, transform 0.3s ease"
-              display={media.md && index > 1 ? 'none' : 'flex'}
             >
               {isTouchable || !data.protocolPopoverFormattedData ? (
                 <StatDisplay data={data} isLoading={isStatDataLoading} />
@@ -115,8 +116,6 @@ const ExploreStatsSection = ({ shouldHideStats = false }: { shouldHideStats?: bo
   )
 }
 
-export default ExploreStatsSection
-
 interface StatDisplayProps {
   data: ExploreStatSectionData
   isLoading?: boolean
@@ -128,7 +127,7 @@ const StatDisplay = memo(({ data, isLoading, isHoverable }: StatDisplayProps) =>
   const { t } = useTranslation()
 
   return (
-    <Flex group gap="$spacing4" animation="simple" minHeight="$spacing60">
+    <Flex transition="all 0.1s ease-in-out" group gap="$spacing4" minHeight="$spacing60">
       <Text variant="body4" color="$neutral2" $group-hover={{ color: isHoverable ? '$neutral2Hovered' : '$neutral2' }}>
         {data.label}
       </Text>
@@ -162,12 +161,12 @@ const StatDisplayWithPopover = memo(({ data, isLoading }: StatDisplayProps) => {
   const { convertFiatAmountFormatted } = useLocalizationContext()
 
   return (
-    <Popover hoverable placement="bottom-start" offset={{ mainAxis: 10 }}>
+    <Popover hoverable={{ delay: { open: 200 }, restMs: 100 }} placement="bottom-start" offset={{ mainAxis: 10 }}>
       <Popover.Trigger>
         <StatDisplay data={data} isLoading={isLoading} isHoverable />
       </Popover.Trigger>
       <Popover.Content
-        zIndex={zIndexes.dropdown}
+        zIndex={zIndexes.popover}
         borderColor="$surface2"
         borderRadius="$rounded16"
         borderWidth="$spacing1"

@@ -24,6 +24,7 @@ const SWAP_FINALIZED_PROMPT_DELAY_MS = 3 * ONE_SECOND_MS
 
 try {
   if (!isTestRun && !isAndroid14()) {
+    // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
     import('expo-store-review')
   }
 } catch (error) {

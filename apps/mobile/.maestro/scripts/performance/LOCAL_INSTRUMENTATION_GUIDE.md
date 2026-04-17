@@ -81,11 +81,11 @@ We've instrumented our Maestro E2E tests to collect performance metrics across t
 
 ```bash
 # Run all e2e tests or a specific test
-yarn e2e:interactive
+bun e2e:interactive
 
 # Process and submit metrics
 export DATADOG_API_KEY=your-key-here
-yarn e2e:local:process-metrics
+bun e2e:local:process-metrics
 ```
 
 #### Maestro Cloud
@@ -187,7 +187,7 @@ appId: com.uniswap.mobile.dev
 - Track meaningful user actions (taps, inputs, swipes)
 - Let shared flows track themselves internally
 - Use descriptive action targets
-- Clear logs regularly with `yarn e2e:clear-logs`
+- Clear logs regularly with `bun e2e:clear-logs`
 
 ### DON'T ❌
 

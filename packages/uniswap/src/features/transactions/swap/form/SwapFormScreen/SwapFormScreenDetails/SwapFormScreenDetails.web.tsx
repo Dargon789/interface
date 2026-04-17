@@ -1,17 +1,14 @@
 import { Accordion, Flex } from 'ui/src'
 import { SwapFormButton } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/SwapFormButton'
+import { useSwapFormScreenStore } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/useSwapFormScreenStore'
+import { SwapFormWarningStoreContextProvider } from 'uniswap/src/features/transactions/swap/form/stores/swapFormWarningStore/SwapFormWarningStoreContextProvider'
 import { ExpandableRows } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/SwapFormScreenDetails/ExpandableRows'
 import { SwapFormScreenFooter } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/SwapFormScreenDetails/SwapFormScreenFooter/SwapFormScreenFooter'
 import { SwapFormWarningModals } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/SwapFormWarningModals/SwapFormWarningModals'
-import { useSwapFormScreenStore } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/useSwapFormScreenStore'
-import { SwapFormWarningStoreContextProvider } from 'uniswap/src/features/transactions/swap/form/stores/swapFormWarningStore/SwapFormWarningStoreContextProvider'
-import { usePriceUXEnabled } from 'uniswap/src/features/transactions/swap/hooks/usePriceUXEnabled'
 
 export function SwapFormScreenDetails(): JSX.Element {
-  const isPriceUXEnabled = usePriceUXEnabled()
-  const { tokenColor, isBridge, showFooter } = useSwapFormScreenStore((state) => ({
+  const { tokenColor, showFooter } = useSwapFormScreenStore((state) => ({
     tokenColor: state.tokenColor,
-    isBridge: state.isBridge,
     showFooter: state.showFooter,
   }))
 
@@ -33,7 +30,7 @@ export function SwapFormScreenDetails(): JSX.Element {
           </Flex>
           <SwapFormScreenFooter />
         </Flex>
-        {showFooter && !isPriceUXEnabled ? <ExpandableRows isBridge={isBridge} /> : null}
+        {showFooter ? <ExpandableRows /> : null}
       </Accordion.Item>
     </Accordion>
   )

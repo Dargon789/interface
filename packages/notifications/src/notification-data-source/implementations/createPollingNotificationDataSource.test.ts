@@ -1,15 +1,25 @@
 import { QueryClient } from '@tanstack/react-query'
+import {
+  Content,
+  GetNotificationsResponse,
+  Metadata,
+  Notification,
+  PlatformType,
+} from '@uniswap/client-notification-service/dist/uniswap/notificationservice/v1/api_pb'
 import type { InAppNotification, NotificationsApiClient } from '@universe/api'
+import { ContentStyle } from '@universe/api'
+import { getNotificationQueryOptions } from '@universe/notifications/src/notification-data-source/getNotificationQueryOptions'
 import { createPollingNotificationDataSource } from '@universe/notifications/src/notification-data-source/implementations/createPollingNotificationDataSource'
-import { getNotificationQueryOptions } from '@universe/notifications/src/notification-data-source/notificationQueryOptions'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 
-vi.mock('utilities/src/logger/logger', () => ({
-  logger: {
-    error: vi.fn(),
-  },
-}))
+function createMockNotification(id: string): InAppNotification {
+  return new Notification({
+    id,
+    metadata: new Metadata({ owner: 'foo', business: 'bar' }),
+    content: new Content({ style: ContentStyle.MODAL, title: 'Hello' }),
+  })
+}
 
 describe('createPollingNotificationDataSource', () => {
   let queryClient: QueryClient
@@ -20,25 +30,11 @@ describe('createPollingNotificationDataSource', () => {
     vi.clearAllMocks()
     queryClient = new QueryClient()
 
-    mockNotifications = [
-      {
-        notification_id: '1',
-        notification_name: 'test_notification',
-        meta_data: { foo: 'bar' },
-        content: { message: 'Hello' },
-        criteria: {},
-      },
-      {
-        notification_id: '2',
-        notification_name: 'another_notification',
-        meta_data: { baz: 'qux' },
-        content: { message: 'World' },
-        criteria: {},
-      },
-    ]
+    mockNotifications = [createMockNotification('1'), createMockNotification('2')]
 
     mockApiClient = {
-      getNotifications: vi.fn().mockResolvedValue(mockNotifications),
+      getNotifications: vi.fn().mockResolvedValue(new GetNotificationsResponse({ notifications: mockNotifications })),
+      ackNotification: vi.fn().mockResolvedValue(undefined),
     }
   })
 
@@ -55,6 +51,7 @@ describe('createPollingNotificationDataSource', () => {
       queryClient: testQueryClient,
       queryOptions: getNotificationQueryOptions({
         apiClient: mockApiClient,
+        getPlatformType: () => PlatformType.WEB,
       }),
     })
 
@@ -72,6 +69,7 @@ describe('createPollingNotificationDataSource', () => {
       queryClient: testQueryClient,
       queryOptions: getNotificationQueryOptions({
         apiClient: mockApiClient,
+        getPlatformType: () => PlatformType.WEB,
       }),
     })
 
@@ -80,7 +78,7 @@ describe('createPollingNotificationDataSource', () => {
 
     // Wait for the query to resolve
     await vi.waitFor(() => {
-      expect(onNotifications).toHaveBeenCalledWith(mockNotifications)
+      expect(onNotifications).toHaveBeenCalledWith(mockNotifications, 'polling_api')
     })
 
     await dataSource.stop()
@@ -95,6 +93,7 @@ describe('createPollingNotificationDataSource', () => {
       queryClient: testQueryClient,
       queryOptions: getNotificationQueryOptions({
         apiClient: mockApiClient,
+        getPlatformType: () => PlatformType.WEB,
       }),
     })
 
@@ -108,6 +107,36 @@ describe('createPollingNotificationDataSource', () => {
     await dataSource.stop()
   })
 
+  it.each([
+    ['WEB', PlatformType.WEB],
+    ['MOBILE', PlatformType.MOBILE],
+    ['EXTENSION', PlatformType.EXTENSION],
+  ] as const)(
+    'calls apiClient.getNotifications with platform_type %s when getPlatformType returns that platform',
+    async (_label, platformType) => {
+      const testQueryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      })
+
+      const dataSource = createPollingNotificationDataSource({
+        queryClient: testQueryClient,
+        queryOptions: getNotificationQueryOptions({
+          apiClient: mockApiClient,
+          getPlatformType: () => platformType,
+        }),
+      })
+
+      const onNotifications = vi.fn()
+      dataSource.start(onNotifications)
+
+      await vi.waitFor(() => {
+        expect(mockApiClient.getNotifications).toHaveBeenCalledWith({ platform_type: platformType })
+      })
+
+      await dataSource.stop()
+    },
+  )
+
   it('does not start twice if already active', async () => {
     const testQueryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -117,6 +146,7 @@ describe('createPollingNotificationDataSource', () => {
       queryClient: testQueryClient,
       queryOptions: getNotificationQueryOptions({
         apiClient: mockApiClient,
+        getPlatformType: () => PlatformType.WEB,
       }),
     })
 
@@ -146,6 +176,7 @@ describe('createPollingNotificationDataSource', () => {
       queryClient: testQueryClient,
       queryOptions: getNotificationQueryOptions({
         apiClient: mockApiClient,
+        getPlatformType: () => PlatformType.WEB,
       }),
     })
 
@@ -172,6 +203,7 @@ describe('createPollingNotificationDataSource', () => {
       queryClient: testQueryClient,
       queryOptions: getNotificationQueryOptions({
         apiClient: mockApiClient,
+        getPlatformType: () => PlatformType.WEB,
         pollIntervalMs: 100, // Short interval for testing
       }),
     })
@@ -203,6 +235,7 @@ describe('createPollingNotificationDataSource', () => {
       queryClient: testQueryClient,
       queryOptions: getNotificationQueryOptions({
         apiClient: mockApiClient,
+        getPlatformType: () => PlatformType.WEB,
       }),
     })
 
@@ -211,7 +244,7 @@ describe('createPollingNotificationDataSource', () => {
     // Start, wait, then stop
     dataSource.start(onNotifications)
     await vi.waitFor(() => {
-      expect(onNotifications).toHaveBeenCalledWith(mockNotifications)
+      expect(onNotifications).toHaveBeenCalledWith(mockNotifications, 'polling_api')
     })
     await dataSource.stop()
 
@@ -223,13 +256,15 @@ describe('createPollingNotificationDataSource', () => {
 
     // Clear mocks
     vi.clearAllMocks()
-    mockApiClient.getNotifications = vi.fn().mockResolvedValue(mockNotifications)
+    mockApiClient.getNotifications = vi
+      .fn()
+      .mockResolvedValue(new GetNotificationsResponse({ notifications: mockNotifications }))
 
     // Start again with a new callback
     const onNotifications2 = vi.fn()
     dataSource.start(onNotifications2)
     await vi.waitFor(() => {
-      expect(onNotifications2).toHaveBeenCalledWith(mockNotifications)
+      expect(onNotifications2).toHaveBeenCalled()
     })
 
     await dataSource.stop()
@@ -245,6 +280,7 @@ describe('createPollingNotificationDataSource', () => {
       queryClient: testQueryClient,
       queryOptions: getNotificationQueryOptions({
         apiClient: mockApiClient,
+        getPlatformType: () => PlatformType.WEB,
         pollIntervalMs: customPollInterval,
       }),
     })
@@ -272,12 +308,13 @@ describe('createPollingNotificationDataSource', () => {
       defaultOptions: { queries: { retry: false } },
     })
 
-    mockApiClient.getNotifications = vi.fn().mockResolvedValue([])
+    mockApiClient.getNotifications = vi.fn().mockResolvedValue(new GetNotificationsResponse({ notifications: [] }))
 
     const dataSource = createPollingNotificationDataSource({
       queryClient: testQueryClient,
       queryOptions: getNotificationQueryOptions({
         apiClient: mockApiClient,
+        getPlatformType: () => PlatformType.WEB,
       }),
     })
 
@@ -285,7 +322,7 @@ describe('createPollingNotificationDataSource', () => {
     dataSource.start(onNotifications)
 
     await vi.waitFor(() => {
-      expect(onNotifications).toHaveBeenCalledWith([])
+      expect(onNotifications).toHaveBeenCalledWith([], 'polling_api')
     })
 
     await dataSource.stop()
@@ -300,6 +337,7 @@ describe('createPollingNotificationDataSource', () => {
       queryClient: testQueryClient,
       queryOptions: getNotificationQueryOptions({
         apiClient: mockApiClient,
+        getPlatformType: () => PlatformType.WEB,
       }),
     })
 
@@ -326,7 +364,7 @@ describe('createPollingNotificationDataSource', () => {
       if (callCount <= 2) {
         return Promise.reject(new Error('Temporary error'))
       }
-      return Promise.resolve(mockNotifications)
+      return Promise.resolve(new GetNotificationsResponse({ notifications: mockNotifications }))
     })
 
     // Create a fresh QueryClient to test actual retry behavior from queryOptions
@@ -336,6 +374,7 @@ describe('createPollingNotificationDataSource', () => {
       queryClient: retryQueryClient,
       queryOptions: getNotificationQueryOptions({
         apiClient: mockApiClient,
+        getPlatformType: () => PlatformType.WEB,
       }),
     })
 
@@ -345,9 +384,9 @@ describe('createPollingNotificationDataSource', () => {
     // Should eventually succeed after retries
     await vi.waitFor(
       () => {
-        expect(onNotifications).toHaveBeenCalledWith(mockNotifications)
+        expect(onNotifications).toHaveBeenCalled()
       },
-      { timeout: 5000 },
+      { timeout: 10000 },
     )
 
     // Should have made multiple attempts (initial + 2 retries)

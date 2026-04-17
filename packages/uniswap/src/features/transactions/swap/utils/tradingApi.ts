@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { BigNumber } from '@ethersproject/bignumber'
 import { MixedRouteSDK } from '@uniswap/router-sdk'
 import type { Currency, TradeType } from '@uniswap/sdk-core'
@@ -78,9 +78,9 @@ export function transformTradingApiResponseToTrade(params: TradingApiResponseToT
       // We validate the token addresses match to ensure the trade is valid.
       if (
         !areAddressesEqual({
-          addressInput1: { address: currencyIn.wrapped.address, chainId: currencyIn.chainId },
+          addressInput1: { address: getTokenAddressForApi(currencyIn), chainId: currencyIn.chainId },
           addressInput2: { address: quote.orderInfo.input.token, chainId: currencyIn.chainId },
-        }) || // UniswapX quotes should use wrapped native as input, rather than the native token
+        }) ||
         !areAddressesEqual({
           addressInput1: { address: getTokenAddressForApi(currencyOut), chainId: currencyOut.chainId },
           addressInput2: { address: quote.orderInfo.outputs[0]?.token, chainId: currencyOut.chainId },
@@ -149,6 +149,7 @@ function computeRoutes({
   }
 
   const tokenIn = quote.route[0]?.[0]?.tokenIn
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
   const tokenOut = quote.route[0]?.[quote.route[0]?.length - 1]?.tokenOut
 
   if (!tokenIn || !tokenOut) {
@@ -461,37 +462,31 @@ export function useQuoteRoutingParams({
   isUSDQuote,
   isV4HookPoolsEnabled = true,
 }: UseQuoteRoutingParamsArgs): QuoteRoutingParamsResult {
-  const protocols = useProtocolsForChain(selectedProtocols ?? DEFAULT_PROTOCOL_OPTIONS, tokenInChainId)
+  const inputChainProtocols = useProtocolsForChain(selectedProtocols ?? DEFAULT_PROTOCOL_OPTIONS, tokenInChainId)
+  const outputChainProtocols = useProtocolsForChain(selectedProtocols ?? DEFAULT_PROTOCOL_OPTIONS, tokenOutChainId)
 
   const getQuoteRoutingParams = createGetQuoteRoutingParams({
-    getProtocols: () => protocols,
+    getProtocols: () => Array.from(new Set([...inputChainProtocols, ...outputChainProtocols])),
     getIsV4HookPoolsEnabled: () => isV4HookPoolsEnabled,
   })
 
-  return getQuoteRoutingParams({ isUSDQuote, tokenInChainId, tokenOutChainId })
+  return getQuoteRoutingParams({ isUSDQuote })
 }
 
-export type GetQuoteRoutingParams = (
-  input: Omit<UseQuoteRoutingParamsArgs, 'selectedProtocols' | 'isV4HookPoolsEnabled'>,
-) => QuoteRoutingParamsResult
+export type GetQuoteRoutingParams = (input: Pick<UseQuoteRoutingParamsArgs, 'isUSDQuote'>) => QuoteRoutingParamsResult
 
 export function createGetQuoteRoutingParams(ctx: {
   getProtocols: () => ReturnType<typeof useProtocolsForChain>
   getIsV4HookPoolsEnabled: () => boolean
 }): GetQuoteRoutingParams {
   return (input) => {
-    const { isUSDQuote, tokenInChainId, tokenOutChainId } = input
+    const { isUSDQuote } = input
     // for USD quotes, we avoid routing through UniswapX
     // hooksOptions should not be sent for USD quotes
     if (isUSDQuote) {
       return {
         protocols: [TradingApi.ProtocolItems.V2, TradingApi.ProtocolItems.V3, TradingApi.ProtocolItems.V4],
       }
-    }
-
-    // for bridging, we want to only return BEST_PRICE
-    if (tokenInChainId !== tokenOutChainId) {
-      return { routingPreference: TradingApi.RoutingPreference.BEST_PRICE }
     }
 
     const protocols = ctx.getProtocols()
@@ -549,9 +544,9 @@ export function createGetQuoteSlippageParams(ctx: {
       return { slippageTolerance: customSlippageTolerance }
     }
 
-    // For bridging or USD quotes, we do not apply any slippage settings
+    // For cross-chain swaps, use default as it will be handled by the backend
     if (tokenInChainId !== tokenOutChainId || isUSDQuote) {
-      return undefined
+      return { autoSlippage: TradingApi.AutoSlippage.DEFAULT }
     }
 
     // L2 chains should use the minimum slippage tolerance defined in the dynamic config

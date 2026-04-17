@@ -1,8 +1,8 @@
+import 'react-native-reanimated'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert } from 'react-native'
-import 'react-native-reanimated'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useDispatch } from 'react-redux'
 import { useEagerExternalProfileRootNavigation } from 'src/app/navigation/hooks'
 import { BackButtonView } from 'src/components/layout/BackButtonView'
@@ -74,6 +74,7 @@ export function WalletConnectModal({
   }, [hasPendingSessionError])
 
   const onScanCode = useCallback(
+    // oxlint-disable-next-line complexity -- biome-parity: oxlint is stricter here
     async (uri: string) => {
       // don't scan any QR codes if there is an error popup open or camera is frozen
       if (!activeAccount || hasPendingSessionError || shouldFreezeCamera) {

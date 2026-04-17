@@ -1,5 +1,5 @@
-import { GasEstimate, TradingApi } from '@universe/api'
-import { GasFeeResult, ValidatedGasFeeResult, validateGasFeeResult } from 'uniswap/src/features/gas/types'
+import { GasEstimate, GasFeeResult, TradingApi } from '@universe/api'
+import { ValidatedGasFeeResult, validateGasFeeResult } from 'uniswap/src/features/gas/utils'
 import { SolanaTrade } from 'uniswap/src/features/transactions/swap/types/solana'
 import {
   BridgeTrade,
@@ -125,7 +125,6 @@ export interface SolanaSwapTxAndGasInfo extends BaseSwapTxAndGasInfo {
   includesDelegation: false
 }
 
-// TODO: SWAP-458 - Subject to change.
 export interface ChainedSwapTxAndGasInfo extends BaseSwapTxAndGasInfo {
   routing: TradingApi.Routing.CHAINED
   planId: string | undefined

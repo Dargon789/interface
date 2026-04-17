@@ -1,20 +1,28 @@
+import { useQuery } from '@tanstack/react-query'
+import { ClaimLPRewardsRequest } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
+import { Distributor } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
 import { Token } from '@uniswap/sdk-core'
-import { useFormattedTokenRewards } from 'components/Liquidity/LPIncentives/hooks/useFormattedTokenRewards'
-import { useLpIncentiveClaimButtonConfig } from 'components/Liquidity/LPIncentives/hooks/useLpIncentiveClaimButtonConfig'
-import { useLpIncentiveClaimMutation } from 'components/Liquidity/LPIncentives/hooks/useLpIncentiveClaimMutation'
-import { LP_INCENTIVES_REWARD_TOKEN } from 'components/LpIncentives/constants'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useDispatch } from 'react-redux'
 import { Flex, Image, Text } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
 import { Dialog } from 'uniswap/src/components/dialog/Dialog'
 import { InlineWarningCard } from 'uniswap/src/components/InlineWarningCard/InlineWarningCard'
 import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
+import { liquidityQueries } from 'uniswap/src/data/apiClients/liquidityService/liquidityQueries'
 import { ModalName, UniswapEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
+import { TransactionStep } from 'uniswap/src/features/transactions/steps/types'
 import { logger } from 'utilities/src/logger/logger'
 import { useEvent } from 'utilities/src/react/hooks'
-import { didUserReject } from 'utils/swapErrorToUserReadableMessage'
+import { useFormattedTokenRewards } from '~/components/Liquidity/LPIncentives/hooks/useFormattedTokenRewards'
+import { useLpIncentiveClaimButtonConfig } from '~/components/Liquidity/LPIncentives/hooks/useLpIncentiveClaimButtonConfig'
+import { LP_INCENTIVES_REWARD_TOKEN } from '~/components/LpIncentives/constants'
+import { useAccount } from '~/hooks/useAccount'
+import useSelectChain from '~/hooks/useSelectChain'
+import { lpIncentivesClaimSaga } from '~/state/sagas/lp_incentives/lpIncentivesSaga'
+import { didUserReject } from '~/utils/swapErrorToUserReadableMessage'
 
 interface LpIncentiveClaimModalProps {
   isOpen: boolean
@@ -36,50 +44,97 @@ export function LpIncentiveClaimModal({
   iconUrl,
 }: LpIncentiveClaimModalProps) {
   const [error, setError] = useState<string | null>(null)
+  const [currentTransactionStep, setCurrentTransactionStep] = useState<
+    { step: TransactionStep; accepted: boolean } | undefined
+  >()
   const { t } = useTranslation()
+  const dispatch = useDispatch()
+  const selectChain = useSelectChain()
 
+  const account = useAccount()
   const formattedTokenRewards = useFormattedTokenRewards({ tokenRewards, token })
 
-  const { mutate: claim, isPending } = useLpIncentiveClaimMutation({
-    token,
-    onSuccess,
-    onClose,
-    onError: (error) => {
-      // For wallet rejections, we don't need to show an error
-      if (didUserReject(error)) {
-        return
-      }
+  const {
+    data,
+    error: calldataError,
+    isLoading: isLoadingClaimData,
+  } = useQuery(
+    liquidityQueries.claimRewards({
+      params: new ClaimLPRewardsRequest({
+        walletAddress: account.address,
+        chainId: token.chainId,
+        tokens: [token.address],
+        distributor: Distributor.MERKLE,
+        simulateTransaction: true,
+      }),
+      enabled: !!account.address,
+    }),
+  )
 
-      logger.error(error, {
-        tags: {
-          file: 'LpIncentiveClaimModal',
-          function: 'useLpIncentiveClaimMutation',
-        },
+  useEffect(() => {
+    if (calldataError) {
+      sendAnalyticsEvent(UniswapEventName.LpIncentiveCollectRewardsErrorThrown, {
+        error: calldataError.message,
       })
-      setError(t('pool.incentives.collectFailed'))
-    },
-  })
+    }
+  }, [calldataError])
 
   const handleClaim = useEvent(({ skipAnalytics = false }: { skipAnalytics?: boolean } = {}) => {
+    if (!account.address || !data?.claim) {
+      return
+    }
+
     if (!skipAnalytics) {
       sendAnalyticsEvent(UniswapEventName.LpIncentiveCollectRewardsRetry)
     }
+
     setError(null)
-    claim()
+    dispatch(
+      lpIncentivesClaimSaga.actions.trigger({
+        address: account.address,
+        claimData: data.claim,
+        tokenAddress: token.address,
+        selectChain,
+        walletChainId: account.chainId,
+        onSuccess,
+        onFailure: (error) => {
+          setCurrentTransactionStep(undefined)
+          // For wallet rejections, we don't need to show an error
+          if (didUserReject(error)) {
+            return
+          }
+
+          logger.error(error, {
+            tags: {
+              file: 'LpIncentiveClaimModal',
+              function: 'render',
+            },
+          })
+
+          setError(error.message || t('pool.incentives.collectFailed'))
+        },
+        setCurrentStep: setCurrentTransactionStep,
+      }),
+    )
   })
 
-  // Only auto-claim when the modal opens and there's no pending transaction
+  // Only auto-claim when the modal opens, data is loaded, and there's no pending transaction
   useEffect(() => {
-    if (isOpen && !isPendingTransaction) {
+    if (isOpen && !isPendingTransaction && !isLoadingClaimData && data) {
       handleClaim({ skipAnalytics: true })
     }
-  }, [isOpen, isPendingTransaction, handleClaim])
+  }, [isOpen, isPendingTransaction, isLoadingClaimData, data, handleClaim])
 
   const buttonConfig = useLpIncentiveClaimButtonConfig({
-    isLoading: isPending,
+    isLoading: Boolean(currentTransactionStep) || isLoadingClaimData,
     isPendingTransaction,
     onClaim: () => handleClaim(), // Don't skip analytics for manual claim
   })
+
+  const primaryButton = useMemo(
+    () => ({ text: buttonConfig.title, onPress: buttonConfig.onClick }),
+    [buttonConfig.title, buttonConfig.onClick],
+  )
 
   return (
     <Dialog
@@ -108,10 +163,9 @@ export function LpIncentiveClaimModal({
       }
       displayHelpCTA
       onClose={onClose}
-      primaryButtonOnPress={buttonConfig.onClick}
+      primaryButton={primaryButton}
       isPrimaryButtonLoading={buttonConfig.isLoading}
       modalName={ModalName.LpIncentiveClaimModal}
-      primaryButtonText={buttonConfig.title}
     />
   )
 }

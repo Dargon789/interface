@@ -1,7 +1,6 @@
-import 'test-utils/tokens/mocks'
-
-import SwapLineItem, { SwapLineItemType } from 'components/swap/SwapLineItem'
-import { InterfaceTrade } from 'state/routing/types'
+import '~/test-utils/tokens/mocks'
+import SwapLineItem, { SwapLineItemType } from '~/components/swap/SwapLineItem'
+import { InterfaceTrade } from '~/state/routing/types'
 import {
   LIMIT_ORDER_TRADE,
   PREVIEW_EXACT_IN_TRADE,
@@ -13,8 +12,8 @@ import {
   TEST_TRADE_EXACT_OUTPUT,
   TEST_TRADE_FEE_ON_BUY,
   TEST_TRADE_FEE_ON_SELL,
-} from 'test-utils/constants'
-import { render, screen } from 'test-utils/render'
+} from '~/test-utils/constants'
+import { render, screen } from '~/test-utils/render'
 
 // Forces tooltips to render in snapshots
 vi.mock('react-dom', () => {
@@ -47,8 +46,16 @@ function testTradeLineItems(trade: InterfaceTrade, props: Partial<typeof lineIte
   expect(asFragment()).toMatchSnapshot()
 }
 
-/* eslint-disable jest/expect-expect */ // allow expect inside testTradeLineItems
+/* oxlint-disable jest/expect-expect */ // allow expect inside testTradeLineItems
 describe('SwapLineItem.tsx', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'info').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('exact input', () => {
     testTradeLineItems(TEST_TRADE_EXACT_INPUT)
   })

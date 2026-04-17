@@ -2,8 +2,8 @@ import userEvent from '@testing-library/user-event'
 import {
   LimitCustomMarketPriceButton,
   LimitPresetPriceButton,
-} from 'components/CurrencyInputPanel/LimitPriceInputPanel/LimitPriceButton'
-import { render, screen } from 'test-utils/render'
+} from '~/components/CurrencyInputPanel/LimitPriceInputPanel/LimitPriceButton'
+import { render, screen } from '~/test-utils/render'
 
 describe('LimitPresetPriceButton', () => {
   it.each([
@@ -13,7 +13,7 @@ describe('LimitPresetPriceButton', () => {
     [5, false, true],
     [5, true, false],
     [10, false, true],
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
   ])('renders %p correctly, disabled %p and selected %p', async (num, disabled, selected) => {
     const onSelect = vi.fn()
     const { container } = render(

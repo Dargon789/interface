@@ -26,12 +26,12 @@ fragment PriceHistoryFallback on TimestampedAmount {
   timestamp
 }
 
-query TokenPrice($chain: Chain!, $address: String = null, $duration: HistoryDuration!, $fallback: Boolean = false) {
+query TokenPrice($chain: Chain!, $address: String = null, $duration: HistoryDuration!, $fallback: Boolean = false, $multichain: Boolean = false) {
   token(chain: $chain, address: $address) {
     id
     address
     chain
-    market(currency: USD) {
+    market(currency: USD, multichain: $multichain) {
       id
       price {
         id
@@ -47,14 +47,14 @@ query TokenPrice($chain: Chain!, $address: String = null, $duration: HistoryDura
   }
 }
 
-query TokenHistoricalVolumes($chain: Chain!, $address: String = null, $duration: HistoryDuration!) {
+query TokenHistoricalVolumes($chain: Chain!, $address: String = null, $duration: HistoryDuration!, $multichain: Boolean = false) {
   token(chain: $chain, address: $address) {
     id
     address
     chain
-    market(currency: USD) {
+    market(currency: USD, multichain: $multichain) {
       id
-      historicalVolume(duration: $duration) {
+      historicalVolume(duration: $duration, multichain: $multichain) {
         id
         timestamp
         value
@@ -63,12 +63,12 @@ query TokenHistoricalVolumes($chain: Chain!, $address: String = null, $duration:
   }
 }
 
-query TokenHistoricalTvls($chain: Chain!, $address: String = null, $duration: HistoryDuration!) {
+query TokenHistoricalTvls($chain: Chain!, $address: String = null, $duration: HistoryDuration!, $multichain: Boolean = false) {
   token(chain: $chain, address: $address) {
     id
     address
     chain
-    market(currency: USD) {
+    market(currency: USD, multichain: $multichain) {
       id
       historicalTvl(duration: $duration) {
         id

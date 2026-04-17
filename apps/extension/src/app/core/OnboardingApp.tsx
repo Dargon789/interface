@@ -1,7 +1,6 @@
 import '@tamagui/core/reset.css'
 import 'src/app/Global.css'
 import 'symbol-observable' // Needed by `reduxed-chrome-storage` as polyfill, order matters
-
 import { useEffect } from 'react'
 import { createHashRouter, RouteObject, RouterProvider } from 'react-router'
 import { PersistGate } from 'redux-persist/integration/react'
@@ -32,8 +31,8 @@ import { OnboardingWrapper } from 'src/app/features/onboarding/OnboardingWrapper
 import { PasswordImport } from 'src/app/features/onboarding/PasswordImport'
 import { ResetComplete } from 'src/app/features/onboarding/reset/ResetComplete'
 import { OTPInput } from 'src/app/features/onboarding/scan/OTPInput'
-import { ScanToOnboard } from 'src/app/features/onboarding/scan/ScanToOnboard'
 import { ScantasticContextProvider } from 'src/app/features/onboarding/scan/ScantasticContextProvider'
+import { ScanToOnboard } from 'src/app/features/onboarding/scan/ScanToOnboard'
 import { OnboardingRoutes, TopLevelRoutes } from 'src/app/navigation/constants'
 import { OnboardingNavigationProvider } from 'src/app/navigation/providers'
 import { setRouter, setRouterState } from 'src/app/navigation/state'
@@ -43,6 +42,7 @@ import { PrimaryAppInstanceDebuggerLazy } from 'src/store/PrimaryAppInstanceDebu
 import { ExtensionEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { ExtensionOnboardingFlow } from 'uniswap/src/types/screens/extension'
+import { AccountsStoreContextProvider } from 'wallet/src/features/accounts/store/provider'
 import { WalletUniswapProvider } from 'wallet/src/features/transactions/contexts/WalletUniswapContext'
 import { getReduxPersistor } from 'wallet/src/state/persistor'
 
@@ -196,8 +196,10 @@ export default function OnboardingApp(): JSX.Element {
       <BaseAppContainer appName={DatadogAppNameTag.Onboarding}>
         <OnboardingNavigationProvider>
           <WalletUniswapProvider>
-            <PrimaryAppInstanceDebuggerLazy />
-            <RouterProvider router={router} />
+            <AccountsStoreContextProvider>
+              <PrimaryAppInstanceDebuggerLazy />
+              <RouterProvider router={router} />
+            </AccountsStoreContextProvider>
           </WalletUniswapProvider>
         </OnboardingNavigationProvider>
       </BaseAppContainer>

@@ -4,7 +4,7 @@ import type { TextInputProps } from 'react-native'
 import type { CurrencyInputPanelRef } from 'uniswap/src/components/CurrencyInputPanel/types'
 import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
 import { usePrefetchSwappableTokens } from 'uniswap/src/data/apiClients/tradingApi/useTradingApiSwappableTokensQuery'
-import { getTokenWarningSeverity } from 'uniswap/src/features/tokens/safetyUtils'
+import { getTokenWarningSeverity } from 'uniswap/src/features/tokens/warnings/safetyUtils'
 import type { DecimalPadInputRef } from 'uniswap/src/features/transactions/components/DecimalPadInput/DecimalPadInput'
 import {
   TransactionScreen,
@@ -18,14 +18,13 @@ import { useTemporaryExactOutputUnavailableWarning } from 'uniswap/src/features/
 import { useUpdateSwapFormOnMountIfExactOutputWillFail } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/hooks/useUpdateSwapFormOnMountIfExactOutputWillFail'
 import { SwapFormScreenStoreContext } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/SwapFormScreenStoreContext'
 import { useSwapFormScreenCallbacks } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/useSwapFormScreenCallbacks'
-
 import {
   useSwapFormStore,
   useSwapFormStoreDerivedSwapInfo,
 } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
 import { getExactOutputWillFail } from 'uniswap/src/features/transactions/swap/utils/getExactOutputWillFail'
 import { CurrencyField } from 'uniswap/src/types/currency'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { formatCurrencyAmount } from 'utilities/src/format/localeBased'
 import { NumberType } from 'utilities/src/format/types'
 import { isMobileApp } from 'utilities/src/platform'
@@ -106,8 +105,8 @@ export const SwapFormScreenStoreContextProvider = ({
   const outputRef = useRef<CurrencyInputPanelRef>(null)
   const decimalPadRef = useRef<DecimalPadInputRef>(null)
 
-  const inputSelectionRef = useRef<TextInputProps['selection']>()
-  const outputSelectionRef = useRef<TextInputProps['selection']>()
+  const inputSelectionRef = useRef<TextInputProps['selection']>(undefined)
+  const outputSelectionRef = useRef<TextInputProps['selection']>(undefined)
 
   // Non-localized formatted derived value (swap amounts must be plain numbers)
   const formattedDerivedValue = formatCurrencyAmount({
@@ -120,14 +119,16 @@ export const SwapFormScreenStoreContextProvider = ({
   const formattedDerivedValueRef = useRef(formattedDerivedValue)
   formattedDerivedValueRef.current = formattedDerivedValue
 
-  // Bridging means different chains → Across only supports exact-in
-  const isBridge = Boolean(input && output && input.chainId !== output.chainId)
-  const exactOutputDisabled = isBridge || exactOutputWillFail
+  // Chained Actions and Across only supports exact-in
+  const isCrossChain = Boolean(input && output && input.chainId !== output.chainId)
+  const sameAssetBridgeDetected =
+    isCrossChain && !!currencies.input?.projectId && currencies.input.projectId === currencies.output?.projectId
 
   const callbacks = useSwapFormScreenCallbacks({
     exactOutputWouldFailIfCurrenciesSwitched,
     exactFieldIsInput,
-    isBridge,
+    isCrossChain,
+    sameAssetBridgeDetected,
     formattedDerivedValueRef,
     inputRef,
     outputRef,
@@ -137,12 +138,13 @@ export const SwapFormScreenStoreContextProvider = ({
   })
 
   // Keep cursor synced when derived value changes while opposite field is focused
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -callbacks.moveCursorToEnd, decimalPadControlledField, exactCurrencyField
+  // oxlint-disable-next-line react/exhaustive-deps -- -callbacks.moveCursorToEnd, decimalPadControlledField, exactCurrencyField
   useEffect(() => {
     if (decimalPadControlledField === exactCurrencyField) {
       return
     }
     callbacks.moveCursorToEnd({ targetInputRef: formattedDerivedValueRef })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [formattedDerivedValue])
 
   const exactValue = isFiatMode ? exactAmountFiat : exactAmountToken
@@ -159,7 +161,7 @@ export const SwapFormScreenStoreContextProvider = ({
   // Always show footer on native mobile; otherwise only when we have tokens & amount & not blocked, or when we have an exact output unavailable warning
   const showFooter = Boolean(
     !hideFooter &&
-      (isMobileApp || (!isBlockedTokens && input && output && exactAmountToken) || showExactOutputUnavailableWarning),
+    (isMobileApp || (!isBlockedTokens && input && output && exactAmountToken) || showExactOutputUnavailableWarning),
   )
 
   // Compose full state object (same shape as SwapFormScreenStoreState)
@@ -182,7 +184,7 @@ export const SwapFormScreenStoreContextProvider = ({
       isFiatMode,
       exactFieldIsInput,
       exactFieldIsOutput,
-      exactOutputDisabled,
+      exactOutputDisabled: exactOutputWillFail,
       resetSelection: callbacks.resetSelection,
       currencyAmountsUSDValue,
       exactValue,
@@ -193,7 +195,7 @@ export const SwapFormScreenStoreContextProvider = ({
       showExactOutputUnavailableWarning,
       outputTokenHasBuyTax,
       exactAmountToken,
-      isBridge,
+      isCrossChain,
 
       // Trade
       trade,
@@ -223,7 +225,7 @@ export const SwapFormScreenStoreContextProvider = ({
       isFiatMode,
       exactFieldIsInput,
       exactFieldIsOutput,
-      exactOutputDisabled,
+      exactOutputWillFail,
       callbacks.resetSelection,
       callbacks.onFocusInput,
       callbacks.onInputSelectionChange,
@@ -247,7 +249,7 @@ export const SwapFormScreenStoreContextProvider = ({
       showTemporaryExactOutputUnavailableWarning,
       outputTokenHasBuyTax,
       exactAmountToken,
-      isBridge,
+      isCrossChain,
       trade,
     ],
   )

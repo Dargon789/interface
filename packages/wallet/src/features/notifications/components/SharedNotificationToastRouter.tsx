@@ -5,7 +5,7 @@ import { AssetType } from 'uniswap/src/entities/assets'
 import { AppNotification, AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
 import { TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { ApproveNotification } from 'wallet/src/features/notifications/components/ApproveNotification'
-import { BridgeNotification } from 'wallet/src/features/notifications/components/BridgeNotification'
+import { CrossChainNotification } from 'wallet/src/features/notifications/components/BridgeNotification'
 import { ChooseCountryNotification } from 'wallet/src/features/notifications/components/ChooseCountryNotification'
 import { CopyFailedNotification } from 'wallet/src/features/notifications/components/CopyFailedNotification'
 import { DefaultNotification } from 'wallet/src/features/notifications/components/DefaultNotification'
@@ -23,7 +23,7 @@ import { UnknownTxNotification } from 'wallet/src/features/notifications/compone
 import { WrapNotification } from 'wallet/src/features/notifications/components/WrapNotification'
 
 // Update name in `packages/wallet/src/components/ErrorBoundary/ErrorBoundary.tsx` if we update here
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function WalletNotificationToastRouter({ notification }: { notification: AppNotification }): JSX.Element | null {
   switch (notification.type) {
     case AppNotificationType.Default:
@@ -57,7 +57,8 @@ export function WalletNotificationToastRouter({ notification }: { notification: 
         case TransactionType.Approve:
           return <ApproveNotification notification={notification} />
         case TransactionType.Bridge:
-          return <BridgeNotification notification={notification} />
+        case TransactionType.Plan:
+          return <CrossChainNotification notification={notification} />
         case TransactionType.Swap:
           return <SwapNotification notification={notification} />
         case TransactionType.Wrap:

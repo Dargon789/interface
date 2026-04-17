@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { nativeOnChain } from 'uniswap/src/constants/tokens'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { getCurrencyAmount, ValueType } from 'uniswap/src/features/tokens/getCurrencyAmount'
-import { useUSDCPrice } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
+import { useUSDCPrice } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
 
 // Hook for individual chain fee calculation
 export function useChainFiatFee(params: {
@@ -13,7 +13,7 @@ export function useChainFiatFee(params: {
 }): void {
   const { chainId, gasFeeDisplayValue, onFetched, onError } = params
   const { convertFiatAmount } = useLocalizationContext()
-  const [fiatAmount, setFiatAmount] = useState<number>(0)
+  const [fiatAmount, setFiatAmount] = useState<number | undefined>(undefined)
 
   const currencyAmount = getCurrencyAmount({
     value: gasFeeDisplayValue,
@@ -21,15 +21,19 @@ export function useChainFiatFee(params: {
     currency: nativeOnChain(chainId),
   })
 
-  const { price: usdPrice } = useUSDCPrice(currencyAmount?.currency)
+  const { price: usdPrice, isLoading: usdPriceLoading } = useUSDCPrice(currencyAmount?.currency)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -chainId
+  // oxlint-disable-next-line react/exhaustive-deps -- -chainId
   useEffect(() => {
     if (!currencyAmount) {
       onError?.(true)
       return
     }
-    if (!usdPrice) {
+    if (usdPrice === undefined) {
+      if (!usdPriceLoading) {
+        // can not fetch USD price
+        onError?.(true)
+      }
       return
     }
     try {
@@ -38,10 +42,10 @@ export function useChainFiatFee(params: {
     } catch (_error) {
       onError?.(true)
     }
-  }, [currencyAmount, usdPrice, convertFiatAmount, onError, chainId])
+  }, [currencyAmount, usdPrice, usdPriceLoading, convertFiatAmount, onError, chainId])
 
   useEffect(() => {
-    if (fiatAmount) {
+    if (fiatAmount !== undefined) {
       onFetched?.(chainId, fiatAmount)
     }
   }, [chainId, fiatAmount, onFetched])

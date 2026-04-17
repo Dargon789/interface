@@ -17,9 +17,12 @@ import { setHasSeenBridgingTooltip } from 'uniswap/src/features/behaviorHistory/
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { getTokenWarningSeverity } from 'uniswap/src/features/tokens/safetyUtils'
-import { useDismissedBridgedAssetWarnings, useDismissedTokenWarnings } from 'uniswap/src/features/tokens/slice/hooks'
-import TokenWarningModal from 'uniswap/src/features/tokens/TokenWarningModal'
+import { getTokenProtectionWarning, getTokenWarningSeverity } from 'uniswap/src/features/tokens/warnings/safetyUtils'
+import {
+  useDismissedBridgedAssetWarnings,
+  useDismissedTokenWarnings,
+} from 'uniswap/src/features/tokens/warnings/slice/hooks'
+import TokenWarningModal from 'uniswap/src/features/tokens/warnings/TokenWarningModal'
 import { CurrencyId } from 'uniswap/src/types/currency'
 import { NumberType } from 'utilities/src/format/types'
 import { DDRumManualTiming } from 'utilities/src/logger/datadog/datadogEvents'
@@ -30,7 +33,7 @@ function isHorizontalListTokenItem(data: TokenSelectorOption): data is TokenOpti
   return Array.isArray(data)
 }
 
-const TokenOptionItem = memo(function _TokenOptionItem({
+const TokenOptionItem = memo(function TokenOptionItemInner({
   tokenOption,
   onSelectCurrency,
   section,
@@ -65,7 +68,7 @@ const TokenOptionItem = memo(function _TokenOptionItem({
     value: tokenOption.quantity,
     type: NumberType.TokenTx,
   })
-  const fiatBalance = convertFiatAmountFormatted(tokenOption.balanceUSD, NumberType.FiatTokenPrice)
+  const fiatBalance = convertFiatAmountFormatted(tokenOption.balanceUSD, NumberType.FiatTokenQuantity)
 
   const { isTestnetModeEnabled } = useEnabledChains()
   const balanceText = isTestnetModeEnabled ? tokenBalance : fiatBalance
@@ -74,7 +77,8 @@ const TokenOptionItem = memo(function _TokenOptionItem({
   // Token protection modal
   const severity = getTokenWarningSeverity(currencyInfo)
   const [showWarningModal, setShowWarningModal] = useState(false)
-  const { tokenWarningDismissed } = useDismissedTokenWarnings(currencyInfo.currency)
+  const tokenProtectionWarning = getTokenProtectionWarning(currencyInfo)
+  const { tokenWarningDismissed } = useDismissedTokenWarnings(currencyInfo.currency, tokenProtectionWarning)
   const isBlocked = severity === WarningSeverity.Blocked
   const shouldShowWarningModalOnPress =
     showWarnings && (isBlocked || (severity !== WarningSeverity.None && !tokenWarningDismissed))
@@ -185,7 +189,7 @@ interface TokenSelectorListProps {
   renderedInModal: boolean
 }
 
-function _TokenSelectorList({
+function TokenSelectorListInner({
   onSelectCurrency,
   sections,
   chainFilter,
@@ -260,4 +264,4 @@ function key(item: TokenSelectorOption): CurrencyId {
   return item.currencyInfo.currencyId
 }
 
-export const TokenSelectorList = memo(_TokenSelectorList)
+export const TokenSelectorList = memo(TokenSelectorListInner)

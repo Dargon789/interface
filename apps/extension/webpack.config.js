@@ -29,6 +29,7 @@ const compileNodeModules = [
   'expo-linear-gradient',
   'react-native-image-picker',
   'expo-modules-core',
+  'react-native-reanimated',
 ]
 
 // This is needed for webpack to compile JavaScript.
@@ -48,8 +49,8 @@ const babelLoaderConfiguration = {
     loader: 'babel-loader',
     options: {
       cacheDirectory: true,
-      // The 'metro-react-native-babel-preset' preset is recommended to match React Native's packager
-      presets: ['module:@react-native/babel-preset'],
+      // The 'babel-preset-expo' preset is recommended to match React Native's packager
+      presets: ['babel-preset-expo'],
       // Re-write paths to import only the modules needed by the app
       plugins: ['react-native-web'],
     },
@@ -155,8 +156,22 @@ module.exports = (env) => {
   const BUILD_ENV = env.BUILD_ENV
   const BUILD_NUM = env.BUILD_NUM || 0
 
+  const publicAssetsVariant = isDevelopment
+    ? 'local'
+    : BUILD_ENV === 'dev'
+      ? 'dev'
+      : BUILD_ENV === 'beta'
+        ? 'beta'
+        : 'prod'
+
   // Title Postfix
-  const EXTENSION_NAME_POSTFIX = BUILD_ENV === 'dev' ? 'DEV' : BUILD_ENV === 'beta' ? 'BETA' : ''
+  const EXTENSION_NAME_POSTFIX = isDevelopment
+    ? 'LOCAL'
+    : BUILD_ENV === 'dev'
+      ? 'DEV'
+      : BUILD_ENV === 'beta'
+        ? 'BETA'
+        : ''
 
   // Description
   let EXTENSION_DESCRIPTION = manifest.description
@@ -263,7 +278,8 @@ module.exports = (env) => {
                     // for example if you have constants.ts then constants.js goes here and it will eval them
                     // at build time and if it can flatten views even if they use imports from that file
                     importsWhitelist: ['constants.js'],
-                    disableExtraction: process.env.NODE_ENV === 'development',
+                    // TODO: test re-enabling extraction in production when #27138 merges
+                    disableExtraction: true,
                   },
                 },
 
@@ -342,6 +358,7 @@ module.exports = (env) => {
           {
             from: 'src/manifest.json',
             force: true,
+            // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
             transform(content) {
               const transformedManifest = {
                 ...manifest,
@@ -363,6 +380,7 @@ module.exports = (env) => {
                     matches: ['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*'],
                     js: ['injected.js'],
                     run_at: 'document_start',
+                    all_frames: true,
                   },
                   {
                     id: 'ethereum',
@@ -371,6 +389,7 @@ module.exports = (env) => {
                     run_at: 'document_start',
                     // Ethereum provider must run in the MAIN world to attach to window.ethereum
                     world: 'MAIN',
+                    all_frames: true,
                   },
                 ],
               }
@@ -389,8 +408,8 @@ module.exports = (env) => {
             force: true,
           },
           {
-            from: 'src/public/logo.svg',
-            to: 'logo.svg',
+            from: `src/publicAssetsByEnv/${publicAssetsVariant}/*.{png,svg}`,
+            to: 'assets/[name][ext]',
             force: true,
           },
           {

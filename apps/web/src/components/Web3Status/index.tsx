@@ -1,16 +1,5 @@
-import { PrefetchBalancesWrapper } from 'appGraphql/data/apollo/AdaptiveTokenBalancesProvider'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import PortfolioDrawer from 'components/AccountDrawer'
-import { usePendingActivity } from 'components/AccountDrawer/MiniPortfolio/Activity/hooks'
-import { useAccountDrawer } from 'components/AccountDrawer/MiniPortfolio/hooks'
-import { Portal } from 'components/Popups/Portal'
-import StatusIcon from 'components/StatusIcon'
-import { RecentlyConnectedModal } from 'components/Web3Status/RecentlyConnectedModal'
-import { useAccountIdentifier } from 'components/Web3Status/useAccountIdentifier'
-import { useShowPendingAfterDelay } from 'components/Web3Status/useShowPendingAfterDelay'
-import { useModalState } from 'hooks/useModalState'
 import { atom, useAtom } from 'jotai'
-import styled from 'lib/styled-components'
 import { forwardRef, RefObject, useCallback, useEffect, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { AnimatePresence, Button, ButtonProps, Flex, Popover, Text } from 'ui/src'
@@ -21,9 +10,22 @@ import { ElementName, InterfaceEventName, ModalName } from 'uniswap/src/features
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
-import { isIFramed } from 'utils/isIFramed'
+import { PrefetchBalancesWrapper } from '~/appGraphql/data/apollo/AdaptiveTokenBalancesProvider'
+import PortfolioDrawer from '~/components/AccountDrawer'
+import { usePendingActivity } from '~/components/AccountDrawer/MiniPortfolio/Activity/hooks'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
+import { Portal } from '~/components/Popups/Portal'
+import StatusIcon from '~/components/StatusIcon'
+import { RecentlyConnectedModal } from '~/components/Web3Status/RecentlyConnectedModal'
+import { useAccountIdentifier } from '~/components/Web3Status/useAccountIdentifier'
+import { useShowPendingAfterDelay } from '~/components/Web3Status/useShowPendingAfterDelay'
+import { useHasInjectedWallets } from '~/features/wallet/connection/hooks/useOrderedWalletConnectors'
+import { useModalState } from '~/hooks/useModalState'
+import { deprecatedStyled } from '~/lib/deprecated-styled'
+import { useEmbeddedWalletState } from '~/state/embeddedWallet/store'
+import { isIFramed } from '~/utils/isIFramed'
 
-const TextStyled = styled.span<{ marginRight?: number }>`
+const TextStyled = deprecatedStyled.span<{ marginRight?: number }>`
   flex: 1 1 auto;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -55,7 +57,7 @@ const Web3StatusGeneric = forwardRef<HTMLDivElement, ButtonProps>(function Web3S
   )
 })
 
-const AddressAndChevronContainer = styled.div<{ $loading?: boolean }>`
+const AddressAndChevronContainer = deprecatedStyled.div<{ $loading?: boolean }>`
   display: flex;
   opacity: ${({ $loading, theme }) => $loading && theme.opacity.disabled};
   align-items: center;
@@ -70,9 +72,10 @@ const ExistingUserCTAButton = forwardRef<HTMLDivElement, { onPress: () => void }
   ref,
 ) {
   const { t } = useTranslation()
-
   const isEmbeddedWalletEnabled = useFeatureFlag(FeatureFlags.EmbeddedWallet)
-  const isLogIn = isEmbeddedWalletEnabled
+  const hasInjectedWallets = useHasInjectedWallets()
+  const { walletAddress: embeddedWalletAddress } = useEmbeddedWalletState()
+  const showGetStarted = isEmbeddedWalletEnabled && !hasInjectedWallets && !embeddedWalletAddress
 
   return (
     <Button
@@ -81,16 +84,16 @@ const ExistingUserCTAButton = forwardRef<HTMLDivElement, { onPress: () => void }
       variant="branded"
       emphasis="primary"
       tabIndex={0}
-      data-testid="navbar-connect-wallet"
+      data-testid={TestID.NavConnectWalletButton}
       ref={ref}
       onPress={onPress}
     >
-      {isLogIn ? t('nav.logIn.button') : t('common.connect.button')}
+      {showGetStarted ? t('common.getStarted') : t('common.connect.button')}
     </Button>
   )
 })
 
-export const Web3StatusRef = atom<RefObject<HTMLElement> | undefined>(undefined)
+export const Web3StatusRef = atom<RefObject<HTMLElement | null> | undefined>(undefined)
 
 function Web3StatusInner() {
   const activeAddresses = useActiveAddresses()
@@ -109,9 +112,12 @@ function Web3StatusInner() {
     accountDrawer.toggle()
   }, [accountDrawer])
 
-  const { hasPendingActivity, pendingActivityCount, isOnlyUnichainPendingActivity } = usePendingActivity()
+  const { hasPendingActivity, pendingActivityCount, hasL1PendingActivity } = usePendingActivity()
   const { accountIdentifier, hasUnitag } = useAccountIdentifier()
-  const showLoadingState = useShowPendingAfterDelay(hasPendingActivity, isOnlyUnichainPendingActivity)
+  const showLoadingState = useShowPendingAfterDelay({
+    hasPendingActivity,
+    hasL1PendingActivity,
+  })
 
   // TODO(WEB-4173): Remove isIFrame check when we can update wagmi to version >= 2.9.4
   if (isConnecting && !isIFramed()) {
@@ -121,7 +127,11 @@ function Web3StatusInner() {
           <Text variant="body2" marginRight={hasUnitag ? '$spacing8' : undefined}>
             {accountIdentifier}
           </Text>
-          {hasUnitag ? <Unitag size={18} /> : undefined}
+          {hasUnitag ? (
+            <Flex pt="$spacing2">
+              <Unitag size={18} />
+            </Flex>
+          ) : undefined}
         </AddressAndChevronContainer>
       </Web3StatusGeneric>
     )
@@ -129,7 +139,7 @@ function Web3StatusInner() {
 
   if (activeAddresses.evmAddress || activeAddresses.svmAddress) {
     return (
-      <Trace logPress eventOnTrigger={InterfaceEventName.MiniPortfolioToggled} properties={{ type: 'open' }}>
+      <Trace logPress element={ElementName.AccountDrawerButton}>
         <AnimatePresence exitBeforeEnter>
           {showLoadingState ? (
             <Flex key="pending" animation="125ms" enterStyle={{ opacity: 0, y: -2 }} exitStyle={{ opacity: 0, y: 2 }}>
@@ -175,7 +185,7 @@ function Web3StatusInner() {
       eventOnTrigger={InterfaceEventName.ConnectWalletButtonClicked}
       element={ElementName.ConnectWalletButton}
     >
-      {/* biome-ignore lint/correctness/noRestrictedElements: needed here */}
+      {/* oxlint-disable-next-line react/forbid-elements -- needed here */}
       <div onKeyDown={(e) => e.key === 'Enter' && handleWalletDropdownClick()}>
         <ExistingUserCTAButton ref={ref} onPress={handleWalletDropdownClick} />
       </div>

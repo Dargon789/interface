@@ -4,6 +4,7 @@ import { useReactNavigationModal } from 'src/components/modals/useReactNavigatio
 import type { GetProps } from 'ui/src'
 import { BridgedAssetModal } from 'uniswap/src/components/BridgedAsset/BridgedAssetModal'
 import { WormholeModal } from 'uniswap/src/components/BridgedAsset/WormholeModal'
+import { ReportPortfolioDataModal } from 'uniswap/src/components/reporting/ReportPortfolioDataModal'
 import { ReportTokenDataModal } from 'uniswap/src/components/reporting/ReportTokenDataModal'
 import { ReportTokenIssueModal } from 'uniswap/src/components/reporting/ReportTokenIssueModal'
 import { PasskeyManagementModal } from 'uniswap/src/features/passkey/PasskeyManagementModal'
@@ -11,7 +12,6 @@ import { PasskeysHelpModal } from 'uniswap/src/features/passkey/PasskeysHelpModa
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TestnetModeModal } from 'uniswap/src/features/testnets/TestnetModeModal'
 import { HiddenTokenInfoModal } from 'uniswap/src/features/transactions/modals/HiddenTokenInfoModal'
-import { SettingsLanguageModal } from 'wallet/src/components/settings/language/SettingsLanguageModal'
 import { PermissionsModal } from 'wallet/src/components/settings/permissions/PermissionsModal'
 import { PortfolioBalanceModal } from 'wallet/src/components/settings/portfolioBalance/PortfolioBalanceModal'
 import { SmartWalletAdvancedSettingsModal } from 'wallet/src/components/smartWallet/modals/SmartWalletAdvancedSettingsModal'
@@ -30,9 +30,9 @@ type ValidModalNames = keyof Pick<
   | typeof ModalName.SmartWalletNudge
   | typeof ModalName.PermissionsModal
   | typeof ModalName.PortfolioBalanceModal
-  | typeof ModalName.LanguageSelector
   | typeof ModalName.BridgedAsset
   | typeof ModalName.Wormhole
+  | typeof ModalName.ReportPortfolioData
   | typeof ModalName.ReportTokenIssue
   | typeof ModalName.ReportTokenData
 >
@@ -47,9 +47,9 @@ type ModalNameWithComponentProps = {
   [ModalName.SmartWalletEnabledModal]: GetProps<typeof SmartWalletEnabledModal>
   [ModalName.PermissionsModal]: GetProps<typeof PermissionsModal>
   [ModalName.PortfolioBalanceModal]: GetProps<typeof PortfolioBalanceModal>
-  [ModalName.LanguageSelector]: GetProps<typeof SettingsLanguageModal>
   [ModalName.BridgedAsset]: GetProps<typeof BridgedAssetModal>
   [ModalName.Wormhole]: GetProps<typeof WormholeModal>
+  [ModalName.ReportPortfolioData]: GetProps<typeof ReportPortfolioDataModal>
   [ModalName.ReportTokenIssue]: GetProps<typeof ReportTokenIssueModal>
   [ModalName.ReportTokenData]: GetProps<typeof ReportTokenDataModal>
 }
@@ -62,7 +62,7 @@ type NavigationModalProps<ModalName extends ValidModalNames> = {
 /**
  * A generic wrapper component that adapts a shared modal to work with React Navigation.
  */
-function _ReactNavigationModal<ModalName extends ValidModalNames>({
+function ReactNavigationModalInner<ModalName extends ValidModalNames>({
   modalComponent: ModalComponent,
   route,
 }: NavigationModalProps<ModalName>): JSX.Element {
@@ -72,4 +72,4 @@ function _ReactNavigationModal<ModalName extends ValidModalNames>({
   return <ModalComponent {...params} isOpen onClose={onClose} />
 }
 
-export const ReactNavigationModal = memo(_ReactNavigationModal)
+export const ReactNavigationModal = memo(ReactNavigationModalInner)

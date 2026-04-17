@@ -1,42 +1,12 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { Currency, CurrencyAmount, Token } from '@uniswap/sdk-core'
 import { UNIVERSAL_ROUTER_ADDRESS, UniversalRouterVersion } from '@uniswap/universal-router-sdk'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { useAccountDrawer } from 'components/AccountDrawer/MiniPortfolio/hooks'
-import { OpenLimitOrdersButton } from 'components/AccountDrawer/MiniPortfolio/Limits/OpenLimitOrdersButton'
-import { MenuStateVariant, useSetMenu } from 'components/AccountDrawer/menuState'
-import { ConfirmSwapModal } from 'components/ConfirmSwapModal'
-import { LimitPriceInputPanel } from 'components/CurrencyInputPanel/LimitPriceInputPanel/LimitPriceInputPanel'
-import {
-  LimitPriceErrorType,
-  useCurrentPriceAdjustment,
-} from 'components/CurrencyInputPanel/LimitPriceInputPanel/useCurrentPriceAdjustment'
-import SwapCurrencyInputPanel from 'components/CurrencyInputPanel/SwapCurrencyInputPanel'
-import DelegationMismatchModal from 'components/delegation/DelegationMismatchModal'
-import Column from 'components/deprecated/Column'
-import { ArrowContainer, ArrowWrapper, SwapSection } from 'components/swap/styled'
-import { ZERO_PERCENT } from 'constants/misc'
-import { useConnectionStatus } from 'features/accounts/store/hooks'
-import { useAccount } from 'hooks/useAccount'
-import usePermit2Allowance, { AllowanceState } from 'hooks/usePermit2Allowance'
-import { SwapResult, useSwapCallback } from 'hooks/useSwapCallback'
-import { useUSDPrice } from 'hooks/useUSDPrice'
-import { useTheme } from 'lib/styled-components'
-import { LimitExpirySection } from 'pages/Swap/Limit/LimitExpirySection'
-import LimitOrdersNotSupportedBanner from 'pages/Swap/Limit/LimitOrdersNotSupportedBanner'
-import { LimitPriceError } from 'pages/Swap/Limit/LimitPriceError'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowDown } from 'react-feather'
 import { Trans, useTranslation } from 'react-i18next'
-import { getDefaultPriceInverted } from 'state/limit/hooks'
-import { LimitContextProvider, useLimitContext } from 'state/limit/LimitContext'
-import { useMultichainContext } from 'state/multichain/useMultichainContext'
-import { LimitOrderTrade, TradeFillType } from 'state/routing/types'
-import { useSwapActionHandlers } from 'state/swap/hooks'
-import { CurrencyState } from 'state/swap/types'
-import { useSwapAndLimitContext } from 'state/swap/useSwapContext'
-import { Anchor, Button, Flex, styled as TamaguiStyled, Text, useIsShortMobileDevice } from 'ui/src'
+import { Anchor, Button, Flex, styled, Text, useIsShortMobileDevice } from 'ui/src'
 import { AlertTriangleFilled } from 'ui/src/components/icons/AlertTriangleFilled'
+import { ArrowDown } from 'ui/src/components/icons/ArrowDown'
 import { nativeOnChain } from 'uniswap/src/constants/tokens'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { LIMIT_SUPPORTED_CHAINS } from 'uniswap/src/features/chains/chainInfo'
@@ -47,22 +17,52 @@ import { isEVMChain } from 'uniswap/src/features/platforms/utils/chains'
 import { useIsMismatchAccountQuery } from 'uniswap/src/features/smartWallet/mismatch/hooks'
 import { ElementName, InterfacePageName, SectionName, SwapEventName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
+import { useUSDCValueWithStatus } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
 import { CurrencyField } from 'uniswap/src/types/currency'
-// biome-ignore lint/style/noRestrictedImports: We need to import this directly so we can format with `en-US` locale
+// oxlint-disable-next-line no-restricted-imports -- We need to import this directly so we can format with `en-US` locale
 import { formatCurrencyAmount as formatCurrencyAmountRaw } from 'utilities/src/format/localeBased'
 import { NumberType } from 'utilities/src/format/types'
-import { maxAmountSpend } from 'utils/maxAmountSpend'
+import { isSafeNumber } from 'utilities/src/primitives/integer'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
+import { LimitPriceInputPanel } from '~/components/CurrencyInputPanel/LimitPriceInputPanel/LimitPriceInputPanel'
+import {
+  LimitPriceErrorType,
+  useCurrentPriceAdjustment,
+} from '~/components/CurrencyInputPanel/LimitPriceInputPanel/useCurrentPriceAdjustment'
+import SwapCurrencyInputPanel from '~/components/CurrencyInputPanel/SwapCurrencyInputPanel'
+import DelegationMismatchModal from '~/components/delegation/DelegationMismatchModal'
+import Column from '~/components/deprecated/Column'
+import { SwitchNetworkAction } from '~/components/Popups/types'
+import { ArrowContainer, ArrowWrapper, SwapSection } from '~/components/swap/styled'
+import { ZERO_PERCENT } from '~/constants/misc'
+import { useConnectionStatus } from '~/features/accounts/store/hooks'
+import { useAccount } from '~/hooks/useAccount'
+import usePermit2Allowance, { AllowanceState } from '~/hooks/usePermit2Allowance'
+import { SwapResult, useSwapCallback } from '~/hooks/useSwapCallback'
+import { ConfirmSwapModal } from '~/pages/Swap/Limit/ConfirmSwapModal'
+import { LimitExpirySection } from '~/pages/Swap/Limit/LimitExpirySection'
+import LimitOrdersNotSupportedBanner from '~/pages/Swap/Limit/LimitOrdersNotSupportedBanner'
+import { LimitPriceError } from '~/pages/Swap/Limit/LimitPriceError'
+import { OpenLimitOrdersButton } from '~/pages/Swap/Limit/OpenLimitOrdersButton'
+import { getDefaultPriceInverted } from '~/state/limit/hooks'
+import { LimitContextProvider, useLimitContext } from '~/state/limit/LimitContext'
+import { useMultichainContext } from '~/state/multichain/useMultichainContext'
+import { LimitOrderTrade, TradeFillType } from '~/state/routing/types'
+import { useOnSwitchTokens } from '~/state/swap/hooks'
+import { CurrencyState } from '~/state/swap/types'
+import { useSwapAndLimitContext } from '~/state/swap/useSwapContext'
+import { maxAmountSpend } from '~/utils/maxAmountSpend'
 
-const CustomHeightSwapSection = TamaguiStyled(SwapSection, {
+const CustomHeightSwapSection = styled(SwapSection, {
   height: 'unset',
 })
 
-const ShortArrowWrapper = TamaguiStyled(ArrowWrapper, {
+const ShortArrowWrapper = styled(ArrowWrapper, {
   mt: -22,
   mb: -22,
 })
 
-const LearnMore = TamaguiStyled(Text, {
+const LearnMore = styled(Text, {
   variant: 'body3',
   color: '$accent1',
   animation: '100ms',
@@ -89,16 +89,45 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
   const isLimitSupportedChain = chainId && LIMIT_SUPPORTED_CHAINS.includes(chainId)
 
   const { limitState, setLimitState, derivedLimitInfo } = useLimitContext()
+
+  // Coerce non-mainnet currencies to mainnet defaults when limit tab mounts or currencies change
+  useEffect(() => {
+    const defaultLimitChainId = LIMIT_SUPPORTED_CHAINS[0]
+    const inputIsOnLimitChain = !inputCurrency || LIMIT_SUPPORTED_CHAINS.includes(inputCurrency.chainId)
+    const outputIsOnLimitChain = !outputCurrency || LIMIT_SUPPORTED_CHAINS.includes(outputCurrency.chainId)
+
+    if (inputIsOnLimitChain && outputIsOnLimitChain) {
+      return
+    }
+
+    const stablecoin = getPrimaryStablecoin(defaultLimitChainId)
+    const newInput = inputIsOnLimitChain ? inputCurrency : nativeOnChain(defaultLimitChainId)
+    const newOutput = outputIsOnLimitChain
+      ? outputCurrency
+      : newInput?.equals(stablecoin)
+        ? nativeOnChain(defaultLimitChainId)
+        : stablecoin
+
+    const newCurrencyState = { inputCurrency: newInput, outputCurrency: newOutput }
+    onCurrencyChange?.(newCurrencyState)
+    setCurrencyState(newCurrencyState)
+
+    // Reset limit price state so market price auto-populates for the new pair
+    setLimitState((prev) => ({
+      ...prev,
+      limitPriceEdited: false,
+      limitPriceInverted: getDefaultPriceInverted(newInput, newOutput),
+    }))
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- only react to currency identity changes, callbacks are stable
+  }, [inputCurrency, outputCurrency])
+
   const { currencyBalances, parsedAmounts, parsedLimitPrice, limitOrderTrade, marketPrice } = derivedLimitInfo
   const [showConfirm, setShowConfirm] = useState(false)
   const [swapResult, setSwapResult] = useState<SwapResult>()
   const [swapError, setSwapError] = useState()
 
-  const theme = useTheme()
-  const { onSwitchTokens } = useSwapActionHandlers()
+  const onSwitchTokens = useOnSwitchTokens()
   const { formatCurrencyAmount } = useLocalizationContext()
-  const accountDrawer = useAccountDrawer()
-  const setMenu = useSetMenu()
 
   const isPermitMismatchUxEnabled = useFeatureFlag(FeatureFlags.EnablePermitMismatchUX)
   const { data: isDelegationMismatch } = useIsMismatchAccountQuery({ chainId: LIMIT_SUPPORTED_CHAINS[0] })
@@ -148,6 +177,11 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
 
   const onTypeInput = useCallback(
     (type: 'inputAmount' | 'outputAmount') => (newValue: string) => {
+      // Omit parsing errors by checking if amount exceeds Number range limit
+      if (!isSafeNumber(newValue)) {
+        return
+      }
+
       setLimitState((prev) => ({
         ...prev,
         [type]: newValue,
@@ -158,7 +192,7 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
   )
 
   const switchTokens = useCallback(() => {
-    onSwitchTokens({ newOutputHasTax: false, previouslyEstimatedOutput: limitState.outputAmount })
+    onSwitchTokens()
     setLimitState((prev) => {
       // Reset limit price settings when switching tokens
       return {
@@ -167,10 +201,10 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
         limitPriceInverted: getDefaultPriceInverted(outputCurrency, inputCurrency),
       }
     })
-  }, [inputCurrency, limitState.outputAmount, onSwitchTokens, outputCurrency, setLimitState])
+  }, [inputCurrency, onSwitchTokens, outputCurrency, setLimitState])
 
   const onSelectCurrency = useCallback(
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     (type: keyof CurrencyState, newCurrency: Currency, isResettingWETHAfterWrap?: boolean) => {
       if ((type === 'inputCurrency' ? outputCurrency : inputCurrency)?.equals(newCurrency)) {
         switchTokens()
@@ -230,7 +264,7 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
     }
   }, [onSelectCurrency, outputCurrency, isSupportedChain, chainId, inputCurrency])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Currency state reset only on currency change
+  // oxlint-disable-next-line react/exhaustive-deps -- Currency state reset only on currency change
   useEffect(() => {
     // If the initial pair is eth <> weth, replace the output currency with a stablecoin
     if (isSupportedChain && inputCurrency && outputCurrency && (inputCurrency.isNative || outputCurrency.isNative)) {
@@ -241,6 +275,7 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
         onSelectCurrency('outputCurrency', getPrimaryStablecoin(chainId))
       }
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   const maxInputAmount: CurrencyAmount<Currency> | undefined = useMemo(
@@ -260,12 +295,12 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
 
   const allowance = usePermit2Allowance({
     amount: parsedAmounts.input?.currency.isNative ? undefined : (parsedAmounts.input as CurrencyAmount<Token>),
-    spender: isSupportedChain ? UNIVERSAL_ROUTER_ADDRESS(UniversalRouterVersion.V1_2, chainId) : undefined,
+    spender: isLimitSupportedChain ? UNIVERSAL_ROUTER_ADDRESS(UniversalRouterVersion.V1_2, chainId) : undefined,
     tradeFillType: TradeFillType.UniswapX,
   })
 
-  const fiatValueTradeInput = useUSDPrice(parsedAmounts.input)
-  const fiatValueTradeOutput = useUSDPrice(parsedAmounts.output)
+  const fiatValueTradeInput = useUSDCValueWithStatus(parsedAmounts.input)
+  const fiatValueTradeOutput = useUSDCValueWithStatus(parsedAmounts.output)
 
   const formattedAmounts = useMemo(() => {
     // if there is no Price field, then just default to user-typed amounts
@@ -304,9 +339,17 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
     derivedLimitInfo.parsedAmounts,
   ])
 
+  const fiatValueInputNumber = fiatValueTradeInput.value ? parseFloat(fiatValueTradeInput.value.toExact()) : undefined
+  const fiatValueOutputNumber = fiatValueTradeOutput.value
+    ? parseFloat(fiatValueTradeOutput.value.toExact())
+    : undefined
+
   const fiatValues = useMemo(() => {
-    return { amountIn: fiatValueTradeInput.data, amountOut: fiatValueTradeOutput.data }
-  }, [fiatValueTradeInput.data, fiatValueTradeOutput.data])
+    return {
+      amountIn: fiatValueInputNumber,
+      amountOut: fiatValueOutputNumber,
+    }
+  }, [fiatValueInputNumber, fiatValueOutputNumber])
 
   const swapCallback = useSwapCallback({
     trade: limitOrderTrade,
@@ -341,6 +384,8 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
             onCurrencySelect={(currency) => onSelectCurrency('inputCurrency', currency)}
             otherCurrency={outputCurrency}
             onMax={handleMaxInput}
+            chainIds={LIMIT_SUPPORTED_CHAINS}
+            switchNetworkAction={SwitchNetworkAction.Limit}
             id={SectionName.SwapCurrencyInput}
           />
         </Trace>
@@ -352,7 +397,7 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
           element={ElementName.SwapTokensReverseArrowButton}
         >
           <ArrowContainer data-testid="swap-currency-button" onPress={switchTokens}>
-            <ArrowDown size="16" color={theme.neutral1} />
+            <ArrowDown size="$icon.16" color="$neutral1" />
           </ArrowContainer>
         </Trace>
       </ShortArrowWrapper>
@@ -367,6 +412,8 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
             onUserInput={onTypeInput('outputAmount')}
             onCurrencySelect={(currency) => onSelectCurrency('outputCurrency', currency)}
             otherCurrency={inputCurrency}
+            chainIds={LIMIT_SUPPORTED_CHAINS}
+            switchNetworkAction={SwitchNetworkAction.Limit}
             id={SectionName.SwapCurrencyOutput}
           />
         </Trace>
@@ -441,8 +488,7 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
         <OpenLimitOrdersButton
           account={account.address}
           openLimitsMenu={() => {
-            setMenu({ variant: MenuStateVariant.LIMITS })
-            accountDrawer.open()
+            window.open('/portfolio', '_blank')
           }}
         />
       )}
@@ -456,9 +502,15 @@ function LimitForm({ onCurrencyChange }: LimitFormProps) {
             setSwapError(undefined)
             setSwapResult(undefined)
           }}
-          fiatValueInput={fiatValueTradeInput}
-          fiatValueOutput={fiatValueTradeOutput}
-          // eslint-disable-next-line max-params
+          fiatValueInput={{
+            data: fiatValueInputNumber,
+            isLoading: fiatValueTradeInput.isLoading,
+          }}
+          fiatValueOutput={{
+            data: fiatValueOutputNumber,
+            isLoading: fiatValueTradeOutput.isLoading,
+          }}
+          // oxlint-disable-next-line max-params
           onCurrencySelection={(field: CurrencyField, currency, isResettingWETHAfterWrap) =>
             onSelectCurrency(
               field === CurrencyField.INPUT ? 'inputCurrency' : 'outputCurrency',

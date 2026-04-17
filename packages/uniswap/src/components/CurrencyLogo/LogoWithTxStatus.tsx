@@ -11,11 +11,10 @@ import { borderRadii, zIndexes } from 'ui/src/theme'
 import { CurrencyLogo, STATUS_RATIO } from 'uniswap/src/components/CurrencyLogo/CurrencyLogo'
 import { TransactionSummaryNetworkLogo } from 'uniswap/src/components/CurrencyLogo/NetworkLogo'
 import { DappIconPlaceholder } from 'uniswap/src/components/dapps/DappIconPlaceholder'
-import { ImageUri } from 'uniswap/src/components/nfts/images/ImageUri'
-import { NFTViewer } from 'uniswap/src/components/nfts/images/NFTViewer'
+import { NFTViewer } from 'uniswap/src/components/nfts/NFTViewer'
 import { AssetType } from 'uniswap/src/entities/assets'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
+import { type CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import {
   NFTTradeType,
   TransactionStatus,
@@ -75,7 +74,7 @@ function getLogo(props: LogoWithTxStatusProps): JSX.Element {
   )
 }
 
-/* eslint-disable complexity */
+/* oxlint-disable complexity */
 export function LogoWithTxStatus(props: LogoWithTxStatusProps): JSX.Element {
   const { assetType, txType, txStatus, size, chainId } = props
   const colors = useSporeColors()
@@ -98,6 +97,7 @@ export function LogoWithTxStatus(props: LogoWithTxStatusProps): JSX.Element {
         Icon = Approve
         break
       case TransactionType.Send:
+      case TransactionType.ToucanBid:
       case TransactionType.OffRampSale:
         Icon = ArrowUpInCircle
         break
@@ -124,7 +124,18 @@ export function LogoWithTxStatus(props: LogoWithTxStatusProps): JSX.Element {
         break
     }
     if (Icon) {
-      icon = <Icon color={color.val} fill={fill.val} size={statusSize} testID="status-icon" />
+      icon = (
+        <Flex
+          centered
+          backgroundColor="$surface1"
+          borderRadius="$roundedFull"
+          height={statusSize}
+          overflow="hidden"
+          width={statusSize}
+        >
+          <Icon color={color.get()} fill={fill.val} size={statusSize} testID="status-icon" />
+        </Flex>
+      )
     }
   }
 
@@ -183,19 +194,21 @@ export function DappLogoWithTxStatus({
     </Flex>
   )
 
-  const iconStyle = {
-    borderRadius: borderRadii.rounded4,
-    height: dappImageSize,
-    width: dappImageSize,
-  }
-
   const dappImage = dappImageUrl ? (
-    <ImageUri
+    <UniversalImage
       fallback={fallback}
-      imageStyle={iconStyle}
-      loadingContainerStyle={{ ...iconStyle, borderRadius: borderRadii.roundedFull, overflow: 'hidden' }}
-      testID="dapp-image"
       uri={dappImageUrl}
+      size={{ height: dappImageSize, width: dappImageSize }}
+      style={{
+        image: { borderRadius: borderRadii.rounded4 },
+        loadingContainer: {
+          height: dappImageSize,
+          width: dappImageSize,
+          borderRadius: borderRadii.roundedFull,
+          overflow: 'hidden',
+        },
+      }}
+      testID="dapp-image"
     />
   ) : (
     fallback

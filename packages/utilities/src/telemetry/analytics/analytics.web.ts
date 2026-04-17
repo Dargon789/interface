@@ -1,12 +1,13 @@
 import { flush, getUserId, Identify, identify, init, setDeviceId, track } from '@amplitude/analytics-browser'
 import { ANONYMOUS_DEVICE_ID } from '@uniswap/analytics'
 import { getChromeWithThrow } from 'utilities/src/chrome/chrome'
+// oxlint-disable-next-line no-restricted-imports -- platform implementation file
 import {
   Analytics,
   AnalyticsInitConfig,
   TestnetModeConfig,
   UserPropertyValue,
-  // biome-ignore lint/style/noRestrictedImports: needed here
+  // oxlint-disable-next-line no-restricted-imports -- needed here
 } from 'utilities/src/telemetry/analytics/analytics'
 import {
   ALLOW_ANALYTICS_ATOM_KEY,
@@ -135,7 +136,7 @@ export const analytics: Analytics = {
     loggers.flushEvents()
     flush()
   },
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   async setUserProperty(property: string, value: UserPropertyValue, insert?: boolean): Promise<void> {
     if (!(await getAnalyticsAtomDirect())) {
       return

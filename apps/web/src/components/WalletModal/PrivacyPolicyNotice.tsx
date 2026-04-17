@@ -1,16 +1,16 @@
-import styled from 'lib/styled-components'
 import { Trans } from 'react-i18next'
-import { ExternalLink } from 'theme/components/Links'
 import { Text } from 'ui/src'
+import { deprecatedStyled } from '~/lib/deprecated-styled'
+import { ExternalLink } from '~/theme/components/Links'
 
-const StyledLink = styled(ExternalLink)`
+const StyledLink = deprecatedStyled(ExternalLink)`
   font-weight: 535;
-  color: ${({ theme }) => theme.neutral2};
+  color: ${({ theme }) => theme.neutral3};
 `
 
 export default function PrivacyPolicyNotice() {
   return (
-    <Text variant="body3" color="neutral2" textAlign="center">
+    <Text variant="body4" color="$neutral3" textAlign="center">
       <Trans
         i18nKey="wallet.connectingAgreement"
         components={{

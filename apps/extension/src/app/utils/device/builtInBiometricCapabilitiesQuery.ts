@@ -61,7 +61,7 @@ async function getBuiltInBiometricCapabilities({ t }: { t: TFunction }): Promise
 
 export async function isUserVerifyingPlatformAuthenticatorAvailable(): Promise<boolean> {
   // Check if WebAuthn is supported in this browser.
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (!navigator.credentials || !navigator.credentials.create || !window.PublicKeyCredential) {
     return false
   }

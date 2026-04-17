@@ -39,6 +39,7 @@ export type FavoriteTokenCardProps = {
   showLoading?: boolean
 } & ViewProps
 
+// oxlint-disable-next-line complexity -- biome-parity: oxlint is stricter here
 function FavoriteTokenCard({
   currencyId,
   isEditing,

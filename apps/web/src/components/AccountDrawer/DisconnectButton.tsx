@@ -1,28 +1,30 @@
+import { SharedEventName } from '@uniswap/analytics-events'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { useAccountDrawer } from 'components/AccountDrawer/MiniPortfolio/hooks'
-import { MenuStateVariant, useSetMenu } from 'components/AccountDrawer/menuState'
-import { Power } from 'components/Icons/Power'
-import { useAccountsStore, useActiveConnector, useActiveWallet } from 'features/accounts/store/hooks'
-import { ExternalWallet } from 'features/accounts/store/types'
-import { useDisconnect } from 'hooks/useDisconnect'
-import { useSignOutWithPasskey } from 'hooks/useSignOutWithPasskey'
-import { useTheme } from 'lib/styled-components'
-import { PropsWithChildren, useMemo } from 'react'
+import { type PropsWithChildren, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
-import { Button, Flex, IconButton, Image, Text, Tooltip } from 'ui/src'
+import { Button, Flex, IconButton, Image, Text, Tooltip, useSporeColors } from 'ui/src'
 import { PlusCircle } from 'ui/src/components/icons/PlusCircle'
 import { SwitchArrows } from 'ui/src/components/icons/SwitchArrows'
-import { AppTFunction } from 'ui/src/i18n/types'
+import { type AppTFunction } from 'ui/src/i18n/types'
+import { zIndexes } from 'ui/src/theme'
 import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { setIsTestnetModeEnabled } from 'uniswap/src/features/settings/slice'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { useEvent } from 'utilities/src/react/hooks'
+import { MenuStateVariant, useSetMenu } from '~/components/AccountDrawer/menuState'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
+import { Power } from '~/components/Icons/Power'
+import { useAccountsStore, useActiveConnector, useActiveWallet } from '~/features/accounts/store/hooks'
+import { type ExternalWallet } from '~/features/accounts/store/types'
+import { useDisconnect } from '~/hooks/useDisconnect'
+import { useSignOutWithPasskey } from '~/hooks/useSignOutWithPasskey'
 
-function useOnDisconnect() {
+export function useOnDisconnect() {
   const disconnect = useDisconnect()
 
   const activeEVMWallet = useActiveWallet(Platform.EVM)
@@ -78,14 +80,14 @@ export function DisconnectButton() {
 }
 
 function PowerIconButton({ onPress, pointer }: { onPress?: () => void; pointer: boolean }) {
-  const theme = useTheme()
+  const colors = useSporeColors()
 
   return (
     <IconButton
       size="small"
       emphasis="text-only"
       data-testid={TestID.WalletDisconnect}
-      icon={<Power height={24} width={24} color={theme.neutral2} />}
+      icon={<Power height={24} width={24} color={colors.neutral2.val} />}
       borderRadius="$rounded32"
       hoverStyle={{
         backgroundColor: '$surface2',
@@ -100,14 +102,18 @@ function DisconnectMenuTooltip({ children }: PropsWithChildren) {
   return (
     <Tooltip placement="bottom-end">
       <Tooltip.Trigger>{children}</Tooltip.Trigger>
-      <Tooltip.Content pointerEvents="auto" paddingVertical={8} paddingHorizontal={8}>
+      <Tooltip.Content pointerEvents="auto" paddingVertical={8} paddingHorizontal={8} zIndex={zIndexes.overlay}>
         <DisconnectMenu />
       </Tooltip.Content>
     </Tooltip>
   )
 }
 
-function DisconnectMenuButtonRow({ children, onPress }: PropsWithChildren<{ onPress: () => void }>) {
+function DisconnectMenuButtonRow({
+  children,
+  onPress,
+  testId,
+}: PropsWithChildren<{ onPress: () => void; testId?: string }>) {
   return (
     <Button
       gap="$spacing8"
@@ -123,6 +129,7 @@ function DisconnectMenuButtonRow({ children, onPress }: PropsWithChildren<{ onPr
       borderRadius="$rounded8"
       cursor="pointer"
       minHeight="$spacing36"
+      data-testid={testId}
     >
       {children}
     </Button>
@@ -264,17 +271,26 @@ function SwitchWalletButtonRow({ variant, platform }: { variant: SwitchButtonVar
 function InLineDisconnectButton() {
   const onDisconnect = useOnDisconnect()
   const { t } = useTranslation()
-  const theme = useTheme()
+  const colors = useSporeColors()
+  const evmConnectorId = useActiveConnector(Platform.EVM)?.externalLibraryId
+  const svmConnectorId = useActiveConnector(Platform.SVM)?.externalLibraryId
+
+  const handleDisconnect = useEvent(() => {
+    sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
+      element: ElementName.DisconnectWalletButton,
+      connector_id: evmConnectorId,
+      svm_connector_id: svmConnectorId,
+    })
+    onDisconnect()
+  })
 
   return (
-    <DisconnectTraceWrapper>
-      <DisconnectMenuButtonRow onPress={onDisconnect}>
-        <Power height={16} width={16} color={theme.neutral1} />
-        <Text variant="buttonLabel3" color="$neutral1" lineHeight={20}>
-          {t('common.button.disconnect')}
-        </Text>
-      </DisconnectMenuButtonRow>
-    </DisconnectTraceWrapper>
+    <DisconnectMenuButtonRow onPress={handleDisconnect} testId={TestID.WalletDisconnectInModal}>
+      <Power height={16} width={16} color={colors.neutral1.val} />
+      <Text variant="buttonLabel3" color="$neutral1" lineHeight={20}>
+        {t('common.button.disconnect')}
+      </Text>
+    </DisconnectMenuButtonRow>
   )
 }
 

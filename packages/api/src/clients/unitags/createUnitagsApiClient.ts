@@ -1,27 +1,29 @@
 import {
   createSignedRequestBody,
   createSignedRequestParams,
-  SignedRequestParams,
+  type SignedRequestParams,
 } from '@universe/api/src/clients/base/auth'
-import { FetchClient } from '@universe/api/src/clients/base/types'
+import { type FetchClient } from '@universe/api/src/clients/base/types'
 import { createFetcher } from '@universe/api/src/clients/base/utils'
 import {
-  UnitagAddressesRequest,
-  UnitagAddressesResponse,
-  UnitagAddressRequest,
-  UnitagAddressResponse,
-  UnitagChangeUsernameRequestBody,
-  UnitagClaimEligibilityRequest,
-  UnitagClaimEligibilityResponse,
-  UnitagClaimUsernameRequestBody,
-  UnitagDeleteUsernameRequestBody,
-  UnitagGetAvatarUploadUrlResponse,
-  UnitagResponse,
-  UnitagUpdateMetadataRequestBody,
-  UnitagUpdateMetadataResponse,
-  UnitagUsernameRequest,
-  UnitagUsernameResponse,
+  type ProfileMetadata,
+  type UnitagAddressesRequest,
+  type UnitagAddressesResponse,
+  type UnitagAddressRequest,
+  type UnitagAddressResponse,
+  type UnitagChangeUsernameRequestBody,
+  type UnitagClaimEligibilityRequest,
+  type UnitagClaimEligibilityResponse,
+  type UnitagClaimUsernameRequestBody,
+  type UnitagDeleteUsernameRequestBody,
+  type UnitagGetAvatarUploadUrlResponse,
+  type UnitagResponse,
+  type UnitagUpdateMetadataRequestBody,
+  type UnitagUpdateMetadataResponse,
+  type UnitagUsernameRequest,
+  type UnitagUsernameResponse,
 } from '@universe/api/src/clients/unitags/types'
+import { sanitizeAvatarUrl } from 'utilities/src/format/urls'
 
 const UNI_SIG_HEADER_KEY = 'x-uni-sig'
 
@@ -36,7 +38,7 @@ export type UnitagsApiClientType = {
   fetchClaimEligibility: (params: UnitagClaimEligibilityRequest) => Promise<UnitagClaimEligibilityResponse>
   claimUnitag: (params: SignedRequestParams<UnitagClaimUsernameRequestBody>) => Promise<UnitagResponse>
   updateUnitagMetadata: (
-    params: { username: string } & SignedRequestParams<UnitagUpdateMetadataRequestBody>,
+    params: SignedRequestParams<UnitagUpdateMetadataRequestBody>,
   ) => Promise<UnitagUpdateMetadataResponse>
   changeUnitag: (params: SignedRequestParams<UnitagChangeUsernameRequestBody>) => Promise<UnitagResponse>
   deleteUnitag: (params: SignedRequestParams<UnitagDeleteUsernameRequestBody>) => Promise<UnitagResponse>
@@ -51,16 +53,27 @@ export function createUnitagsApiClient(ctx: UnitagsApiClientFetchersContext): Un
     client,
     method: 'get',
     url: '/username',
+    transformResponse: sanitizeMetadataResponse,
   })
   const fetchAddress = createFetcher<UnitagAddressRequest, UnitagAddressResponse>({
     client,
     method: 'get',
     url: '/address',
+    transformResponse: sanitizeMetadataResponse,
   })
   const fetchUnitagsByAddresses = createFetcher<UnitagAddressesRequest, UnitagAddressesResponse>({
     client,
     method: 'get',
     url: '/addresses',
+    transformResponse: (response) => ({
+      ...response,
+      usernames: Object.fromEntries(
+        Object.entries(response.usernames).map(([address, data]) => [
+          address,
+          { ...data, metadata: sanitizeProfileMetadata(data.metadata) },
+        ]),
+      ),
+    }),
   })
   const fetchClaimEligibility = createFetcher<UnitagClaimEligibilityRequest, UnitagClaimEligibilityResponse>({
     client,
@@ -89,7 +102,7 @@ export function createUnitagsApiClient(ctx: UnitagsApiClientFetchersContext): Un
     },
   })
   const updateUnitagMetadata = createFetcher<
-    { username: string } & SignedRequestParams<UnitagUpdateMetadataRequestBody>,
+    SignedRequestParams<UnitagUpdateMetadataRequestBody>,
     UnitagUpdateMetadataResponse
   >({
     client,
@@ -103,13 +116,14 @@ export function createUnitagsApiClient(ctx: UnitagsApiClientFetchersContext): Un
         signMessage,
       })
       return {
-        url: request.url.replace(':username', request.params.username),
+        url: request.url.replace(':username', data.username),
         params: requestBody,
         headers: {
           [UNI_SIG_HEADER_KEY]: signature,
         },
       }
     },
+    transformResponse: sanitizeMetadataResponse,
   })
   const changeUnitag = createFetcher<SignedRequestParams<UnitagChangeUsernameRequestBody>, UnitagResponse>({
     client,
@@ -183,4 +197,18 @@ export function createUnitagsApiClient(ctx: UnitagsApiClientFetchersContext): Un
     deleteUnitag,
     getUnitagAvatarUploadUrl,
   }
+}
+
+function sanitizeProfileMetadata(metadata: ProfileMetadata | undefined): ProfileMetadata | undefined {
+  if (!metadata) {
+    return metadata
+  }
+  return {
+    ...metadata,
+    avatar: sanitizeAvatarUrl(metadata.avatar ?? null) ?? undefined,
+  }
+}
+
+function sanitizeMetadataResponse<T extends { metadata?: ProfileMetadata }>(response: T): T {
+  return { ...response, metadata: sanitizeProfileMetadata(response.metadata) }
 }

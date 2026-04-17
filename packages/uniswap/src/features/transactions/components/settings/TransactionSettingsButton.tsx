@@ -2,7 +2,7 @@ import { memo } from 'react'
 import type { ColorTokens, GeneratedIcon } from 'ui/src'
 import { Flex, Tooltip as TooltipComponent } from 'ui/src'
 import { Settings } from 'ui/src/components/icons/Settings'
-import type { IconSizeTokens } from 'ui/src/theme'
+import { type IconSizeTokens, zIndexes } from 'ui/src/theme'
 import { TransactionSettingsModalId } from 'uniswap/src/features/transactions/components/settings/stores/TransactionSettingsModalStore/createTransactionSettingsModalStore'
 import { useModalVisibility } from 'uniswap/src/features/transactions/components/settings/stores/TransactionSettingsModalStore/useTransactionSettingsModalStore'
 import { isWebApp, isWebPlatform } from 'utilities/src/platform'
@@ -40,12 +40,25 @@ export const TransactionSettingsButton = memo(
         height={isWebApp ? '$spacing32' : 'auto'}
       >
         {IconLabel}
-        <IconComponent color={contentColor} size={iconSize} />
+        <Flex
+          animation="simple"
+          rotate="0deg"
+          hoverStyle={{
+            rotate: '90deg',
+          }}
+          $platform-web={{
+            cursor: 'pointer',
+            transition: 'transform 80ms ease-out',
+          }}
+        >
+          <IconComponent color={contentColor} hoverColor="$neutral2Hovered" size={iconSize} />
+        </Flex>
       </Flex>
     )
   },
 )
 
+// oxlint-disable-next-line react/display-name -- biome-parity: oxlint is stricter here
 export const TransactionSettingsButtonWithTooltip = memo(
   ({
     Tooltip,
@@ -72,7 +85,7 @@ export const TransactionSettingsButtonWithTooltip = memo(
       return (
         <TooltipComponent>
           <TooltipComponent.Trigger>{button}</TooltipComponent.Trigger>
-          <TooltipComponent.Content>{Tooltip}</TooltipComponent.Content>
+          <TooltipComponent.Content zIndex={zIndexes.overlay}>{Tooltip}</TooltipComponent.Content>
         </TooltipComponent>
       )
     }

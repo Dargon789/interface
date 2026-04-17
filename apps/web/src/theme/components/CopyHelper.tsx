@@ -1,9 +1,9 @@
-import { ReactComponent as TooltipTriangle } from 'assets/svg/tooltip_triangle.svg'
-import useCopyClipboard from 'hooks/useCopyClipboard'
 import { forwardRef, PropsWithChildren, ReactNode, useCallback, useImperativeHandle, useRef, useState } from 'react'
 import { Trans } from 'react-i18next'
-import { ClickableTamaguiStyle, EllipsisTamaguiStyle } from 'theme/components/styles'
 import { AnimatableCopyIcon, ColorTokens, Flex, isTouchable, Text, TextProps } from 'ui/src'
+import { ReactComponent as TooltipTriangle } from '~/assets/svg/tooltip_triangle.svg'
+import useCopyClipboard from '~/hooks/useCopyClipboard'
+import { ClickableTamaguiStyle, EllipsisTamaguiStyle } from '~/theme/components/styles'
 
 const TOOLTIP_WIDTH = 60
 
@@ -102,9 +102,13 @@ export const CopyHelper = forwardRef<CopyHelperRefType, CopyHelperProps>(
   ) => {
     const [isCopied, setCopied] = useCopyClipboard(1000)
 
-    const copy = useCallback(() => {
-      setCopied(toCopy)
-    }, [toCopy, setCopied])
+    const copy = useCallback(
+      (e?: { preventDefault: () => void }) => {
+        e?.preventDefault()
+        setCopied(toCopy)
+      },
+      [toCopy, setCopied],
+    )
 
     useImperativeHandle(ref, () => ({
       forceCopy() {
@@ -126,6 +130,7 @@ export const CopyHelper = forwardRef<CopyHelperRefType, CopyHelperProps>(
     const showIcon =
       alwaysShowIcon || Boolean(iconPosition === 'left' || isHover || externalHover || isTouchable || isCopied)
     const offset = showIcon ? gap + iconSize : 0
+
     return (
       <Flex
         row

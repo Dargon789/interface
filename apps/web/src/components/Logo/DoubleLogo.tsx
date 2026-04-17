@@ -1,5 +1,4 @@
 import { Currency } from '@uniswap/sdk-core'
-import styled from 'lib/styled-components'
 import { memo } from 'react'
 import { Flex, useColorSchemeFromSeed } from 'ui/src'
 import { zIndexes } from 'ui/src/theme'
@@ -11,8 +10,9 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { buildCurrencyId, currencyAddress } from 'uniswap/src/utils/currencyId'
 import { isMobileApp } from 'utilities/src/platform'
+import { deprecatedStyled } from '~/lib/deprecated-styled'
 
-const MissingImageLogo = styled.div<{ $size?: string; $textColor: string; $backgroundColor: string }>`
+const MissingImageLogo = deprecatedStyled.div<{ $size?: string; $textColor: string; $backgroundColor: string }>`
   --size: ${({ $size }) => $size};
   border-radius: 100px;
   color: ${({ $textColor }) => $textColor};
@@ -62,11 +62,13 @@ export const DoubleCurrencyLogo = memo(function DoubleCurrencyLogo({
   size = 32,
   customIcon,
   includeNetwork = true,
+  showMainnetNetworkLogo = false,
 }: {
   currencies: Array<Currency | undefined>
   size?: number
   customIcon?: React.ReactNode
   includeNetwork?: boolean
+  showMainnetNetworkLogo?: boolean
 }) {
   const currencyId0 = currencies[0] ? buildCurrencyId(currencies[0].chainId, currencyAddress(currencies[0])) : undefined
   const currencyId1 = currencies[1] ? buildCurrencyId(currencies[1].chainId, currencyAddress(currencies[1])) : undefined
@@ -80,10 +82,24 @@ export const DoubleCurrencyLogo = memo(function DoubleCurrencyLogo({
     return <LogolessPlaceholder currency={currencies[0]} size={size} includeNetwork={Boolean(chainId)} />
   }
   if (invalidCurrencyLogo0 && currencyInfos[1]?.logoUrl) {
-    return <TokenLogo url={currencyInfos[1].logoUrl} size={size} chainId={chainId} />
+    return (
+      <TokenLogo
+        url={currencyInfos[1].logoUrl}
+        size={size}
+        chainId={chainId}
+        showMainnetNetworkLogo={showMainnetNetworkLogo}
+      />
+    )
   }
   if (invalidCurrencyLogo1 && currencyInfos[0]?.logoUrl) {
-    return <TokenLogo url={currencyInfos[0]?.logoUrl} size={size} chainId={chainId} />
+    return (
+      <TokenLogo
+        url={currencyInfos[0]?.logoUrl}
+        size={size}
+        chainId={chainId}
+        showMainnetNetworkLogo={showMainnetNetworkLogo}
+      />
+    )
   }
   return (
     <SplitLogo
@@ -92,6 +108,7 @@ export const DoubleCurrencyLogo = memo(function DoubleCurrencyLogo({
       outputCurrencyInfo={currencyInfos[1]}
       customIcon={customIcon}
       size={size}
+      showMainnetNetworkLogo={showMainnetNetworkLogo}
     />
   )
 })

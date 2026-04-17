@@ -1,5 +1,6 @@
 import { GraphQLApi } from '@universe/api'
 import { SOLANA_LOGO } from 'ui/src/assets'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import { getQuicknodeEndpointUrl } from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
 import { SOLANA_GAS_CONFIG } from 'uniswap/src/features/chains/gasDefaults'
@@ -26,7 +27,7 @@ export const SOLANA_CHAIN_INFO = {
   platform: Platform.SVM,
   assetRepoNetworkName: 'solana',
   blockPerMainnetEpochForChainId: 1,
-  urlParam: 'solana',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Solana],
   name: 'Solana',
   tokens,
   blockWaitMsBeforeWarning: undefined,
@@ -34,8 +35,9 @@ export const SOLANA_CHAIN_INFO = {
   docs: 'https://docs.solana.com',
   elementName: ElementName.ChainSolana,
   supportsV4: false,
+  supportsNFTs: false,
   explorer: {
-    name: 'Solana Explorer',
+    name: 'Solscan',
     url: 'https://solscan.io/',
     apiURL: 'https://api.explorer.solana.com',
   },

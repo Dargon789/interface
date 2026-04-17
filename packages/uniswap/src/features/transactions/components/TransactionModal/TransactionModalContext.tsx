@@ -1,7 +1,6 @@
 import { Currency } from '@uniswap/sdk-core'
 import { createContext, PropsWithChildren, useContext, useMemo } from 'react'
-import type { StyleProp } from 'react-native/Libraries/StyleSheet/StyleSheet'
-import type { ViewStyle } from 'react-native/Libraries/StyleSheet/StyleSheetTypes'
+import type { StyleProp, ViewStyle } from 'react-native'
 import { AuthTrigger } from 'uniswap/src/features/auth/types'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { CurrencyField } from 'uniswap/src/types/currency'
@@ -9,7 +8,6 @@ import { CurrencyField } from 'uniswap/src/types/currency'
 export enum TransactionScreen {
   Form = 'Form',
   Review = 'Review',
-  UnichainInstantBalance = 'UnichainInstantBalance',
 }
 
 export type PasskeyAuthStatus = {

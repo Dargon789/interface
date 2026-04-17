@@ -1,124 +1,362 @@
-import { Project, SourceFile, TypeLiteralNode } from 'ts-morph'
+#!/usr/bin/env bun
 
-const project = new Project()
+const debug = (...args: unknown[]) => {
+  if (process.env.DEBUG) console.log(...args)
+}
 
 const path = './src/clients/trading/__generated__/models'
 
 // Request types
-const approvalRequestFile = project.addSourceFileAtPath(`${path}/ApprovalRequest.ts`)
-const createSendRequestFile = project.addSourceFileAtPath(`${path}/CreateSendRequest.ts`)
-const createSwapRequestFile = project.addSourceFileAtPath(`${path}/CreateSwapRequest.ts`)
-const quoteRequestFile = project.addSourceFileAtPath(`${path}/QuoteRequest.ts`)
-const requestFiles = [approvalRequestFile, createSendRequestFile, createSwapRequestFile, quoteRequestFile]
+const requestFileNames = ['ApprovalRequest', 'CreateSendRequest', 'CreateSwapRequest', 'QuoteRequest']
 
 // Response types
-const approvalResponseFile = project.addSourceFileAtPath(`${path}/ApprovalResponse.ts`)
-const createSwapResponseFile = project.addSourceFileAtPath(`${path}/CreateSwapResponse.ts`)
-const createSendResponseFile = project.addSourceFileAtPath(`${path}/CreateSendResponse.ts`)
-const classicQuoteFile = project.addSourceFileAtPath(`${path}/ClassicQuote.ts`)
-const responseFiles = [approvalResponseFile, createSwapResponseFile, createSendResponseFile, classicQuoteFile]
+const responseFileNames = ['ApprovalResponse', 'CreateSwapResponse', 'CreateSendResponse', 'ClassicQuote']
 
-// Enums
-const routingFile = project.addSourceFileAtPath(`${path}/Routing.ts`)
+// ------------------------------------------------------------------
+// Helpers
+// ------------------------------------------------------------------
 
-function addImport(file: SourceFile, importName: string): void {
-  if (!file.getImportDeclaration((imp) => imp.getModuleSpecifierValue() === '../../types')) {
-    file.addImportDeclaration({
-      namedImports: [importName],
-      moduleSpecifier: '../../types',
-    })
-  } else {
-    const existingImport = file.getImportDeclaration((imp) => imp.getModuleSpecifierValue() === '../../types')
-    if (
-      existingImport &&
-      !existingImport.getNamedImports().some((namedImport) => namedImport.getName() === importName)
-    ) {
-      existingImport.addNamedImport(importName)
-    }
-  }
+async function readFile(filePath: string): Promise<string> {
+  return Bun.file(filePath).text()
 }
 
+async function writeFile(filePath: string, content: string): Promise<void> {
+  await Bun.write(filePath, content)
+}
+
+/**
+ * Add a named import to a file.
+ * Supports both `import type { X }` and `import { X }` (non-type) styles.
+ * If an import from the same module already exists, the named import is appended.
+ */
+function addImport(source: string, importName: string, importPath = '../../types', isTypeImport = false): string {
+  // Check if this specific named import already exists from this path
+  const escapedPath = importPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+  // Match any import (type or value) from this module path
+  const importRegex = new RegExp(`^(import\\s+(?:type\\s+)?\\{[^}]*\\}\\s+from\\s+['"]${escapedPath}['"];?)$`, 'gm')
+
+  const matches = [...source.matchAll(importRegex)]
+
+  if (matches.length > 0) {
+    // Check if the import name already exists in any matching import
+    for (const match of matches) {
+      const importLine = match[0]
+      // Extract the names between { }
+      const namesMatch = importLine.match(/\{([^}]*)\}/)
+      if (namesMatch) {
+        const names = namesMatch[1].split(',').map((n) => n.trim())
+        if (names.includes(importName)) {
+          // Already imported
+          return source
+        }
+      }
+    }
+
+    // Append to the first matching import
+    const firstMatch = matches[0]!
+    const importLine = firstMatch[0]
+    const namesMatch = importLine.match(/\{([^}]*)\}/)
+    if (namesMatch) {
+      const existingNames = namesMatch[1].trim()
+      const newNames = `${existingNames}, ${importName}`
+      const newImportLine = importLine.replace(/\{[^}]*\}/, `{ ${newNames} }`)
+      return source.replace(importLine, newImportLine)
+    }
+  }
+
+  // No existing import from this path — add a new one after the last import
+  const typeKeyword = isTypeImport ? 'type ' : ''
+  const newImportLine = `import ${typeKeyword}{ ${importName} } from "${importPath}";`
+
+  // Find the position after the last import statement
+  const lastImportRegex = /^import\s+.*$/gm
+  let lastImportEnd = -1
+  let match: RegExpExecArray | null
+  while ((match = lastImportRegex.exec(source)) !== null) {
+    lastImportEnd = match.index + match[0].length
+  }
+
+  if (lastImportEnd !== -1) {
+    return source.slice(0, lastImportEnd) + '\n' + newImportLine + source.slice(lastImportEnd)
+  }
+
+  // No imports at all — add at the top
+  return newImportLine + '\n' + source
+}
+
+/**
+ * Add properties to a type alias (object literal type).
+ * Finds `export type TypeName = {` and inserts before the closing `};`.
+ * If `replace` is true and a property already exists, it is removed then re-added.
+ */
 function modifyType(
-  file: SourceFile,
+  source: string,
   typeName: string,
   newProperties: { name: string; type: string; isOptional?: boolean }[],
-): void {
-  const typeAlias = file.getTypeAlias(typeName)
-  if (typeAlias) {
-    const typeNode = typeAlias.getTypeNode()
-    if (typeNode && TypeLiteralNode.isTypeLiteral(typeNode)) {
-      newProperties.forEach((prop) => {
-        const existingProperty = typeNode.getProperty(prop.name)
-        if (!existingProperty) {
-          typeNode.addProperty({
-            name: prop.name,
-            type: prop.type,
-            hasQuestionToken: prop.isOptional,
-          })
-          console.log(`Added property ${prop.name} to ${typeName}`)
-        } else {
-          console.log(`Property ${prop.name} already exists in ${typeName}`)
-        }
-      })
-    } else {
-      console.log(`Type ${typeName} is not an object type`)
+  replace = false,
+): string {
+  // Find the type alias declaration
+  const typeRegex = new RegExp(`(export\\s+type\\s+${typeName}\\s*=\\s*\\{)`)
+  const typeMatch = source.match(typeRegex)
+
+  if (!typeMatch) {
+    console.warn(`Type ${typeName} not found`)
+    return source
+  }
+
+  // Find the matching closing brace for this type
+  const startIdx = typeMatch.index! + typeMatch[0].length
+  let braceDepth = 1
+  let endIdx = startIdx
+
+  while (endIdx < source.length && braceDepth > 0) {
+    if (source[endIdx] === '{') {
+      braceDepth++
+    } else if (source[endIdx] === '}') {
+      braceDepth--
     }
-  } else {
-    console.log(`Type ${typeName} not found`)
+    if (braceDepth > 0) {
+      endIdx++
+    }
   }
+
+  // endIdx now points to the closing }
+  let typeBody = source.slice(startIdx, endIdx)
+
+  for (const prop of newProperties) {
+    const propName = prop.name
+    // Check if property already exists
+    const propRegex = new RegExp(`^\\s*${propName}[?]?\\s*:`, 'm')
+    const exists = propRegex.test(typeBody)
+
+    if (exists) {
+      if (replace) {
+        // Remove the existing property line — match the full line including leading newline
+        const removeRegex = new RegExp(`\\n[ \\t]*${propName}[?]?\\s*:[^;]*;`, 'g')
+        typeBody = typeBody.replace(removeRegex, '')
+        debug(`Replaced property ${propName} in ${typeName}`)
+      } else {
+        debug(`Property ${propName} already exists in ${typeName}`)
+        continue
+      }
+    } else {
+      debug(`Added property ${propName} to ${typeName}`)
+    }
+
+    // Add the property at the end of the type body (trimming trailing whitespace first)
+    const questionMark = prop.isOptional ? '?' : ''
+    const propLine = `\n    ${propName}${questionMark}: ${prop.type};`
+    // Remove trailing blank lines before adding new property
+    typeBody = typeBody.replace(/\n\s*$/, '')
+    typeBody = typeBody + propLine
+  }
+
+  // Ensure there's a newline before the closing brace
+  if (!typeBody.endsWith('\n')) {
+    typeBody = typeBody + '\n'
+  }
+
+  return source.slice(0, startIdx) + typeBody + source.slice(endIdx)
 }
 
-function addEnumMember(file: SourceFile, enumName: string, newMember: { name: string; value: string }): void {
-  const enumDecl = file.getEnum(enumName)
+/**
+ * Add a union member to a type alias, e.g. `| null`.
+ * Handles object literal types by brace-matching to find the true end.
+ */
+function addToTypeAlias(source: string, typeName: string, typeToAdd: string): string {
+  const typeRegex = new RegExp(`(export\\s+type\\s+${typeName}\\s*=\\s*)`)
+  const typeMatch = source.match(typeRegex)
 
-  if (!enumDecl) {
-    console.log(`Enum ${enumName} not found in ${file.getBaseName()}`)
-    return
+  if (!typeMatch) {
+    console.warn(`Type ${typeName} not found`)
+    return source
   }
 
-  const existing = enumDecl.getMember(newMember.name)
+  const startIdx = typeMatch.index! + typeMatch[0].length
 
-  if (existing) {
-    console.log(`Enum member ${newMember.name} already exists in ${enumName}`)
-    return
+  // Walk forward from startIdx, matching braces to find the end of the type.
+  // The type ends at the `;` that follows the outermost balanced expression.
+  let pos = startIdx
+  let braceDepth = 0
+
+  while (pos < source.length) {
+    const ch = source[pos]
+    if (ch === '{') {
+      braceDepth++
+    } else if (ch === '}') {
+      braceDepth--
+    } else if (ch === ';' && braceDepth === 0) {
+      break
+    }
+    pos++
   }
 
-  enumDecl.addMember({
-    name: newMember.name,
-    initializer: `"${newMember.value}"`,
-  })
+  // pos points to the terminating `;`
+  const typeText = source.slice(startIdx, pos)
 
-  console.log(`Added enum member ${newMember.name} = "${newMember.value}" to ${enumName}`)
+  if (typeText.includes(typeToAdd)) {
+    debug(`${typeToAdd} already exists in ${typeName}`)
+    return source
+  }
+
+  debug(`Added ${typeToAdd} to ${typeName}`)
+  const newTypeText = typeText.trimEnd() + ' ' + typeToAdd
+  return source.slice(0, startIdx) + newTypeText + source.slice(pos)
 }
 
-// Modify the request interfaces
-requestFiles.forEach((file) => {
-  addImport(file, 'GasStrategy')
-  modifyType(file, file.getBaseName().replace('.ts', ''), [
-    { name: 'gasStrategies', type: 'GasStrategy[]', isOptional: true },
-  ])
-})
+/**
+ * Add an enum member. Optionally with a @deprecated JSDoc comment.
+ */
+function addEnumMember(
+  source: string,
+  enumName: string,
+  newMember: { name: string; value: string },
+  deprecated = false,
+): string {
+  // Check if the enum exists
+  const enumRegex = new RegExp(`(export\\s+enum\\s+${enumName}\\s*\\{)`)
+  const enumMatch = source.match(enumRegex)
 
-// Modify the response interfaces
-responseFiles.forEach((file) => {
-  addImport(file, 'GasEstimate')
-  modifyType(file, file.getBaseName().replace('.ts', ''), [
-    { name: 'gasEstimates', type: 'GasEstimate[]', isOptional: true },
-  ])
-})
+  if (!enumMatch) {
+    console.warn(`Enum ${enumName} not found in file`)
+    return source
+  }
 
-// Add new enum member
-addEnumMember(routingFile, 'Routing', { name: 'JUPITER', value: 'JUPITER' })
-// TODO: SWAP-458 - Add routing type when available
-addEnumMember(routingFile, 'Routing', { name: 'CHAINED', value: 'CHAINED' })
+  // Find the closing brace of the enum
+  const startIdx = enumMatch.index! + enumMatch[0].length
+  let braceDepth = 1
+  let endIdx = startIdx
 
-// Save the changes
-requestFiles.forEach((file) => {
-  file.saveSync()
-})
-responseFiles.forEach((file) => {
-  file.saveSync()
-})
-routingFile.saveSync()
+  while (endIdx < source.length && braceDepth > 0) {
+    if (source[endIdx] === '{') {
+      braceDepth++
+    } else if (source[endIdx] === '}') {
+      braceDepth--
+    }
+    if (braceDepth > 0) {
+      endIdx++
+    }
+  }
 
-console.log('Trading API types have been updated')
+  // endIdx points to closing }
+  const enumBody = source.slice(startIdx, endIdx)
+
+  // Check if member already exists
+  const memberRegex = new RegExp(`\\b${newMember.name}\\b\\s*=`)
+  if (memberRegex.test(enumBody)) {
+    debug(`Enum member ${newMember.name} already exists in ${enumName}`)
+    return source
+  }
+
+  // Build the new member
+  let insertion = ''
+  if (deprecated) {
+    insertion += `\n    /** @deprecated Deprecation flag added via modifyTradingApiTypes.mts in order to not break existing code. */`
+  }
+  insertion += `\n    ${newMember.name} = "${newMember.value}",`
+
+  // Ensure there's a comma after the last existing member
+  // Find the last non-whitespace character before the closing brace
+  const trimmedBody = enumBody.trimEnd()
+  const lastChar = trimmedBody[trimmedBody.length - 1]
+
+  let newEnumBody = enumBody
+  if (lastChar && lastChar !== ',' && lastChar !== '{') {
+    // Need to add a comma to the last member
+    const lastNonWhitespaceIdx = enumBody.lastIndexOf(lastChar)
+    newEnumBody = enumBody.slice(0, lastNonWhitespaceIdx + 1) + ',' + enumBody.slice(lastNonWhitespaceIdx + 1)
+  }
+
+  // Insert before closing brace (at the end of the body)
+  debug(`Added enum member ${newMember.name} = "${newMember.value}" to ${enumName}`)
+  return source.slice(0, startIdx) + newEnumBody + insertion + '\n' + source.slice(endIdx)
+}
+
+// ------------------------------------------------------------------
+// Main
+// ------------------------------------------------------------------
+
+async function main(): Promise<void> {
+  // Process request files — add GasStrategy import + gasStrategies property
+  for (const name of requestFileNames) {
+    const filePath = `${path}/${name}.ts`
+    let source = await readFile(filePath)
+    source = addImport(source, 'GasStrategy')
+    source = modifyType(source, name, [{ name: 'gasStrategies', type: 'GasStrategy[]', isOptional: true }])
+    await writeFile(filePath, source)
+  }
+
+  // Process response files — add GasEstimate import + gasEstimates property
+  for (const name of responseFileNames) {
+    const filePath = `${path}/${name}.ts`
+    let source = await readFile(filePath)
+    source = addImport(source, 'GasEstimate')
+    source = modifyType(source, name, [{ name: 'gasEstimates', type: 'GasEstimate[]', isOptional: true }])
+    await writeFile(filePath, source)
+  }
+
+  // ChainedQuote — special handling (replace mode for gasEstimates + slippage)
+  {
+    const filePath = `${path}/ChainedQuote.ts`
+    let source = await readFile(filePath)
+    source = addImport(source, 'GasEstimate')
+    source = addImport(source, 'slippageTolerance', './slippageTolerance')
+    source = modifyType(
+      source,
+      'ChainedQuote',
+      [
+        { name: 'gasEstimates', type: 'GasEstimate[]', isOptional: true },
+        { name: 'slippage', type: 'slippageTolerance', isOptional: true },
+      ],
+      true,
+    )
+    await writeFile(filePath, source)
+  }
+
+  // NullablePermit — add `| null`
+  {
+    const filePath = `${path}/NullablePermit.ts`
+    let source = await readFile(filePath)
+    source = addToTypeAlias(source, 'NullablePermit', '| null')
+    await writeFile(filePath, source)
+  }
+
+  // PlanResponse — add lastUserActionAt
+  {
+    const filePath = `${path}/PlanResponse.ts`
+    let source = await readFile(filePath)
+    source = modifyType(source, 'PlanResponse', [{ name: 'lastUserActionAt', type: 'string', isOptional: true }])
+    await writeFile(filePath, source)
+  }
+
+  // Routing enum — add JUPITER and DUTCH_LIMIT
+  {
+    const filePath = `${path}/Routing.ts`
+    let source = await readFile(filePath)
+    source = addEnumMember(source, 'Routing', { name: 'JUPITER', value: 'JUPITER' })
+    source = addEnumMember(source, 'Routing', { name: 'DUTCH_LIMIT', value: 'DUTCH_LIMIT' }, true)
+    await writeFile(filePath, source)
+  }
+
+  // OrderType enum — add DUTCH and DUTCH_LIMIT
+  {
+    const filePath = `${path}/OrderType.ts`
+    let source = await readFile(filePath)
+    source = addEnumMember(source, 'OrderType', { name: 'DUTCH', value: 'DUTCH' }, true)
+    source = addEnumMember(source, 'OrderType', { name: 'DUTCH_LIMIT', value: 'DUTCH_LIMIT' }, true)
+    await writeFile(filePath, source)
+  }
+
+  // OrderStatus enum — add UNVERIFIED
+  {
+    const filePath = `${path}/OrderStatus.ts`
+    let source = await readFile(filePath)
+    source = addEnumMember(source, 'OrderStatus', { name: 'UNVERIFIED', value: 'unverified' }, true)
+    await writeFile(filePath, source)
+  }
+
+  console.log('✓ Trading API types updated')
+}
+
+main()

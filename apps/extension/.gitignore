@@ -8,7 +8,6 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dev
 dist
 dist-ssr
 *.local
@@ -35,3 +34,7 @@ tsconfig.tsbuildinfo
 
 # E2E test artifacts
 e2e/test-results/
+
+coverage/
+
+dev/

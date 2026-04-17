@@ -21,11 +21,12 @@ import { getFormattedCurrencyAmount, getSymbolDisplayText } from 'uniswap/src/ut
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { shortenAddress } from 'utilities/src/addresses'
 
-function _TransferTokenSummaryItem({
+function TransferTokenSummaryItemInner({
   transactionType,
   otherAddress,
   transaction,
   index,
+  isExternalProfile,
 }: SummaryItemProps & {
   transactionType: TransactionType.Send | TransactionType.Receive
   otherAddress: string
@@ -137,7 +138,15 @@ function _TransferTokenSummaryItem({
     [captionText, unitag?.username],
   )
 
-  return <TransactionSummaryLayout caption={caption} icon={icon} index={index} transaction={transaction} />
+  return (
+    <TransactionSummaryLayout
+      caption={caption}
+      icon={icon}
+      index={index}
+      transaction={transaction}
+      isExternalProfile={isExternalProfile}
+    />
+  )
 }
 
-export const TransferTokenSummaryItem = memo(_TransferTokenSummaryItem)
+export const TransferTokenSummaryItem = memo(TransferTokenSummaryItemInner)

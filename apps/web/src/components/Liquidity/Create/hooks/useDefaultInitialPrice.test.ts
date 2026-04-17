@@ -1,12 +1,12 @@
 import { CurrencyAmount, TradeType } from '@uniswap/sdk-core'
-import { useDefaultInitialPrice } from 'components/Liquidity/Create/hooks/useDefaultInitialPrice'
 import JSBI from 'jsbi'
-import { renderHook } from 'test-utils/render'
-import { PositionField } from 'types/position'
 import { PollingInterval } from 'uniswap/src/constants/misc'
 import { USDC } from 'uniswap/src/constants/tokens'
 import { useTrade } from 'uniswap/src/features/transactions/swap/hooks/useTrade'
 import { ETH } from 'uniswap/src/test/fixtures/lib/sdk'
+import { useDefaultInitialPrice } from '~/components/Liquidity/Create/hooks/useDefaultInitialPrice'
+import { renderHook } from '~/test-utils/render'
+import { PositionField } from '~/types/position'
 
 vi.mock('uniswap/src/features/transactions/swap/hooks/useTrade', () => ({
   useTrade: vi.fn(),
@@ -27,6 +27,7 @@ describe('useDefaultInitialPrice', () => {
       isIndicativeLoading: false,
       indicativeTrade: undefined,
       gasEstimate: undefined,
+      quoteHash: '',
     })
 
     const currencies = {
@@ -56,6 +57,7 @@ describe('useDefaultInitialPrice', () => {
       indicativeTrade: undefined,
       isIndicativeLoading: false,
       gasEstimate: undefined,
+      quoteHash: '',
     })
 
     const currencies = {
@@ -76,6 +78,7 @@ describe('useDefaultInitialPrice', () => {
       indicativeTrade: undefined,
       isIndicativeLoading: false,
       gasEstimate: undefined,
+      quoteHash: '',
     })
 
     const currencies = {
@@ -99,6 +102,7 @@ describe('useDefaultInitialPrice', () => {
       indicativeTrade: undefined,
       isIndicativeLoading: false,
       gasEstimate: undefined,
+      quoteHash: '',
     })
 
     const currencies = {

@@ -1,10 +1,11 @@
-import providers from '@ethersproject/providers'
+import { type TransactionRequest } from '@ethersproject/providers'
+import { NFTPermitData, PermitBatchData } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
 import { ONE, Protocol } from '@uniswap/router-sdk'
 import { Currency, CurrencyAmount, Fraction, Percent, TradeType } from '@uniswap/sdk-core'
 import { GasEstimate, TradingApi } from '@universe/api'
 import { LocalizationContextState } from 'uniswap/src/features/language/LocalizationContext'
 import { IndicativeTrade, Trade } from 'uniswap/src/features/transactions/swap/types/trade'
-import { ACROSS_DAPP_INFO, isBridge, isClassic, isUniswapX } from 'uniswap/src/features/transactions/swap/utils/routing'
+import { ACROSS_DAPP_INFO, isBridge, isClassic } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { getClassicQuoteFromResponse } from 'uniswap/src/features/transactions/swap/utils/tradingApi'
 import {
   BaseSwapTransactionInfo,
@@ -26,16 +27,19 @@ export function tradeToTransactionInfo({
   trade,
   transactedUSDValue,
   gasEstimate,
+  swapStartTimestamp,
+  isFinalStep,
 }: {
   trade: Trade
   transactedUSDValue?: number
   gasEstimate?: GasEstimate
+  swapStartTimestamp?: number
+  isFinalStep?: boolean
 }): ExactInputSwapTransactionInfo | ExactOutputSwapTransactionInfo | BridgeTransactionInfo {
   const { quote, slippageTolerance } = trade
   const { quoteId, gasUseEstimate, routeString } = getClassicQuoteFromResponse(quote) ?? {}
 
-  // UniswapX trades wrap native input before swapping
-  const inputCurrency = isUniswapX(trade) ? trade.inputAmount.currency.wrapped : trade.inputAmount.currency
+  const inputCurrency = trade.inputAmount.currency
   const outputCurrency = trade.outputAmount.currency
 
   if (isBridge(trade)) {
@@ -50,6 +54,8 @@ export function tradeToTransactionInfo({
       gasUseEstimate,
       transactedUSDValue,
       gasEstimate,
+      swapStartTimestamp,
+      isFinalStep,
     }
   }
 
@@ -65,6 +71,8 @@ export function tradeToTransactionInfo({
     simulationFailureReasons: isClassic(trade) ? trade.quote.quote.txFailureReasons : undefined,
     transactedUSDValue,
     gasEstimate,
+    swapStartTimestamp,
+    isFinalStep,
   }
 
   return trade.tradeType === TradeType.EXACT_INPUT
@@ -200,7 +208,7 @@ export function getProtocolVersionFromTrade(trade: Trade): Protocol | undefined 
 }
 
 export function validateTransactionRequest(
-  request?: providers.TransactionRequest | null,
+  request?: TransactionRequest | null,
 ): ValidatedTransactionRequest | undefined {
   if (request?.to && request.chainId) {
     return { ...request, to: request.to, chainId: request.chainId }
@@ -208,14 +216,8 @@ export function validateTransactionRequest(
   return undefined
 }
 
-export function validateTransactionRequestTypeGuard(
-  request?: providers.TransactionRequest | null,
-): request is ValidatedTransactionRequest {
-  return !!request?.to && !!request.chainId
-}
-
 export function validateTransactionRequests(
-  requests?: providers.TransactionRequest[] | null,
+  requests?: TransactionRequest[] | null,
 ): PopulatedTransactionRequestArray | undefined {
   if (!requests?.length) {
     return undefined
@@ -241,7 +243,9 @@ type RemoveUndefined<T> = {
 
 export type ValidatedPermit = RemoveUndefined<TradingApi.Permit>
 
-export function validatePermit(permit: TradingApi.NullablePermit | undefined): ValidatedPermit | undefined {
+export function validatePermit(
+  permit: TradingApi.NullablePermit | PermitBatchData | NFTPermitData | undefined,
+): ValidatedPermit | undefined {
   const { domain, types, values } = permit ?? {}
   if (domain && types && values) {
     return { domain, types, values }

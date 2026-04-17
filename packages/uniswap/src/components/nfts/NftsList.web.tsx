@@ -1,21 +1,31 @@
+import { NetworkStatus } from '@apollo/client'
+import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { isNonPollingRequestInFlight } from '@universe/api'
-import { useCallback, useEffect, useMemo } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import InfiniteScroll from 'react-infinite-scroll-component'
-import { Flex, Loader, styled, View } from 'ui/src'
-import { NoNfts } from 'ui/src/components/icons/NoNfts'
+import { Flex, Loader, styled, Text, View } from 'ui/src'
 import { BaseCard } from 'uniswap/src/components/BaseCard/BaseCard'
 import { ExpandoRow } from 'uniswap/src/components/ExpandoRow/ExpandoRow'
+import { useContainerWidth } from 'uniswap/src/components/nfts/hooks/useContainerWidth'
 import { useNftListRenderData } from 'uniswap/src/components/nfts/hooks/useNftListRenderData'
+import { useNftSearch } from 'uniswap/src/components/nfts/hooks/useNftSearch'
 import { NftsListProps } from 'uniswap/src/components/nfts/NftsList'
+import { NftsListEmptyState } from 'uniswap/src/components/nfts/NftsListEmptyState'
+import { NftListHeader } from 'uniswap/src/components/nfts/NftsListHeader'
 import { ShowNFTModal } from 'uniswap/src/components/nfts/ShowNFTModal'
-import { EMPTY_NFT_ITEM, HIDDEN_NFTS_ROW } from 'uniswap/src/features/nfts/constants'
+import {
+  NFT_GRID_DEFAULT_COLUMNS,
+  NFT_GRID_MIN_COLUMN_WIDTH,
+  NFT_GRID_ROW_HEIGHT,
+} from 'uniswap/src/features/nfts/constants'
 import { NFTItem } from 'uniswap/src/features/nfts/types'
 import { getNFTAssetKey } from 'uniswap/src/features/nfts/utils'
 import { WalletEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
-import { isExtensionApp } from 'utilities/src/platform'
+import { isMobileWeb } from 'utilities/src/platform'
+
+const estimateRowSize = (): number => NFT_GRID_ROW_HEIGHT
 
 const AssetsContainer = styled(View, {
   width: '100%',
@@ -41,11 +51,6 @@ const AssetsContainer = styled(View, {
   },
 })
 
-const LOADING_ITEM = 'loading'
-
-const keyExtractor = (item: NFTItem | string): string =>
-  typeof item === 'string' ? item : getNFTAssetKey(item.contractAddress ?? '', item.tokenId ?? '')
-
 export function NftsList({
   owner,
   errorStateStyle,
@@ -56,33 +61,79 @@ export function NftsList({
   autoColumns = false,
   loadingSkeletonCount = 6,
   customLoadingState,
+  filteredNumHidden,
+  chainsFilter,
+  onFilteredCountsChange,
+  renderExpandoRow,
+  nextFetchPolicy,
+  onRefetchReady,
+  onLoadingStateChange,
+  showHeader = false,
+  SearchInputComponent,
+  searchInputTestId,
+  headerTestId,
+  noResultsTestId,
+  emptyStateTestId,
+  pollInterval,
 }: NftsListProps): JSX.Element {
   const { t } = useTranslation()
 
   const {
-    nfts,
-    numHidden,
-    numShown,
+    numHidden: internalNumHidden,
+    numShown: internalNumShown,
     isErrorState,
     hasNextPage,
-    shouldAddInLoadingItem,
     hiddenNftsExpanded,
     setHiddenNftsExpanded,
     networkStatus,
     onListEndReached,
     refetch,
-  } = useNftListRenderData({ owner, skip })
+    shownNfts,
+    hiddenNfts,
+  } = useNftListRenderData({ owner, skip, chainsFilter, nextFetchPolicy, pollInterval })
 
-  const onHiddenRowPressed = useCallback((): void => {
-    setHiddenNftsExpanded(!hiddenNftsExpanded)
-  }, [hiddenNftsExpanded, setHiddenNftsExpanded])
-
+  // Expose refetch function to parent component
   useEffect(() => {
-    sendAnalyticsEvent(WalletEventName.NFTsLoaded, {
-      shown: numShown,
-      hidden: numHidden,
-    })
-  }, [numHidden, numShown])
+    if (onRefetchReady) {
+      onRefetchReady(refetch)
+    }
+  }, [onRefetchReady, refetch])
+
+  // Expose loading state to parent component
+  const isLoadingState = isNonPollingRequestInFlight(networkStatus)
+  useEffect(() => {
+    if (onLoadingStateChange) {
+      onLoadingStateChange(isLoadingState)
+    }
+  }, [onLoadingStateChange, isLoadingState])
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const containerWidth = useContainerWidth(containerRef)
+
+  const { search, setSearch, nfts, filteredShownCount, filteredHiddenCount } = useNftSearch({
+    shownNfts,
+    hiddenNfts,
+    hiddenNftsExpanded,
+    hasNextPage,
+  })
+
+  const keyExtractor = (item: NFTItem | string): string =>
+    typeof item === 'string' ? item : getNFTAssetKey(item.contractAddress ?? '', item.tokenId ?? '')
+
+  // Use filtered count if provided, otherwise use internal count
+  const numHidden = filteredNumHidden ?? (search ? filteredHiddenCount : internalNumHidden)
+
+  // Notify parent of filtered counts (or unfiltered counts if no search)
+  useEffect(() => {
+    if (onFilteredCountsChange) {
+      onFilteredCountsChange({ shown: filteredShownCount, hidden: filteredHiddenCount })
+    }
+  }, [onFilteredCountsChange, filteredShownCount, filteredHiddenCount])
+
+  // Track NFTs loaded only when initial data loads, not when filtering changes
+  useEffect(() => {
+    sendAnalyticsEvent(WalletEventName.NFTsLoaded, { shown: internalNumShown, hidden: internalNumHidden })
+  }, [internalNumShown, internalNumHidden])
 
   useEffect(() => {
     if (numHidden === 0 && hiddenNftsExpanded) {
@@ -90,120 +141,168 @@ export function NftsList({
     }
   }, [hiddenNftsExpanded, numHidden, setHiddenNftsExpanded])
 
-  const renderItem = useCallback(
-    (item: string | NFTItem, index: number) => {
-      if (typeof item !== 'string') {
-        return renderNFTItem(item, index)
-      }
-
-      switch (item) {
-        case LOADING_ITEM:
-          // This case probably never occurs
-          return <Loader.NFT />
-        case EMPTY_NFT_ITEM:
-          return null
-        case HIDDEN_NFTS_ROW:
-          return (
-            <Flex key={keyExtractor(item)} grow gridColumn="span 2" $platform-web={{ gridColumn: '1 / -1' }}>
-              <ExpandoRow
-                isExpanded={hiddenNftsExpanded}
-                data-testid={TestID.HiddenNftsRow}
-                label={t('hidden.nfts.info.text.button', { numHidden })}
-                mx="$spacing4"
-                onPress={onHiddenRowPressed}
-              />
-              {hiddenNftsExpanded && <ShowNFTModal />}
-            </Flex>
-          )
-
-        default:
-          return null
-      }
-    },
-    [hiddenNftsExpanded, numHidden, onHiddenRowPressed, renderNFTItem, t],
-  )
-
-  const onRetry = useCallback(() => refetch(), [refetch])
-
-  const itemsToRender = useMemo(
-    () => (shouldAddInLoadingItem ? [...nfts, LOADING_ITEM] : nfts),
-    [nfts, shouldAddInLoadingItem],
-  )
-
-  const loadingState = useMemo<JSX.Element>(() => {
-    if (customLoadingState) {
-      return customLoadingState
-    }
-    return (
-      <>
-        {Array.from({ length: loadingSkeletonCount }, (_, i) => (
-          <Loader.NFT key={i} />
-        ))}
-      </>
-    )
-  }, [loadingSkeletonCount, customLoadingState])
-
-  const emptyState = useMemo(
+  const gridItems = useMemo(() => nfts.filter((item): item is NFTItem => typeof item !== 'string'), [nfts])
+  const numColumns = useMemo(
     () =>
-      customEmptyState ?? (
-        <Flex centered pt="$spacing48" px="$spacing36" style={emptyStateStyle}>
-          <BaseCard.EmptyState
-            buttonLabel={isExtensionApp ? t('tokens.nfts.list.none.button') : undefined}
-            description={t('tokens.nfts.list.none.description.default')}
-            icon={<NoNfts color="$neutral3" size="$icon.100" />}
-            title={t('tokens.nfts.list.none.title')}
-          />
-        </Flex>
-      ),
-    [customEmptyState, emptyStateStyle, t],
+      autoColumns && containerWidth > 0
+        ? Math.max(1, Math.floor(containerWidth / NFT_GRID_MIN_COLUMN_WIDTH))
+        : NFT_GRID_DEFAULT_COLUMNS,
+    [autoColumns, containerWidth],
   )
+  const rowCount = Math.ceil(gridItems.length / numColumns)
+  const isFetchingMore = nfts.length > 0 && networkStatus === NetworkStatus.fetchMore
 
-  const errorState = useMemo(
+  const rowVirtualizer = useWindowVirtualizer({
+    count: rowCount,
+    estimateSize: estimateRowSize,
+    overscan: isMobileWeb ? 2 : 12,
+  })
+
+  const virtualRows = rowVirtualizer.getVirtualItems()
+
+  const lastVisibleRowIndex = virtualRows[virtualRows.length - 1]?.index
+  useEffect(() => {
+    if (lastVisibleRowIndex === undefined) {
+      return
+    }
+    if (lastVisibleRowIndex >= rowCount - 3 && hasNextPage && !isLoadingState && !isFetchingMore) {
+      // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
+      onListEndReached()
+    }
+  }, [lastVisibleRowIndex, rowCount, hasNextPage, isLoadingState, isFetchingMore, onListEndReached])
+
+  const onHiddenRowPressed = useCallback((): void => {
+    setHiddenNftsExpanded(!hiddenNftsExpanded)
+  }, [hiddenNftsExpanded, setHiddenNftsExpanded])
+
+  const skeletonContent = useMemo(
     () => (
-      <Flex centered grow style={errorStateStyle}>
-        <BaseCard.ErrorState
-          description={t('common.error.general')}
-          retryButtonLabel={t('common.button.retry')}
-          title={t('tokens.nfts.list.error.load.title')}
-          onRetry={onRetry}
-        />
-      </Flex>
+      <AssetsContainer useGrid autoColumns={autoColumns}>
+        {customLoadingState ?? Array.from({ length: loadingSkeletonCount }, (_, i) => <Loader.NFT key={i} />)}
+      </AssetsContainer>
     ),
-    [errorStateStyle, onRetry, t],
+    [autoColumns, customLoadingState, loadingSkeletonCount],
   )
 
-  const isLoadingState = isNonPollingRequestInFlight(networkStatus)
-
-  const listContent = useMemo(() => {
+  const nonNftContent = useMemo((): JSX.Element | null => {
     if (isLoadingState) {
-      return loadingState
+      return skeletonContent
     }
 
     if (isErrorState) {
-      return errorState
+      return (
+        <Flex centered grow style={errorStateStyle}>
+          <BaseCard.ErrorState
+            description={t('common.error.general')}
+            retryButtonLabel={t('common.button.retry')}
+            title={t('tokens.nfts.list.error.load.title')}
+            onRetry={refetch}
+          />
+        </Flex>
+      )
+    }
+
+    // Show no-results when user has searched and the filtered list is empty (explicit check so we always hit this when filtering yields nothing)
+    if (search && filteredShownCount === 0) {
+      return (
+        <Flex centered p="$spacing12" width="100%" data-testid={noResultsTestId}>
+          <Text variant="body3" color="$neutral2">
+            {t('common.noResults')}
+          </Text>
+        </Flex>
+      )
     }
 
     if (nfts.length === 0) {
-      return emptyState
+      const defaultEmptyState = <NftsListEmptyState containerStyle={emptyStateStyle} dataTestId={emptyStateTestId} />
+      return (customEmptyState ?? defaultEmptyState) as JSX.Element
     }
 
-    return itemsToRender.map(renderItem)
-  }, [isLoadingState, nfts.length, itemsToRender, renderItem, errorState, emptyState, loadingState, isErrorState])
+    return null
+  }, [
+    customEmptyState,
+    emptyStateStyle,
+    emptyStateTestId,
+    errorStateStyle,
+    filteredShownCount,
+    isErrorState,
+    isLoadingState,
+    nfts.length,
+    noResultsTestId,
+    skeletonContent,
+    refetch,
+    search,
+    t,
+  ])
+
+  // Virtual grid renders fresh on every virtualizer tick — intentionally outside useMemo.
+  const nftListContent = (
+    <>
+      <Flex position="relative" style={{ height: rowVirtualizer.getTotalSize() }}>
+        {virtualRows.map((virtualRow) => {
+          const startIndex = virtualRow.index * numColumns
+          const rowItems = gridItems.slice(startIndex, startIndex + numColumns)
+          return (
+            <Flex
+              key={virtualRow.key}
+              position="absolute"
+              top={0}
+              left={0}
+              width="100%"
+              gap="$spacing12"
+              height={virtualRow.size}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${numColumns}, minmax(0, 1fr))`,
+                transform: `translateY(${virtualRow.start}px)`,
+                willChange: 'transform',
+                contain: 'strict',
+                contentVisibility: 'auto',
+              }}
+            >
+              {rowItems.map((item, i) => (
+                <Fragment key={keyExtractor(item)}>{renderNFTItem(item, startIndex + i)}</Fragment>
+              ))}
+            </Flex>
+          )
+        })}
+      </Flex>
+      {isFetchingMore && skeletonContent}
+      {numHidden > 0 && (
+        <Flex grow>
+          {renderExpandoRow ? (
+            renderExpandoRow({
+              isExpanded: hiddenNftsExpanded,
+              label: t('hidden.nfts.info.text.button', { numHidden }),
+              onPress: onHiddenRowPressed,
+            })
+          ) : (
+            <ExpandoRow
+              isExpanded={hiddenNftsExpanded}
+              data-testid={TestID.HiddenNftsRow}
+              label={t('hidden.nfts.info.text.button', { numHidden })}
+              mx="$spacing4"
+              onPress={onHiddenRowPressed}
+            />
+          )}
+          {hiddenNftsExpanded && <ShowNFTModal />}
+        </Flex>
+      )}
+    </>
+  )
 
   return (
-    <>
-      <InfiniteScroll
-        next={onListEndReached}
-        hasMore={hasNextPage}
-        loader={loadingState}
-        dataLength={shouldAddInLoadingItem ? nfts.length + 1 : nfts.length}
-        style={{ overflow: 'unset' }}
-        scrollableTarget="wallet-dropdown-scroll-wrapper"
-      >
-        <AssetsContainer useGrid={isLoadingState || nfts.length > 0} autoColumns={autoColumns}>
-          {listContent}
-        </AssetsContainer>
-      </InfiniteScroll>
-    </>
+    <Flex ref={containerRef} gap="$spacing24">
+      {showHeader && (
+        <NftListHeader
+          count={filteredShownCount}
+          SearchInputComponent={SearchInputComponent}
+          searchInputTestId={searchInputTestId}
+          headerTestId={headerTestId}
+          onSearchValueChange={setSearch}
+        />
+      )}
+      {nonNftContent ?? nftListContent}
+    </Flex>
   )
 }

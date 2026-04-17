@@ -51,7 +51,7 @@ export function OTPInput(): JSX.Element {
   const [failedAttemptCount, setFailedAttemptCount] = useState<number>(0)
   const [characterSequence, setCharacterSequence] = useState<CharacterSequence>(INITIAL_CHARACTER_SEQUENCE)
 
-  const inputRefs = useRef<RefObject<TextInput>[]>([])
+  const inputRefs = useRef<RefObject<TextInput | null>[]>([])
   inputRefs.current = new Array(6).fill(null).map((_, i) => inputRefs.current[i] || createRef<TextInput>())
 
   // Add all accounts from mnemonic.
@@ -125,6 +125,7 @@ export function OTPInput(): JSX.Element {
         newCharacters[index] = event.nativeEvent.text
         setCharacterSequence(newCharacters)
 
+        // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
         if (newCharacters[index]?.length === 1 && inputRefs.current[index + 1]?.current) {
           inputRefs.current[index + 1]?.current?.focus()
         }

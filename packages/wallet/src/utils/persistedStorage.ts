@@ -24,7 +24,7 @@ export class PersistedStorage {
 
   async getAll(): Promise<Record<string, string>> {
     const result = await chrome.storage[this.area].get(null)
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     return result ?? {}
   }
 

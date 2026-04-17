@@ -15,6 +15,15 @@ import { v4 as uuid } from 'uuid'
 const APPLE_PAY = 'Apple Pay'
 const GOOGLE_PAY = 'Google Pay'
 
+/**
+ * Validates that a currency code is a valid 3-letter ISO 4217 currency code.
+ * Must be exactly 3 alphabetic characters (case-insensitive).
+ * Used to validate sourceCurrency/fiatCurrency in on-ramp transactions.
+ */
+export function isValidIsoCurrencyCode(code: unknown): code is string {
+  return typeof code === 'string' && /^[A-Za-z]{3}$/.test(code)
+}
+
 export function transformPaymentMethods(paymentMethods: string[]): string[] {
   return paymentMethods.filter((pm) => !(pm === APPLE_PAY && isAndroid) && !(pm === GOOGLE_PAY && isIOS))
 }
@@ -116,9 +125,10 @@ export function isFiatOnRampApiError(error: unknown): error is FORApiError {
   if (typeof error === 'object' && error !== null) {
     const e = error as FORApiError
     return (
+      /* oxlint-disable typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here */
       typeof e.data === 'object' &&
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       e.data !== null &&
+      /* oxlint-enable typescript/no-unnecessary-condition */
       typeof e.data.statusCode === 'number' &&
       typeof e.data.errorName === 'string'
     )
@@ -184,7 +194,7 @@ export function filterQuotesByPaymentMethod(quotes: Maybe<FORQuote[]>, paymentFi
   }
 
   return quotes.filter((quote) => {
-    return quote.serviceProviderDetails.paymentMethods.some((paymentMethod) => {
+    return (quote.serviceProviderDetails?.paymentMethods ?? []).some((paymentMethod) => {
       const mappedFilter = FORFiltersMap[paymentMethod]
       return mappedFilter === paymentFilter
     })

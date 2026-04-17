@@ -1,23 +1,17 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { ProposalTypes, SessionTypes } from '@walletconnect/types'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { EthMethod, EthSignMethod } from 'uniswap/src/features/dappRequests/types'
-import { DappRequestInfo, EthTransaction, UwULinkMethod } from 'uniswap/src/types/walletConnect'
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { type ProposalTypes, type SessionTypes } from '@walletconnect/types'
+import { type UniverseChainId } from 'uniswap/src/features/chains/types'
+import { EthMethod, type EthSignMethod } from 'uniswap/src/features/dappRequests/types'
+import { type DappRequestInfo, type EthTransaction, UwULinkMethod } from 'uniswap/src/types/walletConnect'
 import { logger } from 'utilities/src/logger/logger'
-import { Call, Capability } from 'wallet/src/features/dappRequests/types'
-
-export enum WalletConnectVerifyStatus {
-  Verified = 'VERIFIED',
-  Unverified = 'UNVERIFIED',
-  Threat = 'THREAT',
-}
+import { type Call, type Capability, type DappVerificationStatus } from 'wallet/src/features/dappRequests/types'
 
 export type WalletConnectPendingSession = {
   id: string
   chains: UniverseChainId[]
   dappRequestInfo: DappRequestInfo
   proposalNamespaces: ProposalTypes.OptionalNamespaces
-  verifyStatus: WalletConnectVerifyStatus
+  verifyStatus: DappVerificationStatus
 }
 
 export type WalletConnectSession = {
@@ -31,6 +25,13 @@ export type WalletConnectSession = {
    * is tracking as the active account based on session events (approve session, change account, etc).
    */
   activeAccount: string
+
+  /**
+   * EIP-5792 capabilities for this session, stored in hex chainId format.
+   * Contains atomic batch support status per chain.
+   * Only populated if EIP-5792 feature flag was enabled during session approval.
+   */
+  capabilities?: Record<string, Capability>
 }
 
 interface BaseRequest {
@@ -99,8 +100,15 @@ export type WalletConnectSigningRequest =
   | UwuLinkErc20Request
   | WalletSendCallsEncodedRequest
 
+type PersonalSignRequest = SignRequest & {
+  type: EthMethod.PersonalSign | EthMethod.EthSign
+}
+
 export const isTransactionRequest = (request: WalletConnectSigningRequest): request is TransactionRequest =>
   request.type === EthMethod.EthSendTransaction || request.type === UwULinkMethod.Erc20Send
+
+export const isPersonalSignRequest = (request: WalletConnectSigningRequest): request is PersonalSignRequest =>
+  request.type === EthMethod.PersonalSign || request.type === EthMethod.EthSign
 
 export const isBatchedTransactionRequest = (
   request: WalletConnectSigningRequest,
@@ -172,6 +180,7 @@ const slice = createSlice({
     setHasPendingSessionError: (state, action: PayloadAction<boolean | undefined>) => {
       state.hasPendingSessionError = action.payload
     },
+    resetWalletConnect: () => initialWalletConnectState,
   },
 })
 
@@ -185,5 +194,6 @@ export const {
   removeRequest,
   setDidOpenFromDeepLink,
   setHasPendingSessionError,
+  resetWalletConnect,
 } = slice.actions
 export const { reducer: walletConnectReducer } = slice

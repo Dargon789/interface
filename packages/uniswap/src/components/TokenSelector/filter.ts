@@ -88,6 +88,11 @@ export function filter({
     return filteredTokens
   }
 
+  // Fast path: when only filtering by chain (no text search), avoid expensive Fuse.js initialization
+  if (chainFilter && !searchFilter) {
+    return filteredTokens.filter((token) => token.currencyInfo.currency.chainId === chainFilter)
+  }
+
   const andPatterns: Fuse.Expression[] = []
   const orPatterns: Fuse.Expression[] = []
 

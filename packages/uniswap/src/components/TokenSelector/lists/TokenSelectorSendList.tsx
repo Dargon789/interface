@@ -1,35 +1,83 @@
 import { GqlResult } from '@universe/api'
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex } from 'ui/src'
 import { BaseCard } from 'uniswap/src/components/BaseCard/BaseCard'
+import { ExpandoRow } from 'uniswap/src/components/ExpandoRow/ExpandoRow'
 import { TokenOption } from 'uniswap/src/components/lists/items/types'
 import { type OnchainItemSection, OnchainItemSectionName } from 'uniswap/src/components/lists/OnchainItemList/types'
 import { SectionHeader } from 'uniswap/src/components/lists/SectionHeader'
 import { useOnchainItemListSection } from 'uniswap/src/components/lists/utils'
+import { usePortfolioBalancesForAddressById } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
 import { usePortfolioTokenOptions } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioTokenOptions'
 import { TokenSelectorList } from 'uniswap/src/components/TokenSelector/TokenSelectorList'
 import { OnSelectCurrency, TokenSectionsHookProps } from 'uniswap/src/components/TokenSelector/types'
 
 function useTokenSectionsForSend({
-  evmAddress,
-  svmAddress,
+  addresses,
   chainFilter,
 }: TokenSectionsHookProps): GqlResult<OnchainItemSection<TokenOption>[]> {
+  const { t } = useTranslation()
+  const portfolioData = usePortfolioBalancesForAddressById(addresses)
   const {
     data: portfolioTokenOptions,
+    hiddenTokens: hiddenPortfolioTokenOptions,
     error: portfolioTokenOptionsError,
     refetch: refetchPortfolioTokenOptions,
     loading: portfolioTokenOptionsLoading,
-  } = usePortfolioTokenOptions({ evmAddress, svmAddress, chainFilter })
+  } = usePortfolioTokenOptions({ chainFilter, includeHidden: true, portfolioData })
+  const [hiddenTokensExpanded, setHiddenTokensExpanded] = useState(false)
+  const expandoElement = useMemo(() => {
+    const hiddenTokensCount = hiddenPortfolioTokenOptions?.length ?? 0
+    if (hiddenTokensCount === 0) {
+      return undefined
+    }
+    return (
+      <ExpandoRow
+        isExpanded={hiddenTokensExpanded}
+        label={t('hidden.tokens.info.text.button', { numHidden: hiddenTokensCount })}
+        mx="$spacing20"
+        onPress={(): void => {
+          setHiddenTokensExpanded(!hiddenTokensExpanded)
+        }}
+      />
+    )
+  }, [hiddenTokensExpanded, hiddenPortfolioTokenOptions?.length, t])
 
   const loading = portfolioTokenOptionsLoading
   const error = !portfolioTokenOptions && portfolioTokenOptionsError
 
-  const sections = useOnchainItemListSection({
+  const visibleSections = useOnchainItemListSection({
     sectionKey: OnchainItemSectionName.YourTokens,
     options: portfolioTokenOptions,
   })
+
+  const openHiddenSections = useOnchainItemListSection({
+    sectionKey: OnchainItemSectionName.HiddenTokens,
+    options: hiddenPortfolioTokenOptions,
+    sectionHeader: expandoElement,
+  })
+
+  const closedHiddenSections: OnchainItemSection<TokenOption>[] = useMemo(
+    () => [
+      {
+        sectionKey: OnchainItemSectionName.HiddenTokens,
+        data: [],
+        sectionHeader: expandoElement,
+      },
+    ],
+    [expandoElement],
+  )
+
+  const sections = useMemo(() => {
+    if (!visibleSections) {
+      return undefined
+    }
+    if (openHiddenSections) {
+      return [...visibleSections, ...(hiddenTokensExpanded ? openHiddenSections : closedHiddenSections)]
+    }
+    return visibleSections
+  }, [visibleSections, openHiddenSections, closedHiddenSections, hiddenTokensExpanded])
 
   return useMemo(
     () => ({
@@ -62,9 +110,8 @@ function EmptyList({ onEmptyActionPress }: { onEmptyActionPress?: () => void }):
   )
 }
 
-function _TokenSelectorSendList({
-  evmAddress,
-  svmAddress,
+function TokenSelectorSendListInner({
+  addresses,
   chainFilter,
   onSelectCurrency,
   onEmptyActionPress,
@@ -80,8 +127,7 @@ function _TokenSelectorSendList({
     error,
     refetch,
   } = useTokenSectionsForSend({
-    evmAddress,
-    svmAddress,
+    addresses,
     chainFilter,
   })
   const emptyElement = useMemo(() => <EmptyList onEmptyActionPress={onEmptyActionPress} />, [onEmptyActionPress])
@@ -102,4 +148,4 @@ function _TokenSelectorSendList({
   )
 }
 
-export const TokenSelectorSendList = memo(_TokenSelectorSendList)
+export const TokenSelectorSendList = memo(TokenSelectorSendListInner)

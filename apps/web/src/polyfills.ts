@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* oxlint-disable typescript/no-unnecessary-condition */
 import 'polyfill-object.fromentries'
-
+import { Buffer } from 'buffer'
 import { ResizeObserver } from '@juggle/resize-observer'
 import flat from 'array.prototype.flat'
 import flatMap from 'array.prototype.flatmap'
-import { Buffer } from 'buffer'
 
 flat.shim()
 flatMap.shim()

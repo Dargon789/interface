@@ -1,4 +1,3 @@
-import { Currency } from '@uniswap/sdk-core'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Checkbox, Flex, GeneratedIcon, Text, TouchableArea } from 'ui/src'
@@ -15,39 +14,41 @@ export type ReportOption<T extends string> = {
   title: string
   subtitle?: string
   value: T
+  /** Shows a text input below the checkbox when this option is selected */
+  additionalTextInput?: boolean
+  /** Overrides the default placeholder text for the text input */
+  inputPlaceholderOverride?: string
 }
 
 export type ReportModalProps<T extends string> = {
   modalName: ModalNameType
+  modalTitle: string
   icon: GeneratedIcon
   reportOptions: ReportOption<T>[]
-  textOptionValue: T
-  currency?: Currency
-  submitReport: ({ checkedItems, reportText }: { checkedItems: Set<T>; reportText: string }) => void
+  submitReport: ({ checkedItems, reportTexts }: { checkedItems: Set<T>; reportTexts: Map<T, string> }) => void
 }
 
-export function ReportTokenModal<T extends string>({
+export function ReportModal<T extends string>({
   modalName,
-  currency,
+  modalTitle,
   icon: Icon,
   reportOptions,
-  textOptionValue,
   isOpen,
   submitReport,
   onClose,
 }: ReportModalProps<T> & BaseModalProps): JSX.Element {
   const { t } = useTranslation()
   const [checkedItems, setCheckedItems] = useState<Set<T>>(new Set())
-  const [reportText, setReportText] = useState('')
+  const [reportTexts, setReportTexts] = useState<Map<T, string>>(new Map())
 
   const { keyboardHeight } = useBottomSheetSafeKeyboard()
 
   // Clear form whenever a new currency is selected
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we intentionally retrigger on currency change or open/close
+  // oxlint-disable-next-line react/exhaustive-deps -- we intentionally retrigger on open/close
   useEffect(() => {
     setCheckedItems(new Set())
-    setReportText('')
-  }, [currency, isOpen])
+    setReportTexts(new Map())
+  }, [isOpen])
 
   const handleItemPress = useEvent((option: T) => {
     setCheckedItems((prev) => {
@@ -58,6 +59,15 @@ export function ReportTokenModal<T extends string>({
         newSet.add(option)
       }
       return newSet
+    })
+    // Clear any associated text when an option is unchecked
+    setReportTexts((prevTexts) => {
+      if (!prevTexts.has(option)) {
+        return prevTexts
+      }
+      const newMap = new Map(prevTexts)
+      newMap.delete(option)
+      return newMap
     })
   })
 
@@ -74,52 +84,65 @@ export function ReportTokenModal<T extends string>({
             <Flex centered backgroundColor="$surface3" borderRadius="$rounded12" p="$spacing12">
               <Icon size="$icon.24" color="$neutral2" />
             </Flex>
-            <Text variant="subheading1">
-              {t('reporting.token.report.title.withSymbol', { symbol: currency?.symbol ?? '' })}
-            </Text>
+            <Text variant="subheading1">{modalTitle}</Text>
           </Flex>
           <Flex gap="$spacing16">
             {reportOptions.map((option: ReportOption<T>) => {
-              if (keyboardHeight > 0 && option.value !== textOptionValue) {
+              if (keyboardHeight > 0 && !(option.additionalTextInput && checkedItems.has(option.value))) {
                 return null
               }
               return (
-                <TouchableArea
-                  key={option.value}
-                  row
-                  role="none"
-                  alignItems="center"
-                  gap="$spacing16"
-                  onPress={() => handleItemPress(option.value)}
-                >
-                  <Checkbox
-                    size="$icon.16"
-                    checked={checkedItems.has(option.value)}
-                    onCheckedChange={isMobileApp ? (): void => handleItemPress(option.value) : undefined}
-                  />
-                  <Flex gap="$spacing4">
-                    <Text variant="body2" color="$neutral1">
-                      {option.title}
-                    </Text>
-                    {option.subtitle && (
-                      <Text variant="body3" color="$neutral2">
-                        {option.subtitle}
+                <Flex key={option.value} gap="$spacing16">
+                  <TouchableArea
+                    row
+                    role="none"
+                    alignItems="center"
+                    gap="$spacing16"
+                    onPress={() => handleItemPress(option.value)}
+                  >
+                    <Checkbox
+                      size="$icon.16"
+                      checked={checkedItems.has(option.value)}
+                      onCheckedChange={isMobileApp ? (): void => handleItemPress(option.value) : undefined}
+                    />
+                    <Flex fill gap="$spacing4">
+                      <Text variant="body2" color="$neutral1">
+                        {option.title}
                       </Text>
-                    )}
-                  </Flex>
-                </TouchableArea>
+                      {option.subtitle && (
+                        <Text variant="body3" color="$neutral2">
+                          {option.subtitle}
+                        </Text>
+                      )}
+                    </Flex>
+                  </TouchableArea>
+                  {option.additionalTextInput && checkedItems.has(option.value) && (
+                    <ReportInput
+                      placeholder={option.inputPlaceholderOverride ?? t('reporting.token.report.other.placeholder')}
+                      setReportText={(text) => {
+                        setReportTexts((prev) => new Map(prev).set(option.value, text))
+                      }}
+                    />
+                  )}
+                </Flex>
               )
             })}
-            {checkedItems.has(textOptionValue) && (
-              <ReportInput placeholder={t('reporting.token.report.other.placeholder')} setReportText={setReportText} />
-            )}
           </Flex>
           <Flex row>
             <Button
               size="medium"
               emphasis="primary"
               isDisabled={checkedItems.size === 0}
-              onPress={() => submitReport({ checkedItems, reportText })}
+              onPress={() => {
+                const sanitizedTexts = new Map<T, string>()
+                for (const [key, value] of reportTexts) {
+                  const trimmed = value.trim()
+                  if (trimmed) {
+                    sanitizedTexts.set(key, trimmed)
+                  }
+                }
+                submitReport({ checkedItems, reportTexts: sanitizedTexts })
+              }}
             >
               {checkedItems.size > 0 ? t('common.submit') : t('reporting.token.report.button.disabled')}
             </Button>

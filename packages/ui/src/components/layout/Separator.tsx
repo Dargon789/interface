@@ -20,10 +20,10 @@ export const Separator = styled(Stack, {
       true: {
         y: 0,
         // `as any` because its valid only on web
-        // biome-ignore lint/suspicious/noExplicitAny: Web-specific CSS value requires type override
+        // oxlint-disable-next-line typescript/no-explicit-any -- Web-specific CSS value requires type override
         height: isWebPlatform ? ('initial' as any) : 'auto',
         // `as any` because its valid only on web
-        // biome-ignore lint/suspicious/noExplicitAny: Web-specific CSS value requires type override
+        // oxlint-disable-next-line typescript/no-explicit-any -- Web-specific CSS value requires type override
         maxHeight: isWebPlatform ? ('initial' as any) : 'auto',
         width: 0,
         maxWidth: 0,

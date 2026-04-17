@@ -1,5 +1,5 @@
-import { call, delay } from 'redux-saga/effects'
 import { expectSaga, RunResult } from 'redux-saga-test-plan'
+import { call, delay } from 'redux-saga/effects'
 import { navigationRef } from 'src/app/navigation/navigationRef'
 import { navigate } from 'src/app/navigation/rootNavigation'
 import { DeepLinkAction } from 'src/features/deepLinking/deepLinkUtils'
@@ -62,8 +62,11 @@ const unsupportedScreenDeepLinkPayload = {
 
 // WalletConnect URI has its own query parameters that should not be dropped
 const wcUri = 'wc:af098@2?relay-protocol=irn&symKey=51e'
+// oxlint-disable-next-line jest/no-export -- suppressed
 export const wcUniversalLinkUrl = `https://uniswap.org/app/wc?uri=${wcUri}`
+// oxlint-disable-next-line jest/no-export -- suppressed
 export const wcAsParamInUniwapScheme = `uniswap://wc?uri=${wcUri}`
+// oxlint-disable-next-line jest/no-export -- suppressed
 export const wcInUniwapScheme = `uniswap://${wcUri}`
 const invalidUrlSchemeUrl = `uniswap://invalid?param=pepe`
 
@@ -248,94 +251,6 @@ describe(handleDeepLink, () => {
       .silentRun()
   })
 
-  it('Handles Share NFT Item Universal Link', async () => {
-    const path = `nfts/asset/${SAMPLE_SEED_ADDRESS_1}/123`
-    const pathUrl = `${UNISWAP_WEB_URL}/${path}`
-    const hashedUrl = `${UNISWAP_WEB_URL}/#/${path}`
-    const expectedModalState = {
-      address: SAMPLE_SEED_ADDRESS_1,
-      tokenId: '123',
-      isSpam: false,
-    }
-
-    await expectSaga(handleDeepLink, {
-      payload: {
-        url: hashedUrl,
-        coldStart: false,
-      },
-      type: '',
-    })
-      .withState(stateWithActiveAccountAddress)
-      .call(handleUniswapAppDeepLink, {
-        path: `#/${path}`,
-        url: hashedUrl,
-        linkSource: LinkSource.Share,
-      })
-      .call(navigate, MobileScreens.NFTItem, expectedModalState)
-      .returns(undefined)
-      .silentRun()
-
-    await expectSaga(handleDeepLink, {
-      payload: {
-        url: pathUrl,
-        coldStart: false,
-      },
-      type: '',
-    })
-      .withState(stateWithActiveAccountAddress)
-      .call(handleUniswapAppDeepLink, {
-        path,
-        url: pathUrl,
-        linkSource: LinkSource.Share,
-      })
-      .call(navigate, MobileScreens.NFTItem, expectedModalState)
-      .returns(undefined)
-      .silentRun()
-  })
-
-  it('Handles Share NFT Collection Universal Link', async () => {
-    const path = `nfts/collection/${SAMPLE_SEED_ADDRESS_1}`
-    const pathUrl = `${UNISWAP_WEB_URL}/${path}`
-    const hashedUrl = `${UNISWAP_WEB_URL}/#/${path}`
-    const expectedModalState = {
-      collectionAddress: SAMPLE_SEED_ADDRESS_1,
-    }
-
-    await expectSaga(handleDeepLink, {
-      payload: {
-        url: hashedUrl,
-        coldStart: false,
-      },
-      type: '',
-    })
-      .withState(stateWithActiveAccountAddress)
-      .call(handleUniswapAppDeepLink, {
-        path: `#/${path}`,
-        url: hashedUrl,
-        linkSource: LinkSource.Share,
-      })
-      .call(navigate, MobileScreens.NFTCollection, expectedModalState)
-      .returns(undefined)
-      .silentRun()
-
-    await expectSaga(handleDeepLink, {
-      payload: {
-        url: pathUrl,
-        coldStart: false,
-      },
-      type: '',
-    })
-      .withState(stateWithActiveAccountAddress)
-      .call(handleUniswapAppDeepLink, {
-        path,
-        url: pathUrl,
-        linkSource: LinkSource.Share,
-      })
-      .call(navigate, MobileScreens.NFTCollection, expectedModalState)
-      .returns(undefined)
-      .silentRun()
-  })
-
   it('Handles Share Token Item Universal Link', async () => {
     const path = `tokens/ethereum/${SAMPLE_SEED_ADDRESS_1}`
     const pathUrl = `${UNISWAP_WEB_URL}/${path}`
@@ -380,7 +295,7 @@ describe(handleDeepLink, () => {
   })
 
   it('Handles Share currently active Account Address Universal Link', () => {
-    const hash = `#/address/${account.address}`
+    const hash = `#/portfolio/${account.address}`
     const url = `${UNISWAP_WEB_URL}/${hash}`
     return expectSaga(handleDeepLink, {
       payload: {
@@ -400,7 +315,7 @@ describe(handleDeepLink, () => {
   })
 
   it('Handles Share already added Account Address Universal Link', () => {
-    const hash = `#/address/${SAMPLE_SEED_ADDRESS_2}`
+    const hash = `#/portfolio/${SAMPLE_SEED_ADDRESS_2}`
     const url = `${UNISWAP_WEB_URL}/${hash}`
     return expectSaga(handleDeepLink, {
       payload: {
@@ -429,7 +344,7 @@ describe(handleDeepLink, () => {
   })
 
   it('Handles Share external Account Address Universal Link', async () => {
-    const path = `address/${SAMPLE_SEED_ADDRESS_2}`
+    const path = `portfolio/${SAMPLE_SEED_ADDRESS_2}`
     const pathUrl = `${UNISWAP_WEB_URL}/${path}`
     const hashedUrl = `${UNISWAP_WEB_URL}/#/${path}`
     const expectedModalState = {

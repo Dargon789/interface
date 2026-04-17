@@ -1,4 +1,5 @@
-// biome-ignore lint/style/noRestrictedImports: Playwright fixtures need direct analytics import
+/* oxlint-disable react-hooks/rules-of-hooks -- Playwright fixtures use `use()` which is not a React hook */
+// oxlint-disable-next-line no-restricted-imports -- Playwright fixtures need direct analytics import
 import { test as base } from '@playwright/test'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 

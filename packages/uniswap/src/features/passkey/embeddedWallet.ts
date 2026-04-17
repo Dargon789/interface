@@ -1,13 +1,20 @@
 import {
   Action,
   AuthenticationTypes,
-  Authenticator,
+  AuthenticatorNameType,
   RegistrationOptions_AuthenticatorAttachment as AuthenticatorAttachment,
+} from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
+import type {
   ChallengeResponse,
   RegistrationOptions,
-  WalletSigninResponse,
-} from '@uniswap/client-embeddedwallet/dist/uniswap/embeddedwallet/v1/service_pb'
+} from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
 import { EmbeddedWalletApiClient } from 'uniswap/src/data/rest/embeddedWallet/requests'
+import {
+  clearDeviceSession,
+  generateDeviceKeyPair,
+  getDeviceSession,
+  setDeviceSession,
+} from 'uniswap/src/features/passkey/deviceSession'
 import { authenticatePasskey, registerPasskey } from 'uniswap/src/features/passkey/passkey'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { getValidAddress } from 'uniswap/src/utils/addresses'
@@ -16,29 +23,40 @@ import { logger } from 'utilities/src/logger/logger'
 
 export {
   Action,
-  Authenticator,
+  AuthenticationTypes,
   AuthenticatorNameType,
   RegistrationOptions_AuthenticatorAttachment as AuthenticatorAttachment,
-} from '@uniswap/client-embeddedwallet/dist/uniswap/embeddedwallet/v1/service_pb'
+} from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
 
-// Registration
-async function registerNewPasskey({
+export type {
+  Authenticator,
+  RecoveryMethod,
+} from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
+
+export async function registerNewPasskey({
   username,
   authenticatorAttachment,
   action,
+  walletId,
 }: {
   username?: string
   authenticatorAttachment?: AuthenticatorAttachment
   action?: Action
-} = {}): Promise<string | undefined> {
-  const options: RegistrationOptions = { authenticatorAttachment, username } as RegistrationOptions
+  walletId?: string
+} = {}): Promise<{ credential: string }> {
+  const options = { authenticatorAttachment, username } as unknown as RegistrationOptions
   try {
-    const challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
+    const challengeJson = await EmbeddedWalletApiClient.fetchChallengeRequest({
       type: AuthenticationTypes.PASSKEY_REGISTRATION,
       action: action ?? Action.CREATE_WALLET,
       options,
+      walletId,
     })
-    return await registerPasskey(challenge.challengeOptions)
+    if (!challengeJson.challengeOptions) {
+      throw new Error('No challenge options returned for passkey registration')
+    }
+    const passkeyCredential = await registerPasskey(challengeJson.challengeOptions)
+    return { credential: passkeyCredential }
   } catch (registrationError: unknown) {
     if (registrationError instanceof Error && registrationError.name === 'AbortError') {
       logger.debug('embeddedWallet.ts', 'registerNewPasskey', 'User aborted registration')
@@ -49,15 +67,29 @@ async function registerNewPasskey({
   }
 }
 
-export async function createNewEmbeddedWallet(unitag: string): Promise<HexString | undefined> {
+export async function createNewEmbeddedWallet(
+  unitag: string,
+): Promise<{ address: HexString; walletId: string } | undefined> {
   try {
-    const passkeyCredential = await registerNewPasskey({ username: unitag })
-    if (!passkeyCredential) {
-      return undefined
+    const { privateKey, publicKeyBase64: devicePublicKey } = await generateDeviceKeyPair()
+    const { credential } = await registerNewPasskey({ username: unitag })
+
+    const createWalletResp = await EmbeddedWalletApiClient.fetchCreateWalletRequest({
+      credential,
+      devicePublicKey,
+    })
+
+    if (createWalletResp.policyId && createWalletResp.policyExpiresAt && createWalletResp.walletId) {
+      setDeviceSession({
+        privateKey,
+        policyId: createWalletResp.policyId,
+        policyExpiresAt: Number(createWalletResp.policyExpiresAt),
+        walletId: createWalletResp.walletId,
+        deviceKeyQuorumId: createWalletResp.deviceKeyQuorumId,
+      })
     }
 
-    const createWalletResp = await EmbeddedWalletApiClient.fetchCreateWalletRequest({ credential: passkeyCredential })
-    if (createWalletResp.walletAddress) {
+    if (createWalletResp.walletAddress && createWalletResp.walletId) {
       logger.debug(
         'embeddedWallet.ts',
         'createNewEmbeddedWallet',
@@ -77,7 +109,7 @@ export async function createNewEmbeddedWallet(unitag: string): Promise<HexString
         })
         return undefined
       }
-      return address as HexString
+      return { address: address as HexString, walletId: createWalletResp.walletId }
     }
     return undefined
   } catch (error) {
@@ -91,61 +123,61 @@ export async function createNewEmbeddedWallet(unitag: string): Promise<HexString
   }
 }
 
-// Authentication
+// oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
 export async function isSessionAuthenticatedForAction(action: Action): Promise<boolean> {
+  const SESSION_ACTIONS: Action[] = [
+    Action.SIGN_MESSAGE,
+    Action.SIGN_TRANSACTION,
+    Action.SIGN_TYPED_DATA,
+    Action.LIST_AUTHENTICATORS,
+    Action.ACTION_UNSPECIFIED,
+  ]
   if (!SESSION_ACTIONS.includes(action)) {
     return false
   }
-
-  try {
-    const challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
-      type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
-      action,
-    })
-    return challenge.challengeOptions.length === 0
-  } catch (_error) {
-    return false
-  }
+  return getDeviceSession() !== null
 }
 
-// Actions that do not require authentication while a user is signed in
-const SESSION_ACTIONS = [
-  Action.SIGN_MESSAGES,
-  Action.SIGN_TRANSACTIONS,
-  Action.SIGN_TYPED_DATA_BATCH,
-  Action.LIST_AUTHENTICATORS,
-  Action.ACTION_UNSPECIFIED,
-]
-
-async function reauthenticateSessionWithPasskey(action: Action, walletAddress?: string): Promise<ChallengeResponse> {
-  // to restart a new session, we first need to sign in, and then get a new challenge
+async function _reauthenticateSessionWithPasskey(action: Action, walletId?: string): Promise<ChallengeResponse> {
   const signinResponse = await signInWithPasskey()
   if (!signinResponse) {
     throw new Error('Failed to re-authenticate')
   }
-  // TODO(WEB-7785): replace with passing wallet address to sign in request once backend is updated
-  // make sure the signed in wallet address is the same as the wallet address we are trying to authenticate with
-  if (walletAddress && signinResponse.walletAddress !== walletAddress) {
-    // We need to disconnect to nullify the incorrect session
-    await disconnectWallet()
-    throw new Error('not_found: Failed to re-authenticate with correct passkey [00000000-0000-0000-0000-000000000000]')
-  }
   return await EmbeddedWalletApiClient.fetchChallengeRequest({
     type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
     action,
+    walletId: walletId ?? signinResponse.walletId,
   })
 }
 
-export async function authenticateWithPasskey(action: Action, walletAddress?: string): Promise<string | undefined> {
-  let challenge: ChallengeResponse | undefined
+export async function authenticateWithPasskey(
+  action: Action,
+  options?: {
+    walletId?: string
+    message?: string
+    transaction?: string
+    typedData?: string
+    encryptionKey?: string
+    authenticatorId?: string
+  },
+): Promise<string | undefined> {
   try {
-    challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
+    const challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
       type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
       action,
+      walletId: options?.walletId,
+      message: options?.message,
+      transaction: options?.transaction,
+      typedData: options?.typedData,
+      authenticatorId: options?.authenticatorId,
     })
-    // if challengeOptions is defined but the action is a session action, it means the session has expired and we need to reauthenticate
-    if (challenge.challengeOptions && SESSION_ACTIONS.includes(action)) {
-      challenge = await reauthenticateSessionWithPasskey(action, walletAddress)
+
+    // TODO[INFRA-1212]: if challengeOptions is defined but the action is a session action, it means the session has expired and we need to reauthenticate
+    // if (challenge.challengeOptions && SESSION_ACTIONS.includes(action)) {
+    //   challenge = await reauthenticateSessionWithPasskey(action, walletId)
+    // }
+    if (!challenge.challengeOptions) {
+      return undefined
     }
     return await authenticatePasskey(challenge.challengeOptions)
   } catch (error: unknown) {
@@ -164,19 +196,21 @@ export async function authenticateWithPasskey(action: Action, walletAddress?: st
   }
 }
 
-export async function authenticateWithPasskeyForSeedPhraseExport(): Promise<string | undefined> {
-  return await authenticateWithPasskey(Action.EXPORT_SEED_PHRASE)
+export async function authenticateWithPasskeyForSeedPhraseExport(walletId?: string): Promise<string | undefined> {
+  return await authenticateWithPasskey(Action.EXPORT_SEED_PHRASE, { walletId })
 }
 
-export async function signInWithPasskey(): Promise<WalletSigninResponse | undefined> {
+export async function signInWithPasskey(): Promise<
+  { walletAddress: string; walletId: string; exported?: boolean } | undefined
+> {
   try {
     const credential = await authenticateWithPasskey(Action.WALLET_SIGNIN)
     if (!credential) {
       return undefined
     }
-    const signInResp = await EmbeddedWalletApiClient.fetchWalletSigninRequest({ credential })
-    if (signInResp.walletAddress) {
-      return signInResp
+    const signInRespJson = await EmbeddedWalletApiClient.fetchWalletSigninRequest({ credential })
+    if (signInRespJson.walletAddress) {
+      return signInRespJson
     }
     return undefined
   } catch (error) {
@@ -190,92 +224,8 @@ export async function signInWithPasskey(): Promise<WalletSigninResponse | undefi
   }
 }
 
-export async function signMessagesWithPasskey(
-  messages: string[],
-  walletAddress?: string,
-): Promise<string[] | undefined> {
-  try {
-    const credential = await authenticateWithPasskey(Action.SIGN_MESSAGES, walletAddress)
-    const signedMessagesResp = await EmbeddedWalletApiClient.fetchSignMessagesRequest({ messages, credential })
-    return signedMessagesResp.signedMessages
-  } catch (error) {
-    logger.error(error, {
-      tags: {
-        file: 'embeddedWallet.ts',
-        function: 'signMessagesWithPasskey',
-      },
-    })
-    throw error
-  }
-}
-
-export async function signTransactionsWithPasskey(
-  transactions: string[],
-  walletAddress?: string,
-): Promise<string[] | undefined> {
-  try {
-    const credential = await authenticateWithPasskey(Action.SIGN_TRANSACTIONS, walletAddress)
-    const signedTransactionResp = await EmbeddedWalletApiClient.fetchSignTransactionsRequest({
-      transactions,
-      credential,
-    })
-    return signedTransactionResp.signedTransactions
-  } catch (error) {
-    logger.error(error, {
-      tags: {
-        file: 'embeddedWallet.ts',
-        function: 'signTransactionWithPasskey',
-      },
-    })
-    throw error
-  }
-}
-
-export async function signTypedDataWithPasskey(
-  typedDataBatch: string[],
-  walletAddress?: string,
-): Promise<string[] | undefined> {
-  try {
-    const credential = await authenticateWithPasskey(Action.SIGN_TYPED_DATA_BATCH, walletAddress)
-    const signedTypedDataResp = await EmbeddedWalletApiClient.fetchSignTypedDataRequest({
-      typedDataBatch,
-      credential,
-    })
-    return signedTypedDataResp.signature
-  } catch (error) {
-    logger.error(error, {
-      tags: {
-        file: 'embeddedWallet.ts',
-        function: 'signTypedDataWithPasskey',
-      },
-    })
-    throw error
-  }
-}
-
-export async function exportEncryptedSeedPhrase(encryptionKey: string): Promise<string | undefined> {
-  try {
-    const credential = await authenticateWithPasskey(Action.EXPORT_SEED_PHRASE)
-    if (!credential) {
-      return undefined
-    }
-    const seedPhraseResp = await EmbeddedWalletApiClient.fetchExportSeedPhraseRequest({
-      encryptionKey,
-      credential,
-    })
-    return seedPhraseResp.encryptedSeedPhrase
-  } catch (error) {
-    logger.error(error, {
-      tags: {
-        file: 'embeddedWallet.ts',
-        function: 'exportEncryptedSeedPhrase',
-      },
-    })
-    throw error
-  }
-}
-
 export async function disconnectWallet(): Promise<void> {
+  clearDeviceSession()
   try {
     await EmbeddedWalletApiClient.fetchDisconnectRequest()
   } catch (error) {
@@ -289,83 +239,81 @@ export async function disconnectWallet(): Promise<void> {
   }
 }
 
-export async function listAuthenticators(walletAddress?: string): Promise<Authenticator[]> {
-  try {
-    const credential = await authenticateWithPasskey(Action.LIST_AUTHENTICATORS, walletAddress)
-    const listAuthenticatorsResp = await EmbeddedWalletApiClient.fetchListAuthenticatorsRequest({ credential })
-    return listAuthenticatorsResp.authenticators
-  } catch (error) {
-    logger.error(error, {
-      tags: {
-        file: 'embeddedWallet.ts',
-        function: 'listAuthenticators',
-      },
-    })
-    throw error
-  }
+export {
+  deleteAuthenticator,
+  deleteRecoveryMethod,
+  listAuthenticators,
+  registerNewAuthenticator,
+  startAddAuthenticatorSession,
+} from 'uniswap/src/features/passkey/authenticatorManagement'
+export type { SetupProgress } from 'uniswap/src/features/passkey/recoverySetup'
+export { encryptAndStoreRecovery } from 'uniswap/src/features/passkey/recoverySetup'
+// Re-exports from sub-modules — consumers continue to import from this file
+export {
+  exportEncryptedSeedPhrase,
+  signMessageWithPasskey,
+  signTransactionWithPasskey,
+  signTypedDataWithPasskey,
+} from 'uniswap/src/features/passkey/signing'
+
+/** Result of the crypto phase — feed this into {@link authorizeAndCompleteRecovery}. */
+export interface EncryptedRecoveryState {
+  publicKey: string
+  authMethodId: string
+  encryptedKeyId: string
 }
 
-export async function registerNewAuthenticator({
-  authenticatorAttachment,
-  existingCredential,
-  username,
-}: {
-  authenticatorAttachment: AuthenticatorAttachment
-  existingCredential?: string
-  username?: string
-}): Promise<boolean | undefined> {
-  try {
-    const newPasskeyCredential = await registerNewPasskey({
-      authenticatorAttachment,
-      action: Action.REGISTER_NEW_AUTHENTICATION_TYPES,
-      username,
-    })
-    if (newPasskeyCredential && existingCredential) {
-      await EmbeddedWalletApiClient.fetchRegisterNewAuthenticatorRequest({
-        newCredential: newPasskeyCredential,
-        newAuthenticationType: AuthenticationTypes.PASSKEY_REGISTRATION,
-        existingCredential,
-        existingAuthenticationType: AuthenticationTypes.PASSKEY_AUTHENTICATION,
-      })
-      return true
-    }
-    return false
-  } catch (error) {
-    logger.error(error, {
-      tags: {
-        file: 'embeddedWallet.ts',
-        function: 'registerNewAuthenticator',
-      },
-    })
-    throw error
-  }
-}
+/**
+ * Phase 2: Challenge → passkey authentication → SetupRecovery.
+ *
+ * Must be called directly from a user gesture (button click) so the WebAuthn
+ * transient activation window is still open when `authenticatePasskey` fires.
+ */
+export type RecoveryAuthMethodType = 'EMAIL' | 'GOOGLE' | 'APPLE'
 
-export async function deleteAuthenticator({
-  authenticator,
-  credential,
+export async function authorizeAndCompleteRecovery({
+  encrypted,
+  email,
+  walletId,
+  privyUserId,
+  authMethodType,
+  onProgress,
 }: {
-  authenticator: Authenticator
-  credential?: string
-}): Promise<boolean | undefined> {
-  try {
-    if (credential) {
-      await EmbeddedWalletApiClient.fetchDeleteAuthenticatorRequest({
-        credential,
-        authenticationType: AuthenticationTypes.PASSKEY_AUTHENTICATION,
-        authenticatorId: authenticator.id,
-        authenticatorType: authenticator.type,
-      })
-      return true
-    }
-    return false
-  } catch (error) {
-    logger.error(error, {
-      tags: {
-        file: 'embeddedWallet.ts',
-        function: 'deleteAuthenticator',
-      },
-    })
-    throw error
+  encrypted: EncryptedRecoveryState
+  email: string
+  walletId: string
+  privyUserId: string
+  authMethodType: RecoveryAuthMethodType
+  onProgress?: (step: import('uniswap/src/features/passkey/recoverySetup').SetupProgress) => void
+}): Promise<{ recoveryQuorumId: string }> {
+  // Challenge — server creates recovery quorum, returns PATCH payload as WebAuthn challenge
+  onProgress?.('challenging')
+  const challenge = await EmbeddedWalletApiClient.fetchChallengeRequest({
+    type: AuthenticationTypes.PASSKEY_AUTHENTICATION,
+    action: Action.SETUP_RECOVERY,
+    walletId,
+    authPublicKey: encrypted.publicKey,
+    privyUserId,
+  })
+  if (!challenge.challengeOptions) {
+    throw new Error('No challenge options for SETUP_RECOVERY')
   }
+
+  // Passkey signs the PATCH payload (existing passkey authorizes quorum link)
+  onProgress?.('authenticating')
+  const credential = await authenticatePasskey(challenge.challengeOptions)
+
+  // Complete setup with passkey credential
+  onProgress?.('registering')
+  const result = await EmbeddedWalletApiClient.fetchSetupRecovery({
+    credential,
+    authMethodId: encrypted.authMethodId,
+    authMethodType,
+    authMethodIdentifier: email,
+    encryptedKeyId: encrypted.encryptedKeyId,
+  })
+  if (!result.success || !result.recoveryQuorumId) {
+    throw new Error('Backend failed to register recovery quorum')
+  }
+  return { recoveryQuorumId: result.recoveryQuorumId }
 }

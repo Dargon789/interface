@@ -1,16 +1,20 @@
-// biome-ignore lint/style/noRestrictedImports: Anvil test fixtures need direct ethers imports
+/* oxlint-disable react-hooks/rules-of-hooks -- Playwright fixtures use `use()` which is not a React hook */
+// oxlint-disable-next-line no-restricted-imports -- Anvil test fixtures need direct ethers imports
 import { test as base } from '@playwright/test'
 import { MaxUint160, MaxUint256, permit2Address } from '@uniswap/permit2-sdk'
 import { WETH_ADDRESS } from '@uniswap/universal-router-sdk'
-import { getAnvilManager } from 'playwright/anvil/anvil-manager'
-import { setErc20BalanceWithMultipleSlots } from 'playwright/anvil/utils'
-import { TEST_WALLET_ADDRESS } from 'playwright/fixtures/wallets'
 import PERMIT2_ABI from 'uniswap/src/abis/permit2'
 import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { DAI, USDT } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { assume0xAddress } from 'utils/wagmi'
+import { sleep } from 'utilities/src/time/timing'
 import { type Address, erc20Abi } from 'viem'
+import { mainnet } from 'viem/chains'
+import type { AnvilClient as BaseAnvilClient } from '~/playwright/anvil/anvil-manager'
+import { getAnvilManager } from '~/playwright/anvil/anvil-manager'
+import { setErc20BalanceWithMultipleSlots } from '~/playwright/anvil/utils'
+import { TEST_WALLET_ADDRESS } from '~/playwright/fixtures/wallets'
+import { assume0xAddress } from '~/utils/wagmi'
 
 const SNAPSHOTS_ENABLED = process.env.ENABLE_ANVIL_SNAPSHOTS === 'true'
 
@@ -18,10 +22,22 @@ class WalletError extends Error {
   code?: number
 }
 
-const allowedErc20BalanceAddresses = [USDT.address, DAI.address, WETH_ADDRESS(UniverseChainId.Mainnet)]
+// Known balance mapping slots for tokens with non-standard storage layouts
+const KNOWN_BALANCE_SLOTS: Record<string, number> = {
+  // WEETH (ether.fi weETH) — balance mapping at slot 101
+  '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee': 101,
+}
+
+const allowedErc20BalanceAddresses = [
+  USDT.address,
+  DAI.address,
+  WETH_ADDRESS(UniverseChainId.Mainnet),
+  ...Object.keys(KNOWN_BALANCE_SLOTS),
+]
 
 // Helper to check if error is a timeout
 const isTimeoutError = (error: any): boolean => {
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   return (
     error?.message?.includes('timeout') ||
     error?.message?.includes('took too long') ||
@@ -31,8 +47,8 @@ const isTimeoutError = (error: any): boolean => {
 
 // Create anvil client with restart capability
 const createAnvilClient = () => {
-  const client = getAnvilManager().getClient()
-  return client.extend((client) => ({
+  const client: BaseAnvilClient = getAnvilManager().getClient()
+  const helpers = {
     async getWalletAddress() {
       return TEST_WALLET_ADDRESS
     },
@@ -53,6 +69,7 @@ const createAnvilClient = () => {
         erc20Address: address,
         user: walletAddress,
         newBalance: balance,
+        knownSlot: KNOWN_BALANCE_SLOTS[address],
       })
     },
     async getErc20Balance(address: Address, owner?: Address) {
@@ -88,6 +105,7 @@ const createAnvilClient = () => {
         functionName: 'approve',
         args: [spender, amount],
         account: owner ?? TEST_WALLET_ADDRESS,
+        chain: mainnet,
       })
     },
     async getPermit2Allowance({ owner, token, spender }: { owner?: Address; token: Address; spender: Address }) {
@@ -120,6 +138,7 @@ const createAnvilClient = () => {
         functionName: 'approve',
         args: [token, spender, amount, expiration],
         account: owner ?? TEST_WALLET_ADDRESS,
+        chain: mainnet,
       })
     },
     async setV2PoolReserves({
@@ -209,11 +228,12 @@ const createAnvilClient = () => {
         await client.revert({ id: snapshotId })
       }
     },
-  }))
+  }
+  return Object.assign(client, helpers)
 }
 
 export const test = base.extend<{ anvil: AnvilClient; delegateToZeroAddress?: void }>({
-  // biome-ignore lint/correctness/noEmptyPattern: it's ok here
+  // oxlint-disable-next-line no-empty-pattern -- it's ok here
   async anvil({}, use) {
     // Ensure Anvil is running and healthy
     if (!(await getAnvilManager().ensureHealthy())) {
@@ -233,12 +253,9 @@ export const test = base.extend<{ anvil: AnvilClient; delegateToZeroAddress?: vo
       if (isTimeoutError(error)) {
         // Anvil timed out during snapshot, restart and retry
         console.error('Snapshot timeout, restarting Anvil...')
-        if (await getAnvilManager().restart()) {
-          await new Promise((resolve) => setTimeout(resolve, 2000))
-          snapshotId = await testAnvil.snapshot()
-        } else {
-          throw new Error('Failed to restart Anvil after snapshot timeout')
-        }
+        await getAnvilManager().restart()
+        await sleep(2000)
+        snapshotId = await testAnvil.snapshot()
       } else {
         throw error
       }
@@ -247,21 +264,30 @@ export const test = base.extend<{ anvil: AnvilClient; delegateToZeroAddress?: vo
     // Run the test
     await use(testAnvil)
 
+    // Check anvil health status
+    const isHealthy = await getAnvilManager().isHealthy()
+    if (!isHealthy) {
+      console.error('Anvil is not healthy after test, stopping...')
+      // Don't restart here - let the next test handle it
+      // This avoids race conditions between parallel tests
+      await getAnvilManager().stop()
+      return
+    }
+
     // Cleanup with auto-recovery
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (snapshotId) {
         await testAnvil.revert({ id: snapshotId })
       } else {
         await testAnvil.reset()
       }
     } catch (error) {
+      console.error('Cleanup failed:', error)
       if (isTimeoutError(error)) {
         console.error('Cleanup timeout, marking Anvil for restart...')
         // Don't restart here - let the next test handle it
         // This avoids race conditions between parallel tests
-      } else {
-        console.error('Cleanup failed:', error)
+      } else if (snapshotId) {
         try {
           await testAnvil.reset()
         } catch (resetError) {
@@ -278,14 +304,17 @@ export const test = base.extend<{ anvil: AnvilClient; delegateToZeroAddress?: vo
         const nonce = await anvil.getTransactionCount({
           address: TEST_WALLET_ADDRESS,
         })
-        const auth = await anvil.account.signAuthorization({
+        const auth = await anvil.signAuthorization({
+          account: TEST_WALLET_ADDRESS,
           contractAddress: ZERO_ADDRESS,
-          chainId: anvil.chain.id,
+          chainId: anvil.chain?.id,
           nonce: nonce + 1,
         })
         await anvil.sendTransaction({
           authorizationList: [auth],
           to: TEST_WALLET_ADDRESS,
+          account: TEST_WALLET_ADDRESS,
+          chain: mainnet,
         })
         // Reset the wallet to the original balance because tests might rely on that
         await anvil.setBalance({ address: TEST_WALLET_ADDRESS, value: originalBalance })
@@ -298,4 +327,4 @@ export const test = base.extend<{ anvil: AnvilClient; delegateToZeroAddress?: vo
   ],
 })
 
-export type AnvilClient = ReturnType<typeof createAnvilClient>
+export type AnvilClient = BaseAnvilClient & ReturnType<typeof createAnvilClient>

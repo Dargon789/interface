@@ -3,19 +3,14 @@ import { Flex } from 'ui/src'
 import { CurrencyInputPanel } from 'uniswap/src/components/CurrencyInputPanel/CurrencyInputPanel'
 import { SectionName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
+import { useSwapFormScreenStore } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/useSwapFormScreenStore'
 import { useCurrencyInputFocusedStyle } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/hooks/useCurrencyInputFocusedStyle'
 import { WalletRestoreButton } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/WalletRestoreButton'
-import { useSwapFormScreenStore } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/useSwapFormScreenStore'
-import { usePriceDifference } from 'uniswap/src/features/transactions/swap/hooks/usePriceDifference'
-import { useSwapFormStore } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { isWebPlatform } from 'utilities/src/platform'
 
 export function SwapFormCurrencyOutputPanel(): JSX.Element {
   const { t } = useTranslation()
-
-  const derivedSwapInfo = useSwapFormStore((s) => s.derivedSwapInfo)
-  const { priceDifferencePercentage } = usePriceDifference(derivedSwapInfo)
 
   const {
     outputRef,
@@ -33,7 +28,6 @@ export function SwapFormCurrencyOutputPanel(): JSX.Element {
     formattedDerivedValue,
     tokenColor,
     walletNeedsRestore,
-    isBridge,
     trade,
     onSetPresetValue,
     onToggleIsFiatMode,
@@ -58,7 +52,6 @@ export function SwapFormCurrencyOutputPanel(): JSX.Element {
     formattedDerivedValue: s.formattedDerivedValue,
     tokenColor: s.tokenColor,
     walletNeedsRestore: s.walletNeedsRestore,
-    isBridge: s.isBridge,
     trade: s.trade,
     onSetPresetValue: s.onSetPresetValue,
     onToggleIsFiatMode: s.onToggleIsFiatMode,
@@ -86,14 +79,13 @@ export function SwapFormCurrencyOutputPanel(): JSX.Element {
           focus={selectingCurrencyField ? undefined : focusOnCurrencyField === CurrencyField.OUTPUT}
           isFiatMode={isFiatMode && exactFieldIsOutput}
           isLoading={!exactFieldIsOutput && trade.isFetching}
-          priceDifferencePercentage={priceDifferencePercentage}
           resetSelection={resetSelection}
           showSoftInputOnFocus={false}
           usdValue={currencyAmountsUSDValue[CurrencyField.OUTPUT]}
           value={exactFieldIsOutput ? exactValue : formattedDerivedValue}
           valueIsIndicative={!exactFieldIsOutput && trade.indicativeTrade && !trade.trade}
           tokenColor={tokenColor}
-          onPressDisabled={isBridge ? undefined : showTemporaryExactOutputUnavailableWarning}
+          onPressDisabled={showTemporaryExactOutputUnavailableWarning}
           onPressIn={onFocusOutput}
           onSelectionChange={onOutputSelectionChange}
           onSetExactAmount={onSetExactAmountOutput}

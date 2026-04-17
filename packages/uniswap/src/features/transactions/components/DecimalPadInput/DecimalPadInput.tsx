@@ -1,20 +1,22 @@
 import {
   forwardRef,
   memo,
-  RefObject,
+  type RefObject,
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react'
 import type { LayoutChangeEvent } from 'react-native'
 import { Flex, useIsShortMobileDevice } from 'ui/src'
-import { TextInputProps } from 'uniswap/src/components/input/TextInput'
+import { type TextInputProps } from 'uniswap/src/components/input/TextInput'
 import { DecimalPad } from 'uniswap/src/features/transactions/components/DecimalPadInput/DecimalPad'
-import { KeyAction, KeyLabel } from 'uniswap/src/features/transactions/components/DecimalPadInput/types'
+import { KeyAction, type KeyLabel } from 'uniswap/src/features/transactions/components/DecimalPadInput/types'
 import { maxDecimalsReached } from 'utilities/src/format/truncateToMaxDecimals'
+import { isNumeric, isSafeNumber } from 'utilities/src/primitives/integer'
 import { useEvent } from 'utilities/src/react/hooks'
 
 const LONG_PRESS_DELETE_INTERVAL_MS = 20
@@ -61,25 +63,45 @@ export function DecimalPadCalculateSpace({
   id,
   decimalPadRef,
   additionalElementsHeight = 0,
+  isDecimalPadReady = false,
 }: {
   id: DecimalPadCalculatedSpaceId
-  decimalPadRef: RefObject<DecimalPadInputRef>
+  decimalPadRef: RefObject<DecimalPadInputRef | null>
   additionalElementsHeight?: number
+  /** Used to optimistically set the height of the `DecimalPad` if it has already been rendered. */
+  isDecimalPadReady?: boolean
 }): JSX.Element {
   const isShortMobileDevice = useIsShortMobileDevice()
-  const [bottomScreenHeight, setBottomScreenHeight] = useState<number | null>(null)
+  const precalculatedHeight = precalculatedSpace[id]
+
+  const [bottomScreenHeight, setBottomScreenHeight] = useState<number | null>(precalculatedHeight ?? null)
+
+  useLayoutEffect(() => {
+    if (precalculatedHeight !== undefined) {
+      decimalPadRef.current?.setMaxHeight(precalculatedHeight)
+    }
+  }, [precalculatedHeight, decimalPadRef])
 
   const onBottomScreenLayout = useEvent((event: LayoutChangeEvent): void => {
+    if (precalculatedHeight !== undefined) {
+      setBottomScreenHeight(precalculatedHeight)
+      decimalPadRef.current?.setMaxHeight(precalculatedHeight)
+      return
+    }
+
     const height = event.nativeEvent.layout.height
+
     setBottomScreenHeight(height)
     // We call `setMaxHeight` even if `additionalElementsHeight` is not set yet,
     // because sometimes it won't be set at all if there are no additional elements.
     decimalPadRef.current?.setMaxHeight(height - additionalElementsHeight)
-    precalculatedSpace[id] = height
   })
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we only want to run it when additionalElementsHeight is changed
+  // oxlint-disable-next-line react/exhaustive-deps -- we only want to run it when additionalElementsHeight is changed
   useEffect(() => {
+    if (precalculatedHeight !== undefined) {
+      return
+    }
     if (!bottomScreenHeight) {
       // There can be a race condition where either `bottomScreenHeight` or `additionalElementsHeight`
       // could be ready first. If `bottomScreenHeight` is not ready yet, we skip this and
@@ -87,19 +109,20 @@ export function DecimalPadCalculateSpace({
       return
     }
     decimalPadRef.current?.setMaxHeight(bottomScreenHeight - additionalElementsHeight)
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [additionalElementsHeight])
 
   useEffect(() => {
-    const precalculatedHeight = precalculatedSpace[id]
-
-    if (precalculatedHeight) {
+    if (isDecimalPadReady === true && bottomScreenHeight && precalculatedHeight === undefined) {
       // If we have already rendered this screen, we already know how much space this phone has,
       // so we optimistically set the height instead of waiting for the layout event.
       // This improves the perceived loading time of the `DecimalPad`,
       // given that it fades in only after the height is known.
-      decimalPadRef.current?.setMaxHeight(precalculatedHeight)
+      const height = bottomScreenHeight - additionalElementsHeight
+      decimalPadRef.current?.setMaxHeight(height)
+      precalculatedSpace[id] = height
     }
-  }, [decimalPadRef, id])
+  }, [isDecimalPadReady, bottomScreenHeight, id, additionalElementsHeight, precalculatedHeight, decimalPadRef])
 
   return <Flex fill mt={isShortMobileDevice ? '$spacing2' : '$spacing8'} onLayout={onBottomScreenLayout} />
 }
@@ -122,9 +145,10 @@ export const DecimalPadInput = memo(
     const [disabledKeys, setDisabledKeys] = useState<Partial<Record<KeyLabel, boolean>>>({})
     const [maxHeight, setMaxHeight] = useState<number | null>(null)
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: -updateDisabledKeys, +selectionRef,maxDecimals
+    // oxlint-disable-next-line react/exhaustive-deps -- -updateDisabledKeys, +selectionRef,maxDecimals
     useEffect(() => {
       updateDisabledKeys(valueRef.current)
+      // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     }, [valueRef, selectionRef, maxDecimals])
 
     useImperativeHandle(ref, () => ({
@@ -205,7 +229,7 @@ export const DecimalPadInput = memo(
           // Prevent unnecessary re-renders and return the same value
           // if no key was updated (react state won't be updated if value is the
           // same as the previous one in terms of referential equality)
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unnecessary-condition
+          // oxlint-disable-next-line typescript/no-unsafe-return, typescript/no-unnecessary-condition
           return isUpdated ? newDisabledKeys : prevDisabledKeys
         })
       },
@@ -214,6 +238,10 @@ export const DecimalPadInput = memo(
 
     const updateValue = useCallback(
       (newValue: string): void => {
+        if (isNumeric(newValue, true) && !isSafeNumber(newValue)) {
+          return
+        }
+
         setValue(newValue)
         updateDisabledKeys(newValue)
       },
@@ -224,6 +252,8 @@ export const DecimalPadInput = memo(
     const handleInsert = useCallback(
       (label: KeyLabel): void => {
         const { start, end } = getCurrentSelection()
+        const previousValue = valueRef.current
+
         if (start === undefined || end === undefined) {
           resetSelection({ start: valueRef.current.length + 1, end: valueRef.current.length + 1 })
           // has no text selection, cursor is at the end of the text input
@@ -232,12 +262,22 @@ export const DecimalPadInput = memo(
           resetSelection({ start: start + 1, end: start + 1 })
           updateValue(valueRef.current.slice(0, start) + label + valueRef.current.slice(end))
         }
+
+        // If the value wasn't updated (e.g., rejected by the consumer because it exceeds
+        // the safe number range), restore the cursor to its previous position.
+        if (valueRef.current === previousValue) {
+          if (start === undefined || end === undefined) {
+            resetSelection({ start: previousValue.length, end: previousValue.length })
+          } else {
+            resetSelection({ start, end })
+          }
+        }
       },
       [updateValue, resetSelection, valueRef, getCurrentSelection],
     )
 
     const handleDelete = useCallback((): void => {
-      // eslint-disable-next-line max-params
+      // oxlint-disable-next-line max-params
       const isEntireTextSelected = (start: number, end: number, value: string): boolean =>
         start === 0 && end === value.length
 

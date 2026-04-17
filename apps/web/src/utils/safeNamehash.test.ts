@@ -1,5 +1,5 @@
 import { namehash } from '@ethersproject/hash'
-import { safeNamehash } from 'utils/safeNamehash'
+import { safeNamehash } from '~/utils/safeNamehash'
 
 describe('safeNamehash', () => {
   const emoji = '🙂'
@@ -16,7 +16,7 @@ describe('safeNamehash', () => {
 
   // suppress console.debug for the next test
   beforeEach(() => {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    // oxlint-disable-next-line typescript/no-empty-function
     vi.spyOn(console, 'info').mockImplementation(() => {})
   })
 

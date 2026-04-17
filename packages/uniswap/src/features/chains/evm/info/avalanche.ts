@@ -3,6 +3,7 @@ import { GraphQLApi } from '@universe/api'
 import { SwapConfigKey } from '@universe/gating'
 import { AVALANCHE_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import { DEFAULT_NATIVE_ADDRESS_LEGACY, getQuicknodeEndpointUrl } from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
 import {
@@ -59,6 +60,7 @@ export const AVALANCHE_CHAIN_INFO = {
     logo: AVALANCHE_LOGO,
   },
   networkLayer: NetworkLayer.L1,
+  blockTimeMs: 2000,
   pendingTransactionsRetryOptions: undefined,
   rpcUrls: {
     [RPCType.Public]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Avalanche)] },
@@ -68,7 +70,8 @@ export const AVALANCHE_CHAIN_INFO = {
   tokens,
   statusPage: undefined,
   supportsV4: true,
-  urlParam: 'avalanche',
+  supportsNFTs: true,
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Avalanche],
   wrappedNativeCurrency: {
     name: 'Wrapped AVAX',
     symbol: 'WAVAX',

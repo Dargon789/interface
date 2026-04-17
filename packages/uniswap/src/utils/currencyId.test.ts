@@ -7,6 +7,8 @@ import {
   areCurrencyIdsEqual,
   buildCurrencyId,
   buildNativeCurrencyId,
+  buildWrappedNativeCurrencyId,
+  buildWrappedNativeCurrencyIdWithThrow,
   currencyAddress,
   currencyId,
   currencyIdToAddress,
@@ -42,7 +44,7 @@ describe('currencyId', () => {
 
   it.each([[UniverseChainId.Mainnet, DAI.address, `${UniverseChainId.Mainnet}-${DAI.address}`]])(
     'buildCurrencyId builds correct ID for chainId=%s + address=%s = %s',
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     (chainId, address, expectedId) => {
       expect(buildCurrencyId(chainId, address)).toEqual(expectedId)
     },
@@ -54,7 +56,7 @@ describe('currencyId', () => {
     [currencyId(DAI), currencyId(ETH), false],
   ])(
     'areCurrencyIdsEqual returns correct comparison for currencyId1=%s and currencyId2=%s = %s',
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     (currencyId1, currencyId2, expected) => {
       expect(areCurrencyIdsEqual(currencyId1, currencyId2)).toBe(expected)
     },
@@ -83,6 +85,21 @@ describe('currencyId', () => {
   })
 
   it.each([
+    [UniverseChainId.Mainnet, expect.stringContaining('-')],
+    [UniverseChainId.Tempo, undefined],
+  ])('buildWrappedNativeCurrencyId returns correct result for chainId=%s', (chainId, expected) => {
+    expect(buildWrappedNativeCurrencyId(chainId)).toEqual(expected)
+  })
+
+  it('buildWrappedNativeCurrencyIdWithThrow throws for Tempo', () => {
+    expect(() => buildWrappedNativeCurrencyIdWithThrow(UniverseChainId.Tempo)).toThrow()
+  })
+
+  it('buildWrappedNativeCurrencyIdWithThrow returns string for Mainnet', () => {
+    expect(buildWrappedNativeCurrencyIdWithThrow(UniverseChainId.Mainnet)).toEqual(expect.any(String))
+  })
+
+  it.each([
     [UniverseChainId.Mainnet, getNativeAddress(UniverseChainId.Mainnet), true],
     [UniverseChainId.Polygon, getNativeAddress(UniverseChainId.Polygon), true],
     [UniverseChainId.Mainnet, null, true],
@@ -93,9 +110,12 @@ describe('currencyId', () => {
     [UniverseChainId.Solana, getNativeAddress(UniverseChainId.Solana), true],
     [UniverseChainId.Solana, '11111', false],
     [UniverseChainId.Solana, DEFAULT_NATIVE_ADDRESS_SOLANA, true],
+    // Invalid chainId should return false instead of crashing
+    [10143, DAI.address, false],
+    [99999, null, false],
   ])(
     'isNativeCurrencyAddress returns correct result for chainId=%s + address=%s = %s',
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     (chainId, address, expected) => {
       expect(isNativeCurrencyAddress(chainId, address)).toEqual(expected)
     },

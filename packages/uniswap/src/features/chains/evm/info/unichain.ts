@@ -1,5 +1,6 @@
 import { GraphQLApi } from '@universe/api'
 import { ETH_LOGO, ETHEREUM_LOGO, UNICHAIN_LOGO, UNICHAIN_SEPOLIA_LOGO } from 'ui/src/assets'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import { DEFAULT_NATIVE_ADDRESS_LEGACY, getQuicknodeEndpointUrl } from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
 import { GENERIC_L2_GAS_CONFIG } from 'uniswap/src/features/chains/gasDefaults'
@@ -38,11 +39,12 @@ export const UNICHAIN_CHAIN_INFO = {
   docs: 'https://docs.unichain.org',
   elementName: ElementName.ChainUnichain,
   explorer: {
-    name: 'Unichain Explorer',
+    name: 'Uniscan',
     url: 'https://uniscan.xyz/',
   },
   openseaName: 'unichain',
   interfaceName: 'unichain',
+  searchAliases: ['uni chain'],
   label: 'Unichain',
   logo: UNICHAIN_LOGO,
   nativeCurrency: {
@@ -53,6 +55,7 @@ export const UNICHAIN_CHAIN_INFO = {
     logo: ETHEREUM_LOGO,
   },
   networkLayer: NetworkLayer.L2,
+  blockTimeMs: 1000,
   pendingTransactionsRetryOptions: undefined,
   rpcUrls: {
     [RPCType.Public]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Unichain)] },
@@ -63,7 +66,8 @@ export const UNICHAIN_CHAIN_INFO = {
   statusPage: undefined,
   subblockTimeMs: 200,
   supportsV4: true,
-  urlParam: 'unichain',
+  supportsNFTs: true,
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Unichain],
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
     symbol: 'WETH',
@@ -73,6 +77,7 @@ export const UNICHAIN_CHAIN_INFO = {
   testnet: false,
   gasConfig: GENERIC_L2_GAS_CONFIG,
   tradingApiPollingIntervalMs: 150,
+  acrossProtocolAddress: '0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64',
 } as const satisfies UniverseChainInfo
 
 const testnetTokens = buildChainTokens({
@@ -99,10 +104,10 @@ export const UNICHAIN_SEPOLIA_CHAIN_INFO = {
   docs: 'https://docs.unichain.org/',
   elementName: ElementName.ChainUnichainSepolia,
   explorer: {
-    name: 'Unichain Sepolia Explorer',
-    url: 'https://unichain-sepolia.blockscout.com/',
+    name: 'Uniscan Sepolia',
+    url: 'https://sepolia.uniscan.xyz/',
   },
-  interfaceName: 'astrochain',
+  interfaceName: 'unichain_sepolia',
   label: 'Unichain Sepolia',
   logo: UNICHAIN_SEPOLIA_LOGO,
   nativeCurrency: {
@@ -113,6 +118,7 @@ export const UNICHAIN_SEPOLIA_CHAIN_INFO = {
     logo: ETH_LOGO,
   },
   networkLayer: NetworkLayer.L2,
+  blockTimeMs: 1000,
   pendingTransactionsRetryOptions: undefined,
   rpcUrls: {
     [RPCType.Public]: {
@@ -129,7 +135,8 @@ export const UNICHAIN_SEPOLIA_CHAIN_INFO = {
   statusPage: undefined,
   subblockTimeMs: 200,
   supportsV4: true,
-  urlParam: 'unichain_sepolia',
+  supportsNFTs: false,
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.UnichainSepolia],
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
     symbol: 'WETH',

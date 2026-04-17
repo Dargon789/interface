@@ -7,16 +7,15 @@ import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/type
 import { WarningInfo } from 'uniswap/src/components/modals/WarningModal/WarningInfo'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
-import { usePriceUXEnabled } from 'uniswap/src/features/transactions/swap/hooks/usePriceUXEnabled'
 import { openUri } from 'uniswap/src/utils/linking'
 import { isWebPlatform } from 'utilities/src/platform'
 
 export function SwapFeeWarning({
-  noFee,
+  noUniswapInterfaceFees,
+  noFeeOnThisSwap,
   children,
   isJupiter,
-}: PropsWithChildren<{ noFee: boolean; isJupiter: boolean }>): JSX.Element {
-  const priceUXEnabled = usePriceUXEnabled()
+}: PropsWithChildren<{ noUniswapInterfaceFees: boolean; noFeeOnThisSwap: boolean; isJupiter: boolean }>): JSX.Element {
   const colors = useSporeColors()
   const { t } = useTranslation()
 
@@ -24,19 +23,20 @@ export function SwapFeeWarning({
     await openUri({ uri: uniswapUrls.helpArticleUrls.swapFeeInfo })
   }
 
-  const caption = priceUXEnabled
-    ? t('fee.uniswap.description')
-    : noFee
-      ? t('swap.warning.uniswapFee.message.default')
-      : isJupiter
-        ? t('swap.fees.jupiter.message')
-        : t('swap.warning.uniswapFee.message.included')
+  const caption =
+    noUniswapInterfaceFees && !isJupiter
+      ? t('swap.warning.noInterfaceFees.message')
+      : noFeeOnThisSwap
+        ? t('swap.warning.uniswapFee.message.default')
+        : isJupiter
+          ? t('swap.fees.jupiter.message')
+          : t('swap.warning.uniswapFee.message.included')
 
   return (
     <WarningInfo
       infoButton={
         <TouchableArea onPress={onPressLearnMore}>
-          <Text color="$accent1" variant={isWebPlatform ? (priceUXEnabled ? 'buttonLabel4' : 'body4') : 'buttonLabel2'}>
+          <Text color="$neutral1" variant={isWebPlatform ? 'body4' : 'buttonLabel2'}>
             {t('common.button.learn')}
           </Text>
         </TouchableArea>

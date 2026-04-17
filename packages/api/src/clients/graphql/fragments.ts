@@ -1,19 +1,21 @@
 import { type UseFragmentResult, useFragment } from '@apollo/client'
 import type {
-  Token,
   TokenBasicInfoPartsFragment,
   TokenBasicProjectPartsFragment,
   TokenMarketPartsFragment,
   TokenProjectMarketsPartsFragment,
+  TokenProjectTokensTvlPartsFragment,
   TokenProjectUrlsPartsFragment,
-} from '@universe/api/src/clients/graphql/__generated__/types-and-hooks'
+} from '@universe/api/src/clients/graphql/__generated__/operations'
 import {
   TokenBasicInfoPartsFragmentDoc,
   TokenBasicProjectPartsFragmentDoc,
   TokenMarketPartsFragmentDoc,
   TokenProjectMarketsPartsFragmentDoc,
+  TokenProjectTokensTvlPartsFragmentDoc,
   TokenProjectUrlsPartsFragmentDoc,
-} from '@universe/api/src/clients/graphql/__generated__/types-and-hooks'
+} from '@universe/api/src/clients/graphql/__generated__/react-hooks'
+import type { Token } from '@universe/api/src/clients/graphql/__generated__/schema-types'
 
 export interface UseTokenFragmentParams {
   address: string | null
@@ -87,6 +89,21 @@ export function useTokenProjectMarketsPartsFragment({
   return useFragment<TokenProjectMarketsPartsFragment>({
     fragment: TokenProjectMarketsPartsFragmentDoc,
     fragmentName: 'TokenProjectMarketsParts',
+    from: {
+      __typename: 'Token' satisfies Token['__typename'],
+      address,
+      chain,
+    },
+  })
+}
+
+export function useTokenProjectTokensTvlPartsFragment({
+  address,
+  chain,
+}: UseTokenFragmentParams): UseFragmentResult<TokenProjectTokensTvlPartsFragment> {
+  return useFragment<TokenProjectTokensTvlPartsFragment>({
+    fragment: TokenProjectTokensTvlPartsFragmentDoc,
+    fragmentName: 'TokenProjectTokensTvlParts',
     from: {
       __typename: 'Token' satisfies Token['__typename'],
       address,

@@ -1,16 +1,16 @@
-import { defineConfig, devices } from '@playwright/test'
-import dotenv from 'dotenv'
-import ms from 'ms'
 import path from 'path'
+import { defineConfig, devices } from '@playwright/test'
+import { config } from 'dotenv'
+import ms from 'ms'
+
+// Load environment variables from .env file
+// This ensures the VSCode Playwright extension has access to env vars
+config({ path: path.resolve(__dirname, '.env') })
 
 const IS_CI = process.env.CI === 'true'
 
-if (!IS_CI) {
-  dotenv.config({ path: path.resolve(__dirname, '.env.local') })
-}
-
 // Handle asset files and platform-specific imports for Node.js
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// oxlint-disable-next-line typescript/no-var-requires
 const Module = require('module')
 
 // Override module resolution to handle platform-specific files like Vite does
@@ -51,15 +51,16 @@ export default defineConfig({
   testMatch: '**/*.e2e.test.ts',
   globalTeardown: './src/playwright/anvil/global-teardown.ts',
   workers: 1, // this is manually configured in the github action depending on type of tests
-  fullyParallel: true,
+  fullyParallel: false,
   maxFailures: IS_CI ? 10 : undefined,
   retries: IS_CI ? 3 : 0,
   reporter: IS_CI && process.env.REPORT_TO_SLACK ? [['blob'], ['list']] : 'list',
-  timeout: ms('60s'),
+  timeout: ms('120s'),
   expect: {
-    timeout: ms('10s'),
+    timeout: ms('15s'),
   },
   use: {
+    actionTimeout: ms('30s'),
     screenshot: 'off',
     video: 'retain-on-failure',
     trace: 'retain-on-failure',

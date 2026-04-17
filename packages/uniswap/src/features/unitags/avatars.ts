@@ -1,14 +1,16 @@
-import { SignMessageFunc, UnitagGetAvatarUploadUrlResponse } from '@universe/api'
-import { UnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
+import { AvatarUploadResponse, SignMessageFunc, UnitagsServiceApiClient } from '@universe/api'
+import { UnitagsApiClientType } from '@universe/api/src/clients/unitags/createUnitagsApiClient'
 import { isLocalFileUri, uploadFileToS3 } from 'uniswap/src/features/unitags/fileUtils'
 import { logger } from 'utilities/src/logger/logger'
 
 export async function uploadAndUpdateAvatarAfterClaim({
+  unitagsApiClient,
   username,
   imageUri,
   address,
   signMessage,
 }: {
+  unitagsApiClient: UnitagsApiClientType | UnitagsServiceApiClient
   username: string
   imageUri: string
   address: string
@@ -16,7 +18,7 @@ export async function uploadAndUpdateAvatarAfterClaim({
 }): Promise<{ success: boolean }> {
   try {
     // First get pre-signedUrl and s3UploadFields from the backend
-    const avatarUploadUrlResponse = await UnitagsApiClient.getUnitagAvatarUploadUrl({
+    const avatarUploadUrlResponse = await unitagsApiClient.getUnitagAvatarUploadUrl({
       data: { username },
       address,
       signMessage,
@@ -34,9 +36,9 @@ export async function uploadAndUpdateAvatarAfterClaim({
     }
 
     // Then update profile metadata with the image url
-    await UnitagsApiClient.updateUnitagMetadata({
-      username,
+    await unitagsApiClient.updateUnitagMetadata({
       data: {
+        username,
         metadata: {
           avatar: avatarUploadUrlResponse.avatarUrl,
         },
@@ -60,7 +62,7 @@ export async function tryUploadAvatar({
   avatarUploadUrlLoading,
 }: {
   avatarImageUri: string | undefined
-  avatarUploadUrlResponse: UnitagGetAvatarUploadUrlResponse | undefined
+  avatarUploadUrlResponse: AvatarUploadResponse | undefined
   avatarUploadUrlLoading: boolean
 }): Promise<{ success: boolean; skipped: boolean }> {
   const needsAvatarUpload = !!avatarImageUri && isLocalFileUri(avatarImageUri)

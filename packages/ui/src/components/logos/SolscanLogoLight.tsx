@@ -1,6 +1,26 @@
-import { ClipPath, Defs, G, Path, Rect, Svg } from 'react-native-svg'
-
-// eslint-disable-next-line no-relative-import-paths/no-relative-import-paths
+import PropTypes from 'prop-types'
+import React, { memo, forwardRef } from 'react'
+import {
+  Svg,
+  SvgProps,
+  Ellipse,
+  G,
+  LinearGradient,
+  RadialGradient,
+  Line,
+  Path,
+  Polygon,
+  Polyline,
+  Rect,
+  Symbol,
+  Use,
+  Defs,
+  Stop,
+  ClipPath,
+  Text,
+  Circle,
+} from 'react-native-svg'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths
 import { createIcon } from '../factories/createIcon'
 
 export const [SolscanLogoLight, AnimatedSolscanLogoLight] = createIcon({
@@ -19,10 +39,9 @@ export const [SolscanLogoLight, AnimatedSolscanLogoLight] = createIcon({
       </G>
       <Defs>
         <ClipPath id="clip0_15320_6385">
-          <Rect width="316" height="315" fill="white" />
+          <Rect width="316" height="315" fill="currentColor" />
         </ClipPath>
       </Defs>
     </Svg>
   ),
-  defaultFill: '#00E8B5',
 })

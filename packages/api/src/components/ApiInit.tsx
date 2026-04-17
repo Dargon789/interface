@@ -1,27 +1,46 @@
 import { queryOptions, useQuery } from '@tanstack/react-query'
-import { getIsSessionServiceEnabled } from '@universe/api/src/getIsSessionServiceEnabled'
+import { SharedQueryClient } from '@universe/api/src/clients/base/SharedQueryClient'
 import type { SessionInitializationService, SessionInitResult } from '@universe/sessions'
 import { SessionError } from '@universe/sessions'
-import { useMemo } from 'react'
+import { useState } from 'react'
+import type { Logger } from 'utilities/src/logger/logger'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 
 interface ApiInitProps {
-  sessionInitService: SessionInitializationService
+  getSessionInitService: () => SessionInitializationService
+  isSessionServiceEnabled: boolean
 }
 
+/**
+ * Query key for session initialization.
+ * Shared between ApiInit (which triggers the query) and InitializationStatusProvider (which observes it).
+ */
+export const SESSION_INIT_QUERY_KEY = [ReactQueryCacheKey.Session, 'initialization'] as const
+
 function createInitServiceQuery(ctx: {
-  sessionInitService: SessionInitializationService
+  getSessionInitService: () => SessionInitializationService
+  getLogger?: () => Logger
 }): ReturnType<typeof queryOptions<SessionInitResult>> {
   return queryOptions<SessionInitResult>({
-    queryKey: [ReactQueryCacheKey.Session, 'initialization'],
+    queryKey: SESSION_INIT_QUERY_KEY,
     queryFn: async (): Promise<SessionInitResult> => {
-      return await ctx.sessionInitService.initialize()
+      const service = ctx.getSessionInitService()
+      return service.initialize()
     },
     retry: (failureCount, error) => {
+      const logger = ctx.getLogger?.()
       // Don't retry any session-related errors - these are terminal errors
       if (error instanceof SessionError) {
+        logger?.error(error, {
+          tags: {
+            file: 'ApiInit.tsx',
+            function: 'createInitServiceQuery',
+          },
+        })
         return false
       }
+
+      logger?.warn('ApiInit.tsx', 'createInitServiceQuery', 'retry', failureCount, error)
       // For other errors (network issues, etc.), retry up to 3 times
       return failureCount < 3
     },
@@ -32,18 +51,20 @@ function createInitServiceQuery(ctx: {
   })
 }
 
-function ApiInit({ sessionInitService }: ApiInitProps): null {
-  const query = useMemo(() => createInitServiceQuery({ sessionInitService }), [sessionInitService])
-
-  // Short-circuit if session service is disabled
-  const shouldInitialize = getIsSessionServiceEnabled()
+function ApiInit({ getSessionInitService, isSessionServiceEnabled }: ApiInitProps): null {
+  const [query] = useState(() => createInitServiceQuery({ getSessionInitService }))
 
   useQuery({
     ...query,
-    enabled: shouldInitialize,
+    enabled: isSessionServiceEnabled,
   })
 
   return null
+}
+
+/** Reinitializes the session by invalidating the session initialization query. Resolves once the query has re-run. */
+export async function reinitializeSession(): Promise<void> {
+  await SharedQueryClient.invalidateQueries({ queryKey: SESSION_INIT_QUERY_KEY })
 }
 
 export { ApiInit }

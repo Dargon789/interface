@@ -1,4 +1,5 @@
-import { BaseSyntheticEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 import { ScreenHeader } from 'src/app/components/layout/ScreenHeader'
@@ -18,9 +19,15 @@ import { Button, Flex, Popover, ScrollView, Text, TouchableArea, useSporeColors 
 import { Ellipsis, Globe, Person, TrashFilled, WalletFilled, X } from 'ui/src/components/icons'
 import { spacing } from 'ui/src/theme'
 import { AddressDisplay } from 'uniswap/src/components/accounts/AddressDisplay'
+import { buildWrappedUrl } from 'uniswap/src/components/banners/shared/utils'
+import { UniswapWrapped2025Card } from 'uniswap/src/components/banners/UniswapWrapped2025Card/UniswapWrapped2025Card'
+import { ContextMenu, MenuOptionItem } from 'uniswap/src/components/menus/ContextMenu'
+import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
 import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
 import { WarningModal } from 'uniswap/src/components/modals/WarningModal/WarningModal'
+import { UNISWAP_WEB_URL } from 'uniswap/src/constants/urls'
 import { AccountType, DisplayNameType } from 'uniswap/src/features/accounts/types'
+import { setHasDismissedUniswapWrapped2025Banner } from 'uniswap/src/features/behaviorHistory/slice'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ModalName, WalletEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
@@ -29,9 +36,9 @@ import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { ImportType } from 'uniswap/src/types/onboarding'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
 import { logger } from 'utilities/src/logger/logger'
+import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { sleep } from 'utilities/src/time/timing'
 import { PlusCircle } from 'wallet/src/components/icons/PlusCircle'
-import { ContextMenu } from 'wallet/src/components/menu/ContextMenu'
 import { MenuContent } from 'wallet/src/components/menu/MenuContent'
 import { MenuContentItem } from 'wallet/src/components/menu/types'
 import { createOnboardingAccount } from 'wallet/src/features/onboarding/createOnboardingAccount'
@@ -59,6 +66,8 @@ export function AccountSwitcherScreen(): JSX.Element {
   const activeAccount = useActiveAccountWithThrow()
   const activeAddress = activeAccount.address
   const isViewOnly = activeAccount.type === AccountType.Readonly
+
+  const isWrappedBannerEnabled = useFeatureFlag(FeatureFlags.UniswapWrapped2025)
 
   const accounts = useSignerAccounts()
   const accountAddresses = useMemo(
@@ -88,6 +97,7 @@ export function AccountSwitcherScreen(): JSX.Element {
   const [showRemoveWalletModal, setShowRemoveWalletModal] = useState(false)
   const [showImportWalletModal, setShowImportWalletModal] = useState(false)
   const [showCreateWalletModal, setShowCreateWalletModal] = useState(false)
+  const { value: isEllipsisMenuOpen, setTrue: openEllipsisMenu, setFalse: closeEllipsisMenu } = useBooleanState(false)
 
   const [pendingWallet, setPendingWallet] = useState<SignerMnemonicAccount>()
 
@@ -154,6 +164,17 @@ export function AccountSwitcherScreen(): JSX.Element {
     [connectedAccounts.length, dispatch, pendingWallet],
   )
 
+  const onPressWrappedCard = useCallback(() => {
+    try {
+      const url = buildWrappedUrl(UNISWAP_WEB_URL, activeAddress)
+      window.open(url, '_blank')
+      dispatch(setHasDismissedUniswapWrapped2025Banner(true))
+      navigate(-1)
+    } catch (error) {
+      logger.error(error, { tags: { file: 'AccountSwitcherScreen', function: 'onPressWrappedCard' } })
+    }
+  }, [activeAddress, dispatch])
+
   const addWalletMenuOptions: MenuContentItem[] = [
     {
       label: t('account.wallet.button.create'),
@@ -174,37 +195,35 @@ export function AccountSwitcherScreen(): JSX.Element {
     zIndex: 1,
   }
 
-  const menuOptions = useMemo((): MenuContentItem[] => {
+  const menuOptions = useMemo((): MenuOptionItem[] => {
     return [
       ...(canClaimUnitag
         ? [
             {
               label: t('account.wallet.menu.claimUsername'),
-
-              onPress: async () => await focusOrCreateUnitagTab(activeAddress, UnitagClaimRoutes.ClaimIntro),
-
+              onPress: async (): Promise<void> => {
+                await focusOrCreateUnitagTab(activeAddress, UnitagClaimRoutes.ClaimIntro)
+              },
               Icon: Person,
             },
           ]
         : []),
-
       {
         label: t('account.wallet.menu.manageConnections'),
-        onPress: () => navigateTo(`/${AppRoutes.Settings}/${SettingsRoutes.ManageConnections}`),
+        onPress: (): void => {
+          navigateTo(`/${AppRoutes.Settings}/${SettingsRoutes.ManageConnections}?address=${activeAddress}`)
+        },
         Icon: Globe,
       },
       {
         label: t('account.wallet.menu.remove.title'),
-        onPress: (e: BaseSyntheticEvent): void => {
-          // We have to manually prevent click-through because the way the context menu is inside of a TouchableArea in this component it
-          // means that without it the TouchableArea handler will get called
-          e.preventDefault()
-          e.stopPropagation()
+        onPress: (): void => {
           setShowRemoveWalletModal(true)
         },
-        textProps: { color: '$statusCritical' },
+        textColor: '$statusCritical',
         Icon: TrashFilled,
-        iconProps: { color: '$statusCritical' },
+        iconColor: '$statusCritical',
+        destructive: true,
       },
     ]
   }, [canClaimUnitag, activeAddress, navigateTo, t])
@@ -252,12 +271,11 @@ export function AccountSwitcherScreen(): JSX.Element {
           Icon={X}
           rightColumn={
             <ContextMenu
-              closeOnClick
-              itemId="account-switcher-ellipsis-dropdown"
-              menuOptions={menuOptions}
-              placement="bottom"
-              onLeftClick
-              menuContainerStyleProps={{ mr: '$spacing12' }}
+              menuItems={menuOptions}
+              triggerMode={ContextMenuTriggerMode.Primary}
+              isOpen={isEllipsisMenuOpen}
+              openMenu={openEllipsisMenu}
+              closeMenu={closeEllipsisMenu}
             >
               <TouchableArea
                 borderRadius="$roundedFull"
@@ -271,14 +289,13 @@ export function AccountSwitcherScreen(): JSX.Element {
         />
         <Flex pb="$spacing4" pt="$spacing8" px="$spacing12">
           <Flex row alignSelf="stretch" width="100%" justifyContent="center">
-            <Flex flex={1} justifyContent="center" alignItems="center">
+            <Flex flex={1} justifyContent="center">
               <AddressDisplay
                 showCopy
                 centered
                 address={activeAddress}
                 captionVariant="body3"
                 direction="column"
-                displayNameTextAlign="center"
                 horizontalGap="$spacing8"
                 showViewOnlyBadge={isViewOnly}
                 size={spacing.spacing60 - spacing.spacing4}
@@ -286,6 +303,12 @@ export function AccountSwitcherScreen(): JSX.Element {
               />
             </Flex>
           </Flex>
+
+          {isWrappedBannerEnabled && (
+            <Flex pt="$spacing16">
+              <UniswapWrapped2025Card onPress={onPressWrappedCard} />
+            </Flex>
+          )}
 
           <Flex pt={activeAccountHasENS ? undefined : '$padding16'}>
             {activeAccountHasUnitag ? (
@@ -355,7 +378,7 @@ export function AccountSwitcherScreen(): JSX.Element {
               borderColor="$surface3"
               borderRadius="$rounded16"
               borderWidth="$spacing1"
-              disableRemoveScroll={false}
+              enableRemoveScroll={true}
               enterStyle={{ y: -10, opacity: 0 }}
               exitStyle={{ y: -10, opacity: 0 }}
               p="$none"

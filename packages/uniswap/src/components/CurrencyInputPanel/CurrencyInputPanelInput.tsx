@@ -1,8 +1,9 @@
 import { forwardRef, memo, useCallback, useImperativeHandle, useRef } from 'react'
 import type { NativeSyntheticEvent, TextInput, TextInputSelectionChangeEventData } from 'react-native'
-import { Flex, Text, TouchableArea, useSporeColors } from 'ui/src'
+import { Flex, FlexProps, Text, TouchableArea, useSporeColors } from 'ui/src'
 import type { ShakeAnimation } from 'ui/src/animations/hooks/useShakeAnimation'
 import { AnimatedFlex } from 'ui/src/components/layout/AnimatedFlex'
+import { FontSizeOptions } from 'ui/src/hooks/useDynamicFontSizing'
 import { fonts, spacing } from 'ui/src/theme'
 import { AmountInput } from 'uniswap/src/components/AmountInput/AmountInput'
 import { DefaultTokenOptions } from 'uniswap/src/components/CurrencyInputPanel/DefaultTokenOptions/DefaultTokenOptions'
@@ -11,7 +12,7 @@ import {
   useCurrencyInputFontSize,
 } from 'uniswap/src/components/CurrencyInputPanel/hooks/useCurrencyInputFontSize'
 import type { PanelTextDisplay } from 'uniswap/src/components/CurrencyInputPanel/hooks/useIndicativeQuoteTextDisplay'
-import { useInputFocusSync } from 'uniswap/src/components/CurrencyInputPanel/hooks/useInputFocusSync/useInputFocusSync.native'
+import { useInputFocusSync } from 'uniswap/src/components/CurrencyInputPanel/hooks/useInputFocusSync/useInputFocusSync'
 import { useRefetchAnimationStyle } from 'uniswap/src/components/CurrencyInputPanel/hooks/useRefetchAnimationStyle'
 import { SelectTokenButton } from 'uniswap/src/components/CurrencyInputPanel/SelectTokenButton'
 import type { CurrencyInputPanelProps, CurrencyInputPanelRef } from 'uniswap/src/components/CurrencyInputPanel/types'
@@ -27,6 +28,9 @@ type CurrencyInputPanelInputProps = {
   showDefaultTokenOptions: boolean
   indicativeQuoteTextDisplay: PanelTextDisplay
   onPressDisabledWithShakeAnimation: () => void
+  fontSizeOptions?: Partial<FontSizeOptions>
+  inputRowPaddingVertical?: FlexProps['py']
+  minHeight?: FlexProps['minHeight']
 } & Pick<
   CurrencyInputPanelProps,
   | 'autoFocus'
@@ -48,11 +52,14 @@ type CurrencyInputPanelInputProps = {
   | 'disabled'
   | 'onPressDisabled'
   | 'tokenColor'
+  | 'onBlur'
+  | 'inputSuffix'
+  | 'hidePresets'
 >
 
 export const CurrencyInputPanelInput = memo(
   forwardRef<CurrencyInputPanelRef, CurrencyInputPanelInputProps>(
-    function _CurrencyInputPanel(props, forwardedRef): JSX.Element {
+    function CurrencyInputPanelInner(props, forwardedRef): JSX.Element {
       const {
         autoFocus,
         currencyField,
@@ -72,6 +79,12 @@ export const CurrencyInputPanelInput = memo(
         showInsufficientBalanceWarning,
         showDefaultTokenOptions,
         indicativeQuoteTextDisplay,
+        onBlur,
+        fontSizeOptions,
+        inputRowPaddingVertical = '$spacing8',
+        minHeight = MIN_INPUT_FONT_SIZE + spacing.spacing36,
+        inputSuffix,
+        hidePresets,
       } = props
 
       const colors = useSporeColors()
@@ -79,7 +92,7 @@ export const CurrencyInputPanelInput = memo(
 
       const { value, color } = indicativeQuoteTextDisplay
 
-      const inputRef = useRef<TextInput>(null)
+      const inputRef = useRef<TextInput | null>(null)
 
       const { shakeStyle, triggerShakeAnimation } = shakeAnimation
 
@@ -98,7 +111,7 @@ export const CurrencyInputPanelInput = memo(
         resetSelection,
       })
 
-      const inputFontSize = useCurrencyInputFontSize({ value, focus })
+      const inputFontSize = useCurrencyInputFontSize({ value, focus, options: fontSizeOptions })
 
       const onSelectionChange = useCallback(
         ({
@@ -116,8 +129,8 @@ export const CurrencyInputPanelInput = memo(
           row
           alignItems="center"
           justifyContent={!currencyInfo ? 'flex-end' : 'space-between'}
-          py="$spacing8"
-          minHeight={MIN_INPUT_FONT_SIZE * 1.2 + 2 * spacing.spacing8}
+          py={inputRowPaddingVertical}
+          minHeight={minHeight}
           style={shakeStyle}
         >
           {isFiatMode && (
@@ -142,7 +155,7 @@ export const CurrencyInputPanelInput = memo(
             onLayout={inputFontSize.onLayout}
           >
             {currencyInfo ? (
-              <Flex grow flexShrink={isWebPlatform ? 1 : 0}>
+              <Flex row flexShrink={isWebPlatform ? 1 : 0}>
                 {disabled && (
                   // Invisible TouchableArea overlay to capture onPress events and trigger the shake animation when the input is disabled
                   <TouchableArea
@@ -152,6 +165,7 @@ export const CurrencyInputPanelInput = memo(
                 )}
                 <AmountInput
                   ref={inputRef}
+                  adjustWidthToContent={!!inputSuffix}
                   autoFocus={autoFocus ?? focus}
                   backgroundColor="$transparent"
                   borderWidth="$none"
@@ -182,7 +196,19 @@ export const CurrencyInputPanelInput = memo(
                   onChangeText={onSetExactAmount}
                   onPressIn={onPressIn}
                   onSelectionChange={onSelectionChange}
+                  onBlur={onBlur}
                 />
+                {inputSuffix && (
+                  <Text
+                    allowFontScaling
+                    color="$neutral2"
+                    fontSize={inputFontSize.fontSize}
+                    lineHeight={inputFontSize.lineHeight}
+                    ml="$spacing4"
+                  >
+                    {inputSuffix}
+                  </Text>
+                )}
               </Flex>
             ) : showDefaultTokenOptions && !isWebAppDesktop ? (
               <DefaultTokenOptions currencyField={CurrencyField.OUTPUT} />
@@ -199,14 +225,16 @@ export const CurrencyInputPanelInput = memo(
               </TouchableArea>
             )}
           </AnimatedFlex>
-          <Flex row alignItems="center">
-            <SelectTokenButton
-              selectedCurrencyInfo={currencyInfo}
-              testID={currencyField === CurrencyField.INPUT ? TestID.ChooseInputToken : TestID.ChooseOutputToken}
-              tokenColor={tokenColor}
-              onPress={onShowTokenSelector}
-            />
-          </Flex>
+          {!hidePresets && (
+            <Flex row alignItems="center">
+              <SelectTokenButton
+                selectedCurrencyInfo={currencyInfo}
+                testID={currencyField === CurrencyField.INPUT ? TestID.ChooseInputToken : TestID.ChooseOutputToken}
+                tokenColor={tokenColor}
+                onPress={onShowTokenSelector}
+              />
+            </Flex>
+          )}
         </AnimatedFlex>
       )
     },

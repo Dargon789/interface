@@ -1,6 +1,26 @@
-import { Circle as _Circle, Defs, LinearGradient, Path, Stop, Svg } from 'react-native-svg'
-
-// eslint-disable-next-line no-relative-import-paths/no-relative-import-paths
+import PropTypes from 'prop-types'
+import React, { memo, forwardRef } from 'react'
+import {
+  Svg,
+  SvgProps,
+  Ellipse,
+  G,
+  LinearGradient,
+  RadialGradient,
+  Line,
+  Path,
+  Polygon,
+  Polyline,
+  Rect,
+  Symbol,
+  Use,
+  Defs,
+  Stop,
+  ClipPath,
+  Text,
+  Circle,
+} from 'react-native-svg'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths
 import { createIcon } from '../factories/createIcon'
 
 export const [GoogleChromeLogo, AnimatedGoogleChromeLogo] = createIcon({
@@ -25,7 +45,7 @@ export const [GoogleChromeLogo, AnimatedGoogleChromeLogo] = createIcon({
           <Stop offset="1" stopColor="#1a73e8" />
         </LinearGradient>
       </Defs>
-      <_Circle cx="24" cy="23.9947" r="12" fill="currentColor" />
+      <Circle cx="24" cy="23.9947" r="12" fill="currentColor" />
       <Path
         d="M3.2154,36A24,24,0,1,0,12,3.2154,24,24,0,0,0,3.2154,36ZM34.3923,18A12,12,0,1,1,18,13.6077,12,12,0,0,1,34.3923,18Z"
         fill="none"
@@ -34,7 +54,7 @@ export const [GoogleChromeLogo, AnimatedGoogleChromeLogo] = createIcon({
         d="M24,12H44.7812a23.9939,23.9939,0,0,0-41.5639.0029L13.6079,30l.0093-.0024A11.9852,11.9852,0,0,1,24,12Z"
         fill="url(#a)"
       />
-      <_Circle cx="24" cy="24" r="9.5" fill="url(#d)" />
+      <Circle cx="24" cy="24" r="9.5" fill="url(#d)" />
       <Path
         d="M34.3913,30.0029,24.0007,48A23.994,23.994,0,0,0,44.78,12.0031H23.9989l-.0025.0093A11.985,11.985,0,0,1,34.3913,30.0029Z"
         fill="url(#b)"

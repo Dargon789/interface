@@ -84,7 +84,7 @@ export function ViewPrivateKeysScreen({ navigation, route }: Props): JSX.Element
           {t('privateKeys.export.modal.speedbump.subtitle')}
         </Text>
         <Spacer size="$spacing16" />
-        <Flex borderWidth={1} borderColor="$surface3" borderRadius="$rounded20" gap="$gap12" p="$spacing12">
+        <Flex borderWidth="$spacing1" borderColor="$surface3" borderRadius="$rounded20" gap="$gap12" p="$spacing12">
           <BulletRow Icon={Eye} description={t('privateKeys.export.modal.speedbump.bullet1')} />
           <BulletRow Icon={Key} description={t('privateKeys.export.modal.speedbump.bullet2')} />
           <BulletRow Icon={Laptop} description={t('privateKeys.export.modal.speedbump.bullet3')} />
@@ -117,7 +117,7 @@ export function ViewPrivateKeysScreen({ navigation, route }: Props): JSX.Element
         justifyContent="space-between"
         p="$spacing12"
         borderRadius="$rounded16"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3"
         gap="$spacing8"
       >

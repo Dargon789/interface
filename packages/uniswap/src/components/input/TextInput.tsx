@@ -6,13 +6,13 @@ export type TextInputProps = InputProps
 
 // TODO(MOB-1537): move this to ui/src and see if we can just use styled() or move entirely to Input
 
-export const TextInput = forwardRef<TextInputBase, TextInputProps>(function _TextInput(
+export const TextInput = forwardRef<TextInputBase, TextInputProps>(function TextInputInner(
   { onChangeText, onBlur, ...rest },
   ref,
 ) {
   const colors = useSporeColors()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -ref, -ref.current (only run on mount since we only need to set this once)
+  // oxlint-disable-next-line react/exhaustive-deps -- -ref, -ref.current (only run on mount since we only need to set this once)
   useEffect(() => {
     // Ensure virtualkeyboardpolicy is set to "auto" on the DOM element
     // otherwise the virtual keyboard will not show on android mobile
@@ -21,6 +21,7 @@ export const TextInput = forwardRef<TextInputBase, TextInputProps>(function _Tex
       const inputElement = ref.current as unknown as HTMLElement
       inputElement.setAttribute('virtualkeyboardpolicy', 'auto')
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, []) // only run on mount since we only need to set this once
 
   return (

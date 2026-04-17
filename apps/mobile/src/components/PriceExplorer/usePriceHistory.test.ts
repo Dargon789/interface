@@ -97,9 +97,9 @@ describe(useTokenPriceHistory, () => {
 
     await waitFor(() => {
       expect(result.current.data?.spot).toEqual({
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         value: expect.objectContaining({ value: market.price?.value }),
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
         relativeChange: expect.objectContaining({ value: market.pricePercentChange?.value }),
       })
     })
@@ -248,9 +248,9 @@ describe(useTokenPriceHistory, () => {
     const yearTokenProject = createUsdcTokenProjectWithMatchingPriceHistory(yearPriceHistory)
 
     const { resolvers } = queryResolvers({
-      // eslint-disable-next-line max-params
+      // oxlint-disable-next-line max-params
       tokenProjects: (parent, args, context, info) => {
-        switch (info.variableValues.duration) {
+        switch (info.variableValues['duration']) {
           case GraphQLApi.HistoryDuration.Day:
             return [dayTokenProject]
           case GraphQLApi.HistoryDuration.Week:
@@ -325,7 +325,7 @@ describe(useTokenPriceHistory, () => {
         })
       })
 
-      it('returns correct spot price', async () => {
+      it('returns correct spot price with calculated percentage change', async () => {
         const { result } = renderHookWithProviders(
           () =>
             useTokenPriceHistory({
@@ -336,10 +336,15 @@ describe(useTokenPriceHistory, () => {
         )
         await waitFor(() => {
           const ethereumToken = yearTokenProject.tokens.find((t) => t.chain === GraphQLApi.Chain.Ethereum)
+          // For non-Day durations, relativeChange is calculated from price history
+          const openPrice = yearPriceHistory[0]?.value ?? 0
+          const closePrice = yearPriceHistory[yearPriceHistory.length - 1]?.value ?? 0
+          const calculatedChange = openPrice > 0 ? ((closePrice - openPrice) / openPrice) * 100 : 0
+
           expect(result.current.data?.spot).toEqual({
             value: expect.objectContaining({ value: ethereumToken?.market?.price?.value }),
             relativeChange: expect.objectContaining({
-              value: yearTokenProject.markets?.[0]?.pricePercentChange24h?.value,
+              value: calculatedChange,
             }),
           })
         })
@@ -347,13 +352,14 @@ describe(useTokenPriceHistory, () => {
     })
 
     describe('when duration is changed', () => {
-      it('returns new price history and spot price', async () => {
+      it('returns new price history and spot price with correct percentage change calculation', async () => {
         const { result } = renderHookWithProviders(() => useTokenPriceHistory({ currencyId: SAMPLE_CURRENCY_ID_1 }), {
           resolvers,
         })
 
         await waitFor(() => {
           const ethereumToken = dayTokenProject.tokens.find((t) => t.chain === GraphQLApi.Chain.Ethereum)
+          // For Day duration, should use API's 24hr value
           expect(result.current.data).toEqual({
             priceHistory: formatPriceHistory(dayPriceHistory),
             spot: {
@@ -372,12 +378,17 @@ describe(useTokenPriceHistory, () => {
 
         await waitFor(() => {
           const ethereumToken = weekTokenProject.tokens.find((t) => t.chain === GraphQLApi.Chain.Ethereum)
+          // For Week duration, should calculate from price history
+          const openPrice = weekPriceHistory[0]?.value ?? 0
+          const closePrice = weekPriceHistory[weekPriceHistory.length - 1]?.value ?? 0
+          const calculatedChange = openPrice > 0 ? ((closePrice - openPrice) / openPrice) * 100 : 0
+
           expect(result.current.data).toEqual({
             priceHistory: formatPriceHistory(weekPriceHistory),
             spot: {
               value: expect.objectContaining({ value: ethereumToken?.market?.price?.value }),
               relativeChange: expect.objectContaining({
-                value: weekTokenProject.markets?.[0]?.pricePercentChange24h?.value,
+                value: calculatedChange,
               }),
             },
           })

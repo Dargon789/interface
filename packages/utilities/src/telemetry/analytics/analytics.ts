@@ -46,7 +46,7 @@ export const analytics: Analytics = {
   flushEvents(): void {
     throw new PlatformSplitStubError('flushAnalyticsEvents')
   },
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   setUserProperty(_property: string, _value: UserPropertyValue, _insert?: boolean): void {
     throw new PlatformSplitStubError('setUserProperty')
   },

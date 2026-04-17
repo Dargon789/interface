@@ -1,37 +1,33 @@
-import Column, { AutoColumn } from 'components/deprecated/Column'
-import Row from 'components/deprecated/Row'
-import { useAccount } from 'hooks/useAccount'
-import { useGroupedRecentTransfers } from 'hooks/useGroupedRecentTransfers'
-import { useOnClickOutside } from 'hooks/useOnClickOutside'
-import { useUnmountingAnimation } from 'hooks/useUnmountingAnimation'
-import styled, { css, keyframes } from 'lib/styled-components'
 import { ChangeEvent, ForwardedRef, forwardRef, KeyboardEvent, useCallback, useRef, useState } from 'react'
-import { X } from 'react-feather'
 import { useTranslation } from 'react-i18next'
-import { RecipientData } from 'state/send/hooks'
-import { useSendContext } from 'state/send/SendContext'
-import { ThemedText } from 'theme/components'
-import { AnimationType } from 'theme/components/FadePresence'
-import { ClickableStyle } from 'theme/components/styles'
 import { capitalize } from 'tsafe'
-import { Flex, Popover, Text, Tooltip, styled as UIStyled } from 'ui/src'
+import { Flex, Popover, Text, Tooltip, TouchableArea, TouchableAreaEvent, styled as UIStyled } from 'ui/src'
 import { Unitag } from 'ui/src/components/icons/Unitag'
+import { X } from 'ui/src/components/icons/X'
+import { zIndexes } from 'ui/src/theme'
 import { useUnitagsAddressQuery } from 'uniswap/src/data/apiClients/unitagsApi/useUnitagsAddressQuery'
 import { AccountIcon } from 'uniswap/src/features/accounts/AccountIcon'
 import { useENSName } from 'uniswap/src/features/ens/api'
 import { shortenAddress } from 'utilities/src/addresses'
+import Column, { AutoColumn } from '~/components/deprecated/Column'
+import Row from '~/components/deprecated/Row'
+import { useAccount } from '~/hooks/useAccount'
+import { useGroupedRecentTransfers } from '~/hooks/useGroupedRecentTransfers'
+import { useOnClickOutside } from '~/hooks/useOnClickOutside'
+import { useUnmountingAnimation } from '~/hooks/useUnmountingAnimation'
+import { css, deprecatedStyled, keyframes } from '~/lib/deprecated-styled'
+import { RecipientData } from '~/state/send/hooks'
+import { useSendContext } from '~/state/send/SendContext'
+import { ThemedText } from '~/theme/components'
+import { AnimationType } from '~/theme/components/FadePresence'
+import { ClickableStyle } from '~/theme/components/styles'
 
-const StyledConfirmedRecipientRow = styled(Row)`
+const StyledConfirmedRecipientRow = deprecatedStyled(Row)`
   padding: 6px 0px;
   justify-content: space-between;
 `
 
-const StyledConfirmedRecipientDisplayRow = styled(Row)`
-  ${ClickableStyle}
-`
-
-const StyledCloseIcon = styled(X)`
-  color: ${({ theme }) => theme.neutral3};
+const StyledConfirmedRecipientDisplayRow = deprecatedStyled(Row)`
   ${ClickableStyle}
 `
 
@@ -61,7 +57,7 @@ const RecipientWrapper = UIStyled(Flex, {
   } as const,
 })
 
-const StyledRecipientInput = styled.input`
+const StyledRecipientInput = deprecatedStyled.input`
   background: none;
   width: 100%;
   color: ${({ theme }) => theme.neutral1};
@@ -92,7 +88,7 @@ const slideOutAnimation = css`
   animation: ${slideOut} ${({ theme }) => `${theme.transition.duration.medium} ${theme.transition.timing.inOut}`};
 `
 
-const MenuFlyout = styled(AutoColumn)`
+const MenuFlyout = deprecatedStyled(AutoColumn)`
   width: 100%;
   background-color: ${({ theme }) => theme.surface1};
   border: 1px solid ${({ theme }) => theme.surface3};
@@ -112,11 +108,11 @@ const MenuFlyout = styled(AutoColumn)`
   }
 `
 
-const StyledTransferText = styled(ThemedText.BodySecondary)`
+const StyledTransferText = deprecatedStyled(ThemedText.BodySecondary)`
   flex-shrink: 0;
 `
 
-const StyledAutocompleteRow = styled(Row)`
+const StyledAutocompleteRow = deprecatedStyled(Row)`
   ${ClickableStyle}
 `
 
@@ -162,14 +158,18 @@ const AutocompleteRow = ({
                 <Tooltip.Trigger>
                   <Text variant="subheading2">{formattedAddress}</Text>
                 </Tooltip.Trigger>
-                <Tooltip.Content maxWidth="fit-content">
+                <Tooltip.Content zIndex={zIndexes.overlay} maxWidth="fit-content">
                   <Text variant="body4">{address}</Text>
                 </Tooltip.Content>
               </Tooltip>
             ) : (
               <ThemedText.BodyPrimary lineHeight="24px">{unitag?.username ?? cachedEnsName}</ThemedText.BodyPrimary>
             )}
-            {unitag?.username && <Unitag size={18} />}
+            {unitag?.username && (
+              <Flex pt="$spacing2">
+                <Unitag size={18} />
+              </Flex>
+            )}
           </Row>
           {!shouldShowAddress && (
             <Tooltip placement="top-start">
@@ -178,7 +178,7 @@ const AutocompleteRow = ({
                   {formattedAddress}
                 </Text>
               </Tooltip.Trigger>
-              <Tooltip.Content maxWidth="fit-content">
+              <Tooltip.Content zIndex={zIndexes.overlay} maxWidth="fit-content">
                 <Text variant="body4">{address}</Text>
               </Tooltip.Content>
             </Tooltip>
@@ -303,7 +303,7 @@ export function SendRecipientForm({ disabled }: { disabled?: boolean }) {
   )
 
   const clearValidatedRecipient = useCallback(
-    (e: React.MouseEvent<SVGElement>) => {
+    (e: TouchableAreaEvent) => {
       e.preventDefault()
       e.stopPropagation()
       handleForceFocus(true)
@@ -366,7 +366,11 @@ export function SendRecipientForm({ disabled }: { disabled?: boolean }) {
                         recipientData.ensName ??
                         shortenAddress({ address: recipientData.address })}
                     </ThemedText.BodyPrimary>
-                    {recipientData.unitag && <Unitag size={18} />}
+                    {recipientData.unitag && (
+                      <Flex pt="$spacing2">
+                        <Unitag size={18} />
+                      </Flex>
+                    )}
                   </Row>
                   {Boolean(recipientData.ensName) && (
                     <ThemedText.LabelMicro lineHeight="16px">
@@ -375,11 +379,14 @@ export function SendRecipientForm({ disabled }: { disabled?: boolean }) {
                   )}
                 </Column>
               </StyledConfirmedRecipientDisplayRow>
-              <StyledCloseIcon size={20} onClick={clearValidatedRecipient} />
+              <TouchableArea onPress={clearValidatedRecipient}>
+                <X size="$icon.20" color="$neutral3" />
+              </TouchableArea>
             </StyledConfirmedRecipientRow>
           )}
         </Popover.Trigger>
         <Popover.Content
+          zIndex={zIndexes.overlay}
           background="transparent"
           width={(inputNode.current?.clientWidth ?? 0) + 32}
           ref={popoverContentRef}

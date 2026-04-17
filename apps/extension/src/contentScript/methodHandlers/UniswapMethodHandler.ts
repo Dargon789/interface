@@ -22,7 +22,7 @@ import { logger } from 'utilities/src/logger/logger'
 export class UniswapMethodHandler extends BaseMethodHandler<WindowEthereumRequest> {
   private readonly requestIdToSourceMap: Map<string, PendingResponseInfo> = new Map()
 
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   constructor({
     getChainId,
     getProvider,

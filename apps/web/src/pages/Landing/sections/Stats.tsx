@@ -1,14 +1,14 @@
-import { LiveIcon, StatCard } from 'pages/Landing/components/StatCard'
-import { useInView } from 'pages/Landing/sections/useInView'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { parseToRgb } from 'polished'
 import { useTranslation } from 'react-i18next'
-import { use24hProtocolVolume, useDailyTVLWithChange } from 'state/explore/protocolStats'
-import { ExternalLink } from 'theme/components/Links'
 import { Flex, styled, Text, useSporeColors } from 'ui/src'
-import { RightArrow } from 'ui/src/components/icons/RightArrow'
-
+import { ArrowRight } from 'ui/src/components/icons/ArrowRight'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
+import { LiveIcon, StatCard } from '~/pages/Landing/components/StatCard'
+import { useInView } from '~/pages/Landing/sections/useInView'
+import { use24hProtocolVolume, useDailyTVLWithChange } from '~/state/explore/protocolStats'
+import { ExternalLink } from '~/theme/components/Links'
 
 const Container = styled(Flex, {
   width: '100%',
@@ -63,13 +63,16 @@ const LearnMoreButton = styled(Flex, {
 
 function GetStarted() {
   const { t } = useTranslation()
+  const isUnificationCopyEnabled = useFeatureFlag(FeatureFlags.UnificationCopy)
 
   return (
     <LearnMoreButton href="/explore">
       <ExternalLink href="/explore" style={{ stroke: 'unset' }}>
         <Flex row gap="$gap8" alignItems="center">
-          <Text variant="buttonLabel1">{t('landing.getStarted')}</Text>
-          <RightArrow size="$icon.24" color="$neutral1" />
+          <Text variant="buttonLabel1">
+            {isUnificationCopyEnabled ? t('landing.getStarted') : t('landing.getStarted.old')}
+          </Text>
+          <ArrowRight size="$icon.16" color="$neutral1" />
         </Flex>
       </ExternalLink>
     </LearnMoreButton>
@@ -81,6 +84,7 @@ export function Stats() {
   const { ref, inView } = useInView()
   const colors = useSporeColors()
   const { red, green, blue } = parseToRgb(colors.neutral2.val)
+  const isUnificationCopyEnabled = useFeatureFlag(FeatureFlags.UnificationCopy)
 
   return (
     <Container>
@@ -92,7 +96,7 @@ export function Stats() {
             </Text>
             <Flex gap="$spacing24">
               <Text variant="heading2" $lg={{ variant: 'heading3' }} $md={{ fontSize: 18, lineHeight: 24 }}>
-                {t('landing.protocolDescription')}
+                {isUnificationCopyEnabled ? t('landing.protocolDescription') : t('landing.protocolDescription.old')}
               </Text>
               <GetStarted />
             </Flex>
@@ -171,7 +175,7 @@ function Cards({ inView }: { inView: boolean }) {
   const { totalVolume } = use24hProtocolVolume()
   const { totalTVL } = useDailyTVLWithChange()
   // Currently hardcoded, BE task [DAT-1435] to make this data available
-  const allTimeVolume = 3.3 * 10 ** 12
+  const allTimeVolume = 4.0 * 10 ** 12
   const allTimeSwappers = 119 * 10 ** 6
 
   return (

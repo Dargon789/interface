@@ -1,3 +1,4 @@
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React, { memo } from 'react'
 import { useSelector } from 'react-redux'
 import { useTokenDetailsContext } from 'src/components/TokenDetails/TokenDetailsContext'
@@ -13,15 +14,23 @@ import { selectHasViewedContractAddressExplainer } from 'uniswap/src/features/be
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 
-export const TokenDetailsHeader = memo(function _TokenDetailsHeader(): JSX.Element {
-  const { currencyId, openContractAddressExplainerModal, copyAddressToClipboard } = useTokenDetailsContext()
+export const TokenDetailsHeader = memo(function TokenDetailsHeaderInner(): JSX.Element {
+  const { currencyId, openContractAddressExplainerModal, openMultichainAddressSheet, copyAddressToClipboard } =
+    useTokenDetailsContext()
   const hasViewedContractAddressExplainer = useSelector(selectHasViewedContractAddressExplainer)
 
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const token = useTokenBasicInfoPartsFragment({ currencyId }).data
   const project = useTokenBasicProjectPartsFragment({ currencyId }).data.project
+  const isMultichainToken = multichainTokenUxEnabled && (project?.tokens?.length ?? 0) > 1
 
   const handleCopyAddress = async (): Promise<void> => {
     if (!token.address) {
+      return
+    }
+
+    if (isMultichainToken) {
+      openMultichainAddressSheet()
       return
     }
 
@@ -37,6 +46,7 @@ export const TokenDetailsHeader = memo(function _TokenDetailsHeader(): JSX.Eleme
     <Flex row gap="$spacing12" mx="$spacing16">
       <TokenLogo
         chainId={fromGraphQLChain(token.chain) ?? undefined}
+        hideNetworkLogo={isMultichainToken}
         name={token.name ?? undefined}
         symbol={token.symbol ?? undefined}
         url={project?.logoUrl ?? undefined}

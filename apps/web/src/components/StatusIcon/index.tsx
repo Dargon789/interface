@@ -1,16 +1,18 @@
-import sockImg from 'assets/svg/socks.svg'
-import { CONNECTOR_ICON_OVERRIDE_MAP } from 'components/Web3Provider/constants'
-import { useActiveAddresses, useActiveWallet } from 'features/accounts/store/hooks'
-import { useHasSocks } from 'hooks/useSocksBalance'
-import styled from 'lib/styled-components'
-import { flexColumnNoWrap } from 'theme/styles'
-import { Flex } from 'ui/src/components/layout'
+import { Passkey } from 'ui/src/components/icons/Passkey'
+import { Flex, FlexProps } from 'ui/src/components/layout'
 import { breakpoints } from 'ui/src/theme'
+import { CONNECTION_PROVIDER_NAMES } from 'uniswap/src/constants/web3'
 import { AccountIcon } from 'uniswap/src/features/accounts/AccountIcon'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { isEVMAddress } from 'utilities/src/addresses/evm/evm'
+import sockImg from '~/assets/svg/socks.svg'
+import { CONNECTOR_ICON_OVERRIDE_MAP } from '~/components/Web3Provider/constants'
+import { useActiveAddresses, useActiveWallet } from '~/features/accounts/store/hooks'
+import { useHasSocks } from '~/hooks/useSocksBalance'
+import { deprecatedStyled } from '~/lib/deprecated-styled'
+import { flexColumnNoWrap } from '~/theme/styles'
 
-const IconWrapper = styled.div<{ size?: number }>`
+const IconWrapper = deprecatedStyled.div<{ size?: number }>`
   position: relative;
   ${flexColumnNoWrap};
   align-items: center;
@@ -30,7 +32,7 @@ const IconWrapper = styled.div<{ size?: number }>`
 
 const MINI_ICON_SIZE = 16
 
-const MiniIconContainer = styled.div<{ side: 'left' | 'right'; size?: number; isIndicator?: boolean }>`
+const MiniIconContainer = deprecatedStyled.div<{ $side: 'left' | 'right'; size?: number; isIndicator?: boolean }>`
   position: absolute;
   display: flex;
   justify-content: center;
@@ -38,7 +40,7 @@ const MiniIconContainer = styled.div<{ side: 'left' | 'right'; size?: number; is
   width: ${({ size }) => size ?? MINI_ICON_SIZE + 'px'};
   height: ${({ size }) => size ?? MINI_ICON_SIZE + 'px'};
   bottom: ${({ size, isIndicator }) => `-${isIndicator ? 0 : (size ?? MINI_ICON_SIZE) / 4}px`};
-  ${({ side, size, isIndicator }) => `${side === 'left' ? 'left' : 'right'}: -${isIndicator ? 0 : (size ?? MINI_ICON_SIZE) / 4}px`};
+  ${({ $side, size, isIndicator }) => `${$side === 'left' ? 'left' : 'right'}: -${isIndicator ? 0 : (size ?? MINI_ICON_SIZE) / 4}px`};
   border-radius: 50%;
   outline: 2px solid ${({ theme }) => theme.surface1};
   outline-offset: -0.1px;
@@ -49,14 +51,14 @@ const MiniIconContainer = styled.div<{ side: 'left' | 'right'; size?: number; is
   }
 `
 
-const MiniImg = styled.img`
+const MiniImg = deprecatedStyled.img`
   width: ${MINI_ICON_SIZE + 'px'};
   height: ${MINI_ICON_SIZE + 'px'};
 `
 
 function Socks() {
   return (
-    <MiniIconContainer side="left">
+    <MiniIconContainer $side="left">
       <MiniImg src={sockImg} />
     </MiniIconContainer>
   )
@@ -68,11 +70,20 @@ function MiniWalletIcon({ platform }: { platform: Platform }) {
     return null
   }
 
+  // Embedded wallet uses the Passkey React component so it respects theme colors
+  if (wallet.name === CONNECTION_PROVIDER_NAMES.EMBEDDED_WALLET) {
+    return (
+      <MiniIconContainer $side="right" data-testid="MiniIcon">
+        <Passkey size={MINI_ICON_SIZE} color="$neutral1" />
+      </MiniIconContainer>
+    )
+  }
+
   // TODO(APPS-8471): this should use useConnectedWallet() which returns connected WalletConnectorMeta, which is post-icon-override-map transformation
   const icon = CONNECTOR_ICON_OVERRIDE_MAP[wallet.name] ?? wallet.icon
 
   return (
-    <MiniIconContainer side="right" data-testid="MiniIcon">
+    <MiniIconContainer $side="right" data-testid="MiniIcon">
       <MiniImg src={icon} alt={`${wallet.name} icon`} />
     </MiniIconContainer>
   )
@@ -80,7 +91,7 @@ function MiniWalletIcon({ platform }: { platform: Platform }) {
 
 function MiniConnectedIndicator() {
   return (
-    <MiniIconContainer isIndicator side="right" size={10}>
+    <MiniIconContainer isIndicator $side="right" size={10}>
       <Flex backgroundColor="$statusSuccess" borderRadius="$roundedFull" height={10} width={10} />
     </MiniIconContainer>
   )
@@ -91,11 +102,13 @@ export default function StatusIcon({
   showMiniIcons = true,
   showConnectedIndicator,
   address,
+  transition,
 }: {
   size?: number
   showMiniIcons?: boolean
   showConnectedIndicator?: boolean
   address?: string
+  transition?: FlexProps['transition']
 }) {
   const activeAddresses = useActiveAddresses()
   const hasSocks = useHasSocks()
@@ -105,7 +118,7 @@ export default function StatusIcon({
 
   return (
     <IconWrapper size={size} data-testid="StatusIconRoot">
-      <AccountIcon address={addressToDisplay} size={size} />
+      <AccountIcon address={addressToDisplay} size={size} transition={transition} />
       {showConnectedIndicator ? <MiniConnectedIndicator /> : showMiniIcons && <MiniWalletIcon platform={platform} />}
       {hasSocks && showMiniIcons && <Socks />}
     </IconWrapper>

@@ -2,10 +2,14 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "extends": "nx/presets/npm.json",
   "defaultBase": "main",
+  "tui": {
+    "enabled": false
+  },
   "targetDefaults": {
     "prepare": {
-      "inputs": ["default", "dependencies"],
-      "cache": true
+      "inputs": ["dependencies"],
+      "cache": true,
+      "outputs": []
     },
     "build": {
       "dependsOn": ["^prepare", "prepare", "^build"],
@@ -26,108 +30,145 @@
       "cache": true
     },
     "typecheck": {
-      "command": "tsc -b",
+      "command": "if test \"$DISABLE_TSGO\" = \"true\"; then bun run nx typecheck:tsc; else bun run nx typecheck:tsgo; fi",
       "options": {
         "cwd": "{projectRoot}"
       },
-      "dependsOn": ["prepare", "^typecheck"],
+      "dependsOn": ["prepare"],
+      "cache": false
+    },
+    "typecheck:tsc": {
+      "command": "NODE_OPTIONS=--max_old_space_size=16384 tsc -b",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
       "inputs": [
-        "{projectRoot}/package.json",
-        "{workspaceRoot}/config/tsconfig/app.json",
+        "{workspaceRoot}/package.json",
+        "{workspaceRoot}/config/tsconfig/*",
         "{workspaceRoot}/tsconfig.base.json",
-        "{projectRoot}/tsconfig.json",
-        "{projectRoot}/src/**/*.ts",
-        "{projectRoot}/src/**/*.tsx",
-        "{projectRoot}/src/**/*.json",
-        "!{projectRoot}/src/**/*.spec.ts",
-        "!{projectRoot}/src/**/*.spec.tsx",
-        "!{projectRoot}/src/**/*.test.ts",
-        "!{projectRoot}/src/**/*.test.tsx",
+        "{projectRoot}/package.json",
+        "{projectRoot}/tsconfig.*.json",
+        "{projectRoot}/**/*.ts",
+        "{projectRoot}/**/*.tsx",
+        "{projectRoot}/**/*.json",
         {
           "dependentTasksOutputFiles": "**/*.d.ts"
         }
       ],
-      "outputs": [],
+      "outputs": ["{workspaceRoot}/dist/out-tsc/{projectRoot}"],
       "cache": true
     },
-    "lint:biome": {
-      "command": "biome check --error-on-warnings .",
+    "typecheck:tsgo": {
+      "command": "tsgo -b",
       "options": {
         "cwd": "{projectRoot}"
       },
-      "dependsOn": ["@uniswap/biome-config:prepare"]
+      "inputs": [
+        "{workspaceRoot}/package.json",
+        "{workspaceRoot}/config/tsconfig/*",
+        "{workspaceRoot}/tsconfig.base.json",
+        "{projectRoot}/package.json",
+        "{projectRoot}/tsconfig.*.json",
+        "{projectRoot}/**/*.ts",
+        "{projectRoot}/**/*.tsx",
+        "{projectRoot}/**/*.json",
+        {
+          "dependentTasksOutputFiles": "**/*.d.ts"
+        }
+      ],
+      "outputs": ["{workspaceRoot}/dist/out-tsc/{projectRoot}"],
+      "cache": true
     },
-    "lint:biome:fix": {
-      "command": "biome check . --write",
+    "format:check": {
+      "command": "oxfmt --check --threads=4 -c $NX_WORKSPACE_ROOT/.oxfmtrc.json .",
       "options": {
         "cwd": "{projectRoot}"
       },
-      "dependsOn": ["@uniswap/biome-config:prepare"]
+      "cache": true,
+      "inputs": ["default", "lintConfig", "{workspaceRoot}/.oxfmtrc.json"]
     },
-    "lint:eslint": {
-      "command": "eslint . --ext ts,tsx --max-warnings=0",
+    "format": {
+      "command": "oxfmt --threads=4 -c $NX_WORKSPACE_ROOT/.oxfmtrc.json .",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "cache": false
     },
-    "lint:eslint:fix": {
-      "command": "eslint . --ext ts,tsx --fix",
+    "lint:oxlint": {
+      "command": "oxlint --threads=4 --type-aware .",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": ["prepare"],
+      "cache": true,
+      "inputs": ["default", "lintConfig", "{projectRoot}/.oxlintrc.json"]
+    },
+    "lint:oxlint:fix": {
+      "command": "oxlint --fix-dangerously --threads=4 --type-aware .",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "dependsOn": ["prepare"],
+      "cache": false
+    },
+    "lint:oxlint:fast": {
+      "command": "oxlint --threads=4 -c .oxlintrc.fast.json .",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "dependsOn": ["prepare"],
+      "cache": true,
+      "inputs": ["default", "lintConfig", "{projectRoot}/.oxlintrc.json", "{projectRoot}/.oxlintrc.fast.json"]
+    },
+    "lint:typeaware-custom": {
+      "dependsOn": ["prepare"],
+      "cache": true,
+      "inputs": ["default", "lintConfig", "{workspaceRoot}/config/oxlint-plugins/typeaware-custom.ts"]
     },
     "lint": {
       "executor": "nx:noop",
-      "dependsOn": ["typecheck", "check:circular", "lint:eslint", "lint:biome"],
+      "dependsOn": ["prepare", "lint:oxlint", "lint:typeaware-custom"],
       "inputs": ["default"],
       "cache": true
     },
     "lint:fix": {
       "executor": "nx:noop",
-      "dependsOn": ["lint:biome:fix", "lint:eslint:fix"],
+      "dependsOn": ["prepare", "lint:oxlint:fix"],
       "cache": false
+    },
+    "check": {
+      "executor": "nx:noop",
+      "dependsOn": ["prepare", "format", "typecheck", "lint", "check:circular", "check:deps:usage"],
+      "cache": true
+    },
+    "check:fast": {
+      "executor": "nx:noop",
+      "dependsOn": ["prepare", "format", "typecheck", "lint:oxlint:fast"],
+      "cache": true
+    },
+    "check:circular": {
+      "inputs": ["sourceFiles"],
+      "cache": true
+    },
+    "check:deps:usage": {
+      "command": "depcheck",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "inputs": ["sourceFiles", "{projectRoot}/package.json", "{projectRoot}/.depcheckrc"],
+      "cache": true
     },
     "test": {
       "dependsOn": ["^prepare"],
       "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
       "cache": true
     },
-    "test:set1": {
-      "dependsOn": ["^prepare"],
-      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
-      "cache": true
-    },
-    "test:set2": {
-      "dependsOn": ["^prepare"],
-      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
-      "cache": true
-    },
-    "test:set3": {
-      "dependsOn": ["^prepare"],
-      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
-      "cache": true
-    },
-    "test:set4": {
-      "dependsOn": ["^prepare"],
-      "inputs": ["sourceFiles", "^production", "{projectRoot}/**/*.test.*", "{projectRoot}/**/*.spec.*"],
-      "cache": true
-    },
-    "format": {
-      "cache": true,
-      "inputs": ["default"]
-    },
     "start": {
       "dependsOn": ["^prepare", "prepare"],
       "cache": false
     },
     "snapshots": {
-      "dependsOn": ["prepare", "typecheck", "lint"],
-      "cache": true
-    },
-    "check:circular": {
-      "cache": true
-    },
-    "check:deps:usage": {
+      "dependsOn": ["^prepare", "prepare"],
       "cache": true
     },
     "storybook:test:standalone": {
@@ -154,9 +195,7 @@
         "{projectRoot}/src/data/**/*.graphql"
       ],
       "outputs": [
-        "{projectRoot}/src/**/types-and-hooks.ts",
         "{projectRoot}/src/data/graphql/**/__generated__/**",
-        "{projectRoot}/src/data/tradingApi/__generated__/**",
         "{projectRoot}/data/__generated__/**",
         "{projectRoot}/graphql/__generated__/**"
       ],
@@ -187,21 +226,13 @@
       "!{projectRoot}/**/*.stories.tsx",
       "!{projectRoot}/**/*.stories.ts"
     ],
-    "sharedGlobals": [
-      "{workspaceRoot}/.github/actions/**/*.yml",
-      "{workspaceRoot}/.github/workflows/*.yml",
-      "{workspaceRoot}/tsconfig.base.json",
-      "{workspaceRoot}/tsconfig.json",
-      "{workspaceRoot}/bun.lock",
-      "{workspaceRoot}/package.json",
-      "{workspaceRoot}/.biome*",
-      "{workspaceRoot}/.eslint*",
-      "{workspaceRoot}/.depcheckrc*",
-      "{workspaceRoot}/.env*",
-      "!{workspaceRoot}/.env.defaults",
-      "{workspaceRoot}/metro.config.*",
-      "{workspaceRoot}/Gemfile*"
+    "sharedGlobals": ["{workspaceRoot}/tsconfig.base.json", "{workspaceRoot}/tsconfig.json"],
+    "lintConfig": [
+      "{workspaceRoot}/.oxfmtrc.json",
+      "{workspaceRoot}/.oxlintrc.json",
+      "{workspaceRoot}/.oxlintrc.fast.json"
     ],
+    "mobileGlobals": ["{workspaceRoot}/metro.config.*", "{workspaceRoot}/Gemfile*"],
     "sourceFiles": [
       "sharedGlobals",
       "{projectRoot}/**/*.ts",
@@ -209,7 +240,7 @@
       "{projectRoot}/**/*.js",
       "{projectRoot}/**/*.jsx"
     ],
-    "dependencies": ["{workspaceRoot}/bun.lock", "{workspaceRoot}/package.json", "{projectRoot}/package.json"],
+    "dependencies": ["{workspaceRoot}/package.json", "{projectRoot}/package.json"],
     "tsConfig": ["{projectRoot}/tsconfig*.json"]
   },
   "workspaceLayout": {
@@ -219,7 +250,7 @@
   "sync": {
     "applyChanges": true
   },
-  "parallel": 3,
+  "parallel": 10,
   "defaultProject": "@universe/web",
   "generators": {
     "@nx/js:library": {
@@ -240,5 +271,10 @@
         }
       }
     }
-  ]
+  ],
+  "pluginsConfig": {
+    "@nx/js": {
+      "analyzeSourceFiles": true
+    }
+  }
 }

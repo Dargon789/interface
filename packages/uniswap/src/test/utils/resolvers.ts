@@ -1,4 +1,4 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: legacy code needs review */
+/* oxlint-disable typescript/no-explicit-any -- legacy code needs review */
 import { GraphQLApi } from '@universe/api'
 import cloneDeepWith from 'lodash/cloneDeepWith'
 
@@ -10,16 +10,17 @@ type ResolverReturnType<T> = T extends (...args: any[]) => infer TResult
     ? TResult
     : never
 
-type ResolverParameters<T extends GraphQLApi.Resolver<any, any, any, any>> = T extends GraphQLApi.ResolverWithResolve<
-  infer TResult, // only result type is needed to filter selected fields
-  any,
-  any,
-  any
->
-  ? Parameters<GraphQLApi.ResolverFn<TResult, any, any, any>>
-  : T extends GraphQLApi.ResolverFn<infer TResult, any, any, any>
+type ResolverParameters<T extends GraphQLApi.Resolver<any, any, any, any>> =
+  T extends GraphQLApi.ResolverWithResolve<
+    infer TResult, // only result type is needed to filter selected fields
+    any,
+    any,
+    any
+  >
     ? Parameters<GraphQLApi.ResolverFn<TResult, any, any, any>>
-    : never
+    : T extends GraphQLApi.ResolverFn<infer TResult, any, any, any>
+      ? Parameters<GraphQLApi.ResolverFn<TResult, any, any, any>>
+      : never
 
 type ResolverResponses<T extends GraphQLApi.QueryResolvers> = {
   [K in keyof T]: Promise<ResolverReturnType<T[K]>>
@@ -28,7 +29,7 @@ type ResolverResponses<T extends GraphQLApi.QueryResolvers> = {
 function isResolverWithResolve<T extends GraphQLApi.Resolver<any, any, any, any>>(
   resolver: T,
 ): resolver is Extract<T, GraphQLApi.ResolverWithResolve<any, any, any, any>> {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   return typeof resolver === 'object' && resolver !== null && 'resolve' in resolver
 }
 
@@ -75,7 +76,7 @@ export function queryResolvers<T extends GraphQLApi.QueryResolvers>(
             const resultObj = cloneDeepWith(resolvedValue, undefinedToNull) as ResolverReturnType<R>
 
             // Resolve the corresponding promise
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            // oxlint-disable-next-line typescript/no-unnecessary-condition
             if (promiseResolvers[key]) {
               promiseResolvers[key](resultObj)
             }

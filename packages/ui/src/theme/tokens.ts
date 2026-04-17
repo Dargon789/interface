@@ -1,5 +1,5 @@
 // until the web app needs all of tamagui, avoid heavy imports there
-// biome-ignore lint/style/noRestrictedImports: until the web app needs all of tamagui, avoid heavy imports there
+// oxlint-disable-next-line no-restricted-imports -- until the web app needs all of tamagui, avoid heavy imports there
 import { type ColorTokens, createTokens } from '@tamagui/core'
 import type { DynamicColor } from 'ui/src/hooks/useSporeColors'
 import { borderRadii } from 'ui/src/theme/borderRadii'
@@ -24,6 +24,7 @@ const iconSize = {
   20: iconSizes.icon20,
   24: iconSizes.icon24,
   28: iconSizes.icon28,
+  32: iconSizes.icon32,
   36: iconSizes.icon36,
   40: iconSizes.icon40,
   48: iconSizes.icon48,
@@ -34,7 +35,13 @@ const iconSize = {
 
 export type IconSizeTokens = `$icon.${keyof typeof iconSize}`
 
-const imageSize = { ...imageSizes, true: imageSizes.image40 }
+export function getIconSizeToken(numberSize: number): IconSizeTokens | null {
+  if (numberSize in iconSize) {
+    return `$icon.${numberSize as keyof typeof iconSize}`
+  }
+
+  return null
+}
 
 const fontSize = {
   heading1: fonts.heading1.fontSize,
@@ -56,6 +63,8 @@ const fontSize = {
 const radius = { ...borderRadii, true: borderRadii.none }
 
 const zIndex = { ...zIndexes, true: zIndexes.default }
+
+const imageSize = { ...imageSizes, true: imageSizes.image40 }
 
 export const tokens = createTokens({
   color,

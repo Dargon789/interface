@@ -12,6 +12,8 @@ export interface TokenBalanceItemContextMenuProps {
   copyAddressToClipboard?: (address: string) => Promise<void>
   triggerMode?: ContextMenuTriggerMode
   onPressToken?: () => void
+  disableNotifications?: boolean
+  recipient?: Address // Pre-filled recipient address for send action
 }
 
 export function TokenBalanceItemContextMenu(_props: PropsWithChildren<TokenBalanceItemContextMenuProps>): JSX.Element {

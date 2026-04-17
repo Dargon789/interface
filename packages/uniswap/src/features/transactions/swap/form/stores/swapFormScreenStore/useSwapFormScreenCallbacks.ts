@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { type MutableRefObject } from 'react'
+import { type MutableRefObject, useEffect, useRef } from 'react'
 import type { TextInputProps } from 'react-native'
 import type { PresetPercentage } from 'uniswap/src/components/CurrencyInputPanel/AmountInputPresets/types'
 import { isMaxPercentage } from 'uniswap/src/components/CurrencyInputPanel/AmountInputPresets/utils'
@@ -7,10 +7,12 @@ import type { CurrencyInputPanelRef } from 'uniswap/src/components/CurrencyInput
 import type { DecimalPadInputRef } from 'uniswap/src/features/transactions/components/DecimalPadInput/DecimalPadInput'
 import { useDecimalPadControlledField } from 'uniswap/src/features/transactions/swap/form/hooks/useDecimalPadControlledField'
 import { useOnToggleIsFiatMode } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/hooks/useOnToggleIsFiatMode'
+import { SwapFormState } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/types'
 import { useSwapFormStore } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
 import { maybeLogFirstSwapAction } from 'uniswap/src/features/transactions/swap/utils/maybeLogFirstSwapAction'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { isWebPlatform } from 'utilities/src/platform'
+import { isSafeNumber } from 'utilities/src/primitives/integer'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 
@@ -19,7 +21,8 @@ const ON_SELECTION_CHANGE_WAIT_TIME_MS = 500
 export function useSwapFormScreenCallbacks({
   exactOutputWouldFailIfCurrenciesSwitched,
   exactFieldIsInput,
-  isBridge,
+  isCrossChain,
+  sameAssetBridgeDetected,
   formattedDerivedValueRef,
   inputRef,
   outputRef,
@@ -29,11 +32,12 @@ export function useSwapFormScreenCallbacks({
 }: {
   exactOutputWouldFailIfCurrenciesSwitched: boolean
   exactFieldIsInput: boolean
-  isBridge: boolean
+  isCrossChain: boolean
+  sameAssetBridgeDetected: boolean
   formattedDerivedValueRef: MutableRefObject<string>
-  inputRef: RefObject<CurrencyInputPanelRef>
-  outputRef: RefObject<CurrencyInputPanelRef>
-  decimalPadRef: RefObject<DecimalPadInputRef>
+  inputRef: RefObject<CurrencyInputPanelRef | null>
+  outputRef: RefObject<CurrencyInputPanelRef | null>
+  decimalPadRef: RefObject<DecimalPadInputRef | null>
   inputSelectionRef: MutableRefObject<TextInputProps['selection']>
   outputSelectionRef: MutableRefObject<TextInputProps['selection']>
 }): {
@@ -77,6 +81,12 @@ export function useSwapFormScreenCallbacks({
 
   const decimalPadControlledField = useDecimalPadControlledField()
 
+  const pendingSelectionTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  useEffect(() => {
+    return () => clearTimeout(pendingSelectionTimeoutRef.current)
+  }, [])
+
   const resetSelection = useEvent(
     ({ start, end, currencyField }: { start: number; end?: number; currencyField?: CurrencyField }) => {
       // Update refs first to have the latest selection state available in the DecimalPadInput
@@ -91,7 +101,10 @@ export function useSwapFormScreenCallbacks({
       selectionRef.current = { start, end }
 
       if (!isWebPlatform && inputFieldRef) {
-        setTimeout(() => {
+        // Cancel any pending native selection update to prevent stale cursor positions
+        // when typing fast (the previous timeout would set the cursor to an outdated position).
+        clearTimeout(pendingSelectionTimeoutRef.current)
+        pendingSelectionTimeoutRef.current = setTimeout(() => {
           inputFieldRef.current?.setNativeProps({ selection: { start, end } })
         }, 0)
       }
@@ -161,6 +174,10 @@ export function useSwapFormScreenCallbacks({
   })
 
   const onSetExactAmount = useEvent((currencyField: CurrencyField, amount: string) => {
+    if (!isSafeNumber(amount)) {
+      return
+    }
+
     const currentIsFiatMode = isFiatMode && focusOnCurrencyField === exactCurrencyField
     updateSwapForm({
       exactAmountFiat: currentIsFiatMode ? amount : undefined,
@@ -187,6 +204,7 @@ export function useSwapFormScreenCallbacks({
       exactAmountToken: amount,
       exactCurrencyField: CurrencyField.INPUT,
       focusOnCurrencyField: undefined,
+      isFiatMode: false,
       isMax: isMaxPercentage(percentage),
       presetPercentage: percentage,
     })
@@ -207,34 +225,33 @@ export function useSwapFormScreenCallbacks({
   })
 
   const onSwitchCurrencies = useEvent(() => {
-    // If exact output would fail if currencies switch, we never want to have OUTPUT as exact field / focused field
-    const newExactCurrencyField = isBridge
-      ? CurrencyField.INPUT
-      : exactOutputWouldFailIfCurrenciesSwitched
-        ? CurrencyField.INPUT
-        : exactFieldIsInput
-          ? CurrencyField.OUTPUT
-          : CurrencyField.INPUT
+    const update: Partial<SwapFormState> = { input: output, output: input }
 
-    // If for a bridge, when currencies are switched, update the new output to the old output chainId and change input to all networks
-    const newFilteredChainIds = isBridge
-      ? {
-          input: undefined,
-          output: output?.chainId,
-        }
-      : undefined
+    if (exactOutputWouldFailIfCurrenciesSwitched) {
+      update.exactCurrencyField = CurrencyField.INPUT
+      update.focusOnCurrencyField = CurrencyField.INPUT
 
-    updateSwapForm({
-      exactCurrencyField: newExactCurrencyField,
-      focusOnCurrencyField: newExactCurrencyField,
-      input: output,
-      output: input,
-      // Preserve the derived output amount if we force exact field to be input to keep USD value of the trade constant after switching
-      ...(exactOutputWouldFailIfCurrenciesSwitched && exactFieldIsInput && !isFiatMode
-        ? { exactAmountToken: formattedDerivedValueRef.current }
-        : undefined),
-      ...(isBridge ? { filteredChainIds: newFilteredChainIds } : undefined),
-    })
+      // Preserve the derived output amount to keep USD value of the trade constant after switching, unless disqualified by any of the following conditions
+      const canReuseDerivedOutputAmount = exactFieldIsInput && !isFiatMode && !sameAssetBridgeDetected
+
+      if (canReuseDerivedOutputAmount) {
+        update.exactAmountToken = formattedDerivedValueRef.current
+      }
+    } else {
+      const currentDependentField = exactFieldIsInput ? CurrencyField.OUTPUT : CurrencyField.INPUT
+      update.exactCurrencyField = currentDependentField
+      update.focusOnCurrencyField = currentDependentField
+    }
+
+    // For cross-chain, update the new output to the old output chainId and change input to all networks
+    if (isCrossChain) {
+      update.filteredChainIds = {
+        input: undefined,
+        output: output?.chainId,
+      }
+    }
+
+    updateSwapForm(update)
 
     // When we have FOT disable exact output logic, the cursor gets out of sync when switching currencies
     setTimeout(() => {

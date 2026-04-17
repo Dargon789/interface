@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { PositionInfo } from 'components/Liquidity/types'
-import { PopupType } from 'components/Popups/types'
-import { ReceiveCryptoModalInitialState } from 'components/ReceiveCryptoModal/types'
 import { ModalName, ModalNameType } from 'uniswap/src/features/telemetry/constants'
+import { PositionInfo } from '~/components/Liquidity/types'
+import { PopupType } from '~/components/Popups/types'
+import { ReceiveCryptoModalInitialState } from '~/components/ReceiveCryptoModal/types'
 
 export type LiquidityModalInitialState = PositionInfo
 
@@ -31,6 +31,26 @@ type ReceiveCryptoModalParams = {
   initialState: ReceiveCryptoModalInitialState
 }
 
+type DeletePasskeyModalInitialState = {
+  authenticatorId: string
+  isLastAuthenticator: boolean
+}
+
+export type DeletePasskeyModalParams = {
+  name: typeof ModalName.DeletePasskey
+  initialState: DeletePasskeyModalInitialState
+}
+
+type RemoveBackupLoginModalInitialState = {
+  recoveryMethodType: string
+  recoveryMethodIdentifier?: string
+}
+
+export type RemoveBackupLoginModalParams = {
+  name: typeof ModalName.RemoveBackupLogin
+  initialState: RemoveBackupLoginModalInitialState
+}
+
 export type OpenModalParams =
   | { name: ModalNameType; initialState?: undefined }
   | AddLiquidityModalParams
@@ -38,6 +58,8 @@ export type OpenModalParams =
   | ClaimFeeModalParams
   | BlockedAccountModalParams
   | ReceiveCryptoModalParams
+  | DeletePasskeyModalParams
+  | RemoveBackupLoginModalParams
 
 type CloseModalParams = ModalNameType
 
@@ -87,6 +109,7 @@ const applicationSlice = createSlice({
     removeSuppressedPopups(state, { payload: { popupTypes } }) {
       state.suppressedPopups = state.suppressedPopups.filter((type) => !popupTypes.includes(type))
     },
+    resetApplication: () => initialState,
   },
 })
 
@@ -97,5 +120,6 @@ export const {
   addSuppressedPopups,
   removeSuppressedPopups,
   updateDownloadGraduatedWalletCardsDismissed,
+  resetApplication,
 } = applicationSlice.actions
 export default applicationSlice.reducer

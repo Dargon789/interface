@@ -1,9 +1,9 @@
 import { getCapabilities as wagmi_getCapabilities } from '@wagmi/core/experimental'
-import { wagmiConfig } from 'components/Web3Provider/wagmiConfig'
-import { ensureValidatedCapabilities } from 'state/walletCapabilities/lib/ensureValidatedCapabilities'
-import { ChainCapabilities, GetCapabilitiesResult } from 'state/walletCapabilities/lib/types'
 import { ensure0xHex, numberToHex } from 'utilities/src/addresses/hex'
 import { getLogger } from 'utilities/src/logger/logger'
+import { wagmiConfig } from '~/components/Web3Provider/wagmiConfig'
+import { ensureValidatedCapabilities } from '~/state/walletCapabilities/lib/ensureValidatedCapabilities'
+import { ChainCapabilities, GetCapabilitiesResult } from '~/state/walletCapabilities/lib/types'
 
 const TIMEOUT_MS = 5000
 
@@ -63,7 +63,7 @@ export function isAtomicBatchingSupportedByChainId(
 ): boolean {
   const key = ensure0xHex(numberToHex(chainId))
   const chainCapabilities = chainCapabilitiesResult[key]
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (!chainCapabilities) {
     return false
   }

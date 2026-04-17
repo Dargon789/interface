@@ -26,8 +26,6 @@ export function HomeIntroCardStack(): JSX.Element | null {
     navigateToBackupFlow,
   })
 
-  // Don't show cards if there are none
-  // or if the account is view only (not yet available on extension, adding for safety)
   if (!cards.length || !isSignerAccount) {
     return null
   }

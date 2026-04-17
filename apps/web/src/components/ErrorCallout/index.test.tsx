@@ -1,5 +1,5 @@
-import { ErrorCallout } from 'components/ErrorCallout'
-import { render } from 'test-utils/render'
+import { ErrorCallout } from '~/components/ErrorCallout'
+import { render } from '~/test-utils/render'
 
 describe('ErrorCallout', () => {
   it('should render defaults', () => {
@@ -14,7 +14,7 @@ describe('ErrorCallout', () => {
   it('should not render errorMessage if true', () => {
     const { asFragment, queryByText } = render(<ErrorCallout errorMessage={true} />)
 
-    expect(queryByText('Error:')).not.toBeInTheDocument()
+    expect(queryByText('Request failed:')).not.toBeInTheDocument()
     expect(asFragment()).toMatchSnapshot()
   })
 })

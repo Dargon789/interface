@@ -1,11 +1,11 @@
 import { GraphQLApi } from '@universe/api'
-import { DeltaArrow } from 'components/Tokens/TokenDetails/Delta'
-import { NATIVE_CHAIN_ID } from 'constants/tokens'
-import { InteractiveToken } from 'pages/Landing/assets/approvedTokens'
 import { useMemo } from 'react'
 import { Flex, Text } from 'ui/src'
 import { ItemPoint } from 'uniswap/src/components/IconCloud/IconCloud'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { DeltaArrow } from '~/components/DeltaArrow/DeltaArrow'
+import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { InteractiveToken } from '~/pages/Landing/assets/approvedTokens'
 
 export function Ticker({ itemPoint }: { itemPoint: ItemPoint<InteractiveToken> }) {
   const { formatPercent } = useLocalizationContext()
@@ -29,9 +29,9 @@ export function Ticker({ itemPoint }: { itemPoint: ItemPoint<InteractiveToken> }
       position="absolute"
       flex={1}
       row
-      animation="100ms"
       opacity={0}
       x={0}
+      transition="all 0.1s ease-in-out"
       gap={20}
       $group-item-hover={{
         opacity: 1,

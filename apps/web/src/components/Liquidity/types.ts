@@ -3,10 +3,10 @@ import { Currency, CurrencyAmount, Percent, Price, Token } from '@uniswap/sdk-co
 import { Pair } from '@uniswap/v2-sdk'
 import { Pool as V3Pool, Position as V3Position } from '@uniswap/v3-sdk'
 import { Pool as V4Pool, Position as V4Position } from '@uniswap/v4-sdk'
-import { FeeData } from 'components/Liquidity/Create/types'
 import { ReactNode } from 'react'
-import { PositionField } from 'types/position'
 import { EVMUniverseChainId } from 'uniswap/src/features/chains/types'
+import { FeeData } from '~/components/Liquidity/Create/types'
+import { PositionField } from '~/types/position'
 
 export interface PriceOrdering {
   priceLower?: Price<Currency, Currency>
@@ -27,6 +27,7 @@ export interface DepositInfo {
   currencyBalances?: { [field in PositionField]?: CurrencyAmount<Currency> }
   currencyAmounts?: { [field in PositionField]?: Maybe<CurrencyAmount<Currency>> }
   currencyAmountsUSDValue?: { [field in PositionField]?: Maybe<CurrencyAmount<Currency>> }
+  currencyMaxAmounts?: { [field in PositionField]?: Maybe<CurrencyAmount<Currency>> }
   error?: ReactNode
 }
 
@@ -53,7 +54,7 @@ interface BasePositionInfo {
   isHidden?: boolean
 }
 
-type V2PairInfo = BasePositionInfo & {
+export type V2PairInfo = BasePositionInfo & {
   version: ProtocolVersion.V2
   poolOrPair?: Pair
   liquidityToken: Token

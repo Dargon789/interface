@@ -5,7 +5,7 @@ import { config } from 'uniswap/src/config'
 type WithScrollToTopProps = PropsWithChildren
 
 // accept any ref
-// biome-ignore lint/suspicious/noExplicitAny: Component needs to accept refs from various list types
+// oxlint-disable-next-line typescript/no-explicit-any, react/display-name -- Component needs to accept refs from various list types
 export const WithScrollToTop = React.forwardRef<any, WithScrollToTopProps>(({ children }, ref): JSX.Element => {
   const onPress = (): void => {
     if (typeof ref === 'function' || !ref?.current?.scrollToOffset) {

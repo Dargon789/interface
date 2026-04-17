@@ -1,7 +1,7 @@
-/* eslint-disable max-lines */
-import { PrefetchBalancesWrapper } from 'appGraphql/data/apollo/AdaptiveTokenBalancesProvider'
+/* oxlint-disable max-lines */
+
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import type { Currency, Percent } from '@uniswap/sdk-core'
+import type { Currency } from '@uniswap/sdk-core'
 import {
   AllowedV4WethHookAddressesConfigKey,
   DynamicConfigs,
@@ -9,56 +9,55 @@ import {
   useDynamicConfigValue,
   useFeatureFlag,
 } from '@universe/gating'
-import CreatingPoolInfo from 'components/CreatingPoolInfo/CreatingPoolInfo'
-import { ErrorCallout } from 'components/ErrorCallout'
-import { AddHook } from 'components/Liquidity/Create/AddHook'
-import { AdvancedButton } from 'components/Liquidity/Create/AdvancedButton'
-import { useLiquidityUrlState } from 'components/Liquidity/Create/hooks/useLiquidityUrlState'
-import type { FeeData } from 'components/Liquidity/Create/types'
-import { DEFAULT_POSITION_STATE } from 'components/Liquidity/Create/types'
-import { HookModal } from 'components/Liquidity/HookModal'
-import { useAllFeeTierPoolData } from 'components/Liquidity/hooks/useAllFeeTierPoolData'
-import { getDefaultFeeTiersWithData, getFeeTierKey, isDynamicFeeTier } from 'components/Liquidity/utils/feeTiers'
-import { hasLPFoTTransferError } from 'components/Liquidity/utils/hasLPFoTTransferError'
-import { DoubleCurrencyLogo } from 'components/Logo/DoubleLogo'
-import { LpIncentivesAprDisplay } from 'components/LpIncentives/LpIncentivesAprDisplay'
-import { SwitchNetworkAction } from 'components/Popups/types'
-import CurrencySearchModal from 'components/SearchModal/CurrencySearchModal'
-import { MouseoverTooltip } from 'components/Tooltip'
-import { BIPS_BASE } from 'constants/misc'
-import { SUPPORTED_V2POOL_CHAIN_IDS } from 'hooks/useNetworkSupportsV2'
-import { useCreateLiquidityContext } from 'pages/CreatePosition/CreateLiquidityContextProvider'
 import type { Dispatch, SetStateAction } from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { useMultichainContext } from 'state/multichain/useMultichainContext'
-import { serializeSwapStateToURLParameters } from 'state/swap/hooks'
-import { ClickableTamaguiStyle } from 'theme/components/styles'
 import type { FlexProps } from 'ui/src'
-import { Button, DropdownButton, Flex, HeightAnimator, Shine, styled, Text } from 'ui/src'
-import { CheckCircleFilled } from 'ui/src/components/icons/CheckCircleFilled'
+import { Button, DropdownButton, Flex, Shine, Text } from 'ui/src'
 import { InfoCircleFilled } from 'ui/src/components/icons/InfoCircleFilled'
-import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import { Search } from 'ui/src/components/icons/Search'
 import { iconSizes } from 'ui/src/theme'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
+import { TokenSelectorFlow } from 'uniswap/src/components/TokenSelector/types'
 import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { nativeOnChain, WRAPPED_NATIVE_CURRENCY } from 'uniswap/src/constants/tokens'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import type { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
-import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
-import { isSVMChain } from 'uniswap/src/features/platforms/utils/chains'
 import { LiquidityEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { FeePoolSelectAction } from 'uniswap/src/features/telemetry/types'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { areCurrenciesEqual, currencyId } from 'uniswap/src/utils/currencyId'
-import { NumberType } from 'utilities/src/format/types'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
-import { isV4UnsupportedChain } from 'utils/networkSupportsV4'
+import { PrefetchBalancesWrapper } from '~/appGraphql/data/apollo/AdaptiveTokenBalancesProvider'
+import CreatingPoolInfo from '~/components/CreatingPoolInfo/CreatingPoolInfo'
+import { ErrorCallout } from '~/components/ErrorCallout'
+import { AddHook } from '~/components/Liquidity/Create/AddHook'
+import { AdvancedButton } from '~/components/Liquidity/Create/AdvancedButton'
+import { useLiquidityUrlState } from '~/components/Liquidity/Create/hooks/useLiquidityUrlState'
+import { PoolParsingError } from '~/components/Liquidity/Create/PoolParsingError'
+import type { FeeData } from '~/components/Liquidity/Create/types'
+import { DEFAULT_POSITION_STATE } from '~/components/Liquidity/Create/types'
+import { FeeTierSelector } from '~/components/Liquidity/FeeTierSelector'
+import { HookModal } from '~/components/Liquidity/HookModal'
+import { useAllFeeTierPoolData } from '~/components/Liquidity/hooks/useAllFeeTierPoolData'
+import { getDefaultFeeTiersWithData, getFeeTierKey } from '~/components/Liquidity/utils/feeTiers'
+import { hasLPFoTTransferError } from '~/components/Liquidity/utils/hasLPFoTTransferError'
+import { isUnsupportedLPChain } from '~/components/Liquidity/utils/isUnsupportedLPChain'
+import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
+import { LpIncentivesAprDisplay } from '~/components/LpIncentives/LpIncentivesAprDisplay'
+import { SwitchNetworkAction } from '~/components/Popups/types'
+import CurrencySearchModal from '~/components/SearchModal/CurrencySearchModal'
+import { MouseoverTooltip } from '~/components/Tooltip'
+import { SUPPORTED_V2POOL_CHAIN_IDS } from '~/hooks/useNetworkSupportsV2'
+import { useCreateLiquidityContext } from '~/pages/CreatePosition/CreateLiquidityContextProvider'
+import { useMultichainContext } from '~/state/multichain/useMultichainContext'
+import { serializeSwapStateToURLParameters } from '~/state/swap/hooks'
+import { ClickableTamaguiStyle } from '~/theme/components/styles'
+import { isV4UnsupportedChain } from '~/utils/networkSupportsV4'
 
 interface WrappedNativeWarning {
   wrappedToken: Currency
@@ -107,97 +106,6 @@ export const CurrencySelector = ({
   )
 }
 
-interface FeeTierData {
-  value: FeeData
-  title: string
-  selectionPercent?: Percent
-  tvl: string
-  boostedApr?: number
-}
-
-const FeeTierContainer = styled(Flex, {
-  flex: 1,
-  width: '100%',
-  p: '$spacing12',
-  gap: '$spacing8',
-  borderRadius: '$rounded12',
-  borderWidth: 1,
-  borderColor: '$surface3',
-  position: 'relative',
-  ...ClickableTamaguiStyle,
-})
-
-function isUnsupportedLPChain(chainId: UniverseChainId | undefined, protocolVersion: ProtocolVersion): boolean {
-  if (chainId && isSVMChain(chainId)) {
-    return true
-  }
-
-  if (protocolVersion === ProtocolVersion.V2) {
-    return Boolean(chainId && !SUPPORTED_V2POOL_CHAIN_IDS.includes(chainId))
-  }
-
-  if (protocolVersion === ProtocolVersion.V4) {
-    return isV4UnsupportedChain(chainId)
-  }
-
-  return false
-}
-
-const FeeTier = ({
-  feeTier,
-  selected,
-  onSelect,
-  isLpIncentivesEnabled,
-}: {
-  feeTier: FeeTierData
-  selected: boolean
-  onSelect: (value: FeeData) => void
-  isLpIncentivesEnabled?: boolean
-}) => {
-  const { t } = useTranslation()
-  const { formatNumberOrString, formatPercent } = useLocalizationContext()
-
-  return (
-    <FeeTierContainer
-      onPress={() => onSelect(feeTier.value)}
-      background={selected ? '$surface3' : '$surface1'}
-      justifyContent="space-between"
-    >
-      <Flex gap="$spacing8">
-        <Flex row gap={10} justifyContent="space-between">
-          <Text variant="buttonLabel3">
-            {feeTier.value.isDynamic ? t('common.dynamic') : formatPercent(feeTier.value.feeAmount / BIPS_BASE, 4)}
-          </Text>
-          {selected && <CheckCircleFilled size="$icon.16" />}
-        </Flex>
-        <Text variant="body4">{feeTier.title}</Text>
-      </Flex>
-      <Flex mt="$spacing16" gap="$spacing2" alignItems="flex-end">
-        <Flex row justifyContent="space-between" width="100%" alignItems="flex-end">
-          <Flex>
-            <Text variant="body4" color="$neutral2">
-              {feeTier.tvl === '0'
-                ? '0'
-                : formatNumberOrString({ value: feeTier.tvl, type: NumberType.FiatTokenStats })}{' '}
-              {t('common.totalValueLocked')}
-            </Text>
-            {feeTier.selectionPercent && feeTier.selectionPercent.greaterThan(0) && (
-              <Text variant="body4" color="$neutral2">
-                {t('fee.tier.percent.select', {
-                  percentage: formatPercent(feeTier.selectionPercent.toSignificant(), 3),
-                })}
-              </Text>
-            )}
-          </Flex>
-          {isLpIncentivesEnabled && feeTier.boostedApr !== undefined && feeTier.boostedApr > 0 && (
-            <LpIncentivesAprDisplay lpIncentiveRewardApr={feeTier.boostedApr} isSmall />
-          )}
-        </Flex>
-      </Flex>
-    </FeeTierContainer>
-  )
-}
-
 const DEFAULT_ADDRESSES: string[] = [] // this has to be a const to prevent a rerender loop
 
 export function SelectTokensStep({
@@ -213,7 +121,6 @@ export function SelectTokensStep({
   setCurrencyInputs: Dispatch<SetStateAction<{ tokenA: Maybe<Currency>; tokenB: Maybe<Currency> }>>
 } & FlexProps) {
   const { loadingA, loadingB } = useLiquidityUrlState()
-  const { formatPercent } = useLocalizationContext()
   const { t } = useTranslation()
   const { setSelectedChainId } = useMultichainContext()
   const trace = useTrace()
@@ -232,6 +139,7 @@ export function SelectTokensStep({
     protocolVersion,
     creatingPoolOrPair,
     currencies,
+    poolOrPairLoading,
     poolOrPair,
     setFeeTierSearchModalOpen,
   } = useCreateLiquidityContext()
@@ -245,8 +153,6 @@ export function SelectTokensStep({
   const isToken1Unsupported = isUnsupportedLPChain(token1?.chainId, protocolVersion)
   const unsupportedChainId = isToken0Unsupported ? token0?.chainId : isToken1Unsupported ? token1?.chainId : undefined
   const isUnsupportedTokenSelected = isToken0Unsupported || isToken1Unsupported
-
-  const continueButtonEnabled = creatingPoolOrPair || poolOrPair
 
   const handleCurrencySelect = useCallback(
     (currency: Currency) => {
@@ -337,11 +243,6 @@ export function SelectTokensStep({
       return
     }
 
-    // If the tokens are locked, return
-    if (tokensLocked) {
-      return
-    }
-
     if (mostUsedFeeTier) {
       setPositionState((prevState) => ({
         ...prevState,
@@ -353,7 +254,7 @@ export function SelectTokensStep({
         ...trace,
       })
     }
-  }, [tokensLocked, mostUsedFeeTier, fee, setPositionState, trace])
+  }, [mostUsedFeeTier, fee, setPositionState, trace])
 
   const { chains } = useEnabledChains({ platform: Platform.EVM })
   const supportedChains = useMemo(() => {
@@ -428,6 +329,18 @@ export function SelectTokensStep({
 
   const hasError = isUnsupportedTokenSelected || Boolean(fotErrorToken)
 
+  const currentFeeTierKey = useMemo(
+    () =>
+      fee
+        ? getFeeTierKey({
+            feeTier: fee.feeAmount,
+            tickSpacing: fee.tickSpacing,
+            isDynamicFee: fee.isDynamic,
+          })
+        : undefined,
+    [fee],
+  )
+
   const lpIncentiveRewardApr = useMemo(() => {
     if (!isLpIncentivesEnabled || protocolVersion !== ProtocolVersion.V4) {
       return undefined
@@ -437,10 +350,15 @@ export function SelectTokensStep({
     // to ensure the current selected fee tier rewards APR matches the same fee tier in the fee tier selector,
     // grab the rewards tier from the fee tier directly
     const matchingFeeTier = Object.values(feeTierData).find(
-      (tier) => getFeeTierKey(tier.fee.feeAmount, tier.fee.isDynamic) === getFeeTierKey(fee?.feeAmount, fee?.isDynamic),
+      (tier) =>
+        getFeeTierKey({
+          feeTier: tier.fee.feeAmount,
+          tickSpacing: tier.fee.tickSpacing,
+          isDynamicFee: tier.fee.isDynamic,
+        }) === currentFeeTierKey,
     )
     return matchingFeeTier?.boostedApr && matchingFeeTier.boostedApr > 0 ? matchingFeeTier.boostedApr : undefined
-  }, [isLpIncentivesEnabled, protocolVersion, feeTierData, fee?.feeAmount, fee?.isDynamic])
+  }, [isLpIncentivesEnabled, protocolVersion, feeTierData, currentFeeTierKey])
 
   const defaultFeeTiers = getDefaultFeeTiersWithData({ chainId: token0?.chainId, feeTierData, protocolVersion })
 
@@ -516,101 +434,81 @@ export function SelectTokensStep({
             </Flex>
 
             {protocolVersion !== ProtocolVersion.V2 && (
-              <Flex gap="$spacing8" pointerEvents={hasError ? 'none' : 'auto'} opacity={hasError ? 0.5 : 1}>
-                <Flex borderRadius="$rounded12" borderWidth="$spacing1" borderColor="$surface3">
-                  <Flex
-                    row
-                    gap="$spacing24"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    py="$spacing12"
-                    px="$spacing16"
-                  >
-                    <Flex gap="$gap4" flex={1} minWidth={0}>
-                      <Flex row gap="$gap8" alignItems="center">
-                        <Text variant="subheading2" color={fee ? '$neutral1' : '$neutral2'}>
-                          {!fee ? (
-                            <Trans i18nKey="fee.tier.default" />
-                          ) : isDynamicFeeTier(fee) ? (
-                            <Trans i18nKey="fee.tier.dynamic" />
-                          ) : (
-                            <Trans
-                              i18nKey="fee.tierExact"
-                              values={{ fee: formatPercent(fee.feeAmount / BIPS_BASE, 4) }}
-                            />
-                          )}
+              <FeeTierSelector
+                selectedFee={fee}
+                onFeeSelect={handleFeeTierSelect}
+                feeTiers={defaultFeeTiers}
+                disabled={
+                  hasError || !currencyInputs.tokenA || !currencyInputs.tokenB || Boolean(initialPosition?.isOutOfRange)
+                }
+                isLpIncentivesEnabled={isLpIncentivesEnabled}
+                hasLpRewards={feeTierHasLpRewards}
+                isExpanded={isShowMoreFeeTiersEnabled}
+                onToggleExpand={toggleShowMoreFeeTiersEnabled}
+                headerInlineContent={
+                  <>
+                    {fee &&
+                    currentFeeTierKey ===
+                      (mostUsedFeeTier &&
+                        getFeeTierKey({
+                          feeTier: mostUsedFeeTier.fee.feeAmount,
+                          tickSpacing: mostUsedFeeTier.fee.tickSpacing,
+                          isDynamicFee: mostUsedFeeTier.fee.isDynamic,
+                        })) ? (
+                      <MouseoverTooltip text={t('fee.tier.recommended.description')}>
+                        <Flex
+                          justifyContent="center"
+                          borderRadius="$rounded6"
+                          backgroundColor="$surface3"
+                          px={7}
+                          py={2}
+                          $md={{ display: 'none' }}
+                        >
+                          <Text variant="buttonLabel4">
+                            <Trans i18nKey="fee.tier.highestTvl" />
+                          </Text>
+                        </Flex>
+                      </MouseoverTooltip>
+                    ) : // oxlint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                    currentFeeTierKey && !feeTierData[currentFeeTierKey]?.created ? (
+                      <Flex justifyContent="center" borderRadius="$rounded6" backgroundColor="$surface3" px={7}>
+                        <Text variant="buttonLabel4">
+                          <Trans i18nKey="fee.tier.new" />
                         </Text>
-                        {fee &&
-                        getFeeTierKey(fee.feeAmount, fee.isDynamic) ===
-                          (mostUsedFeeTier &&
-                            getFeeTierKey(mostUsedFeeTier.fee.feeAmount, mostUsedFeeTier.fee.isDynamic)) ? (
-                          <MouseoverTooltip text={t('fee.tier.recommended.description')}>
-                            <Flex
-                              justifyContent="center"
-                              borderRadius="$rounded6"
-                              backgroundColor="$surface3"
-                              px={7}
-                              py={2}
-                              $md={{ display: 'none' }}
-                            >
-                              <Text variant="buttonLabel4">
-                                <Trans i18nKey="fee.tier.highestTvl" />
-                              </Text>
-                            </Flex>
-                          </MouseoverTooltip>
-                        ) : fee &&
-                          defaultFeeTiers.find(
-                            (tier) =>
-                              getFeeTierKey(tier.value.feeAmount, tier.value.isDynamic) ===
-                              getFeeTierKey(fee.feeAmount, fee.isDynamic),
-                          ) ? null : fee ? (
-                          <Flex justifyContent="center" borderRadius="$rounded6" backgroundColor="$surface3" px={7}>
-                            <Text variant="buttonLabel4">
-                              <Trans i18nKey="fee.tier.new" />
-                            </Text>
-                          </Flex>
-                        ) : null}
-                        {fee && lpIncentiveRewardApr && (
-                          <LpIncentivesAprDisplay
-                            lpIncentiveRewardApr={lpIncentiveRewardApr}
-                            $md={{ display: 'none' }}
-                            isSmall
-                          />
-                        )}
                       </Flex>
-                      <Text variant="body3" color="$neutral2">
-                        <Trans i18nKey="fee.tier.label" />
-                      </Text>
-                      {lpIncentiveRewardApr && (
-                        <LpIncentivesAprDisplay
-                          lpIncentiveRewardApr={lpIncentiveRewardApr}
-                          display="none"
-                          $md={{ display: 'flex' }}
-                          isSmall
-                        />
-                      )}
-                    </Flex>
-                    <Button
-                      fill={false}
-                      isDisabled={!currencyInputs.tokenA || !currencyInputs.tokenB || initialPosition?.isOutOfRange}
-                      size="xsmall"
-                      maxWidth="fit-content"
-                      emphasis="secondary"
-                      onPress={toggleShowMoreFeeTiersEnabled}
-                      $md={{ width: 32 }}
-                      icon={
-                        <RotatableChevron
-                          direction={isShowMoreFeeTiersEnabled ? 'up' : 'down'}
-                          width={iconSizes.icon20}
-                          height={iconSizes.icon20}
-                        />
-                      }
-                      iconPosition="after"
-                    >
-                      {isShowMoreFeeTiersEnabled ? t('common.less') : t('common.more')}
-                    </Button>
-                  </Flex>
-                  {!lpIncentiveRewardApr && feeTierHasLpRewards && !isShowMoreFeeTiersEnabled && (
+                    ) : null}
+                    {fee && lpIncentiveRewardApr && (
+                      <LpIncentivesAprDisplay
+                        lpIncentiveRewardApr={lpIncentiveRewardApr}
+                        $md={{ display: 'none' }}
+                        isSmall
+                      />
+                    )}
+                  </>
+                }
+                headerSubContent={
+                  lpIncentiveRewardApr ? (
+                    <LpIncentivesAprDisplay
+                      lpIncentiveRewardApr={lpIncentiveRewardApr}
+                      display="none"
+                      $md={{ display: 'flex' }}
+                      isSmall
+                    />
+                  ) : undefined
+                }
+                expandedFooterContent={
+                  protocolVersion === ProtocolVersion.V4 ? (
+                    <AdvancedButton
+                      title={t('fee.tier.search')}
+                      Icon={Search}
+                      onPress={() => {
+                        setFeeTierSearchModalOpen(true)
+                      }}
+                    />
+                  ) : undefined
+                }
+                footerContent={
+                  !lpIncentiveRewardApr && feeTierHasLpRewards && !isShowMoreFeeTiersEnabled ? (
                     <Flex
                       row
                       alignItems="center"
@@ -638,46 +536,9 @@ export function SelectTokensStep({
                         {t('pool.incentives.switchPools')}
                       </Text>
                     </Flex>
-                  )}
-                </Flex>
-                <HeightAnimator open={isShowMoreFeeTiersEnabled}>
-                  <Flex flexDirection="column" display="flex" gap="$gap12">
-                    <Flex
-                      $platform-web={{
-                        display: 'grid',
-                      }}
-                      gridTemplateColumns={feeTierHasLpRewards ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)'}
-                      $md={{
-                        gridTemplateColumns: feeTierHasLpRewards ? 'repeat(1, 1fr)' : 'repeat(2, 1fr)',
-                      }}
-                      gap={10}
-                    >
-                      {defaultFeeTiers.map((feeTier) => (
-                        <FeeTier
-                          key={feeTier.value.feeAmount}
-                          feeTier={feeTier}
-                          selected={
-                            !!fee &&
-                            getFeeTierKey(feeTier.value.feeAmount, feeTier.value.isDynamic) ===
-                              getFeeTierKey(fee.feeAmount, fee.isDynamic)
-                          }
-                          onSelect={handleFeeTierSelect}
-                          isLpIncentivesEnabled={isLpIncentivesEnabled}
-                        />
-                      ))}
-                    </Flex>
-                    {protocolVersion === ProtocolVersion.V4 && (
-                      <AdvancedButton
-                        title={t('fee.tier.search')}
-                        Icon={Search}
-                        onPress={() => {
-                          setFeeTierSearchModalOpen(true)
-                        }}
-                      />
-                    )}
-                  </Flex>
-                </HeightAnimator>
-              </Flex>
+                  ) : undefined
+                }
+              />
             )}
           </Flex>
           <CreatingPoolInfo />
@@ -686,12 +547,15 @@ export function SelectTokensStep({
               size="large"
               key="SelectTokensStep-continue"
               onPress={handleOnContinue}
-              loading={Boolean(!continueButtonEnabled && token0 && token1 && fee)}
-              isDisabled={!continueButtonEnabled || hasError || (showWrappedNativeWarning && !!wrappedNativeWarning)}
+              loading={Boolean(poolOrPairLoading && token0 && token1 && fee)}
+              isDisabled={
+                !(creatingPoolOrPair || poolOrPair) || hasError || (showWrappedNativeWarning && !!wrappedNativeWarning)
+              }
             >
               {t('common.button.continue')}
             </Button>
           </Flex>
+          <PoolParsingError formComplete={Boolean(token0 && token1 && fee)} />
           {showWrappedNativeWarning && wrappedNativeWarning && (
             <SelectStepError
               isUnsupportedTokenSelected={false}
@@ -708,6 +572,7 @@ export function SelectTokensStep({
           switchNetworkAction={SwitchNetworkAction.LP}
           onCurrencySelect={handleCurrencySelect}
           chainIds={supportedChains}
+          flow={TokenSelectorFlow.Liquidity}
         />
       </PrefetchBalancesWrapper>
     </>

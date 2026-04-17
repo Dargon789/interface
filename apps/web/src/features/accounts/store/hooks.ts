@@ -1,7 +1,6 @@
-/* eslint-disable import/no-unused-modules */
-import { useAccountsStoreContext } from 'features/accounts/store/provider'
+/* oxlint-disable import/no-unused-modules */
+
 import { useMemo } from 'react'
-import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
 import { AccessPattern } from 'uniswap/src/features/accounts/store/types/Connector'
 import { createUseActiveAccount } from 'uniswap/src/features/accounts/store/utils/accounts'
 import { createUseActiveAddress, createUseActiveAddresses } from 'uniswap/src/features/accounts/store/utils/addresses'
@@ -12,6 +11,7 @@ import {
 import { createUseAccountsStore } from 'uniswap/src/features/accounts/store/utils/createUseAccountsStore'
 import { createUseActiveWallet, createUseWalletWithId } from 'uniswap/src/features/accounts/store/utils/wallets'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
+import { useAccountsStoreContext } from '~/features/accounts/store/provider'
 
 export const useAccountsStore = createUseAccountsStore(useAccountsStoreContext)
 
@@ -46,11 +46,6 @@ const useWalletWithConnectors = (walletId: string) => {
 
 export function useIsInjectedWallet(walletId: string) {
   const { evmConnector, svmConnector } = useWalletWithConnectors(walletId)
-
-  // Porto is exposed by wagmi as injected, but we don't want to show it in the wallet modal as a detected wallet
-  if (walletId === CONNECTION_PROVIDER_IDS.PORTO_CONNECTOR_ID) {
-    return false
-  }
 
   return evmConnector?.access === AccessPattern.Injected || svmConnector?.access === AccessPattern.Injected
 }

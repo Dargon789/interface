@@ -1,4 +1,7 @@
 import { datadogRum } from '@datadog/browser-rum'
+import { useQuery } from '@tanstack/react-query'
+import { provideUniswapIdentifierService } from '@universe/api'
+import { uniswapIdentifierQuery } from '@universe/sessions'
 import { useEffect } from 'react'
 import { useIsDarkMode } from 'ui/src'
 import { DisplayNameType } from 'uniswap/src/features/accounts/types'
@@ -7,7 +10,7 @@ import { useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useCurrentLanguage } from 'uniswap/src/features/language/hooks'
 import { useHideSmallBalancesSetting, useHideSpamTokensSetting } from 'uniswap/src/features/settings/hooks'
 import { ExtensionUserPropertyName, setUserProperty } from 'uniswap/src/features/telemetry/user'
-// biome-ignore lint/style/noRestrictedImports: Direct analytics import required for user property tracking
+// oxlint-disable-next-line no-restricted-imports -- Direct analytics import required for user property tracking
 import { analytics } from 'utilities/src/telemetry/analytics/analytics'
 import { useGatingUserPropertyUsernames } from 'wallet/src/features/gating/userPropertyHooks'
 import {
@@ -30,6 +33,8 @@ export function TraceUserProperties(): null {
   const { isTestnetModeEnabled } = useEnabledChains()
   const displayName = useDisplayName(activeAccount?.address)
 
+  const { data: uniswapIdentifier } = useQuery(uniswapIdentifierQuery(provideUniswapIdentifierService))
+
   useGatingUserPropertyUsernames()
 
   // Set user properties for datadog
@@ -37,6 +42,12 @@ export function TraceUserProperties(): null {
   useEffect(() => {
     datadogRum.setUserProperty(ExtensionUserPropertyName.ActiveWalletAddress, activeAccount?.address)
   }, [activeAccount?.address])
+
+  useEffect(() => {
+    if (uniswapIdentifier) {
+      datadogRum.setUserProperty(ExtensionUserPropertyName.UniswapIdentifier, uniswapIdentifier)
+    }
+  }, [uniswapIdentifier])
 
   // Set user properties for amplitude
 

@@ -1,15 +1,15 @@
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
+import { CurrencyInfo, MultichainSearchResult } from 'uniswap/src/features/dataApi/types'
 
 /* Types of list item options */
 export enum OnchainItemListOptionType {
   Token = 'Token',
+  MultichainToken = 'MultichainToken',
   Pool = 'Pool',
   WalletByAddress = 'WalletByAddress',
   ENSAddress = 'ENSAddress',
   Unitag = 'Unitag',
-  NFTCollection = 'NFTCollection',
 }
 
 export interface BaseOption {
@@ -22,6 +22,12 @@ export interface TokenOption extends BaseOption {
   quantity: number | null // float representation of balance, returned by data-api
   balanceUSD: Maybe<number>
   isUnsupported?: boolean
+}
+
+export interface MultichainTokenOption extends BaseOption {
+  type: OnchainItemListOptionType.MultichainToken
+  multichainResult: MultichainSearchResult
+  primaryCurrencyInfo: CurrencyInfo
 }
 
 export interface PoolOption extends BaseOption {
@@ -55,17 +61,9 @@ export interface UnitagOption extends BaseOption {
   unitag: string
 }
 
-export interface NFTCollectionOption extends BaseOption {
-  type: OnchainItemListOptionType.NFTCollection
-  chainId: UniverseChainId
-  address: Address
-  name: string
-  imageUrl: string | null
-  isVerified: boolean
-}
 // Union of item types for different list use cases
-export type MobileExploreSearchModalOption = TokenOption | WalletOption | NFTCollectionOption
-export type WebSearchModalOption = TokenOption | PoolOption
+export type MobileExploreSearchModalOption = TokenOption | MultichainTokenOption | WalletOption
+export type WebSearchModalOption = TokenOption | MultichainTokenOption | PoolOption | WalletOption
 export type SearchModalOption = MobileExploreSearchModalOption | WebSearchModalOption
 
 export type TokenSelectorOption = TokenOption | TokenOption[]

@@ -1,6 +1,6 @@
 import { UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query'
-import { BiometricUnlockStorage } from 'src/app/features/biometricUnlock/BiometricUnlockStorage'
 import { biometricUnlockCredentialQuery } from 'src/app/features/biometricUnlock/biometricUnlockCredentialQuery'
+import { BiometricUnlockStorage } from 'src/app/features/biometricUnlock/BiometricUnlockStorage'
 import { logger } from 'utilities/src/logger/logger'
 
 export function useBiometricUnlockDisableMutation(): UseMutationResult<void, Error, void> {
@@ -11,6 +11,7 @@ export function useBiometricUnlockDisableMutation(): UseMutationResult<void, Err
       await BiometricUnlockStorage.remove()
     },
     onSettled: () => {
+      // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
       queryClient.invalidateQueries(biometricUnlockCredentialQuery())
     },
     onError: (error) => {

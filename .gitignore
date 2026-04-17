@@ -7,15 +7,20 @@ node_modules
 
 # testing
 coverage
+test-results/
 
 # utility script output
 scripts/dist
 tools/uniswap-nx/dist
 
-# next.js
+# build output
 .next/
 out/
+bin/
 build
+
+# React Router
+.react-router/
 
 # misc
 .DS_Store
@@ -29,6 +34,7 @@ yarn-error.log*
 
 # local env files
 .env
+.env.local
 .env.defaults.local
 
 # turbo
@@ -36,19 +42,25 @@ yarn-error.log*
 
 # nx
 .nx/
+graph.json
 
 # .yarn files
 .yarn/cache
 .yarn/versions
 .yarn/install-state.gz
 
+# typescript
 dist/out-tsc/*
+tsconfig.tsbuildinfo
 
 # Locale backup/generated files
 packages/uniswap/src/i18n/locales/source/*_old.json
 
 # ci
 .ci-cache/
+
+# cli gh analysis artifacts
+.analysis/
 
 # JetBrains
 .idea/
@@ -59,8 +71,14 @@ packages/uniswap/src/i18n/locales/source/*_old.json
 # CodeTours Extension
 .tours/*
 
-# RNEF
-.rnef/
+# Expo
+.expo/
+
+# Watchman
+.watchman-cookie-*
+
+# auto-generated test ids
+apps/mobile/.maestro/scripts/testIds.js
 
 # claude
 claude.local.md
@@ -68,10 +86,12 @@ CLAUDE.local.md
 .claude/settings.local.json
 .claude/local/
 **/*/.claude/user/*
+**/*/.claude/local/
 
 # cursor
 .cursor/mcp.json
 .cursor/rules/local-workflow.mdc
+.cursor/*.log
 
 # lefthook
 .lefthook/
@@ -83,3 +103,7 @@ CLAUDE.local.md
 
 # Spec Workflow MCP
 .spec-workflow/
+
+# temporary files
+/tmp/
+.env*.local

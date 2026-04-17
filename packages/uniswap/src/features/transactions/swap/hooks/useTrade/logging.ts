@@ -1,5 +1,5 @@
 import { TradeType } from '@uniswap/sdk-core'
-import { FetchError } from '@universe/api/src'
+import { FetchError } from '@universe/api'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { SwapEventName } from 'uniswap/src/features/telemetry/constants/features'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
@@ -110,6 +110,7 @@ function logBlockingTradeError(params: { blockingError: BlockingTradeError }): v
       file: 'packages/uniswap/src/features/transactions/swap/hooks/useTrade/logging.ts',
       function: 'logBlockingTradeError',
     },
+    // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
     extra: { ...params.blockingError },
   })
 }

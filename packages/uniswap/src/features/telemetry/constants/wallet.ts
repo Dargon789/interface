@@ -2,7 +2,7 @@ import { SharedEventName } from '@uniswap/analytics-events'
 import { ExtensionEventName } from 'uniswap/src/features/telemetry/constants/extension'
 import { SwapEventName } from 'uniswap/src/features/telemetry/constants/features'
 import { UniswapEventName } from 'uniswap/src/features/telemetry/constants/uniswap'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import type { TestnetModeConfig } from 'utilities/src/telemetry/analytics/analytics'
 
 export enum WalletEventName {
@@ -19,7 +19,6 @@ export enum WalletEventName {
   MismatchAccountSignatureRequestBlocked = 'Mismatch Account Signature Request Blocked',
   NFTVisibilityChanged = 'NFT Visibility Changed',
   NFTsLoaded = 'NFTs Loaded',
-  NetworkFilterSelected = 'Network Filter Selected',
   OnboardingIntroCardClosed = 'Onboarding Intro Card Closed',
   OnboardingIntroCardPressed = 'Onboarding Intro Card Pressed',
   OnboardingIntroCardSwiped = 'Onboarding Intro Card Swiped',
@@ -47,10 +46,10 @@ export const WALLET_TESTNET_CONFIG: TestnetModeConfig = {
   allowlistEvents: [
     SharedEventName.PAGE_VIEWED,
     SharedEventName.ELEMENT_CLICKED,
+    UniswapEventName.NetworkFilterSelected,
     UniswapEventName.TokenSelected,
     UniswapEventName.TooltipOpened,
     WalletEventName.ExternalLinkOpened,
-    WalletEventName.NetworkFilterSelected,
     WalletEventName.SwapSubmitted,
     WalletEventName.TransferCompleted,
     WalletEventName.TransferSubmitted,

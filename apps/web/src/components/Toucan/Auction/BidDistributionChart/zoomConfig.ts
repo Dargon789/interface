@@ -21,6 +21,9 @@ export const BID_DISTRIBUTION_INITIAL_ZOOM = {
     afterPercentOfFullRange: 0.02,
     /** Minimum padding in ticks on either side (prevents “too tight” zooms on small ranges). */
     minPadTicks: 2,
+    /** Cap padding at this multiple of the concentration band width per side.
+     *  Prevents outlier bids from stretching the initial view far beyond the concentration band. */
+    maxPadConcentrationMultiplier: 3,
   },
 } as const
 
@@ -38,4 +41,7 @@ export const BID_DEMAND_INITIAL_ZOOM = {
   afterConcentrationPercentOfFullRange: 0.02,
   /** Minimum padding ticks on the right side */
   minPadTicksAfter: 2,
+  /** Cap padding at this multiple of the concentration band width.
+   *  Prevents outlier bids from stretching the initial view far beyond the concentration band. */
+  maxPadConcentrationMultiplier: 3,
 } as const

@@ -54,10 +54,11 @@ export function computeTickGroupingConfig(params: {
   minTick: number
   maxTick: number
   tickSizeDecimal: number
+  barStep?: number
   clearingPriceDecimal: number
   concentration: { startTick: number; endTick: number } | null
 }): TickGroupingConfig {
-  const { bars, minTick, maxTick, tickSizeDecimal, clearingPriceDecimal, concentration } = params
+  const { bars, minTick, maxTick, tickSizeDecimal, barStep, clearingPriceDecimal, concentration } = params
 
   if (bars.length === 0 || !Number.isFinite(tickSizeDecimal) || tickSizeDecimal <= 0) {
     return { groupSizeTicks: 1, medianOffsetTicks: 0 }
@@ -73,21 +74,26 @@ export function computeTickGroupingConfig(params: {
         beforePercentOfFullRange: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.beforePercentOfFullRange,
         afterPercentOfFullRange: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.afterPercentOfFullRange,
         minPadTicks: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.minPadTicks,
+        maxPadConcentrationMultiplier: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.maxPadConcentrationMultiplier,
       })
     : calculateInitialVisibleRange({
         clearingPrice: clearingPriceDecimal,
         minTick,
         maxTick,
         tickSize: tickSizeDecimal,
+        barStep,
       })
 
+  // Use barStep (rendered-bar spacing) so indices map to actual bars, not raw ticks.
+  const indexStep = Number.isFinite(barStep) && barStep && barStep > 0 ? barStep : tickSizeDecimal
+
   const fromIndex = clampInt({
-    value: Math.floor((initialRange.from - minTick) / tickSizeDecimal),
+    value: Math.floor((initialRange.from - minTick) / indexStep),
     min: 0,
     max: bars.length - 1,
   })
   const toIndex = clampInt({
-    value: Math.ceil((initialRange.to - minTick) / tickSizeDecimal),
+    value: Math.ceil((initialRange.to - minTick) / indexStep),
     min: 0,
     max: bars.length - 1,
   })
@@ -125,10 +131,11 @@ export interface GroupedTickBar {
 export function groupTickBars(params: {
   bars: ChartBarData[]
   tickSizeDecimal: number
+  barStep?: number
   minBidTickDecimal: number
   grouping: TickGroupingConfig
 }): GroupedTickBar[] {
-  const { bars, tickSizeDecimal, minBidTickDecimal, grouping } = params
+  const { bars, tickSizeDecimal, barStep, minBidTickDecimal, grouping } = params
 
   if (grouping.groupSizeTicks <= 1 || bars.length === 0) {
     return bars.map((b) => ({ tick: b.tick, tickQ96: b.tickQ96, amount: b.amount }))
@@ -139,7 +146,8 @@ export function groupTickBars(params: {
   }
 
   const minTick = bars[0].tick
-  const minBidIndex = Math.round((minBidTickDecimal - minTick) / tickSizeDecimal)
+  const stepSize = Number.isFinite(barStep) && barStep && barStep > 0 ? barStep : tickSizeDecimal
+  const minBidIndex = Math.round((minBidTickDecimal - minTick) / stepSize)
   const groupStartIndex0 = minBidIndex - grouping.medianOffsetTicks
   const groups = new Map<number, ChartBarData[]>()
 

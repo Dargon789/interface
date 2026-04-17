@@ -33,6 +33,7 @@ export interface MaxValuationFieldState {
   usdValue: CurrencyAmount<Currency> | null
   value: string
   tokenValue: string
+  tokenValueQ96: bigint | undefined
   snappedTokenValue: string
   bidTokenSymbol: string
   error?: string
@@ -40,6 +41,7 @@ export interface MaxValuationFieldState {
   isFiatMode: boolean
   onChange: (amount: string) => void
   onTokenValueChange: (amount: string) => void
+  onTokenValueQ96Change: (q96: bigint) => void
   onBlur: () => void
   onToggleFiatMode: () => void
   setSkipBlurSnap: (skip: boolean) => void
@@ -85,6 +87,7 @@ export function useBidMaxValuationField({
   const [isMaxValuationFiatMode, setIsMaxValuationFiatMode] = useState(false)
   const [maxPriceError, setMaxPriceError] = useState<string | undefined>()
   const [maxPriceErrorDetails, setMaxPriceErrorDetails] = useState<MinValuationErrorDetails | undefined>()
+  const [tokenPriceQ96, setTokenPriceQ96] = useState<bigint | undefined>(undefined)
 
   const [hasInitializedDefault, setHasInitializedDefault] = useState(false)
   const [displayValueOverride, setDisplayValueOverride] = useState<string | null>(null)
@@ -274,8 +277,24 @@ export function useBidMaxValuationField({
     return fiatAmount ? fiatAmount.toFixed(MAX_FIAT_PRECISION) : exactMaxValuationAmountFiat
   }, [snappedTokenValue, bidCurrency, usdPriceOfCurrency, conversionRate, exactMaxValuationAmountFiat])
 
+  // Use slider's stored Q96 when available (full precision), otherwise derive from string
+  const effectiveTokenPriceQ96 = useMemo(() => {
+    if (tokenPriceQ96 !== undefined) {
+      return tokenPriceQ96
+    }
+    if (!maxValuationCurrencyAmount || bidTokenDecimals === undefined || auctionTokenDecimals === undefined) {
+      return undefined
+    }
+    const rawAmount = BigInt(maxValuationCurrencyAmount.quotient.toString())
+    if (rawAmount === 0n) {
+      return undefined
+    }
+    return priceToQ96WithDecimals({ priceRaw: rawAmount, auctionTokenDecimals })
+  }, [tokenPriceQ96, maxValuationCurrencyAmount, bidTokenDecimals, auctionTokenDecimals])
+
   const handleMaxValuationChange = useEvent((amount: string) => {
     setDisplayValueOverride(amount)
+    setTokenPriceQ96(undefined)
 
     const normalizedAmount = (() => {
       if (amount === '') {
@@ -305,6 +324,7 @@ export function useBidMaxValuationField({
   // Used by the slider and chart clicks which always work in token units
   const handleTokenValueChange = useEvent((amount: string) => {
     setDisplayValueOverride(null)
+    setTokenPriceQ96(undefined)
     setExactMaxValuationAmountToken(amount)
 
     // Skip the next blur snap since slider/chart values are already correctly snapped
@@ -329,8 +349,39 @@ export function useBidMaxValuationField({
     onInputChange?.()
   })
 
+  // Q96-precision handler: stores the exact Q96 value from the slider to avoid
+  // precision loss from Q96 → string → Q96 round-trips on sub-wei ticks
+  const handleTokenValueQ96Change = useEvent((q96: bigint) => {
+    setTokenPriceQ96(q96)
+    skipBlurSnapRef.current = true
+
+    // Also update the string representation for display/fiat sync
+    if (bidTokenDecimals !== undefined && auctionTokenDecimals !== undefined) {
+      const displayValue = q96ToPriceString({ q96Value: q96, bidTokenDecimals, auctionTokenDecimals })
+      setDisplayValueOverride(null)
+      setExactMaxValuationAmountToken(displayValue)
+
+      if (isMaxValuationFiatMode && bidCurrency && usdPriceOfCurrency) {
+        const tokenAmount = getCurrencyAmount({
+          value: displayValue,
+          valueType: ValueType.Exact,
+          currency: bidCurrency,
+        })
+        const usdAmount = tokenAmount ? usdPriceOfCurrency.quote(tokenAmount) : undefined
+        const fiatAmount = usdAmount ? parseFloat(usdAmount.toExact()) * conversionRate : 0
+        const fiatAmountFormatted = fiatAmount ? fiatAmount.toFixed(MAX_FIAT_PRECISION) : ''
+        setExactMaxValuationAmountFiat(fiatAmountFormatted)
+      }
+    }
+
+    setMaxPriceError(undefined)
+    setMaxPriceErrorDetails(undefined)
+    onInputChange?.()
+  })
+
   const onToggleValuationFiatMode = useEvent(() => {
     setDisplayValueOverride(null)
+    setTokenPriceQ96(undefined)
 
     if (
       isMaxValuationFiatMode &&
@@ -452,6 +503,7 @@ export function useBidMaxValuationField({
     setMaxPriceErrorDetails(undefined)
 
     if (sanitizedDisplayValue && sanitizedDisplayValue !== exactMaxValuationAmountToken) {
+      setTokenPriceQ96(undefined)
       setExactMaxValuationAmountToken(sanitizedDisplayValue)
 
       if (isMaxValuationFiatMode && bidCurrency && usdPriceOfCurrency) {
@@ -470,6 +522,7 @@ export function useBidMaxValuationField({
 
   const resetMaxValuationField = useEvent(() => {
     setDisplayValueOverride(null)
+    setTokenPriceQ96(undefined)
     setMaxPriceError(undefined)
     setMaxPriceErrorDetails(undefined)
     setExactMaxValuationAmountToken(defaultMaxValuationDisplay)
@@ -504,6 +557,7 @@ export function useBidMaxValuationField({
       usdValue: maxValuationUsdValue,
       value: displayValue,
       tokenValue: exactMaxValuationAmountToken,
+      tokenValueQ96: effectiveTokenPriceQ96,
       snappedTokenValue,
       bidTokenSymbol,
       error: maxPriceError,
@@ -511,6 +565,7 @@ export function useBidMaxValuationField({
       isFiatMode: isMaxValuationFiatMode,
       onChange: handleMaxValuationChange,
       onTokenValueChange: handleTokenValueChange,
+      onTokenValueQ96Change: handleTokenValueQ96Change,
       onBlur: handleMaxPriceBlur,
       onToggleFiatMode: onToggleValuationFiatMode,
       setSkipBlurSnap,

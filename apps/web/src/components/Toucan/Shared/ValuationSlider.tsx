@@ -1,3 +1,4 @@
+/* oxlint-disable max-lines */
 import { memo, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, getContrastPassingTextColor, Slider, Text, Tooltip, styled as tamaguiStyled } from 'ui/src'
@@ -6,7 +7,11 @@ import { useLocalizationContext } from 'uniswap/src/features/language/Localizati
 import { NumberType } from 'utilities/src/format/types'
 import { useEvent } from 'utilities/src/react/hooks'
 import { parseUnits } from 'viem'
-import { priceToQ96WithDecimals, q96ToPriceString } from '~/components/Toucan/Auction/BidDistributionChart/utils/q96'
+import {
+  Q96,
+  priceToQ96WithDecimals,
+  q96ToPriceString,
+} from '~/components/Toucan/Auction/BidDistributionChart/utils/q96'
 import {
   approximateNumberFromRaw,
   computeFdvBidTokenRaw,
@@ -14,9 +19,14 @@ import {
 } from '~/components/Toucan/Auction/utils/fixedPointFdv'
 import { snapToNearestTick } from '~/components/Toucan/Auction/utils/ticks'
 
-const MAX_PERCENTAGE = 270
-const MARKER_COUNT = 10 // 0% to 270% in 30% increments = 10 dots
-const TOOLTIP_OPEN_DELAY_MS = 2000
+const MAX_PERCENTAGE = 4900
+const MARKER_COUNT = 10 // 0% to 4900% in ~490% increments = 10 dots
+// When the clearing-price FDV is below these thresholds,
+// expand the slider range to the target FDV instead of the default 4900% (~50x).
+const LOW_FDV_THRESHOLD_USD = 10_000
+const LOW_FDV_TARGET_USD = 1_000_000
+const LOW_FDV_THRESHOLD_BID_TOKEN = 10n
+const LOW_FDV_TARGET_BID_TOKEN = 1n
 
 const StyledSlider = tamaguiStyled(Slider, {
   hoverTheme: false,
@@ -68,6 +78,10 @@ interface ValuationSliderProps {
   value: string
   /** Called with new token price when slider changes */
   onChange: (amount: string) => void
+  /** Current token price in Q96 format (avoids string round-trip precision loss) */
+  valueQ96?: bigint
+  /** Called with new Q96 price when slider changes (preferred over onChange for precision) */
+  onChangeQ96?: (q96: bigint) => void
   /** Decimals of the bid/quote token (e.g., 6 for USDC) */
   bidTokenDecimals?: number
   /** Symbol of the bid/quote token (e.g., "USDC") */
@@ -103,6 +117,8 @@ const clamp = ({ value, min, max }: ClampParams): number => Math.min(Math.max(va
 function ValuationSliderComponent({
   value,
   onChange,
+  valueQ96,
+  onChangeQ96,
   bidTokenDecimals,
   bidTokenSymbol,
   tokenColor,
@@ -129,17 +145,92 @@ function ValuationSliderComponent({
     return clearingPriceQ96 + tickSizeQ96
   }, [clearingPriceQ96, tickSizeQ96])
 
+  // Expand the slider range when the clearing-price FDV is very low.
+  // If FDV < $10K (or < 10 bid tokens when fiat is unavailable), expand the
+  // slider upper bound to the price implying $1M FDV (or 1 bid token).
+  const maxSliderPriceQ96 = useMemo(() => {
+    if (!clearingPriceQ96 || !tokenTotalSupply || bidTokenDecimals === undefined) {
+      return undefined
+    }
+
+    const supplyRaw = BigInt(tokenTotalSupply)
+    if (supplyRaw === 0n) {
+      return undefined
+    }
+
+    const fdvRaw = computeFdvBidTokenRaw({
+      priceQ96: clearingPriceQ96,
+      totalSupplyRaw: supplyRaw,
+      auctionTokenDecimals,
+    })
+
+    const bidTokenScale = 10n ** BigInt(bidTokenDecimals)
+    let targetFdvRaw: bigint | undefined
+
+    if (bidTokenPriceFiat && bidTokenPriceFiat > 0) {
+      const fdvBidToken = approximateNumberFromRaw({ raw: fdvRaw, decimals: bidTokenDecimals })
+      const fdvUsd = fdvBidToken * bidTokenPriceFiat
+      if (fdvUsd < LOW_FDV_THRESHOLD_USD) {
+        const targetBidToken = LOW_FDV_TARGET_USD / bidTokenPriceFiat
+        targetFdvRaw = BigInt(Math.ceil(targetBidToken)) * bidTokenScale
+      }
+    } else {
+      if (fdvRaw < LOW_FDV_THRESHOLD_BID_TOKEN * bidTokenScale) {
+        targetFdvRaw = LOW_FDV_TARGET_BID_TOKEN * bidTokenScale
+      }
+    }
+
+    if (!targetFdvRaw) {
+      return undefined
+    }
+
+    return (targetFdvRaw * Q96 + supplyRaw / 2n) / supplyRaw
+  }, [clearingPriceQ96, tokenTotalSupply, bidTokenPriceFiat, bidTokenDecimals, auctionTokenDecimals])
+
   const totalTicks = useMemo(() => {
     if (!minPriceQ96 || !tickSizeQ96) {
       return 0
     }
+
+    if (maxSliderPriceQ96 && maxSliderPriceQ96 > minPriceQ96) {
+      const range = maxSliderPriceQ96 - minPriceQ96
+      return Number((range + tickSizeQ96 - 1n) / tickSizeQ96)
+    }
+
     const numerator = minPriceQ96 * BigInt(MAX_PERCENTAGE)
     const denominator = 100n * tickSizeQ96
     return Number((numerator + denominator - 1n) / denominator)
-  }, [minPriceQ96, tickSizeQ96])
+  }, [minPriceQ96, tickSizeQ96, maxSliderPriceQ96])
 
   const sanitizedValueQ96 = useMemo(() => {
-    if (!value || bidTokenDecimals === undefined || !clearingPriceQ96 || !floorPriceQ96 || !tickSizeQ96) {
+    if (!clearingPriceQ96 || !floorPriceQ96 || !tickSizeQ96) {
+      return minPriceQ96
+    }
+
+    // When Q96 value is provided directly, use it to avoid string round-trip precision loss
+    if (valueQ96 !== undefined) {
+      const snappedToTick = snapToNearestTick({
+        value: valueQ96,
+        floorPrice: floorPriceQ96,
+        clearingPrice: clearingPriceQ96,
+        tickSize: tickSizeQ96,
+      })
+
+      if (groupTicksEnabled && tickGrouping && minPriceQ96) {
+        const delta = snappedToTick - minPriceQ96
+        if (delta >= 0n) {
+          const index = Number(delta / tickSizeQ96)
+          const groupSize = Math.max(1, tickGrouping.groupSizeTicks)
+          const snappedIndex = Math.round(index / groupSize) * groupSize
+          return minPriceQ96 + tickSizeQ96 * BigInt(snappedIndex)
+        }
+      }
+
+      return snappedToTick
+    }
+
+    // Fallback: parse from string (lossy for sub-wei ticks)
+    if (!value || bidTokenDecimals === undefined) {
       return minPriceQ96
     }
     try {
@@ -176,6 +267,7 @@ function ValuationSliderComponent({
     tickGrouping,
     tickSizeQ96,
     value,
+    valueQ96,
   ])
 
   const sliderIndex = useMemo(() => {
@@ -327,8 +419,15 @@ function ValuationSliderComponent({
     }
 
     const nextQ96 = minPriceQ96 + tickSizeQ96 * BigInt(nextIndex)
-    const displayValue = q96ToPriceString({ q96Value: nextQ96, bidTokenDecimals, auctionTokenDecimals })
-    onChange(displayValue)
+
+    if (onChangeQ96) {
+      // Q96 handler syncs the string value internally — calling onChange too
+      // would clear the stored Q96, defeating the precision fix
+      onChangeQ96(nextQ96)
+    } else {
+      const displayValue = q96ToPriceString({ q96Value: nextQ96, bidTokenDecimals, auctionTokenDecimals })
+      onChange(displayValue)
+    }
   })
 
   if (
@@ -370,12 +469,7 @@ function ValuationSliderComponent({
           <SliderTrackActive style={tokenColor ? { backgroundColor: tokenColor } : undefined} />
         </SliderTrack>
         <SliderThumb index={0} x={thumbX}>
-          <Tooltip
-            placement="bottom"
-            delay={{ open: TOOLTIP_OPEN_DELAY_MS, close: 0 }}
-            restMs={TOOLTIP_OPEN_DELAY_MS}
-            offset={{ mainAxis: 8 }}
-          >
+          <Tooltip placement="bottom" delay={{ open: 0, close: 0 }} restMs={0} offset={{ mainAxis: 8 }}>
             <Tooltip.Trigger>
               <Flex position="relative" alignItems="center" justifyContent="center">
                 <Flex

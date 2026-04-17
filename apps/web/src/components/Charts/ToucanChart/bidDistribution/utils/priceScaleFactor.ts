@@ -21,7 +21,14 @@ export function calculatePriceScaleFactor(params: {
     return defaultFactor
   }
 
-  const maxTickMagnitude = Math.max(Math.abs(minTick), Math.abs(maxTick), Math.abs(clearingPriceDecimal), 1)
+  // Use actual tick magnitudes (not floored at 1) so sub-wei ticks get a large enough factor.
+  // For sub-wei ticks (~1e-20), magnitudes are tiny and we need a factor that maps them to
+  // distinct integers: tick * factor should produce values spaced >= 1 apart.
+  const maxTickMagnitude = Math.max(Math.abs(minTick), Math.abs(maxTick), Math.abs(clearingPriceDecimal))
+  if (maxTickMagnitude === 0) {
+    return defaultFactor
+  }
+
   const maxSafeFactor = Math.max(1, Math.floor(Number.MAX_SAFE_INTEGER / maxTickMagnitude))
   if (!Number.isFinite(maxSafeFactor) || maxSafeFactor <= 0) {
     return Math.max(baseFactor, defaultFactor)

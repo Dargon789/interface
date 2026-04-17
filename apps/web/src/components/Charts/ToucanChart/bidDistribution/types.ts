@@ -91,6 +91,7 @@ export interface ToucanBidDistributionChartControllerUpdateParams {
   minTick: number
   maxTick: number
   tickSizeDecimal: number
+  barStep?: number
   clearingPriceDecimal: number
   clearingPriceBigInt: bigint | null
   priceScaleFactor: number

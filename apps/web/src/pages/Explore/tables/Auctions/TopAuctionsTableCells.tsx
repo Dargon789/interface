@@ -53,28 +53,29 @@ export function AuctionTableHeader({
 }
 
 export function TokenNameCell({ auction }: { auction: EnrichedAuction }) {
-  // Check for logo override from config
-  const logoOverride =
+  // Check for metadata overrides from config
+  const metadataOverride =
     auction.auction?.chainId && auction.auction.tokenAddress
-      ? getAuctionMetadata({ chainId: auction.auction.chainId, tokenAddress: auction.auction.tokenAddress })?.logoUrl
+      ? getAuctionMetadata({ chainId: auction.auction.chainId, tokenAddress: auction.auction.tokenAddress })
       : undefined
+
+  const tokenName = metadataOverride?.tokenName ?? auction.auction?.tokenName
+  const tokenSymbol = metadataOverride?.tokenSymbol ?? auction.auction?.tokenSymbol
 
   return (
     <Flex row gap="$gap8" alignItems="center" justifyContent="flex-start">
       <Flex pr="$spacing4">
         <TokenLogo
-          url={logoOverride ?? auction.logoUrl}
+          url={metadataOverride?.logoUrl ?? auction.logoUrl}
           size={24}
           chainId={auction.auction?.chainId}
-          symbol={auction.auction?.tokenSymbol}
-          name={auction.auction?.tokenName}
+          symbol={tokenSymbol}
+          name={tokenName}
         />
       </Flex>
-      <EllipsisText>
-        {auction.auction?.tokenName ?? auction.auction?.tokenSymbol ?? auction.auction?.tokenAddress ?? '—'}
-      </EllipsisText>
+      <EllipsisText>{tokenName ?? tokenSymbol ?? auction.auction?.tokenAddress ?? '—'}</EllipsisText>
       <EllipsisText $platform-web={{ minWidth: 'fit-content' }} $lg={{ display: 'none' }} color="$neutral2">
-        {auction.auction?.tokenSymbol}
+        {tokenSymbol}
       </EllipsisText>
       {auction.verified && <CheckmarkCircle size="$icon.16" color="$accent1" />}
     </Flex>

@@ -33,14 +33,14 @@ export function AuctionChip({
 
   const chainId = auction.auction?.chainId
   const tokenAddress = auction.auction?.tokenAddress
-  const tokenName = auction.auction?.tokenName
-  const tokenSymbol = auction.auction?.tokenSymbol
+  const metadataOverride = chainId && tokenAddress ? getAuctionMetadata({ chainId, tokenAddress }) : undefined
+  const tokenName = metadataOverride?.tokenName ?? auction.auction?.tokenName
+  const tokenSymbol = metadataOverride?.tokenSymbol ?? auction.auction?.tokenSymbol
 
   const projectedFdv = computeProjectedFdvTableValue({ auction, auctionTokenUsdPrice })
 
   const address = auction.auction?.address
-  const logoOverride = chainId && tokenAddress ? getAuctionMetadata({ chainId, tokenAddress })?.logoUrl : undefined
-  const logoUrl = logoOverride ?? auction.logoUrl
+  const logoUrl = metadataOverride?.logoUrl ?? auction.logoUrl
 
   // Color extraction logic
   const { tokenColor, tokenColorLoading } = useSrcColor({

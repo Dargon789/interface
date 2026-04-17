@@ -155,15 +155,15 @@ export function CombinedAuctionChart({
 
   const handleBarClick = useCallback(
     (bar: ChartBarData | null, tickPrice: number) => {
+      if (!Number.isFinite(tickPrice) || tickPrice <= 0) {
+        return
+      }
+
       let q96Value: bigint
 
       if (bar?.tickQ96) {
         q96Value = BigInt(bar.tickQ96)
       } else {
-        if (tickPrice <= 0) {
-          return
-        }
-        // Convert decimal price to Q96 via raw bid token units
         const priceRaw = BigInt(Math.round(tickPrice * 10 ** bidTokenInfo.decimals))
         q96Value = priceToQ96WithDecimals({ priceRaw, auctionTokenDecimals })
       }

@@ -1,7 +1,7 @@
 import { groupTickBars } from '~/components/Charts/ToucanChart/bidDistribution/utils/tickGrouping'
 import type { ChartBarData, ProcessedChartData } from '~/components/Toucan/Auction/BidDistributionChart/utils/utils'
 
-const TARGET_GROUPED_BARS = 33
+const TARGET_GROUPED_BARS = 80
 
 interface NormalizedDataSlice {
   yMin: number

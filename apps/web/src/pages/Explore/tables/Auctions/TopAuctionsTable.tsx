@@ -20,6 +20,7 @@ import { Cell } from '~/components/Table/Cell'
 import { TableText } from '~/components/Table/shared/TableText'
 import { HeaderCell } from '~/components/Table/styled'
 import { formatCompactFromRaw } from '~/components/Toucan/Auction/utils/fixedPointFdv'
+import { getAuctionMetadata } from '~/components/Toucan/Config/config'
 import { buildTokenMarketPriceKey } from '~/components/Toucan/hooks/useTokenMarketPrices'
 import { computeProjectedFdvTableValue, ProjectedFdvTableValue } from '~/components/Toucan/utils/computeProjectedFdv'
 import { MAX_WIDTH_MEDIA_BREAKPOINT } from '~/constants/breakpoints'
@@ -161,10 +162,15 @@ function filterAuctionsBySearchString(auctions: readonly EnrichedAuction[], filt
       return false
     }
 
-    const symbolMatch = auction.tokenSymbol.toLowerCase().includes(lowercaseFilter)
+    const metadataOverride =
+      auction.chainId && auction.tokenAddress
+        ? getAuctionMetadata({ chainId: auction.chainId, tokenAddress: auction.tokenAddress })
+        : undefined
+
+    const symbolMatch = (metadataOverride?.tokenSymbol ?? auction.tokenSymbol).toLowerCase().includes(lowercaseFilter)
     const addressMatch = normalizeTokenAddressForCache(auction.tokenAddress).toLowerCase().includes(lowercaseFilter)
     const auctionIdMatch = auction.auctionId.toLowerCase().includes(lowercaseFilter)
-    const nameMatch = enrichedAuction.auction?.tokenName?.toLowerCase().includes(lowercaseFilter)
+    const nameMatch = (metadataOverride?.tokenName ?? auction.tokenName)?.toLowerCase().includes(lowercaseFilter)
 
     return symbolMatch || addressMatch || auctionIdMatch || nameMatch
   })

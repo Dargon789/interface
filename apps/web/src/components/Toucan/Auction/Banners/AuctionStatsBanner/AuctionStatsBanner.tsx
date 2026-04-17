@@ -13,6 +13,7 @@ import {
 } from 'ui/src'
 import { useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { NumberType } from 'utilities/src/format/types'
 import { ArrowChangeDown } from '~/components/Icons/ArrowChangeDown'
 import { ArrowChangeUp } from '~/components/Icons/ArrowChangeUp'
 import { useStatsBannerData } from '~/components/Toucan/Auction/hooks/useStatsBannerData'
@@ -89,7 +90,7 @@ const SUBSCRIPT_THRESHOLD = 4
 export function AuctionStatsBanner() {
   const { t } = useTranslation()
   const colors = useSporeColors()
-  const { formatPercent } = useLocalizationContext()
+  const { formatPercent, formatNumberOrString } = useLocalizationContext()
   const { symbol: currencySymbol } = useAppFiatCurrencyInfo()
   const statCellTitleVariant = useStatCellTitleVariant()
   const media = useMedia()
@@ -119,8 +120,14 @@ export function AuctionStatsBanner() {
   const arrowSize = media.lg ? 10 : 16
   const showChangePercent = changePercent !== null && changePercent > 0
 
-  // Format the change percent (formatPercent expects a raw percentage like 36 for 36%)
-  const changePercentFormatted = changePercent !== null ? formatPercent(changePercent) : null
+  const changePercentFormatted =
+    changePercent === null
+      ? null
+      : changePercent >= 1_000_000
+        ? '1M+%'
+        : changePercent >= 1000
+          ? `${formatNumberOrString({ value: changePercent, type: NumberType.TokenQuantityStats })}%`
+          : formatPercent(changePercent)
 
   return (
     <Flex

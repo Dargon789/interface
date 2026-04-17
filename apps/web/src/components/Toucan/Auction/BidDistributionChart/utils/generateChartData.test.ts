@@ -37,10 +37,15 @@ describe('generateChartData (demand mode)', () => {
       chartMode: 'demand',
     })
 
-    expect(chartData.bars.length).toBe(MAX_RENDERABLE_BARS)
+    // With 10050 ticks exceeding MAX_RENDERABLE_BARS (10000), barStep doubles to 2x tickSize
+    // resulting in ceil(10050/2) bars with aggregated volumes
+    const expectedBars = Math.floor((totalTicks - 1) / 2) + 1 // 5025
+    expect(chartData.bars.length).toBe(expectedBars)
     expect(chartData.totalBidVolume).toBe(totalTicks)
+    // First bar (lowest tick) should have cumulative of all bids
     expect(chartData.bars[0]?.amount).toBe(totalTicks)
-    expect(chartData.bars[chartData.bars.length - 1]?.amount).toBe(51)
+    // Last bar covers ticks 10048+10049, so cumulative = 2
+    expect(chartData.bars[chartData.bars.length - 1]?.amount).toBe(2)
   })
 
   it('includes excluded volume in cumulative calculations', () => {

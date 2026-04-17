@@ -6,7 +6,14 @@ import { UserRejectedRequestError } from '~/utils/errors'
 /** Attempts to extract a string from an error, based on common error object formats */
 function getReason(error: any): string | undefined {
   let reason: string | undefined
+  const seen = new WeakSet()
   while (error) {
+    if (typeof error === 'object' && seen.has(error)) {
+      break
+    }
+    if (typeof error === 'object') {
+      seen.add(error)
+    }
     reason = error.reason ?? error.message ?? reason
     if (typeof error === 'string') {
       return error

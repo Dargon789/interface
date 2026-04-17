@@ -78,11 +78,13 @@ export function useTickGrouping({
       minTick: chartData.minTick,
       maxTick: chartData.maxTick,
       tickSizeDecimal,
+      barStep: chartData.barStep,
       clearingPriceDecimal,
       concentration: concentration ? { startTick: concentration.startTick, endTick: concentration.endTick } : null,
     })
   }, [
     chartData.bars,
+    chartData.barStep,
     chartData.maxTick,
     chartData.minTick,
     clearingPriceDecimal,
@@ -116,10 +118,11 @@ export function useTickGrouping({
     return groupTickBars({
       bars: chartData.bars,
       tickSizeDecimal,
+      barStep: chartData.barStep,
       minBidTickDecimal,
       grouping: tickGrouping,
     })
-  }, [chartData.bars, groupTicksEnabled, minBidTickDecimal, tickGrouping, tickSizeDecimal])
+  }, [chartData.bars, chartData.barStep, groupTicksEnabled, minBidTickDecimal, tickGrouping, tickSizeDecimal])
 
   const effectiveUserBidPriceDecimal = useMemo(() => {
     if (!groupTicksEnabled || !tickGrouping || userBidPriceDecimal == null) {
@@ -129,8 +132,14 @@ export function useTickGrouping({
       return userBidPriceDecimal
     }
 
+    // Use barStep (rendered-bar spacing) so index math matches actual bar positions.
+    const stepSize =
+      Number.isFinite(chartData.barStep) && chartData.barStep && chartData.barStep > 0
+        ? chartData.barStep
+        : tickSizeDecimal
+
     // Calculate which group the user's bid falls into
-    const offsetTicks = Math.round((userBidPriceDecimal - minBidTickDecimal) / tickSizeDecimal)
+    const offsetTicks = Math.round((userBidPriceDecimal - minBidTickDecimal) / stepSize)
     const groupIndex = Math.round(offsetTicks / tickGrouping.groupSizeTicks)
 
     // If we have grouped bars, find the bar at this group index and use its actual tick value
@@ -139,7 +148,7 @@ export function useTickGrouping({
       // Find the bar that corresponds to this group
       // Bars are sorted by tick, so we need to find by group index calculation
       for (const bar of groupedBars) {
-        const barOffsetTicks = Math.round((bar.tick - minBidTickDecimal) / tickSizeDecimal)
+        const barOffsetTicks = Math.round((bar.tick - minBidTickDecimal) / stepSize)
         const barGroupIndex = Math.round(barOffsetTicks / tickGrouping.groupSizeTicks)
         if (barGroupIndex === groupIndex) {
           return bar.tick // Use the actual bar's tick value for exact match
@@ -149,8 +158,16 @@ export function useTickGrouping({
 
     // Fallback: calculate theoretically (may not match exactly due to floating point)
     const snappedOffsetTicks = groupIndex * tickGrouping.groupSizeTicks
-    return minBidTickDecimal + (snappedOffsetTicks + tickGrouping.medianOffsetTicks) * tickSizeDecimal
-  }, [minBidTickDecimal, tickGrouping, tickSizeDecimal, userBidPriceDecimal, groupTicksEnabled, groupedBars])
+    return minBidTickDecimal + (snappedOffsetTicks + tickGrouping.medianOffsetTicks) * stepSize
+  }, [
+    minBidTickDecimal,
+    tickGrouping,
+    tickSizeDecimal,
+    chartData.barStep,
+    userBidPriceDecimal,
+    groupTicksEnabled,
+    groupedBars,
+  ])
 
   // Track previous barsForMarkers to avoid creating new references when content is unchanged
   const prevBarsForMarkersRef = useRef<{ tick: number; amount: number; tickQ96?: string }[]>([])

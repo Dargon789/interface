@@ -68,7 +68,7 @@ function generateTimeUniformData(params: TimeUniformDataParams): ClearingPriceCh
     const currentPrice = sortedChanges[changeIndex]!
 
     result.push({
-      time: currentTime as ClearingPriceChartPoint['time'],
+      time: Math.floor(currentTime) as ClearingPriceChartPoint['time'],
       value: currentPrice.value,
       q96: currentPrice.q96,
     })
@@ -258,7 +258,7 @@ export function normalizeClearingSeries({
   const range = maxValue - minValue
   // When price is flat (range ≈ 0), add symmetric buffer so the line is centered
   const buffer = range > 0 ? range * 0.05 : minValue * 0.2
-  const yMin = Math.max(0, minValue - buffer)
+  const yMin = minValue > 0 ? minValue - buffer : 0
   const yMax = maxValue + buffer
   const scaledYMin = yMin * scaleFactor
   const scaledYMax = yMax * scaleFactor

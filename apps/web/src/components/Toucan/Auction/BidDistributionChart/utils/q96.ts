@@ -53,7 +53,17 @@ export function fromQ96ToDecimalWithTokenDecimals({
   })
 
   const parsed = Number.parseFloat(priceString)
-  return Number.isFinite(parsed) ? parsed : 0
+  if (Number.isFinite(parsed) && parsed !== 0) {
+    return parsed
+  }
+
+  // q96ToPriceString underflowed to zero (tickSize * auctionScale < Q96).
+  // Fall back to float arithmetic to preserve sub-wei precision for chart positioning.
+  const q96Num = Number(typeof q96Value === 'string' ? BigInt(q96Value) : q96Value)
+  if (q96Num === 0) {
+    return 0
+  }
+  return (q96Num / Number(Q96)) * 10 ** (auctionTokenDecimals - bidTokenDecimals)
 }
 
 /**
@@ -134,7 +144,16 @@ export function q96ToPriceString({
   const auctionScale = 10n ** BigInt(auctionTokenDecimals)
   const rawBidAmount = (valueBigInt * auctionScale + Q96 / 2n) / Q96
 
-  return formatUnits(rawBidAmount, bidTokenDecimals)
+  if (rawBidAmount > 0n) {
+    return formatUnits(rawBidAmount, bidTokenDecimals)
+  }
+
+  // Standard precision underflowed to zero — the price is sub-wei
+  // (tickSizeQ96 * auctionScale < Q96). Use extra precision to preserve the value.
+  const EXTRA_PRECISION = 18
+  const precisionScale = 10n ** BigInt(EXTRA_PRECISION)
+  const rawBidAmountHighPrec = (valueBigInt * auctionScale * precisionScale + Q96 / 2n) / Q96
+  return formatUnits(rawBidAmountHighPrec, bidTokenDecimals + EXTRA_PRECISION)
 }
 
 /**

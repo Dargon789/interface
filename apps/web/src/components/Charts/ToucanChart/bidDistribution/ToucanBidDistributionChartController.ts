@@ -232,6 +232,7 @@ export class ToucanBidDistributionChartController {
         minTick: next.minTick,
         maxTick: next.maxTick,
         tickSizeDecimal: next.tickSizeDecimal,
+        barStep: next.barStep,
         priceScaleFactor: next.priceScaleFactor,
         chartMode: this.createParams.chartMode,
       })
@@ -773,6 +774,7 @@ export class ToucanBidDistributionChartController {
       minTick: next.minTick,
       maxTick: next.maxTick,
       tickSizeDecimal: next.tickSizeDecimal,
+      barStep: next.barStep,
       priceScaleFactor: next.priceScaleFactor,
       chartMode: this.createParams.chartMode,
     })

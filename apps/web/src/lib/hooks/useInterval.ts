@@ -18,10 +18,7 @@ export default function useInterval(callback: () => void | Promise<void>, delay:
     let timeout: ReturnType<typeof setTimeout>
     tick(delay, /* skip= */ !leading)
     return () => {
-      // oxlint-disable-next-line typescript/no-unnecessary-condition
-      if (timeout) {
-        clearInterval(timeout)
-      }
+      clearTimeout(timeout)
     }
 
     async function tick(delay: number, skip = false) {

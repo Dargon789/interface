@@ -110,11 +110,13 @@ export function createAreaSeriesOptions({
 }): Record<string, unknown> {
   const lineColor = tokenColor || colors.accent1.val
 
-  // Custom autoscale provider that enforces calculated scaled yMin/yMax range
-  // Uses scaledYMin to ensure line stays within visible Y-axis area
+  // Custom autoscale provider that enforces calculated scaled yMin/yMax range.
+  // Adds bottom margin so the lowest data point doesn't overlap with x-axis labels.
+  const range = scaledYMax - scaledYMin
+  const bottomPad = range * 0.05
   const autoscaleInfoProvider = () => ({
     priceRange: {
-      minValue: scaledYMin,
+      minValue: scaledYMin - bottomPad,
       maxValue: scaledYMax,
     },
   })

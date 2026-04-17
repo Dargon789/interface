@@ -71,6 +71,7 @@ export function applyZoomFromState(params: {
   minTick: number
   maxTick: number
   tickSizeDecimal: number
+  barStep?: number
   priceScaleFactor: number
   chartMode?: ChartMode
 }): { hasInitializedRange: boolean } {
@@ -83,6 +84,7 @@ export function applyZoomFromState(params: {
     minTick,
     maxTick,
     tickSizeDecimal,
+    barStep,
     priceScaleFactor,
     chartMode,
   } = params
@@ -99,10 +101,20 @@ export function applyZoomFromState(params: {
       const leftEdge = clearingPriceDecimal - BID_DEMAND_INITIAL_ZOOM.ticksBelowClearingPrice * tickSizeDecimal
       // Right edge: end of concentration band + padding
       const fullTickCount = Math.max(1, Math.round((maxTick - minTick) / tickSizeDecimal))
-      const padAfterTicks = Math.max(
+      let padAfterTicks = Math.max(
         BID_DEMAND_INITIAL_ZOOM.minPadTicksAfter,
         Math.round(fullTickCount * BID_DEMAND_INITIAL_ZOOM.afterConcentrationPercentOfFullRange),
       )
+      // Cap padding relative to concentration band width so outlier bids don't stretch the view.
+      const concentrationTickCount = Math.max(
+        1,
+        Math.round((concentration.endTick - concentration.startTick) / tickSizeDecimal),
+      )
+      const maxPadTicks = Math.max(
+        BID_DEMAND_INITIAL_ZOOM.minPadTicksAfter,
+        concentrationTickCount * BID_DEMAND_INITIAL_ZOOM.maxPadConcentrationMultiplier,
+      )
+      padAfterTicks = Math.min(padAfterTicks, maxPadTicks)
       const rightEdge = concentration.endTick + padAfterTicks * tickSizeDecimal
       targetFrom = Math.round(Math.max(minTick, leftEdge) * priceScaleFactor)
       targetTo = Math.round(Math.min(maxTick, rightEdge) * priceScaleFactor)
@@ -113,6 +125,7 @@ export function applyZoomFromState(params: {
         minTick,
         maxTick,
         tickSize: tickSizeDecimal,
+        barStep,
         initialTickCount: ZOOM_DEFAULTS.INITIAL_TICK_COUNT,
       })
       targetFrom = Math.round(initial.from * priceScaleFactor)
@@ -129,6 +142,7 @@ export function applyZoomFromState(params: {
       beforePercentOfFullRange: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.beforePercentOfFullRange,
       afterPercentOfFullRange: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.afterPercentOfFullRange,
       minPadTicks: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.minPadTicks,
+      maxPadConcentrationMultiplier: BID_DISTRIBUTION_INITIAL_ZOOM.concentrationPadding.maxPadConcentrationMultiplier,
     })
     targetFrom = Math.round(padded.from * priceScaleFactor)
     targetTo = Math.round(padded.to * priceScaleFactor)

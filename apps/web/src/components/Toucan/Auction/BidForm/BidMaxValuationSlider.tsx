@@ -8,6 +8,8 @@ import { ValuationSlider } from '~/components/Toucan/Shared/ValuationSlider'
 interface BidMaxValuationSliderProps {
   value: string
   onChange: (amount: string) => void
+  valueQ96?: bigint
+  onChangeQ96?: (q96: bigint) => void
   bidTokenDecimals?: number
   bidTokenSymbol: string
   tokenColor?: string
@@ -18,6 +20,8 @@ interface BidMaxValuationSliderProps {
 function BidMaxValuationSliderComponent({
   value,
   onChange,
+  valueQ96,
+  onChangeQ96,
   bidTokenDecimals,
   bidTokenSymbol,
   tokenColor,
@@ -56,6 +60,8 @@ function BidMaxValuationSliderComponent({
     <ValuationSlider
       value={value}
       onChange={onChange}
+      valueQ96={valueQ96}
+      onChangeQ96={onChangeQ96}
       bidTokenDecimals={bidTokenDecimals}
       bidTokenSymbol={bidTokenSymbol}
       tokenColor={tokenColor ?? effectiveTokenColor}

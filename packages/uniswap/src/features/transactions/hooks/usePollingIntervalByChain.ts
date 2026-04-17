@@ -30,7 +30,7 @@ export function usePollingIntervalByChain(chainId?: UniverseChainId): number {
   const l2PollingInterval = enableTwoSecondInterval ? 2 * ONE_SECOND_MS : averageL2BlockTimeMs
 
   // Remove this dynamic config once Monad RPC latency issues are resolved
-  if (chainId === UniverseChainId.MonadTestnet) {
+  if (chainId === UniverseChainId.Monad) {
     return monadTestnetPollingIntervalMs
   }
   return isMainnetChainId(chainId) ? averageL1BlockTimeMs : l2PollingInterval

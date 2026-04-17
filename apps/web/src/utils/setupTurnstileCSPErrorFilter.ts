@@ -16,6 +16,25 @@ export function setupTurnstileCSPErrorFilter(): void {
   /**
    * Checks if an error string or URI is related to Turnstile CSP violations
    */
+  function hasAllowedTurnstileHost(text: string): boolean {
+    const allowedHosts = new Set(['challenges.cloudflare.com'])
+
+    // Split free-form text into tokens and parse URL-like values safely.
+    const tokens = text.split(/\s+/)
+    for (const token of tokens) {
+      try {
+        const parsed = new URL(token)
+        if (allowedHosts.has(parsed.hostname.toLowerCase())) {
+          return true
+        }
+      } catch {
+        // Ignore non-URL tokens.
+      }
+    }
+
+    return false
+  }
+
   function isTurnstileCSPError(text: string): boolean {
     const lowerText = text.toLowerCase()
 
@@ -29,7 +48,7 @@ export function setupTurnstileCSPErrorFilter(): void {
 
     // Check for Turnstile-related identifiers
     const hasTurnstileIdentifier =
-      lowerText.includes('challenges.cloudflare.com') ||
+      hasAllowedTurnstileHost(text) ||
       lowerText.includes('cdn-cgi/challenge-platform') ||
       lowerText.includes('turnstile') ||
       lowerText.includes('normal?lang=auto') ||

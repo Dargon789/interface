@@ -19,11 +19,11 @@ export function usePollingIntervalByChain(chainId?: UniverseChainId): number {
     defaultValue: AVERAGE_L2_BLOCK_TIME_MS,
   })
 
-  const monadTestnetPollingIntervalMs = useDynamicConfigValue(
-    DynamicConfigs.Swap,
-    SwapConfigKey.MonadTestnetPollingIntervalMs,
-    AVERAGE_L2_BLOCK_TIME_MS,
-  )
+  const monadTestnetPollingIntervalMs = useDynamicConfigValue({
+    config: DynamicConfigs.Swap,
+    key: SwapConfigKey.MonadTestnetPollingIntervalMs,
+    defaultValue: AVERAGE_L2_BLOCK_TIME_MS,
+  })
 
   // TODO(WEB-6132): remove this flag once short term experiment is complete
   const enableTwoSecondInterval = useFeatureFlag(FeatureFlags.TwoSecondSwapQuotePollingInterval)

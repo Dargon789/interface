@@ -70,7 +70,7 @@ export function* waitForReceiptWithSmartPolling({
         transaction = refreshed
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (receipt?.blockNumber) {
         logger.debug('watchOnChainTransactionSaga', 'waitForReceiptWithSmartPolling', 'Tx receipt received', hash)
         return receipt
@@ -98,7 +98,7 @@ export async function waitForReceipt(
     errorMsg: 'Timed out waiting for transaction receipt',
   })
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (txReceipt) {
     logger.debug('watchOnChainTransactionSaga', 'waitForReceipt', 'Tx receipt received', hash)
   }

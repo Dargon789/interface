@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
 export function mockUIAssets(): void {
+  // oxlint-disable-next-line vitest/hoisted-apis-on-top -- suppressed
   vi.mock('ui/src/assets', () => {
     const assets: Record<string, unknown> = {
       ...vi.importActual('ui/src/assets'),

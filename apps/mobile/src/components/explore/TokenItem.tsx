@@ -39,7 +39,7 @@ interface TokenItemProps {
   onPriceWrapperLayout?: (layout: LayoutRectangle) => void
 }
 
-export const TokenItem = memo(function _TokenItem({
+export const TokenItem = memo(function TokenItemInner({
   tokenItemData,
   index,
   metadataDisplayType,

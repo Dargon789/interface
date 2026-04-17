@@ -1,5 +1,5 @@
-import type { StorybookConfig } from '@storybook/react-webpack5'
 import { dirname, join, resolve } from 'path'
+import type { StorybookConfig } from '@storybook/react-webpack5'
 import TerserPlugin from 'terser-webpack-plugin'
 import { DefinePlugin } from 'webpack'
 
@@ -147,6 +147,7 @@ const config: StorybookConfig = {
         ...config?.resolve?.alias,
         'react-native$': 'react-native-web',
         'expo-blur': require.resolve('./__mocks__/expo-blur.jsx'),
+        '~': resolve(__dirname, '../src'),
       },
     }
 

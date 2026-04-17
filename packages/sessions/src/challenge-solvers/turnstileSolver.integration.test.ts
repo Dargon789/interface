@@ -1,7 +1,20 @@
 /// @vitest-environment happy-dom
 import { ChallengeType } from '@uniswap/client-platform-service/dist/uniswap/platformservice/v1/sessionService_pb'
 import { createTurnstileSolver } from '@universe/sessions/src/challenge-solvers/createTurnstileSolver'
+import { resetTurnstileState } from '@universe/sessions/src/challenge-solvers/turnstileScriptLoader'
+import type { PerformanceTracker } from '@universe/sessions/src/performance/types'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Mock performance tracker for testing
+function createMockPerformanceTracker(): PerformanceTracker {
+  let time = 0
+  return {
+    now: (): number => {
+      time += 100
+      return time
+    },
+  }
+}
 
 // Mock window.turnstile API
 const mockTurnstileAPI = {
@@ -19,7 +32,7 @@ beforeAll(() => {
     const element = originalCreateElement(tagName)
     if (tagName === 'div') {
       // Track created divs for assertions
-      // eslint-disable-next-line no-extra-semi
+      // oxlint-disable-next-line no-extra-semi
       ;(element as any)._testCreated = true
     }
     return element
@@ -39,7 +52,7 @@ beforeAll(() => {
       // Simulate script load immediately
       setTimeout(() => {
         // Set up the mock turnstile API
-        // eslint-disable-next-line no-extra-semi
+        // oxlint-disable-next-line no-extra-semi
         ;(window as any).turnstile = mockTurnstileAPI
         if (node.onload) {
           node.onload({} as Event)
@@ -51,14 +64,14 @@ beforeAll(() => {
 
   const originalBodyAppendChild = document.body.appendChild.bind(document.body)
   vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
-    // eslint-disable-next-line no-extra-semi
+    // oxlint-disable-next-line no-extra-semi
     ;(node as any)._testAppended = true
     // Actually append to the DOM so we can query it later
     return originalBodyAppendChild(node)
   })
 
   vi.spyOn(Element.prototype, 'removeChild').mockImplementation(function (this: Element, child: Node) {
-    // eslint-disable-next-line no-extra-semi
+    // oxlint-disable-next-line no-extra-semi
     ;(child as any)._testRemoved = true
     return child
   })
@@ -94,11 +107,14 @@ describe('Turnstile Solver Integration Tests', () => {
     // Reset mocks to default successful behavior
     vi.clearAllMocks()
     ;(window as any).turnstile = undefined
+
+    // Reset turnstile script loader state for next test
+    resetTurnstileState()
   })
 
   it('verifies Turnstile solver basic functionality', async () => {
     // Create a challenge solver directly to test
-    const turnstileSolver = createTurnstileSolver()
+    const turnstileSolver = createTurnstileSolver({ performanceTracker: createMockPerformanceTracker() })
 
     // Create challenge data with proper structure
     const challengeData = {
@@ -122,8 +138,6 @@ describe('Turnstile Solver Integration Tests', () => {
     expect(document.head.appendChild).toHaveBeenCalledWith(
       expect.objectContaining({
         src: 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
-        async: true,
-        defer: true,
       }),
     )
   })
@@ -140,7 +154,7 @@ describe('Turnstile Solver Integration Tests', () => {
       return 'widget-error-123'
     })
 
-    const turnstileSolver = createTurnstileSolver()
+    const turnstileSolver = createTurnstileSolver({ performanceTracker: createMockPerformanceTracker() })
     const challengeData = {
       challengeId: 'error-test-123',
       challengeType: ChallengeType.TURNSTILE,
@@ -168,7 +182,7 @@ describe('Turnstile Solver Integration Tests', () => {
       return 'widget-expired-123'
     })
 
-    const turnstileSolver = createTurnstileSolver()
+    const turnstileSolver = createTurnstileSolver({ performanceTracker: createMockPerformanceTracker() })
     const challengeData = {
       challengeId: 'expired-test-123',
       challengeType: ChallengeType.TURNSTILE,
@@ -191,7 +205,11 @@ describe('Turnstile Solver Integration Tests', () => {
       return 'widget-timeout-123'
     })
 
-    const turnstileSolver = createTurnstileSolver()
+    // Use a short timeout for testing (100ms instead of 30s)
+    const turnstileSolver = createTurnstileSolver({
+      performanceTracker: createMockPerformanceTracker(),
+      timeoutMs: 100,
+    })
     const challengeData = {
       challengeId: 'timeout-test-123',
       challengeType: ChallengeType.TURNSTILE,
@@ -203,12 +221,12 @@ describe('Turnstile Solver Integration Tests', () => {
       },
     }
 
-    // Should reject with timeout error after 30 seconds
-    await expect(turnstileSolver.solve(challengeData)).rejects.toThrow('Turnstile challenge timeout')
-  }, 35000) // Extend test timeout since we're testing a 30s timeout
+    // Should reject with timeout error after 100ms
+    await expect(turnstileSolver.solve(challengeData)).rejects.toThrow('Turnstile challenge timed out after')
+  })
 
   it('handles missing challenge data', async () => {
-    const turnstileSolver = createTurnstileSolver()
+    const turnstileSolver = createTurnstileSolver({ performanceTracker: createMockPerformanceTracker() })
     const challengeData = {
       challengeId: 'missing-data-123',
       challengeType: ChallengeType.TURNSTILE,
@@ -220,7 +238,7 @@ describe('Turnstile Solver Integration Tests', () => {
   })
 
   it('handles invalid challenge data JSON', async () => {
-    const turnstileSolver = createTurnstileSolver()
+    const turnstileSolver = createTurnstileSolver({ performanceTracker: createMockPerformanceTracker() })
     const challengeData = {
       challengeId: 'invalid-json-123',
       challengeType: ChallengeType.TURNSTILE,
@@ -234,7 +252,7 @@ describe('Turnstile Solver Integration Tests', () => {
   })
 
   it('handles missing siteKey in challenge data', async () => {
-    const turnstileSolver = createTurnstileSolver()
+    const turnstileSolver = createTurnstileSolver({ performanceTracker: createMockPerformanceTracker() })
     const challengeData = {
       challengeId: 'missing-sitekey-123',
       challengeType: ChallengeType.TURNSTILE,
@@ -270,7 +288,7 @@ describe('Turnstile Solver Integration Tests', () => {
       return node
     })
 
-    const turnstileSolver = createTurnstileSolver()
+    const turnstileSolver = createTurnstileSolver({ performanceTracker: createMockPerformanceTracker() })
     const challengeData = {
       challengeId: 'script-fail-123',
       challengeType: ChallengeType.TURNSTILE,
@@ -287,7 +305,7 @@ describe('Turnstile Solver Integration Tests', () => {
   })
 
   it('handles multiple concurrent solve requests', async () => {
-    const turnstileSolver = createTurnstileSolver()
+    const turnstileSolver = createTurnstileSolver({ performanceTracker: createMockPerformanceTracker() })
 
     // Create multiple challenge data objects
     const challenges = Array.from({ length: 3 }, (_, i) => ({

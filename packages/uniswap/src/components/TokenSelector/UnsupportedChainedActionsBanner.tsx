@@ -59,9 +59,12 @@ export function UnsupportedChainedActionsBanner({
       gap="$spacing12"
       mx={spacing.spacing16}
       p="$spacing12"
+      mb="$spacing8"
     >
       <InfoCircleFilled color="$neutral2" size="$icon.20" />
-      <Text variant="body3">{message}</Text>
+      <Text flex={1} variant="body3">
+        {message}
+      </Text>
     </Flex>
   )
 }

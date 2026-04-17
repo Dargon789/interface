@@ -8,7 +8,7 @@ import { Pill } from 'uniswap/src/components/pill/Pill'
 import { OnSelectCurrency } from 'uniswap/src/components/TokenSelector/types'
 import { getSymbolDisplayText } from 'uniswap/src/utils/currency'
 
-function _TokenPill({
+function TokenPillInner({
   onSelectCurrency,
   token,
   index,
@@ -58,4 +58,4 @@ function _TokenPill({
   )
 }
 
-export const TokenPill = memo(_TokenPill)
+export const TokenPill = memo(TokenPillInner)

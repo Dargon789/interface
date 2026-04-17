@@ -1,6 +1,6 @@
 import React, { memo, PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { LayoutChangeEvent, View } from 'react-native'
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
+// oxlint-disable-next-line typescript/no-restricted-imports
 import { GestureResponderEvent } from 'react-native'
 import Animated, { useSharedValue } from 'react-native-reanimated'
 import {
@@ -16,7 +16,7 @@ import {
 } from 'ui/src'
 import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import { useDeviceDimensions } from 'ui/src/hooks/useDeviceDimensions'
-import { iconSizes, spacing, zIndexes } from 'ui/src/theme'
+import { spacing, zIndexes } from 'ui/src/theme'
 import { BaseCard } from 'uniswap/src/components/BaseCard/BaseCard'
 import { Scrollbar } from 'uniswap/src/components/misc/Scrollbar'
 import { MenuItemProp } from 'uniswap/src/components/modals/ActionSheetModal'
@@ -119,7 +119,7 @@ export function ActionSheetDropdown({
       const containerNode = containerRef.current
 
       if (containerNode) {
-        // eslint-disable-next-line max-params
+        // oxlint-disable-next-line max-params
         containerNode.measureInWindow((x, y, width, height) => {
           setToggleMeasurements({
             x,
@@ -134,14 +134,14 @@ export function ActionSheetDropdown({
     })
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +toggleMeasurements?.sticky, insets.top
+  // oxlint-disable-next-line react/exhaustive-deps -- +toggleMeasurements?.sticky, insets.top
   useEffect(() => {
     if (!isWebPlatform) {
       return undefined
     }
 
     function resizeListener(): void {
-      // eslint-disable-next-line max-params
+      // oxlint-disable-next-line max-params
       containerRef.current?.measureInWindow((x, y, width, height) => {
         setToggleMeasurements((prev) => ({
           ...prev,
@@ -160,7 +160,7 @@ export function ActionSheetDropdown({
     }
   }, [toggleMeasurements?.sticky, insets.top])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +setOpen, setToggleMeasurements
+  // oxlint-disable-next-line react/exhaustive-deps -- +setOpen, setToggleMeasurements
   const closeDropdown = useCallback(
     (event: GestureResponderEvent): void => {
       setOpen(false)
@@ -183,20 +183,13 @@ export function ActionSheetDropdown({
           collapsable={false}
           gap="$spacing8"
           px={styles?.buttonPaddingX}
-          py={styles?.buttonPaddingY || '$spacing8'}
+          py={styles?.buttonPaddingY ?? '$spacing8'}
           // TODO(INFRA-1126) -- testIDs inside TouchableArea are not recognized by Maestro
           testID={testID || 'dropdown-toggle'}
         >
           {children}
           {showArrow && (
-            <RotatableChevron
-              animation="100ms"
-              color="$neutral2"
-              direction={isOpen ? 'up' : 'down'}
-              height={iconSizes.icon20}
-              width={iconSizes.icon20}
-              $group-item-hover={{}}
-            />
+            <RotatableChevron animation="100ms" color="$neutral2" direction={isOpen ? 'up' : 'down'} size="$icon.20" />
           )}
         </Flex>
       </TouchableArea>
@@ -250,7 +243,7 @@ const ActionSheetBackdropWithContent = memo(function ActionSheetBackdropWithCont
         : zIndexes.popover
 
   return (
-    <Portal zIndex={zIndex}>
+    <Portal stackZIndex={zIndex}>
       <AnimatePresence custom={isSheetOpenMemo}>
         {toggleMeasurements && (
           <>
@@ -359,7 +352,7 @@ function DropdownContent({
     }
   }, [initialScrollY, toggleMeasurements.sticky])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +toggleMeasurements
+  // oxlint-disable-next-line react/exhaustive-deps -- +toggleMeasurements
   useEffect(() => {
     setWindowScrollY(0)
   }, [toggleMeasurements])

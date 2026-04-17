@@ -12,11 +12,11 @@ import { setHasBalanceOrActivity } from 'wallet/src/features/wallet/slice'
 import { WalletState } from 'wallet/src/state/walletReducer'
 
 /**
- * This is the interval at which the NFTs tab will poll for new NFTs
- * when the wallet is empty. Both activity and balances are updated
- * in other parts of the app so we don't need to poll.
+ * Poll interval for checking wallet state (balances, NFTs) when the wallet
+ * is empty. Used to detect when the user first receives tokens so the
+ * empty-wallet UI can transition to the funded-wallet UI.
  */
-const EMPTY_WALLET_NFT_POLL_INTERVAL = 15 * ONE_SECOND_MS
+const EMPTY_WALLET_POLL_INTERVAL = 15 * ONE_SECOND_MS
 
 /**
  * Helper hook used to determine the state of the home screen such as whether the wallet should fetch
@@ -47,6 +47,7 @@ export function useHomeScreenState(): {
 
   const { data: balancesById, loading: areBalancesLoading } = usePortfolioBalances({
     evmAddress: address,
+    pollInterval: !hasUsedWalletFromCache ? EMPTY_WALLET_POLL_INTERVAL : undefined,
     skip: hasUsedWalletFromCache,
   })
   const { data: nftData, loading: areNFTsLoading } = GraphQLApi.useNftsTabQuery({
@@ -56,7 +57,7 @@ export function useHomeScreenState(): {
       filter: { filterSpam: true },
       chains: gqlChains,
     },
-    pollInterval: EMPTY_WALLET_NFT_POLL_INTERVAL,
+    pollInterval: EMPTY_WALLET_POLL_INTERVAL,
     notifyOnNetworkStatusChange: true, // Used to trigger network state / loading on refetch or fetchMore
     errorPolicy: 'all', // Suppress non-null image.url fields from backend
     skip: hasUsedWalletFromCache,
@@ -91,7 +92,7 @@ export function useHomeScreenState(): {
   }
 
   return {
-    showEmptyWalletState: !hasUsedWallet,
+    showEmptyWalletState: !hasUsedWallet && isTabsDataLoaded,
     isTabsDataLoaded: dataLoadedRef.current || isTabsDataLoaded,
   }
 }

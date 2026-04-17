@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query/build/modern/useQuery'
+import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
@@ -38,6 +38,7 @@ export function BackupRecoveryPhraseScreen(): JSX.Element {
   )
 }
 
+// oxlint-disable-next-line typescript/consistent-return -- biome-parity: oxlint is stricter here
 function BackupRecoveryPhraseScreenSteps(): JSX.Element {
   const { t } = useTranslation()
   const dispatch = useDispatch()

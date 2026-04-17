@@ -1,6 +1,26 @@
-import { Circle as _Circle, G, Path, Svg } from 'react-native-svg'
-
-// eslint-disable-next-line no-relative-import-paths/no-relative-import-paths
+import PropTypes from 'prop-types'
+import React, { memo, forwardRef } from 'react'
+import {
+  Svg,
+  SvgProps,
+  Ellipse,
+  G,
+  LinearGradient,
+  RadialGradient,
+  Line,
+  Path,
+  Polygon,
+  Polyline,
+  Rect,
+  Symbol,
+  Use,
+  Defs,
+  Stop,
+  ClipPath,
+  Text,
+  Circle,
+} from 'react-native-svg'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths
 import { createIcon } from '../factories/createIcon'
 
 export const [RoundExclamation, AnimatedRoundExclamation] = createIcon({
@@ -8,7 +28,7 @@ export const [RoundExclamation, AnimatedRoundExclamation] = createIcon({
   getIcon: (props) => (
     <Svg viewBox="0 0 16 16" fill="none" {...props}>
       <G id="Frame 1321322480">
-        <_Circle
+        <Circle
           id="Ellipse 714"
           cx="8"
           cy="8"

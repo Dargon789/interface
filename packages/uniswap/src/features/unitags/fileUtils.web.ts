@@ -1,4 +1,4 @@
-import { UnitagAvatarUploadCredentials } from '@universe/api'
+import type { S3UploadCredentials } from 'uniswap/src/features/unitags/fileUtils'
 import { logger } from 'utilities/src/logger/logger'
 
 // Web-specific: data URLs and blob URLs as local files
@@ -39,10 +39,7 @@ function dataURLToBlob(dataURL: string): Blob {
 }
 
 // Web-specific: Convert data URLs to blobs for upload
-export async function uploadFileToS3(
-  imageUri: string,
-  creds: UnitagAvatarUploadCredentials,
-): Promise<{ success: boolean }> {
+export async function uploadFileToS3(imageUri: string, creds: S3UploadCredentials): Promise<{ success: boolean }> {
   if (!creds.preSignedUrl || !creds.s3UploadFields) {
     return { success: false }
   }

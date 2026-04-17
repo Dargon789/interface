@@ -6,12 +6,13 @@ import { BiometricAuthenticationStatus } from 'src/features/biometrics/biometric
 // Biometrics State
 //------------------------------------------------------------------------------------------------
 
-// eslint-disable-next-line import/no-unused-modules
+// oxlint-disable-next-line import/no-unused-modules
 export interface BiometricsState {
   authenticationStatus: BiometricAuthenticationStatus
   deviceSupportsBiometrics: boolean | undefined
   lastAuthenticationTime: number | undefined
   isEnrolled: boolean | undefined
+  isBiometricsDisabledInOSSettings: boolean | undefined
   supportedAuthenticationTypes: AuthenticationType[] | undefined
 }
 
@@ -20,6 +21,7 @@ const initialState: BiometricsState = {
   deviceSupportsBiometrics: undefined,
   lastAuthenticationTime: undefined,
   isEnrolled: undefined,
+  isBiometricsDisabledInOSSettings: undefined,
   supportedAuthenticationTypes: undefined,
 }
 
@@ -45,6 +47,9 @@ const biometricsSlice = createSlice({
     setIsEnrolled: (state, action: PayloadAction<boolean>) => {
       state.isEnrolled = action.payload
     },
+    setIsBiometricsDisabledInOSSettings: (state, action: PayloadAction<boolean>) => {
+      state.isBiometricsDisabledInOSSettings = action.payload
+    },
     setSupportedAuthenticationTypes: (state, action: PayloadAction<AuthenticationType[]>) => {
       state.supportedAuthenticationTypes = action.payload
     },
@@ -61,6 +66,7 @@ export const {
   setAuthenticationStatus,
   setDeviceSupportsBiometrics,
   setIsEnrolled,
+  setIsBiometricsDisabledInOSSettings,
   setSupportedAuthenticationTypes,
   triggerAuthentication,
 } = biometricsSlice.actions
@@ -75,6 +81,9 @@ export const selectDeviceSupportsBiometrics = (state: { biometrics: BiometricsSt
   state.biometrics.deviceSupportsBiometrics
 
 const selectIsEnrolled = (state: { biometrics: BiometricsState }): boolean | undefined => state.biometrics.isEnrolled
+
+export const selectIsBiometricsDisabledInOSSettings = (state: { biometrics: BiometricsState }): boolean | undefined =>
+  state.biometrics.isBiometricsDisabledInOSSettings
 
 const selectSupportedAuthenticationTypes = (state: { biometrics: BiometricsState }): AuthenticationType[] | undefined =>
   state.biometrics.supportedAuthenticationTypes

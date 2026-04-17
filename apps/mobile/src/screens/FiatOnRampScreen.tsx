@@ -1,16 +1,20 @@
-/* eslint-disable max-lines */
-/* eslint-disable complexity */
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+/* oxlint-disable max-lines */
+/* oxlint-disable complexity */
+import { type NativeStackScreenProps } from '@react-navigation/native-stack'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { Image } from 'expo-image'
+import React, { type ComponentProps, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { TextInputProps } from 'react-native'
-import FastImage from 'react-native-fast-image'
+import { type TextInputProps } from 'react-native'
 import { FadeIn, FadeOut, FadeOutDown } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
-import { FiatOnRampStackParamList } from 'src/app/navigation/types'
+import { type FiatOnRampStackParamList } from 'src/app/navigation/types'
 import { FiatOnRampCtaButton } from 'src/components/fiatOnRamp/CtaButton'
 import { Screen } from 'src/components/layout/Screen'
-import { FiatOnRampAmountSection, FiatOnRampAmountSectionRef } from 'src/features/fiatOnRamp/FiatOnRampAmountSection'
+import {
+  FiatOnRampAmountSection,
+  type FiatOnRampAmountSectionRef,
+} from 'src/features/fiatOnRamp/FiatOnRampAmountSection'
 import { useFiatOnRampContext } from 'src/features/fiatOnRamp/FiatOnRampContext'
 import { FiatOnRampCountryListModal } from 'src/features/fiatOnRamp/FiatOnRampCountryListModal'
 import { FiatOnRampTokenSelectorModal } from 'src/features/fiatOnRamp/FiatOnRampTokenSelector'
@@ -22,7 +26,6 @@ import { HandleBar } from 'uniswap/src/components/modals/HandleBar'
 import { PillMultiToggle } from 'uniswap/src/components/pill/PillMultiToggle'
 import { MAX_FIAT_INPUT_DECIMALS } from 'uniswap/src/constants/transactions'
 import { usePortfolioBalances } from 'uniswap/src/features/dataApi/balances/balances'
-import { useFiatOnRampAggregatorGetCountryQuery } from 'uniswap/src/features/fiatOnRamp/api'
 import { FiatOnRampCountryPicker } from 'uniswap/src/features/fiatOnRamp/FiatOnRampCountryPicker'
 import {
   useFiatOnRampQuotes,
@@ -31,17 +34,18 @@ import {
   useMeldFiatCurrencySupportInfo,
   useParseFiatOnRampError,
 } from 'uniswap/src/features/fiatOnRamp/hooks'
+import { useFiatOnRampAggregatorGetCountryQuery } from 'uniswap/src/features/fiatOnRamp/hooks/useFiatOnRampQueries'
 import { TokenSelectorBalanceDisplay } from 'uniswap/src/features/fiatOnRamp/TokenSelectorBalanceDisplay'
 import {
-  FiatOnRampCurrency,
-  FORCurrencyOrBalance,
-  FORServiceProvider,
+  type FiatOnRampCurrency,
+  type FORCurrencyOrBalance,
+  type FORServiceProvider,
   RampDirection,
   RampToggle,
 } from 'uniswap/src/features/fiatOnRamp/types'
 import UnsupportedTokenModal from 'uniswap/src/features/fiatOnRamp/UnsupportedTokenModal'
 import {
-  getServiceProviderLogo,
+  getOptionalServiceProviderLogo,
   isSupportedFORCurrency,
   organizeQuotesIntoSections,
 } from 'uniswap/src/features/fiatOnRamp/utils'
@@ -49,18 +53,19 @@ import { pushNotification } from 'uniswap/src/features/notifications/slice/slice
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
 import { FiatOffRampEventName, FiatOnRampEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
-import { FORAmountEnteredProperties } from 'uniswap/src/features/telemetry/types'
+import { type FORAmountEnteredProperties } from 'uniswap/src/features/telemetry/types'
 import {
   DecimalPadCalculatedSpaceId,
   DecimalPadCalculateSpace,
   DecimalPadInput,
-  DecimalPadInputRef,
+  type DecimalPadInputRef,
 } from 'uniswap/src/features/transactions/components/DecimalPadInput/DecimalPadInput'
 import { useUSDTokenUpdater } from 'uniswap/src/features/transactions/hooks/useUSDTokenUpdater'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { FiatOnRampScreens } from 'uniswap/src/types/screens/mobile'
 import { currencyIdToAddress } from 'uniswap/src/utils/currencyId'
 import { truncateToMaxDecimals } from 'utilities/src/format/truncateToMaxDecimals'
+import { logger } from 'utilities/src/logger/logger'
 import { isIOS, isWebPlatform } from 'utilities/src/platform'
 import { usePrevious } from 'utilities/src/react/hooks'
 import { DEFAULT_DELAY, useDebounce } from 'utilities/src/time/timing'
@@ -73,17 +78,24 @@ const ON_SELECTION_CHANGE_WAIT_TIME_MS = 500
 const MAX_TOKEN_DECIMALS = 9 // limited for design purposes
 const MAX_INPUT_LENGTH = MAX_TOKEN_DECIMALS + 2
 
-function preloadServiceProviderLogos(serviceProviders: FORServiceProvider[], isDarkMode: boolean): void {
-  FastImage.preload(
-    serviceProviders.map((sp) => ({ uri: getServiceProviderLogo(sp.logos, isDarkMode) })).filter((sp) => !!sp.uri),
-  )
+function preloadServiceProviderLogos(serviceProviders: (FORServiceProvider | undefined)[], isDarkMode: boolean): void {
+  const urls = serviceProviders
+    .filter((sp): sp is FORServiceProvider => sp !== undefined)
+    .map((sp) => getOptionalServiceProviderLogo(sp.logos, isDarkMode))
+    .filter((uri): uri is string => !!uri)
+
+  if (urls.length > 0) {
+    Image.prefetch(urls).catch((err) => {
+      logger.warn('FiatOnRampScreen', 'preloadServiceProviderLogos', 'Error preloading service provider logos', err)
+    })
+  }
 }
 
 const PREDEFINED_AMOUNTS_SUPPORTED_CURRENCIES = ['usd', 'eur', 'gbp', 'aud', 'cad', 'sgd']
 const US_STATES_WITH_RESTRICTIONS = 'US-NY'
 
-// TokenSelectorBalanceDisplay height: 85 + FiatOnRampCtaButton height: 30 + padding: 10
-const DECIMAL_PAD_EXTRA_ELEMENTS_HEIGHT = 125
+// TokenSelectorBalanceDisplay height: 85 + FiatOnRampCtaButton height: 30 + padding: 10 + spacing: 8
+const DECIMAL_PAD_EXTRA_ELEMENTS_HEIGHT = 133
 
 export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
   const [showUnsupportedTokenModal, setShowUnsupportedTokenModal] = useState(false)
@@ -144,11 +156,20 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
     inputRef.current?.triggerShakeAnimation()
   }, [])
 
+  const pendingSelectionTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  useEffect(() => {
+    return () => clearTimeout(pendingSelectionTimeoutRef.current)
+  }, [])
+
   // passed to memo(...) component
   const resetSelection = useCallback(({ start, end }: { start: number; end?: number }): void => {
     selectionRef.current = { start, end }
     if (!isWebPlatform && inputRef.current) {
-      setTimeout(() => {
+      // Cancel any pending native selection update to prevent stale cursor positions
+      // when typing fast (the previous timeout would set the cursor to an outdated position).
+      clearTimeout(pendingSelectionTimeoutRef.current)
+      pendingSelectionTimeoutRef.current = setTimeout(() => {
         inputRef.current?.textInputRef.current?.setNativeProps({ selection: { start, end } })
       }, 0)
     }
@@ -158,7 +179,7 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
     useMeldFiatCurrencySupportInfo({
       countryCode,
       skip: false,
-      rampDirection: isOffRamp ? RampDirection.OFFRAMP : RampDirection.ONRAMP,
+      rampDirection: isOffRamp ? RampDirection.OFF_RAMP : RampDirection.ON_RAMP,
     })
 
   const debouncedFiatAmount = useDebounce(fiatAmount, DEFAULT_DELAY * 2)
@@ -214,7 +235,7 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
     quoteCurrencyCode: quoteCurrency.meldCurrencyCode,
     countryCode,
     countryState,
-    rampDirection: isOffRamp ? RampDirection.OFFRAMP : RampDirection.ONRAMP,
+    rampDirection: isOffRamp ? RampDirection.OFF_RAMP : RampDirection.ON_RAMP,
     balanceError: exceedsBalanceError,
   })
 
@@ -232,7 +253,7 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
     exceedsBalanceError,
   })
 
-  const { currentData: ipCountryData } = useFiatOnRampAggregatorGetCountryQuery()
+  const { data: ipCountryData } = useFiatOnRampAggregatorGetCountryQuery()
 
   useEffect(() => {
     if (ipCountryData) {
@@ -242,14 +263,15 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
   }, [ipCountryData, setCountryCode, setCountryState])
 
   // preload service provider logos for given quotes for the next screen
+  const isExpoImageEnabled = useFeatureFlag(FeatureFlags.ExpoImage)
   useEffect(() => {
-    if (quotes) {
+    if (isExpoImageEnabled && quotes) {
       preloadServiceProviderLogos(
         quotes.map((q) => q.serviceProviderDetails),
         isDarkMode,
       )
     }
-  }, [quotes, isDarkMode])
+  }, [isExpoImageEnabled, quotes, isDarkMode])
 
   const filteredQuotes = useMemo(() => {
     if (!quotes) {
@@ -259,7 +281,7 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
     // If specific providers are provided, only show quotes from the specified providers
     if (providers.length > 0) {
       const providerFilteredQuotes = quotes.filter((quote) =>
-        providers.includes(quote.serviceProviderDetails.serviceProvider.toUpperCase()),
+        providers.includes(quote.serviceProviderDetails?.serviceProvider.toUpperCase() ?? ''),
       )
       return providerFilteredQuotes.length > 0 ? providerFilteredQuotes : quotes
     }
@@ -299,11 +321,11 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
     setCountryCode(country.countryCode)
   }
 
+  // oxlint-disable-next-line max-params
   const onChangeValue = (
     newAmount: string,
     source: FORAmountEnteredProperties['source'],
     newIsTokenInputMode?: boolean,
-    // eslint-disable-next-line max-params
   ): void => {
     amountUpdatedTimeRef.current = Date.now()
     sendAnalyticsEvent(
@@ -331,10 +353,12 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
     valueRef.current = truncatedValue
     setValue(truncatedValue)
 
+    const parsedValue = truncatedValue ? parseFloat(truncatedValue) : undefined
+
     if (currentIsTokenInputMode) {
-      setTokenAmount(truncatedValue ? parseFloat(truncatedValue) : 0)
+      setTokenAmount(parsedValue)
     } else {
-      setFiatAmount(truncatedValue ? parseFloat(truncatedValue) : 0)
+      setFiatAmount(parsedValue)
     }
 
     // if user did not use Decimal Pad to enter value
@@ -388,7 +412,7 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
   } = useFiatOnRampSupportedTokens({
     sourceCurrencyCode: meldSupportedFiatCurrency.code,
     countryCode,
-    rampDirection: isOffRamp ? RampDirection.OFFRAMP : RampDirection.ONRAMP,
+    rampDirection: isOffRamp ? RampDirection.OFF_RAMP : RampDirection.ON_RAMP,
   })
 
   useEffect(() => {
@@ -483,8 +507,8 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
 
   const resetAmount = useCallback(() => {
     setValue('')
-    setFiatAmount(0)
-    setTokenAmount(0)
+    setFiatAmount(undefined)
+    setTokenAmount(undefined)
     valueRef.current = ''
     resetSelection({ start: 0 })
     setSelectedQuote(undefined)
@@ -553,6 +577,10 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
                 onChangeValue(val, 'chip', isOffRamp)
               }}
               onEnterAmount={(amount: string, newIsTokenInputMode?: boolean): void => {
+                if (amount.length > MAX_INPUT_LENGTH) {
+                  onDecimalPadTriggerInputShake()
+                  return
+                }
                 onChangeValue(amount, 'textInput', newIsTokenInputMode)
               }}
               onToggleIsTokenInputMode={onToggleIsTokenInputMode}
@@ -591,7 +619,7 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
                   }}
                 />
               )}
-              <Flex grow justifyContent="flex-end">
+              <Flex grow justifyContent="flex-end" py="$spacing8">
                 <DecimalPadInput
                   ref={decimalPadRef}
                   maxDecimals={isTokenInputMode ? tokenMaxDecimals : MAX_FIAT_INPUT_DECIMALS}
@@ -645,6 +673,7 @@ export function FiatOnRampScreen({ navigation }: Props): JSX.Element {
       {showUnsupportedTokenModal && (
         <UnsupportedTokenModal
           isVisible
+          rampDirection={isOffRamp ? RampDirection.OFF_RAMP : RampDirection.ON_RAMP}
           onAccept={onAcceptUnsupportedTokenSwap}
           onBack={(): void => {
             setShowUnsupportedTokenModal(false)

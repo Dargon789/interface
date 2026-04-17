@@ -1,4 +1,4 @@
-/* eslint-disable import/no-unused-modules */
+/* oxlint-disable import/no-unused-modules */
 import { type InAppNotification } from '@universe/api'
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 

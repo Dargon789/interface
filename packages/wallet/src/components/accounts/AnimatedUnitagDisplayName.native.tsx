@@ -14,8 +14,8 @@ import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { ExtensionScreens } from 'uniswap/src/types/screens/extension'
 import { MobileScreens } from 'uniswap/src/types/screens/mobile'
 import { sanitizeAddressText } from 'uniswap/src/utils/addresses'
-import { setClipboard } from 'uniswap/src/utils/clipboard'
 import { shortenAddress } from 'utilities/src/addresses'
+import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { isExtensionApp, isMobileApp } from 'utilities/src/platform'
 import { AnimatedUnitagDisplayNameProps } from 'wallet/src/components/accounts/AnimatedUnitagDisplayName'
 
@@ -23,7 +23,7 @@ import { AnimatedUnitagDisplayNameProps } from 'wallet/src/components/accounts/A
  * Used in the account header that displays the user's unitag and name if available and
  * address. The unitag is animated which shows the unitag suffix.
  */
-function _AnimatedUnitagDisplayName({
+function AnimatedUnitagDisplayNameInner({
   displayName,
   unitagIconSize = '$icon.24',
   address,
@@ -120,7 +120,14 @@ function _AnimatedUnitagDisplayName({
                   {UNITAG_SUFFIX}
                 </Text>
               </Flex>
-              <Flex zIndex={2} alignSelf="center" backgroundColor="$background" animation="semiBouncy" pl="$spacing4">
+              <Flex
+                zIndex={2}
+                alignSelf="center"
+                backgroundColor="$background"
+                animation="semiBouncy"
+                pl="$spacing4"
+                pt="$spacing1"
+              >
                 <Unitag size={unitagIconSize} />
               </Flex>
             </Flex>
@@ -161,4 +168,4 @@ export function useLayoutWidth(pause = false): {
   return { width, onLayout }
 }
 
-export const AnimatedUnitagDisplayName = memo(_AnimatedUnitagDisplayName)
+export const AnimatedUnitagDisplayName = memo(AnimatedUnitagDisplayNameInner)

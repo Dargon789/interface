@@ -30,15 +30,10 @@ test.describe('Basic Extension Setup', () => {
   })
 
   test('background script loads', async ({ context }) => {
-    // Wait for background script/service worker to load
+    // Wait for service worker to load (MV3 extensions use service workers)
     await sleep(ONE_SECOND_MS * 2)
 
-    // Check for background pages or service workers
-    const backgroundPages = context.backgroundPages()
     const serviceWorkers = context.serviceWorkers()
-
-    // Either background pages or service workers should exist
-    const hasBackground = backgroundPages.length > 0 || serviceWorkers.length > 0
-    expect(hasBackground).toBeTruthy()
+    expect(serviceWorkers.length).toBeGreaterThan(0)
   })
 })

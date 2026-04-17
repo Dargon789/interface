@@ -1,10 +1,10 @@
-import { createGlobalStyle, css, ThemeProvider as StyledComponentsThemeProvider } from 'lib/styled-components'
 import { PropsWithChildren, useMemo } from 'react'
-import { darkTheme, lightTheme, ThemeColors } from 'theme/colors'
-import { useIsDarkMode } from 'theme/components/ThemeToggle'
-import { darkDeprecatedTheme, lightDeprecatedTheme } from 'theme/deprecatedColors'
-import { getAccent2, getNeutralContrast } from 'theme/utils'
 import { breakpoints } from 'ui/src/theme'
+import { useSelectedColorScheme } from 'uniswap/src/features/appearance/hooks'
+import { createGlobalStyle, css, ThemeProvider as StyledComponentsThemeProvider } from '~/lib/deprecated-styled'
+import { darkTheme, lightTheme, ThemeColors } from '~/theme/colors'
+import { darkDeprecatedTheme, lightDeprecatedTheme } from '~/theme/deprecatedColors'
+import { getAccent2, getNeutralContrast } from '~/theme/utils'
 
 const MEDIA_WIDTHS = {
   deprecated_upToExtraSmall: 500,
@@ -13,17 +13,18 @@ const MEDIA_WIDTHS = {
   deprecated_upToLarge: 1280,
 }
 
-const MAX_CONTENT_WIDTH_PX = 1200
+export const MAX_CONTENT_WIDTH_PX = 1200
 
 const deprecated_mediaWidthTemplates: { [width in keyof typeof MEDIA_WIDTHS]: typeof css } = Object.keys(
   MEDIA_WIDTHS,
 ).reduce((acc, size) => {
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   acc[size] = (a: any, b: any, c: any) => css`
     @media (max-width: ${(MEDIA_WIDTHS as any)[size]}px) {
       ${css(a, b, c)}
     }
   `
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   return acc
 }, {} as any)
 
@@ -96,7 +97,7 @@ function getSettings(darkMode: boolean) {
   }
 }
 
-// eslint-disable-next-line import/no-unused-modules -- used in styled.d.ts
+// oxlint-disable-next-line import/no-unused-modules -- used in styled.d.ts
 export function getTheme(darkMode: boolean, overriddenColors?: Partial<ThemeColors>) {
   const [colors, deprecatedColors] = darkMode ? [darkTheme, darkDeprecatedTheme] : [lightTheme, lightDeprecatedTheme]
   const colorsWithOverrides = applyOverriddenColors(colors, overriddenColors)
@@ -110,16 +111,13 @@ function applyOverriddenColors(defaultColors: ThemeColors, overriddenColors?: Pa
   }
 
   // Remove any undefined values from the object such that no theme values are overridden by undefined
-  const definedOverriddenColors = Object.keys(overriddenColors).reduce(
-    (acc, curr) => {
-      const key = curr as keyof ThemeColors
-      if (overriddenColors[key] !== undefined) {
-        acc[key] = overriddenColors[key]
-      }
-      return acc
-    },
-    {} as Partial<ThemeColors>,
-  )
+  const definedOverriddenColors = Object.keys(overriddenColors).reduce((acc, curr) => {
+    const key = curr as keyof ThemeColors
+    if (overriddenColors[key] !== undefined) {
+      acc[key] = overriddenColors[key]
+    }
+    return acc
+  }, {} as Partial<ThemeColors>)
 
   const mergedColors = { ...defaultColors, ...definedOverriddenColors }
 
@@ -136,8 +134,8 @@ function applyOverriddenColors(defaultColors: ThemeColors, overriddenColors?: Pa
 }
 
 export function ThemeProvider({ children, ...overriddenColors }: PropsWithChildren<Partial<ThemeColors>>) {
-  const darkMode = useIsDarkMode()
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Only update when darkMode or overriddenColors' entries change
+  const darkMode = useSelectedColorScheme() === 'dark'
+  // oxlint-disable-next-line react/exhaustive-deps -- Only update when darkMode or overriddenColors' entries change
   const themeObject = useMemo(() => getTheme(darkMode, overriddenColors), [darkMode, JSON.stringify(overriddenColors)])
 
   // TODO(WEB-7508): set theme for wallet connect modal

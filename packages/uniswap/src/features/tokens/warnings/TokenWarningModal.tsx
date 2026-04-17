@@ -77,7 +77,7 @@ function allowsDismissWarning(tokenProtectionWarning: TokenProtectionWarning): b
   return WARNINGS_ALLOWING_DISMISSAL.includes(tokenProtectionWarning)
 }
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 function TokenWarningModalContent({
   currencyInfo0,
   currencyInfo1,

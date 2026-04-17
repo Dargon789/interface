@@ -1,22 +1,23 @@
-import { SharedEventName } from '@uniswap/analytics-events'
-import { Table } from 'components/Table'
-import { PORTFOLIO_TABLE_ROW_HEIGHT } from 'pages/Portfolio/constants'
-import { MAX_TOKENS_ROWS } from 'pages/Portfolio/Overview/constants'
-import { TableSectionHeader } from 'pages/Portfolio/Overview/TableSectionHeader'
-import { ViewAllButton } from 'pages/Portfolio/Overview/ViewAllButton'
-import { useNavigateToTokenDetails } from 'pages/Portfolio/Tokens/hooks/useNavigateToTokenDetails'
-import { TokenData, useTransformTokenTableData } from 'pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
-import { TokenColumns, useTokenColumns } from 'pages/Portfolio/Tokens/Table/columns/useTokenColumns'
-import { memo, useCallback } from 'react'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flex, TouchableArea } from 'ui/src'
+import { Flex } from 'ui/src'
+import { useGetWalletTokensProfitLossQuery } from 'uniswap/src/data/rest/getWalletTokensProfitLoss'
+import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { useRestPortfolioValueModifier } from 'uniswap/src/features/dataApi/balances/balancesRest'
 import { ElementName, SectionName } from 'uniswap/src/features/telemetry/constants'
-import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
-import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
-
-const TOKENS_TABLE_MAX_HEIGHT = 800
-const TOKENS_TABLE_MAX_WIDTH = 1200
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
+import { usePortfolioAddresses } from '~/pages/Portfolio/hooks/usePortfolioAddresses'
+import { MAX_TOKENS_ROWS } from '~/pages/Portfolio/Overview/constants'
+import { TableSectionHeader } from '~/pages/Portfolio/Overview/TableSectionHeader'
+import { ViewAllButton } from '~/pages/Portfolio/Overview/ViewAllButton'
+import { useTransformTokenTableData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
+import { TokenColumns } from '~/pages/Portfolio/Tokens/Table/columns/useTokenColumns'
+import { TokensTableInner } from '~/pages/Portfolio/Tokens/Table/TokensTableInner'
+import { PortfolioTab } from '~/pages/Portfolio/types'
+import { buildPortfolioUrl } from '~/pages/Portfolio/utils/portfolioUrls'
 
 interface MiniTokensTableProps {
   maxTokens?: number
@@ -25,9 +26,29 @@ interface MiniTokensTableProps {
 
 export const MiniTokensTable = memo(function MiniTokensTable({ maxTokens = 8, chainId }: MiniTokensTableProps) {
   const { t } = useTranslation()
-  const trace = useTrace()
+  const { externalAddress, chainId: routeChainId } = usePortfolioRoutes()
+  const portfolioAddresses = usePortfolioAddresses()
+  const isProfitLossEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const { chains: enabledChains } = useEnabledChains()
+  const modifier = useRestPortfolioValueModifier(portfolioAddresses.evmAddress ?? portfolioAddresses.svmAddress)
+  const viewAllHref = buildPortfolioUrl({
+    tab: PortfolioTab.Tokens,
+    chainId: routeChainId,
+    externalAddress: externalAddress?.address,
+  })
 
-  // Get token data with limit applied at the hook level
+  const { data: tokenProfitLossData, isError: isProfitLossError } = useGetWalletTokensProfitLossQuery({
+    input: {
+      evmAddress: portfolioAddresses.evmAddress,
+      svmAddress: portfolioAddresses.svmAddress,
+      chainIds: chainId ? [chainId] : enabledChains,
+      modifier,
+      multichain: multichainTokenUxEnabled || undefined,
+    },
+    enabled: isProfitLossEnabled,
+  })
+
   const {
     visible: tokenData,
     totalCount,
@@ -36,33 +57,16 @@ export const MiniTokensTable = memo(function MiniTokensTable({ maxTokens = 8, ch
   } = useTransformTokenTableData({
     limit: maxTokens,
     chainIds: chainId ? [chainId] : undefined,
+    tokenProfitLossData: isProfitLossError ? undefined : (tokenProfitLossData ?? undefined),
   })
 
-  // Create table columns with only the specified columns: Token, Price, Balance, Value, Actions
-  const columns = useTokenColumns({
-    hiddenColumns: [TokenColumns.Change1d, TokenColumns.Allocation],
-    showLoadingSkeleton: loading || !!error,
-  })
-
-  const navigateToTokenDetails = useNavigateToTokenDetails()
-
-  const handleTokenRowClick = useCallback(
-    (tokenData: TokenData) => {
-      sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
-        element: ElementName.PortfolioMiniTokenRow,
-        section: SectionName.PortfolioOverviewTab,
-        ...trace,
-      })
-      navigateToTokenDetails(tokenData)
-    },
-    [navigateToTokenDetails, trace],
-  )
-
-  // Ensure we always have an array for the data prop
-  const tableData = tokenData || []
-
-  // Only show loading state if we don't have data yet (similar to TokensTableInner)
+  const tableData = tokenData ?? []
   const tableLoading = loading && !tokenData
+
+  const hiddenColumns = [TokenColumns.Change1d, TokenColumns.Allocation, TokenColumns.AvgCost]
+  if (!isProfitLossEnabled) {
+    hiddenColumns.push(TokenColumns.UnrealizedPnl)
+  }
 
   return (
     <Flex grow gap="$gap12">
@@ -70,34 +74,28 @@ export const MiniTokensTable = memo(function MiniTokensTable({ maxTokens = 8, ch
         title={t('common.tokens')}
         subtitle={t('portfolio.tokens.balance.totalTokens', { count: totalCount ?? tableData.length })}
         loading={tableLoading}
+        testId={TestID.PortfolioOverviewTokensSection}
       >
-        <Table
-          columns={columns}
-          data={tableData}
+        <TokensTableInner
+          tokenData={tableData}
           loading={tableLoading}
-          error={!!error}
-          v2={true}
-          getRowId={(row) => row.id}
+          error={error}
+          hiddenColumns={hiddenColumns}
+          maxHeight={undefined}
           loadingRowsCount={MAX_TOKENS_ROWS}
-          rowWrapper={
-            tableLoading
-              ? undefined
-              : (row, content) => (
-                  <TouchableArea onPress={() => handleTokenRowClick(row.original)}>{content}</TouchableArea>
-                )
-          }
-          rowHeight={PORTFOLIO_TABLE_ROW_HEIGHT}
-          compactRowHeight={PORTFOLIO_TABLE_ROW_HEIGHT}
-          defaultPinnedColumns={['currencyInfo']}
-          maxWidth={TOKENS_TABLE_MAX_WIDTH}
-          centerArrows
-          maxHeight={TOKENS_TABLE_MAX_HEIGHT}
+          externalScrollSync={false}
+          showUnrealizedPnlPercent
+          analyticsContext={{
+            element: ElementName.PortfolioMiniTokenRow,
+            section: SectionName.PortfolioOverviewTab,
+          }}
         />
       </TableSectionHeader>
       <ViewAllButton
-        href="/portfolio/tokens"
+        href={viewAllHref}
         label={t('portfolio.overview.miniTokensTable.viewAllTokens')}
         elementName={ElementName.PortfolioViewAllTokens}
+        testId={TestID.PortfolioOverviewViewAllTokens}
       />
     </Flex>
   )

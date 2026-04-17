@@ -1,22 +1,23 @@
-import { useShowMoonpayText } from 'components/AccountDrawer/MiniPortfolio/hooks'
-import { MenuStateVariant, useSetMenu } from 'components/AccountDrawer/menuState'
-import ConnectionErrorView from 'components/WalletModal/ConnectionErrorView'
-import PrivacyPolicyNotice from 'components/WalletModal/PrivacyPolicyNotice'
-import { UniswapMobileWalletConnectorOption } from 'components/WalletModal/UniswapMobileWalletConnectorOption'
-import { WalletConnectorOption } from 'components/WalletModal/WalletConnectorOption'
-import { useRecentConnectorId } from 'components/Web3Provider/constants'
-import { useOrderedWallets } from 'features/wallet/connection/hooks/useOrderedWalletConnectors'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React from 'react'
 import { Trans } from 'react-i18next'
-import { transitions } from 'theme/styles'
-import { Flex, Separator, Text } from 'ui/src'
+import { Flex, Separator, Text, TouchableArea } from 'ui/src'
 import { BackArrow } from 'ui/src/components/icons/BackArrow'
 import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
+import { MenuStateVariant, useSetMenu } from '~/components/AccountDrawer/menuState'
+import { useShowMoonpayText } from '~/components/AccountDrawer/MiniPortfolio/hooks'
+import ConnectionErrorView from '~/components/WalletModal/ConnectionErrorView'
+import PrivacyPolicyNotice from '~/components/WalletModal/PrivacyPolicyNotice'
+import { UniswapMobileWalletConnectorOption } from '~/components/WalletModal/UniswapMobileWalletConnectorOption'
+import { WalletConnectorOption } from '~/components/WalletModal/WalletConnectorOption'
+import { useRecentConnectorId } from '~/components/Web3Provider/constants'
+import { useOrderedWallets } from '~/features/wallet/connection/hooks/useOrderedWalletConnectors'
+import { transitions } from '~/theme/styles'
 
 export function OtherWalletsModal() {
   const showMoonpayText = useShowMoonpayText()
   const setMenu = useSetMenu()
-
+  const isEmbeddedWalletEnabled = useFeatureFlag(FeatureFlags.EmbeddedWallet)
   const wallets = useOrderedWallets({ showSecondaryConnectors: true })
   const recentConnectorId = useRecentConnectorId()
 
@@ -32,14 +33,9 @@ export function OtherWalletsModal() {
     >
       <ConnectionErrorView />
       <Flex row justifyContent="center" width="100%">
-        <BackArrow
-          color="$neutral2"
-          size={20}
-          onPress={() => setMenu({ variant: MenuStateVariant.MAIN })}
-          mr="auto"
-          hoverStyle={{ opacity: 0.8 }}
-          cursor="pointer"
-        />
+        <TouchableArea onPress={() => setMenu({ variant: MenuStateVariant.MAIN })} mr="auto">
+          <BackArrow color="$neutral2" size={20} />
+        </TouchableArea>
         <Text variant="subheading2" mr="auto" ml={-20}>
           <Trans i18nKey="common.connectAWallet.button" />
         </Text>
@@ -55,16 +51,19 @@ export function OtherWalletsModal() {
             data-testid="option-grid"
           >
             {/* If uniswap mobile was the last used connector it will be show on the primary window */}
-            {recentConnectorId !== CONNECTION_PROVIDER_IDS.UNISWAP_WALLET_CONNECT_CONNECTOR_ID && (
-              <>
-                <UniswapMobileWalletConnectorOption />
-                {wallets.length > 0 && <Separator />}
-              </>
-            )}
+            {/* If Embedded Wallet is enabled, it will be shown on the primary window */}
+            {recentConnectorId !== CONNECTION_PROVIDER_IDS.UNISWAP_WALLET_CONNECT_CONNECTOR_ID &&
+              !isEmbeddedWalletEnabled && (
+                <>
+                  <UniswapMobileWalletConnectorOption />
+                  {wallets.length > 0 && <Separator />}
+                </>
+              )}
             {wallets.map((wallet, index) => (
               <React.Fragment key={wallet.name}>
                 <WalletConnectorOption wallet={wallet} />
-                {index < wallets.length - 1 && <Separator />}
+                {index < wallets.length - 1 &&
+                  (isEmbeddedWalletEnabled ? <Flex height={2} backgroundColor="$surface1" /> : <Separator />)}
               </React.Fragment>
             ))}
           </Flex>

@@ -1,14 +1,13 @@
 import { useApolloClient } from '@apollo/client'
 import { SharedEventName } from '@uniswap/analytics-events'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { memo, useCallback, useEffect, useState } from 'react'
+import { getIsNotificationServiceLocalOverrideEnabled } from '@universe/notifications'
+import React, { memo, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 import { ActivityTab } from 'src/app/components/tabs/ActivityTab'
 import { NftsTab } from 'src/app/components/tabs/NftsTab'
 import { useSmartWalletNudges } from 'src/app/context/SmartWalletNudgesContext'
-import AppRatingModal from 'src/app/features/appRating/AppRatingModal'
-import { useAppRating } from 'src/app/features/appRating/hooks/useAppRating'
 import { HomeIntroCardStack } from 'src/app/features/home/introCards/HomeIntroCardStack'
 import { PortfolioActionButtons } from 'src/app/features/home/PortfolioActionButtons'
 import { PortfolioHeader } from 'src/app/features/home/PortfolioHeader'
@@ -19,6 +18,7 @@ import { PinReminder } from 'src/app/features/onboarding/PinReminder'
 import { useOptimizedSearchParams } from 'src/app/hooks/useOptimizedSearchParams'
 import { HomeQueryParams, HomeTabs } from 'src/app/navigation/constants'
 import { navigate } from 'src/app/navigation/state'
+import { ExtensionNotificationServiceManager } from 'src/notification-service/ExtensionNotificationServiceManager'
 import { Flex, Loader, styled, Text, TouchableArea } from 'ui/src'
 import { SMART_WALLET_UPGRADE_VIDEO } from 'ui/src/assets'
 import { buildWrappedUrl } from 'uniswap/src/components/banners/shared/utils'
@@ -61,7 +61,7 @@ const MemoizedVideo = memo(() => (
 
 MemoizedVideo.displayName = 'MemoizedVideo'
 
-export const HomeScreen = memo(function _HomeScreen(): JSX.Element {
+export const HomeScreen = memo(function HomeScreenInner(): JSX.Element {
   const { t } = useTranslation()
   const activeAccount = useActiveAccountWithThrow()
   const [showTabs, setShowTabs] = useState(false)
@@ -81,6 +81,11 @@ export const HomeScreen = memo(function _HomeScreen(): JSX.Element {
   const isWrappedBannerEnabled = useFeatureFlag(FeatureFlags.UniswapWrapped2025)
   const hasDismissedWrappedBanner = useSelector(selectHasDismissedUniswapWrapped2025Banner)
   const shouldShowWrappedBanner = isWrappedBannerEnabled && !hasDismissedWrappedBanner
+
+  // Notification service feature flag
+  const isNotificationServiceEnabledFlag = useFeatureFlag(FeatureFlags.NotificationService)
+  const isNotificationServiceEnabled =
+    getIsNotificationServiceLocalOverrideEnabled() || isNotificationServiceEnabledFlag
 
   const handleDismissWrappedBanner = useCallback(() => {
     dispatch(setHasDismissedUniswapWrapped2025Banner(true))
@@ -182,8 +187,6 @@ export const HomeScreen = memo(function _HomeScreen(): JSX.Element {
     }
   }, [apolloClient, shouldRefetchNfts])
 
-  const { appRatingModalVisible, onAppRatingModalClose } = useAppRating()
-
   return (
     <Flex fill alignItems="center" backgroundColor="$surface1" p="$spacing12">
       {address ? (
@@ -223,7 +226,9 @@ export const HomeScreen = memo(function _HomeScreen(): JSX.Element {
 
             <PortfolioActionButtons />
 
-            <HomeIntroCardStack />
+            <ExtensionNotificationServiceManager />
+
+            {!isNotificationServiceEnabled && <HomeIntroCardStack />}
 
             <Flex flex={1} width="100%">
               <Flex row gap="$spacing16" px="$spacing4" py="$spacing8">
@@ -286,7 +291,6 @@ export const HomeScreen = memo(function _HomeScreen(): JSX.Element {
           {t('home.extension.error')}
         </Text>
       )}
-      {appRatingModalVisible && <AppRatingModal onClose={onAppRatingModalClose} />}
       {isSmartWalletEnabled && !activeModal && (
         <SmartWalletUpgradeModals
           account={activeAccount}
@@ -316,7 +320,7 @@ const TabButton = ({
   onPress: () => void
   children: React.ReactNode
   showPendingNotificationBadge?: boolean
-}): JSX.Element => {
+}): React.JSX.Element => {
   return (
     <TouchableArea alignItems="center" flexDirection="row" gap="$spacing4" p="$spacing2" onPress={onPress}>
       <Text color={isActive ? '$neutral1' : '$neutral2'} userSelect="none" variant="subheading2">

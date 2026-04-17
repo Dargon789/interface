@@ -1,17 +1,17 @@
-import { expect, getTest } from 'playwright/fixtures'
-import { stubTradingApiEndpoint } from 'playwright/fixtures/tradingApi'
-import { Mocks } from 'playwright/mocks/mocks'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { expect, getTest } from '~/playwright/fixtures'
+import { stubTradingApiEndpoint } from '~/playwright/fixtures/tradingApi'
+import { Mocks } from '~/playwright/mocks/mocks'
 
 const test = getTest()
 
 test.describe(
   'Buy Crypto Form',
   {
-    tag: '@team:apps-growth',
+    tag: '@team:apps-swap',
     annotation: [
-      { type: 'DD_TAGS[team]', description: 'apps-growth' },
+      { type: 'DD_TAGS[team]', description: 'apps-swap' },
       { type: 'DD_TAGS[test.type]', description: 'web-e2e' },
     ],
   },
@@ -38,7 +38,7 @@ test.describe(
       await page.getByTestId(TestID.Web3StatusConnected).waitFor()
 
       await page.getByTestId(TestID.ChooseInputToken).click()
-      // eslint-disable-next-line
+      // oxlint-disable-next-line
       await page.getByTestId('for-currency-list-wrapper').getByText('Ethereum').click()
     })
 
@@ -57,7 +57,7 @@ test.describe(
 
     test('change input token', async ({ page }) => {
       await page.getByTestId(TestID.ChooseInputToken).click()
-      // eslint-disable-next-line
+      // oxlint-disable-next-line
       await page.getByTestId('for-currency-list-wrapper').getByText('DAI').nth(1).click()
       await page.getByTestId(TestID.BuyFormAmountInput).fill('123')
       await page.getByRole('button', { name: 'Continue' }).click()

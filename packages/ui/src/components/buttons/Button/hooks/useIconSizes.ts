@@ -6,6 +6,7 @@ import { ButtonProps } from 'ui/src/components/buttons/Button/types'
 import { getLineHeightForButtonFontTokenKey } from 'ui/src/components/buttons/Button/utils/getLineHeightForButtonFontTokenKey'
 import { IconButtonProps } from 'ui/src/components/buttons/IconButton/IconButton'
 
+// oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
 type Size = NonNullable<ButtonProps['size'] | IconButtonProps['size']>
 
 // These are special as they're mapped to the size of the font within the button

@@ -141,10 +141,15 @@ interface MouseInteractionResult {
  * @param speedFactor - Speed multiplier for snowfall (1.0 = normal, 0.5 = half speed)
  * @returns Array of active snowflakes, removal function, and optional mouse interaction handlers
  */
-export function useSnowflakeAnimation(
-  mouseInteraction?: MouseInteractionConfig,
+export function useSnowflakeAnimation({
+  mouseInteraction,
   speedFactor = 1.0,
-): {
+  delay = 900,
+}: {
+  mouseInteraction?: MouseInteractionConfig
+  speedFactor?: number
+  delay?: number
+}): {
   snowflakes: SnowflakeProps[]
   removeSnowflake: (id: number) => void
   mouseInteraction?: MouseInteractionResult
@@ -351,13 +356,13 @@ export function useSnowflakeAnimation(
     animationFrameId = requestAnimationFrame(updatePhysics)
 
     // return a cleanup function to correctly cancel the animation frame on a mouse movement
-    // eslint-disable-next-line consistent-return
+    // oxlint-disable-next-line consistent-return
     return () => {
       cancelAnimationFrame(animationFrameId)
     }
   }, [snowflakes, mousePosition, mouseVelocity, mouseInteraction, calculateSnowflakeY])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we don't want to add nextId to the dependencies which get constantly updated when snowflakes are spawned/removed causing poor performance
+  // oxlint-disable-next-line react/exhaustive-deps -- we don't want to add nextId to the dependencies which get constantly updated when snowflakes are spawned/removed causing poor performance
   const spawnSnowflakes = useCallback(() => {
     // Calculate spawn amount to maintain high density with continuous spawning
     // Strategy: Spawn small groups frequently instead of large batches infrequently
@@ -424,10 +429,11 @@ export function useSnowflakeAnimation(
       return Array.from(snowflakeMap.values())
     })
     setNextId((prev) => prev + numToSpawn)
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [fullWidth, speedFactor])
 
   // Set up continuous spawning with random intervals
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we only want to start continuous spawning once
+  // oxlint-disable-next-line react/exhaustive-deps -- we only want to start continuous spawning once
   useEffect(() => {
     let isActive = true
     let timeoutId: NodeJS.Timeout
@@ -452,7 +458,7 @@ export function useSnowflakeAnimation(
     // Start continuous spawning after initial delay
     const startTimer = setTimeout(() => {
       scheduleNextSpawn()
-    }, 900)
+    }, delay)
 
     // Cleanup: Stop spawning when component unmounts
     return () => {
@@ -460,6 +466,7 @@ export function useSnowflakeAnimation(
       clearTimeout(startTimer)
       clearTimeout(timeoutId)
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   return {

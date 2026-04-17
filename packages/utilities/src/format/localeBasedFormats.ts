@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 // Number formatting in our app should follow the guide in this doc:
 // https://www.notion.so/uniswaplabs/Number-standards-fbb9f533f10e4e22820722c2f66d23c0
 
@@ -498,6 +498,7 @@ export const swapPriceFormatter: Formatter = {
 
 export const fiatTokenDetailsFormatter: Formatter = {
   rules: [
+    { exact: 0, formatter: NoDecimalsCurrency },
     {
       upperBound: 0.00000001,
       overrideValue: 0.00000001,
@@ -507,13 +508,15 @@ export const fiatTokenDetailsFormatter: Formatter = {
     { upperBound: 0.1, formatter: ThreeSigFigsCurrency },
     { upperBound: 1.05, formatter: ThreeDecimalsCurrency },
     { upperBound: 1e6, formatter: TwoDecimalsCurrency },
-    { upperBound: Infinity, formatter: ShorthandTwoDecimalsCurrency },
+    { upperBound: 1e15, formatter: ShorthandTwoDecimalsCurrency },
+    { upperBound: Infinity, formatter: '>$999T' },
   ],
   defaultFormat: TwoDecimalsCurrency,
 }
 
 export const fiatTokenPricesFormatter: Formatter = {
   rules: [
+    { exact: 0, formatter: NoDecimalsCurrency },
     {
       upperBound: 0.00000001,
       overrideValue: 0.00000001,
@@ -522,7 +525,8 @@ export const fiatTokenPricesFormatter: Formatter = {
     },
     { upperBound: 1, formatter: ThreeSigFigsCurrency },
     { upperBound: 1e6, formatter: TwoDecimalsCurrency },
-    { upperBound: Infinity, formatter: ShorthandTwoDecimalsCurrency },
+    { upperBound: 1e15, formatter: ShorthandTwoDecimalsCurrency },
+    { upperBound: Infinity, formatter: '>$999T' },
   ],
   defaultFormat: TwoDecimalsCurrency,
 }
@@ -569,7 +573,8 @@ export const fiatGasPriceFormatter: Formatter = {
       postFormatModifier: lessThanPostFormatModifier,
     },
     { upperBound: 1e6, formatter: TwoDecimalsCurrency },
-    { upperBound: Infinity, formatter: ShorthandTwoDecimalsCurrency },
+    { upperBound: 1e15, formatter: ShorthandTwoDecimalsCurrency },
+    { upperBound: Infinity, formatter: '>$999T' },
   ],
   defaultFormat: TwoDecimalsCurrency,
 }
@@ -601,31 +606,6 @@ export const portfolioBalanceFormatter: Formatter = {
     { upperBound: Infinity, formatter: TwoDecimalsCurrency },
   ],
   defaultFormat: TwoDecimalsCurrency,
-}
-
-export const ntfTokenFloorPriceFormatter: Formatter = {
-  rules: [
-    { exact: 0, formatter: '0' },
-    {
-      upperBound: 0.001,
-      overrideValue: 0.001,
-      formatter: ThreeDecimals,
-      postFormatModifier: lessThanPostFormatModifier,
-    },
-    { upperBound: 1, formatter: ThreeDecimals },
-    { upperBound: 1000, formatter: TwoDecimals },
-    { upperBound: 1e15, formatter: ShorthandTwoDecimals },
-    { upperBound: Infinity, formatter: '>999T' },
-  ],
-  defaultFormat: TwoDecimals,
-}
-
-export const ntfCollectionStatsFormatter: Formatter = {
-  rules: [
-    { upperBound: 1000, formatter: NoDecimals },
-    { upperBound: Infinity, formatter: ShorthandOneDecimal },
-  ],
-  defaultFormat: ShorthandOneDecimal,
 }
 
 const percentagesOneDecimalFormatter: Formatter = {
@@ -686,8 +666,6 @@ export const TYPE_TO_FORMATTER_RULES = {
   [NumberType.FiatRewards]: fiatRewardsFormatter,
   [NumberType.FiatGasPrice]: fiatGasPriceFormatter,
   [NumberType.PortfolioBalance]: portfolioBalanceFormatter,
-  [NumberType.NFTTokenFloorPrice]: ntfTokenFloorPriceFormatter,
-  [NumberType.NFTCollectionStats]: ntfCollectionStatsFormatter,
   [NumberType.Percentage]: percentagesFormatter,
   [NumberType.PercentageOneDecimal]: percentagesOneDecimalFormatter,
   [NumberType.PercentageThreeDecimals]: percentagesThreeDecimalsFormatter,

@@ -1,5 +1,5 @@
-import { WalletConnectorMeta } from 'features/wallet/connection/types/WalletConnectorMeta'
 import { logger } from 'utilities/src/logger/logger'
+import { WalletConnectorMeta } from '~/features/wallet/connection/types/WalletConnectorMeta'
 
 const NORMALIZATION_RULES = [
   // Convert to lowercase
@@ -70,7 +70,7 @@ function shouldMergeConnectors(
 /** Merges 2 connectors if they are on different platforms and have no custom connector id, otherwise returns `connectors` as is. */
 function getMergedConnectors(connectors: WalletConnectorMeta[]): WalletConnectorMeta[] {
   const [connector1, connector2, ...rest] = connectors
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (connector1 && connector2 && shouldMergeConnectors([connector1, connector2, ...rest])) {
     return [mergeWalletConnectorMeta(connector1, connector2)]
   }

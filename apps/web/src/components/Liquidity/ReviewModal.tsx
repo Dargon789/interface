@@ -1,22 +1,7 @@
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
-import {
-  getLiquidityRangeChartProps,
-  WrappedLiquidityPositionRangeChart,
-} from 'components/Charts/LiquidityPositionRangeChart/LiquidityPositionRangeChart'
-import { ErrorCallout } from 'components/ErrorCallout'
-import { BaseQuoteFiatAmount } from 'components/Liquidity/BaseQuoteFiatAmount'
-import { PoolOutOfSyncError } from 'components/Liquidity/Create/PoolOutOfSyncError'
-import { LiquidityPositionInfoBadges } from 'components/Liquidity/LiquidityPositionInfoBadges'
-import { DoubleCurrencyLogo } from 'components/Logo/DoubleLogo'
-import { DetailLineItem } from 'components/swap/DetailLineItem'
-import { MouseoverTooltip } from 'components/Tooltip'
-import { useCurrencyInfo } from 'hooks/Tokens'
-import { useAccount } from 'hooks/useAccount'
-import { useCreateLiquidityContext } from 'pages/CreatePosition/CreateLiquidityContextProvider'
+import { Currency, CurrencyAmount, Price, Token } from '@uniswap/sdk-core'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PositionField } from 'types/position'
 import { Button, Flex, Separator, Text } from 'ui/src'
 import { InfoCircleFilled } from 'ui/src/components/icons/InfoCircleFilled'
 import { Passkey } from 'ui/src/components/icons/Passkey'
@@ -29,10 +14,29 @@ import { Modal } from 'uniswap/src/components/modals/Modal'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { useGetPasskeyAuthStatus } from 'uniswap/src/features/passkey/hooks/useGetPasskeyAuthStatus'
 import { ModalNameType } from 'uniswap/src/features/telemetry/constants'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
 import { TransactionStep } from 'uniswap/src/features/transactions/steps/types'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { NumberType } from 'utilities/src/format/types'
+import {
+  getLiquidityRangeChartProps,
+  WrappedLiquidityPositionRangeChart,
+} from '~/components/Charts/LiquidityPositionRangeChart/LiquidityPositionRangeChart'
+import { ErrorCallout } from '~/components/ErrorCallout'
+import { BaseQuoteFiatAmount } from '~/components/Liquidity/BaseQuoteFiatAmount'
+import { PoolOutOfSyncError } from '~/components/Liquidity/Create/PoolOutOfSyncError'
+import { LiquidityPositionInfoBadges } from '~/components/Liquidity/LiquidityPositionInfoBadges'
+import { LowLPSlippageWarning } from '~/components/Liquidity/LowLPSlippageWarning'
+import { getBaseAndQuoteCurrencies } from '~/components/Liquidity/utils/currency'
+import { getTicksAtLimit } from '~/components/Liquidity/utils/priceRangeInfo'
+import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
+import { DetailLineItem } from '~/components/swap/DetailLineItem'
+import { MouseoverTooltip } from '~/components/Tooltip'
+import { useCurrencyInfo } from '~/hooks/Tokens'
+import { useAccount } from '~/hooks/useAccount'
+import { useCreateLiquidityContext } from '~/pages/CreatePosition/CreateLiquidityContextProvider'
+import { PositionField } from '~/types/position'
+import { getTickToPrice, getV4TickToPrice } from '~/utils/getTickToPrice'
 
 export interface ReviewModalProps {
   modalName: ModalNameType
@@ -113,6 +117,7 @@ export function ReviewModal({
 }: ReviewModalProps) {
   const { t } = useTranslation()
   const {
+    currencies,
     protocolVersion,
     creatingPoolOrPair,
     positionState: { fee, hook },
@@ -120,9 +125,7 @@ export function ReviewModal({
     price,
     poolOrPair,
     ticks,
-    ticksAtLimit,
-    pricesAtTicks,
-    priceRangeState: { priceInverted },
+    priceRangeState: { priceInverted, fullRange, minTick, maxTick },
     refetch,
   } = useCreateLiquidityContext()
 
@@ -134,25 +137,56 @@ export function ReviewModal({
 
   const { formatNumberOrString, formatCurrencyAmount } = useLocalizationContext()
 
-  const baseCurrency = price?.baseCurrency
-  const quoteCurrency = price?.quoteCurrency
+  const { baseCurrency, quoteCurrency } = getBaseAndQuoteCurrencies(currencies.sdk, priceInverted)
+
+  const ticksAtLimit = useMemo(() => {
+    // V2 pools return 0 tick spacing because every V2 position is full range
+    if (!fee?.tickSpacing) {
+      return [false, false]
+    }
+
+    return getTicksAtLimit({
+      tickSpacing: fee.tickSpacing,
+      lowerTick: minTick,
+      upperTick: maxTick,
+      fullRange,
+    })
+  }, [fee?.tickSpacing, minTick, maxTick, fullRange])
+
+  const pricesAtTicks: [Maybe<Price<Currency, Currency>>, Maybe<Price<Currency, Currency>>] = useMemo(() => {
+    let pricesAtTicks: [Maybe<Price<Currency, Currency>>, Maybe<Price<Currency, Currency>>] = [undefined, undefined]
+    if (protocolVersion === ProtocolVersion.V4) {
+      pricesAtTicks = [
+        getV4TickToPrice({ baseCurrency, quoteCurrency, tick: ticks[0] }),
+        getV4TickToPrice({ baseCurrency, quoteCurrency, tick: ticks[1] }),
+      ]
+    }
+
+    if (protocolVersion === ProtocolVersion.V3) {
+      pricesAtTicks = [
+        getTickToPrice({ baseToken: baseCurrency as Token, quoteToken: quoteCurrency as Token, tick: ticks[0] }),
+        getTickToPrice({ baseToken: baseCurrency as Token, quoteToken: quoteCurrency as Token, tick: ticks[1] }),
+      ]
+    }
+
+    return priceInverted ? [pricesAtTicks[1], pricesAtTicks[0]] : pricesAtTicks
+  }, [ticks, baseCurrency, quoteCurrency, protocolVersion, priceInverted])
 
   const formattedPrices = useMemo(() => {
-    if (protocolVersion === ProtocolVersion.V2) {
-      return ['', '']
-    }
+    const minPrice = pricesAtTicks[0]
+    const maxPrice = pricesAtTicks[1]
 
     const lowerPriceFormatted = ticksAtLimit[0]
       ? '0'
-      : formatNumberOrString({ value: pricesAtTicks[0]?.toSignificant(), type: NumberType.TokenTx })
+      : formatNumberOrString({ value: minPrice?.toSignificant(), type: NumberType.TokenTx })
 
     const upperPriceFormatted = ticksAtLimit[1]
       ? '∞'
-      : formatNumberOrString({ value: pricesAtTicks[1]?.toSignificant(), type: NumberType.TokenTx })
+      : formatNumberOrString({ value: maxPrice?.toSignificant(), type: NumberType.TokenTx })
 
     const postfix = `${quoteCurrency?.symbol + '/' + baseCurrency?.symbol}`
     return [`${lowerPriceFormatted} ${postfix}`, `${upperPriceFormatted} ${postfix}`]
-  }, [formatNumberOrString, pricesAtTicks, ticksAtLimit, protocolVersion, baseCurrency, quoteCurrency])
+  }, [formatNumberOrString, pricesAtTicks, ticksAtLimit, baseCurrency, quoteCurrency])
 
   const connectedAccount = useAccount()
   const { isSignedInWithPasskey, isSessionAuthenticated, needsPasskeySignin } = useGetPasskeyAuthStatus(
@@ -182,15 +216,16 @@ export function ReviewModal({
     <Modal name={modalName} padding="$none" onClose={onClose} isDismissible isModalOpen={isOpen}>
       <Flex px="$spacing8" pt="$spacing12" pb="$spacing8" gap="$spacing24">
         <Flex px="$spacing12">
-          <GetHelpHeader
-            title={
-              <Text variant="subheading2" color="$neutral2">
-                {headerTitle}
-              </Text>
-            }
-            closeDataTestId={TestID.LiquidityModalHeaderClose}
-            closeModal={() => onClose()}
-          />
+          <Flex row justifyContent="space-between" alignItems="center" width="100%">
+            <Text variant="subheading2" color="$neutral2">
+              {headerTitle}
+            </Text>
+            <GetHelpHeader
+              width="auto"
+              closeDataTestId={TestID.LiquidityModalHeaderClose}
+              closeModal={() => onClose()}
+            />
+          </Flex>
           <Flex py="$spacing12" gap="$spacing12" mt="$spacing16">
             <Flex row alignItems="center" justifyContent="space-between">
               <Flex>
@@ -278,6 +313,9 @@ export function ReviewModal({
             </Flex>
           )}
           <Flex gap="$spacing12">
+            <LowLPSlippageWarning
+              isNativePool={Boolean(currencies.sdk.TOKEN0?.isNative || currencies.sdk.TOKEN1?.isNative)}
+            />
             <ErrorCallout errorMessage={transactionError} onPress={refetch} />
             <PoolOutOfSyncError />
           </Flex>
@@ -321,7 +359,7 @@ export function ReviewModal({
                 onPress={onConfirm}
                 isDisabled={isDisabled}
                 fill={false}
-                icon={needsPasskeySignin ? <Passkey size="$icon.24" /> : undefined}
+                icon={needsPasskeySignin ? <Passkey size="$icon.24" color="$white" /> : undefined}
               >
                 {isSignedInWithPasskey && isSessionAuthenticated ? t('position.create.confirm') : confirmButtonText}
               </Button>

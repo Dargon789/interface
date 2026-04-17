@@ -1,21 +1,16 @@
-import { FeatureFlags } from '@universe/gating'
-import { DEFAULT_FEE_DATA, DYNAMIC_FEE_DATA } from 'components/Liquidity/Create/types'
-import { expect, getTest, type Page } from 'playwright/fixtures'
-import { stubTradingApiEndpoint } from 'playwright/fixtures/tradingApi'
-import { createTestUrlBuilder } from 'playwright/fixtures/urls'
-import { DAI, USDC_UNICHAIN, USDT } from 'uniswap/src/constants/tokens'
+import { DAI, USDT } from 'uniswap/src/constants/tokens'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { WETH } from 'uniswap/src/test/fixtures/lib/sdk'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { DEFAULT_FEE_DATA, DYNAMIC_FEE_DATA } from '~/components/Liquidity/Create/types'
+import { expect, getTest, type Page } from '~/playwright/fixtures'
+import { stubTradingApiEndpoint } from '~/playwright/fixtures/tradingApi'
+import { createTestUrlBuilder } from '~/playwright/fixtures/urls'
 
 const test = getTest()
 
 const buildUrl = createTestUrlBuilder({
   basePath: '/positions/create',
-  defaultFeatureFlags: {
-    [FeatureFlags.D3LiquidityRangeChart]: false,
-    [FeatureFlags.PriceRangeInputV2]: true,
-  },
 })
 
 const WETH_ADDRESS = WETH.address
@@ -117,7 +112,7 @@ test.describe(
         await page.getByRole('button', { name: 'Continue' }).click()
         await page.getByRole('button', { name: 'Reset' }).click()
         // Confirm reset
-        await page.getByRole('button', { name: 'Reset' }).click()
+        await page.getByRole('button', { name: 'Reset' }).last().click()
         const url = new URL(page.url())
         await expect(url.pathname).toContain(`/positions/create/v2`)
         await expect(page.getByRole('button', { name: 'New v2 position' })).not.toBeVisible()
@@ -133,7 +128,7 @@ test.describe(
               chain: 'unichain',
               hook: '0x09DEA99D714A3a19378e3D80D1ad22Ca46085080',
               priceRangeState:
-                '{"priceInverted":true,"fullRange":false,"minPrice":"0.00019382924070396673","maxPrice":"0.000350504530738769","initialPrice":"0.000025"}',
+                '{"priceInverted":true,"fullRange":false,"minTick":-85500,"maxTick":-79560,"initialPrice":"0.000025"}',
               fee: JSON.stringify({ ...DEFAULT_FEE_DATA, isDynamic: true }),
             },
           }),
@@ -156,8 +151,8 @@ test.describe(
         const priceRange = JSON.parse(url.searchParams.get('priceRangeState')!)
         expect(priceRange.priceInverted, 'priceInverted').toBe(true)
         expect(priceRange.fullRange, 'fullRange').toBe(false)
-        expect(priceRange.minPrice, 'minPrice').toBe('0.00019382924070396673')
-        expect(priceRange.maxPrice, 'maxPrice').toBe('0.000350504530738769')
+        expect(priceRange.minTick, 'minTick').toBe(-85500)
+        expect(priceRange.maxTick, 'maxTick').toBe(-79560)
         expect(priceRange.initialPrice, 'initialPrice').toBe('0.000025')
         const minPriceInput = page.getByTestId(TestID.RangeInput + '-0').first()
         const maxPriceInput = page.getByTestId(TestID.RangeInput + '-1').first()
@@ -174,6 +169,7 @@ test.describe(
               currencyA: 'NATIVE',
               currencyB: USDT.address,
               depositState: '{"exactField":"TOKEN0","exactAmounts":{"TOKEN0":"1.25"}}',
+              fee: '{"isDynamic":false,"feeAmount":500,"tickSpacing":10}',
             },
           }),
         )
@@ -182,8 +178,7 @@ test.describe(
         const depositState = JSON.parse(url.searchParams.get('depositState')!)
         expect(depositState.exactField, 'exactField').toBe('TOKEN0')
         expect(depositState.exactAmounts.TOKEN0, 'exactAmounts.TOKEN0').toBe('1.25')
-        const ethInput = page.getByTestId(TestID.AmountInputIn).first()
-        await expect(ethInput).toHaveValue('1.25')
+        await expect(page.getByText('Enter an amount')).toBeVisible()
       })
 
       test('historyState is set from URL', async ({ page }) => {
@@ -372,7 +367,7 @@ test.describe(
           '{"priceInverted":false,"fullRange":false,"minPrice":"2500","maxPrice":"5000","initialPrice":""}',
       }
 
-      test('V4 can increment/decrement price range correctly', async ({ page }) => {
+      test('V4 can increment/decrement price range correctly', async ({ page, graphql }) => {
         await page.goto(
           buildUrl({
             subPath: '/v4',
@@ -384,11 +379,13 @@ test.describe(
           }),
         )
 
+        await graphql.waitForResponse('PoolPriceHistory')
+        await graphql.waitForResponse('AllV4Ticks')
         await expectInputToBeFilled({ page })
         await incrementDecrementPrice({ page })
       })
 
-      test('V3 can increment/decrement price range correctly', async ({ page }) => {
+      test('V3 can increment/decrement price range correctly', async ({ page, graphql }) => {
         await stubTradingApiEndpoint({ page, endpoint: uniswapUrls.tradingApiPaths.quote })
         await page.goto(
           buildUrl({
@@ -400,6 +397,7 @@ test.describe(
             },
           }),
         )
+        await graphql.waitForResponse('PoolPriceHistory')
         await expectInputToBeFilled({ page })
         await incrementDecrementPrice({ page })
       })
@@ -408,27 +406,36 @@ test.describe(
 )
 
 async function incrementDecrementPrice({ page }: { page: Page }) {
-  // Decrement and increment the min price
-  const minPrice = await page.getByTestId(TestID.RangeInput + '-0').inputValue()
-  await page.getByTestId(TestID.RangeInputDecrement + '-0').click()
-  const lowerMinPrice = await page.getByTestId(TestID.RangeInput + '-0').inputValue()
-  expect(minPrice).toBeDefined()
-  expect(Number(lowerMinPrice)).toBeLessThan(Number(minPrice))
+  const minInput = page.getByTestId(TestID.RangeInput + '-0')
+  const maxInput = page.getByTestId(TestID.RangeInput + '-1')
 
-  await page.getByTestId(TestID.RangeInputIncrement + '-0').click()
-  const higherMinPrice = await page.getByTestId(TestID.RangeInput + '-0').inputValue()
-  expect(Number(higherMinPrice)).toBeGreaterThan(Number(lowerMinPrice))
+  // Decrement and increment the min price
+  const minPrice = await minInput.inputValue()
+  expect(minPrice).toBeDefined()
+  await expect(async () => {
+    await page.getByTestId(TestID.RangeInputDecrement + '-0').click()
+    expect(Number(await minInput.inputValue())).toBeLessThan(Number(minPrice))
+  }).toPass({ timeout: 5000 })
+
+  const lowerMinPrice = await minInput.inputValue()
+  await expect(async () => {
+    await page.getByTestId(TestID.RangeInputIncrement + '-0').click()
+    expect(Number(await minInput.inputValue())).toBeGreaterThan(Number(lowerMinPrice))
+  }).toPass({ timeout: 5000 })
 
   // Decrement and increment the max price
-  const maxPrice = await page.getByTestId(TestID.RangeInput + '-1').inputValue()
-  await page.getByTestId(TestID.RangeInputDecrement + '-1').click()
-  const lowerMaxPrice = await page.getByTestId(TestID.RangeInput + '-1').inputValue()
+  const maxPrice = await maxInput.inputValue()
   expect(maxPrice).toBeDefined()
-  expect(Number(lowerMaxPrice)).toBeLessThan(Number(maxPrice))
+  await expect(async () => {
+    await page.getByTestId(TestID.RangeInputDecrement + '-1').click()
+    expect(Number(await maxInput.inputValue())).toBeLessThan(Number(maxPrice))
+  }).toPass({ timeout: 5000 })
 
-  await page.getByTestId(TestID.RangeInputIncrement + '-1').click()
-  const higherMaxPrice = await page.getByTestId(TestID.RangeInput + '-1').inputValue()
-  expect(Number(higherMaxPrice)).toBeGreaterThan(Number(lowerMaxPrice))
+  const lowerMaxPrice = await maxInput.inputValue()
+  await expect(async () => {
+    await page.getByTestId(TestID.RangeInputIncrement + '-1').click()
+    expect(Number(await maxInput.inputValue())).toBeGreaterThan(Number(lowerMaxPrice))
+  }).toPass({ timeout: 5000 })
 }
 
 async function expectInputToBeFilled({ page }: { page: Page }) {

@@ -15,8 +15,11 @@ import { TXN_HISTORY_ICON_SIZE, TXN_STATUS_ICON_SIZE } from 'uniswap/src/compone
 import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
 import { useTransactionActions } from 'uniswap/src/features/activity/hooks/useTransactionActions'
 import { getTransactionSummaryTitle } from 'uniswap/src/features/activity/utils/getTransactionSummaryTitle'
+import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import Trace from 'uniswap/src/features/telemetry/Trace'
 import { useIsQueuedTransaction } from 'uniswap/src/features/transactions/hooks/useIsQueuedTransaction'
 import { TransactionStatus } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { isPlanTransactionDetails } from 'uniswap/src/features/transactions/types/utils'
 import { isWebPlatform } from 'utilities/src/platform'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 
@@ -26,7 +29,7 @@ const hoverStyle: FlexProps['hoverStyle'] = { backgroundColor: '$surface2' }
 
 const displayNameTextProps: TextProps = { color: '$accent1', variant: 'body1' }
 
-export const TransactionSummaryLayout = memo(function _TransactionSummaryLayout({
+export const TransactionSummaryLayout = memo(function TransactionSummaryLayoutInner({
   caption,
   isExternalProfile,
   transaction,
@@ -60,7 +63,7 @@ export const TransactionSummaryLayout = memo(function _TransactionSummaryLayout(
  * IMPORTANT: If you add any new hooks to this component, make sure to profile the app using `react-devtools` to verify
  *            that the component is not re-rendering unnecessarily.
  */
-const TransactionSummaryLayoutContent = memo(function _TransactionSummaryLayoutContent({
+const TransactionSummaryLayoutContent = memo(function TransactionSummaryLayoutContentInner({
   authTrigger,
   transaction,
   title,
@@ -97,81 +100,85 @@ const TransactionSummaryLayoutContent = memo(function _TransactionSummaryLayoutC
     transaction,
   })
 
-  const formattedAddedTime = useFormattedTimeForActivity(transaction.addedTime)
+  const sortTime = isPlanTransactionDetails(transaction) ? transaction.updatedTime : transaction.addedTime
+  const formattedSortTime = useFormattedTimeForActivity(sortTime)
 
   const statusIconFill = colors.surface1.get()
+  const showWarningIcon = status === TransactionStatus.Failed || status === TransactionStatus.AwaitingAction
 
   const rightBlock = useMemo(
     () =>
       isCancel ? (
         <SlashCircle color="$statusCritical" fill={statusIconFill} fillOpacity={1} size={TXN_STATUS_ICON_SIZE} />
-      ) : status === TransactionStatus.Failed ? (
+      ) : showWarningIcon ? (
         <Flex grow alignItems="flex-end" justifyContent="space-between">
           <AlertTriangleFilled color="$statusWarning" fill={colors.statusWarning.val} size={TXN_STATUS_ICON_SIZE} />
         </Flex>
       ) : (
         <Text color="$neutral3" variant="body3">
-          {formattedAddedTime}
+          {formattedSortTime}
         </Text>
       ),
-    [isCancel, status, statusIconFill, formattedAddedTime, colors],
+    [isCancel, showWarningIcon, statusIconFill, formattedSortTime, colors],
   )
 
   return (
     <>
-      <TouchableArea
-        mb="$spacing4"
-        overflow="hidden"
-        testID={`activity-list-item-${index ?? 0}`}
-        onPress={handleShowDetailsModal}
-      >
-        <Flex
-          grow
-          row
-          backgroundColor="$surface1"
-          borderRadius="$rounded16"
-          gap="$spacing12"
-          hoverStyle={hoverStyle}
-          px={isWebPlatform ? '$spacing8' : '$none'}
-          py="$spacing8"
+      <Trace logPress element={ElementName.ActivityRow} properties={{ transactionHash: transaction.hash }}>
+        <TouchableArea
+          mb="$spacing4"
+          overflow="hidden"
+          testID={`activity-list-item-${index ?? 0}`}
+          onPress={handleShowDetailsModal}
         >
-          {icon && (
-            <Flex centered width={TXN_HISTORY_ICON_SIZE}>
-              {icon}
-            </Flex>
-          )}
-          <Flex grow shrink>
-            <Flex grow gap="$spacing2">
-              <Flex grow row alignItems="center" gap="$spacing4" justifyContent="space-between">
-                <Flex row shrink alignItems="center" gap="$spacing4">
-                  {walletDisplayName ? (
-                    <DisplayNameText displayName={walletDisplayName} textProps={displayNameTextProps} />
-                  ) : null}
-                  {(transaction.routing === TradingApi.Routing.DUTCH_V2 ||
-                    transaction.routing === TradingApi.Routing.DUTCH_LIMIT) && <UniswapX size="$icon.16" />}
-                  <TransactionSummaryTitle title={title} transaction={transaction} />
-                </Flex>
-                {!inProgress && rightBlock}
+          <Flex
+            grow
+            row
+            backgroundColor="$surface1"
+            borderRadius="$rounded16"
+            gap="$spacing12"
+            hoverStyle={hoverStyle}
+            px={isWebPlatform ? '$spacing8' : '$none'}
+            py="$spacing8"
+          >
+            {icon && (
+              <Flex centered width={TXN_HISTORY_ICON_SIZE}>
+                {icon}
               </Flex>
-              <Flex grow row gap="$spacing16">
-                {typeof caption === 'string' ? <Text flex={1}>{caption}</Text> : <Flex flex={1}>{caption}</Flex>}
-                {status === TransactionStatus.Failed && onRetry && (
-                  <Flex flexShrink={0}>
-                    <Text color="$accent1" variant="buttonLabel2" onPress={onRetry}>
-                      {t('common.button.retry')}
-                    </Text>
+            )}
+            <Flex grow shrink>
+              <Flex grow gap="$spacing2">
+                <Flex grow row alignItems="center" gap="$spacing4" justifyContent="space-between">
+                  <Flex row shrink alignItems="center" gap="$spacing4">
+                    {walletDisplayName ? (
+                      <DisplayNameText displayName={walletDisplayName} textProps={displayNameTextProps} />
+                    ) : null}
+                    {(transaction.routing === TradingApi.Routing.DUTCH_V2 ||
+                      transaction.routing === TradingApi.Routing.DUTCH_LIMIT) && <UniswapX size="$icon.16" />}
+                    <TransactionSummaryTitle title={title} transaction={transaction} />
                   </Flex>
-                )}
+                  {!inProgress && rightBlock}
+                </Flex>
+                <Flex grow row gap="$spacing16">
+                  {typeof caption === 'string' ? <Text flex={1}>{caption}</Text> : <Flex flex={1}>{caption}</Flex>}
+                  {status === TransactionStatus.Failed && onRetry && (
+                    <Flex flexShrink={0}>
+                      <Text color="$accent1" variant="buttonLabel2" onPress={onRetry}>
+                        {t('common.button.retry')}
+                      </Text>
+                    </Flex>
+                  )}
+                </Flex>
               </Flex>
             </Flex>
+            {inProgress && (
+              <Flex justifyContent="center">
+                <SpinningLoader color="$accent1" disabled={isQueued} size={LOADING_SPINNER_SIZE} />
+              </Flex>
+            )}
           </Flex>
-          {inProgress && (
-            <Flex justifyContent="center">
-              <SpinningLoader color="$accent1" disabled={isQueued} size={LOADING_SPINNER_SIZE} />
-            </Flex>
-          )}
-        </Flex>
-      </TouchableArea>
+        </TouchableArea>
+      </Trace>
       <AnimatePresence>
         {showDetailsModal && (
           <TransactionDetailsModal

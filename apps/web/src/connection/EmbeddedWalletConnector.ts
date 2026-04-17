@@ -1,5 +1,3 @@
-import { EmbeddedWalletProvider, embeddedWalletProvider, Listener } from 'connection/EmbeddedWalletProvider'
-import { getEmbeddedWalletState } from 'state/embeddedWallet/store'
 import { CONNECTION_PROVIDER_IDS, CONNECTION_PROVIDER_NAMES } from 'uniswap/src/constants/web3'
 import { HexString } from 'utilities/src/addresses/hex'
 import {
@@ -11,6 +9,8 @@ import {
   UserRejectedRequestError,
 } from 'viem'
 import { ChainNotConfiguredError, createConnector } from 'wagmi'
+import { EmbeddedWalletProvider, embeddedWalletProvider, Listener } from '~/connection/EmbeddedWalletProvider'
+import { getEmbeddedWalletState } from '~/state/embeddedWallet/store'
 
 interface EmbeddedWalletParameters {
   onConnect?(): void
@@ -129,6 +129,7 @@ export function embeddedWallet(_parameters: EmbeddedWalletParameters = {}) {
       }
 
       try {
+        // oxlint-disable-next-line unicorn/no-single-promise-in-promise-methods
         await Promise.all([
           provider.request({
             method: 'wallet_switchEthereumChain',

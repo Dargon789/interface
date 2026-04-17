@@ -4,7 +4,7 @@ import { isNonTestDev } from 'utilities/src/environment/constants'
 // Module-level cache for config to avoid recomputing on every call
 let cachedConfig: Config | undefined
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export const getConfig = (): Config => {
   // Return cached config if already computed
   if (cachedConfig !== undefined) {
@@ -60,7 +60,7 @@ export const getConfig = (): Config => {
     walletConnectProjectIdDev: process.env.WALLETCONNECT_PROJECT_ID_DEV || '',
   }
   if (isNonTestDev) {
-    // biome-ignore lint/suspicious/noConsole: Cannot use logger here, causes error from circular dep
+    // oxlint-disable-next-line no-console -- Cannot use logger here, causes error from circular dep
     console.debug('Using app config:', config)
   }
   // Cache and return frozen config

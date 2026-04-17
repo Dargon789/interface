@@ -12,7 +12,18 @@ import { currencyIdToChain, currencyIdToGraphQLAddress, isNativeCurrencyAddress 
 import { canOpenURL, openURL } from 'uniswap/src/utils/link'
 import { logger } from 'utilities/src/logger/logger'
 
-const ALLOWED_EXTERNAL_URI_SCHEMES = ['http://', 'https://']
+/**
+ * Checks whether a URI uses an allowed external scheme (http or https).
+ * Uses the URL API for case-insensitive protocol parsing.
+ */
+export function isAllowedExternalUri(uri: string): boolean {
+  try {
+    const parsed = new URL(uri.trim())
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
 
 /**
  * Opens allowed URIs. if isSafeUri is set to true then this will open http:// and https:// as well as some deeplinks.
@@ -38,8 +49,7 @@ export async function openUri({
   controlsColor?: string
   throwOnError?: boolean
 }): Promise<void> {
-  const trimmedURI = uri.trim()
-  if (!isSafeUri && !ALLOWED_EXTERNAL_URI_SCHEMES.some((scheme) => trimmedURI.startsWith(scheme))) {
+  if (!isSafeUri && !isAllowedExternalUri(uri)) {
     const error = new Error('User attempted to open potentially unsafe url')
     logger.error(error, {
       tags: {
@@ -54,10 +64,11 @@ export async function openUri({
     return
   }
 
+  const trimmedURI = uri.trim()
   const isHttp = /^https?:\/\//.test(trimmedURI)
 
   // `canOpenURL` returns `false` for App Links / Universal Links, so we just assume any device can handle the `https://` protocol.
-  const supported = isHttp ? true : await canOpenURL(uri)
+  const supported = isHttp ? true : await canOpenURL(trimmedURI)
 
   if (!supported) {
     const error = new Error(`Cannot open URI: ${uri}`)
@@ -117,7 +128,15 @@ export function getExplorerLink({
   data?: string
   type: ExplorerDataType
 }): string {
-  const { explorer, nativeCurrency } = getChainInfo(chainId)
+  const chainInfo = getChainInfo(chainId)
+
+  // Handle unsupported chain IDs gracefully
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- chainInfo can be undefined in edge cases (SDK mismatch)
+  if (!chainInfo) {
+    return ''
+  }
+
+  const { explorer, nativeCurrency } = chainInfo
   const prefix = explorer.url
 
   if (!data) {
@@ -161,18 +180,15 @@ export function getExplorerLink({
 
 export function getNftExplorerLink({
   chainId,
-  fallbackChainId,
   contractAddress,
   tokenId,
 }: {
-  chainId?: UniverseChainId
-  fallbackChainId: UniverseChainId
+  chainId: UniverseChainId
   contractAddress: string
   tokenId: string
 }): string {
-  const targetChainId = chainId ?? fallbackChainId
   return getExplorerLink({
-    chainId: targetChainId,
+    chainId,
     data: `${contractAddress}/${tokenId}`,
     type: ExplorerDataType.NFT,
   })
@@ -227,6 +243,11 @@ export function getTokenDetailsURL({
   return `/explore/tokens/${chainName}/${adjustedAddress}${inputAddressSuffix}`
 }
 
+export function getFiatOnRampURL(chainId?: UniverseChainId): string {
+  const chainParam = chainId ? `?chain=${getChainInfo(chainId).urlParam}` : ''
+  return `/buy${chainParam}`
+}
+
 export function getPoolDetailsURL(address: string, chain: UniverseChainId): string {
   const chainName = getChainInfo(chain).urlParam
   return `/explore/pools/${chainName}/${address}`
@@ -252,8 +273,8 @@ export async function openOfframpPendingSupportLink(): Promise<void> {
   return openUri({ uri: uniswapUrls.helpArticleUrls.fiatOffRampHelp })
 }
 
-export function getProfileUrl(walletAddress: string): string {
-  return `${uniswapUrls.webInterfaceAddressUrl}/${walletAddress}`
+export function getPortfolioUrl(walletAddress: string): string {
+  return `${uniswapUrls.webInterfacePortfolioUrl}/${walletAddress}`
 }
 
 const UTM_TAGS_MOBILE = 'utm_medium=mobile&utm_source=share-tdp'

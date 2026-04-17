@@ -14,10 +14,10 @@ import type {
   Provider,
   ProviderService,
 } from 'wallet/src/features/transactions/executeTransaction/services/providerService'
+import type { TransactionConfigService } from 'wallet/src/features/transactions/executeTransaction/services/transactionConfigService'
 import type { TransactionRepository } from 'wallet/src/features/transactions/executeTransaction/services/TransactionRepository/transactionRepository'
 import type { TransactionService } from 'wallet/src/features/transactions/executeTransaction/services/TransactionService/transactionService'
 import type { TransactionSigner } from 'wallet/src/features/transactions/executeTransaction/services/TransactionSignerService/transactionSignerService'
-import type { TransactionConfigService } from 'wallet/src/features/transactions/executeTransaction/services/transactionConfigService'
 import type { TransactionExecutor } from 'wallet/src/features/transactions/swap/services/transactionExecutor'
 import type { TransactionParamsFactory } from 'wallet/src/features/transactions/swap/services/transactionParamsFactory'
 import type { BaseTransactionContext } from 'wallet/src/features/transactions/swap/types/transactionExecutor'

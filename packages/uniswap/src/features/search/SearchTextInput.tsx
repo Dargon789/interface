@@ -8,6 +8,7 @@ import type {
 } from 'react-native'
 import {
   AnimatePresence,
+  ColorTokens,
   Flex,
   FlexProps,
   Input,
@@ -70,11 +71,13 @@ export type SearchTextInputProps = InputProps & {
   hideIcon?: boolean
   minHeight?: number
   cancelBehaviorType?: CancelBehaviorType
+  borderColor?: ColorTokens
+  borderWidth?: SpaceTokens
 }
 
 export const SearchTextInput = forwardRef<NativeTextInput, SearchTextInputProps>(
-  // eslint-disable-next-line complexity
-  function _SearchTextInput(props, ref) {
+  // oxlint-disable-next-line complexity
+  function SearchTextInputInner(props, ref) {
     const dimensions = useDeviceDimensions()
     const { t } = useTranslation()
     const {
@@ -98,6 +101,9 @@ export const SearchTextInput = forwardRef<NativeTextInput, SearchTextInputProps>
       cancelBehaviorType = CancelBehaviorType.CancelButton,
       keyboardType = 'default',
       inputMode: inputModeProp,
+      placeholderTextColor = '$neutral2',
+      borderColor = '$surface5',
+      borderWidth = '$spacing1',
     } = props
 
     const inputMode = inputModeProp ?? 'text'
@@ -149,7 +155,7 @@ export const SearchTextInput = forwardRef<NativeTextInput, SearchTextInputProps>
             x={CANCEL_CHEVRON_X_OFFSET}
           >
             <TouchableArea hitSlop={16} onPress={onPressCancel}>
-              <RotatableChevron color="$neutral1" direction="left" height={iconSizes.icon20} width={iconSizes.icon20} />
+              <RotatableChevron color="$neutral1" direction="left" size="$icon.20" />
             </TouchableArea>
           </Flex>
         )}
@@ -161,7 +167,7 @@ export const SearchTextInput = forwardRef<NativeTextInput, SearchTextInputProps>
           animateOnly={animateOnly}
           animation="quick"
           backgroundColor={backgroundColor}
-          borderRadius="$roundedFull"
+          borderRadius="$rounded16"
           gap="$spacing8"
           minHeight={minHeight}
           ml={showBackChevron && isFocus ? cancelChevronWidth + spacing.spacing8 + spacing.spacing2 : 0}
@@ -169,6 +175,8 @@ export const SearchTextInput = forwardRef<NativeTextInput, SearchTextInputProps>
           my={my}
           px={px}
           py={py}
+          borderColor={borderColor}
+          borderWidth={borderWidth}
           {...(showShadow && SHADOW_PROPS)}
         >
           {!hideIcon && (
@@ -194,7 +202,7 @@ export const SearchTextInput = forwardRef<NativeTextInput, SearchTextInputProps>
                 outlineWidth={0}
                 p="$none"
                 placeholder={placeholder}
-                placeholderTextColor="$neutral2"
+                placeholderTextColor={placeholderTextColor}
                 position="absolute"
                 returnKeyType="done"
                 testID={TestID.ExploreSearchInput}
@@ -228,7 +236,7 @@ export const SearchTextInput = forwardRef<NativeTextInput, SearchTextInputProps>
                 exitStyle={ENTER_EXIT_STYLE}
                 onPress={onClose}
               >
-                <RotatableChevron color="$neutral3" direction="up" height={iconSizes.icon20} width={iconSizes.icon20} />
+                <RotatableChevron color="$neutral3" direction="up" size="$icon.20" />
               </TouchableArea>
             )}
           </AnimatePresence>

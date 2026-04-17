@@ -1,6 +1,6 @@
 import { isNonTestDev } from 'utilities/src/environment/constants'
 import { logger } from 'utilities/src/logger/logger'
-// biome-ignore lint/style/noRestrictedImports: Platform-specific implementation needs internal types
+// oxlint-disable-next-line no-restricted-imports -- Platform-specific implementation needs internal types
 import { UserPropertyValue } from 'utilities/src/telemetry/analytics/analytics'
 
 interface ErrorLoggers {

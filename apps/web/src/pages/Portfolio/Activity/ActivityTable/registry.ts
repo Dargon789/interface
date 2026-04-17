@@ -1,38 +1,20 @@
 import { UNI_ADDRESSES } from '@uniswap/sdk-core'
-import { ActivityProtocolInfo, ActivityRowFragments } from 'pages/Portfolio/Activity/ActivityTable/activityTableModels'
-import { ActivityFilterType } from 'pages/Portfolio/Activity/Filters/utils'
 import { AssetType } from 'uniswap/src/entities/assets'
+import { mapTAPIPlanStatusToTXStatus } from 'uniswap/src/features/activity/extract/statusMappers'
+import { getAmountsFromTrade } from 'uniswap/src/features/transactions/swap/utils/getAmountsFromTrade'
 import {
-  DappInfoTransactionDetails,
   TransactionDetails,
+  TransactionStatus,
   TransactionType,
+  TransactionTypeInfo,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { isPlanTransactionDetails } from 'uniswap/src/features/transactions/types/utils'
 import { getValidAddress } from 'uniswap/src/utils/addresses'
-import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
-
-function toProtocolInfo(dappInfo: DappInfoTransactionDetails | undefined): ActivityProtocolInfo | null {
-  if (!dappInfo?.name) {
-    return null
-  }
-  return {
-    name: normalizeProtocolName(dappInfo.name),
-    logoUrl: dappInfo.icon,
-  }
-}
-
-/**
- * Normalizes protocol names for display in the activity table.
- * Applies hardcoded corrections to protocol names from the backend.
- */
-function normalizeProtocolName(name: string): string {
-  if (name === 'Across API') {
-    return 'Across'
-  }
-  if (name === 'Uniswap V4' || name === 'Uniswap V3' || name === 'Uniswap V2') {
-    return 'Uniswap'
-  }
-  return name
-}
+import { buildCurrencyId, buildNativeCurrencyId, isNativeCurrencyAddress } from 'uniswap/src/utils/currencyId'
+import { logger } from 'utilities/src/logger/logger'
+import { ActivityRowFragments } from '~/pages/Portfolio/Activity/ActivityTable/activityTableModels'
+import { toProtocolInfo } from '~/pages/Portfolio/Activity/ActivityTable/protocolInfo'
+import { ActivityFilterType } from '~/pages/Portfolio/Activity/Filters/utils'
 
 // Cache size set to 2x the maximum possible transactions (250) to handle refetches and scrolling
 const MAX_CACHE_SIZE = 500
@@ -43,6 +25,9 @@ const fragmentsCache = new Map<string, ActivityRowFragments>()
  * Uses chainId and id which are stable identifiers that persist across refetches.
  */
 function getTransactionCacheKey(details: TransactionDetails): string {
+  if (details.typeInfo.type === TransactionType.Plan) {
+    return `${details.chainId}:${details.id}:${details.typeInfo.planStatus}`
+  }
   return `${details.chainId}:${details.id}`
 }
 
@@ -87,14 +72,15 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
   const { typeInfo, chainId } = details
 
   switch (typeInfo.type) {
-    case TransactionType.Swap:
+    case TransactionType.Swap: {
+      const { inputCurrencyAmountRaw, outputCurrencyAmountRaw } = getAmountsFromTrade(typeInfo)
       return {
         amount: {
           kind: 'pair',
           inputCurrencyId: typeInfo.inputCurrencyId,
           outputCurrencyId: typeInfo.outputCurrencyId,
-          inputAmountRaw: 'inputCurrencyAmountRaw' in typeInfo ? typeInfo.inputCurrencyAmountRaw : undefined,
-          outputAmountRaw: 'outputCurrencyAmountRaw' in typeInfo ? typeInfo.outputCurrencyAmountRaw : undefined,
+          inputAmountRaw: inputCurrencyAmountRaw || undefined,
+          outputAmountRaw: outputCurrencyAmountRaw || undefined,
         },
         counterparty: null,
         typeLabel: {
@@ -103,15 +89,41 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
         },
         protocolInfo: toProtocolInfo(typeInfo.dappInfo),
       }
-
-    case TransactionType.Bridge:
+    }
+    case TransactionType.Plan: {
+      if (!isPlanTransactionDetails(details)) {
+        logInvalidTransactionType(typeInfo)
+        return {}
+      }
+      const status = mapTAPIPlanStatusToTXStatus(typeInfo.planStatus)
+      const overrideLabelKey =
+        status === TransactionStatus.Success
+          ? 'transaction.status.swap.success'
+          : 'transaction.status.plan.interruptedShort'
       return {
         amount: {
           kind: 'pair',
           inputCurrencyId: typeInfo.inputCurrencyId,
           outputCurrencyId: typeInfo.outputCurrencyId,
-          inputAmountRaw: 'inputCurrencyAmountRaw' in typeInfo ? typeInfo.inputCurrencyAmountRaw : undefined,
-          outputAmountRaw: 'outputCurrencyAmountRaw' in typeInfo ? typeInfo.outputCurrencyAmountRaw : undefined,
+          inputAmountRaw: typeInfo.inputCurrencyAmountRaw,
+          outputAmountRaw: typeInfo.outputCurrencyAmountRaw,
+        },
+        counterparty: null,
+        typeLabel: {
+          baseGroup: ActivityFilterType.Swaps,
+          overrideLabelKey,
+        },
+      }
+    }
+    case TransactionType.Bridge: {
+      const { inputCurrencyAmountRaw, outputCurrencyAmountRaw } = getAmountsFromTrade(typeInfo)
+      return {
+        amount: {
+          kind: 'pair',
+          inputCurrencyId: typeInfo.inputCurrencyId,
+          outputCurrencyId: typeInfo.outputCurrencyId,
+          inputAmountRaw: inputCurrencyAmountRaw || undefined,
+          outputAmountRaw: outputCurrencyAmountRaw || undefined,
         },
         counterparty: null,
         typeLabel: {
@@ -120,7 +132,7 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
         },
         protocolInfo: toProtocolInfo(typeInfo.routingDappInfo),
       }
-
+    }
     case TransactionType.Send: {
       const currencyId = buildCurrencyId(chainId, typeInfo.tokenAddress)
 
@@ -138,7 +150,6 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
         protocolInfo: toProtocolInfo(typeInfo.dappInfo),
       }
     }
-
     case TransactionType.Receive: {
       // Handle NFT receives
       if (typeInfo.assetType === AssetType.ERC721 || typeInfo.assetType === AssetType.ERC1155) {
@@ -176,7 +187,6 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
         protocolInfo: toProtocolInfo(typeInfo.dappInfo),
       }
     }
-
     case TransactionType.Approve: {
       const currencyId = buildCurrencyId(chainId, typeInfo.tokenAddress)
 
@@ -194,7 +204,6 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
         protocolInfo: toProtocolInfo(typeInfo.dappInfo),
       }
     }
-
     case TransactionType.Wrap:
       return {
         amount: {
@@ -209,7 +218,24 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
         },
         protocolInfo: toProtocolInfo(typeInfo.dappInfo),
       }
-
+    case TransactionType.Withdraw: {
+      const currencyId = buildCurrencyId(chainId, typeInfo.tokenAddress)
+      return {
+        amount: {
+          kind: 'single',
+          currencyId,
+          amountRaw: typeInfo.currencyAmountRaw,
+        },
+        counterparty: typeInfo.dappInfo?.address
+          ? getValidAddress({ address: typeInfo.dappInfo.address, chainId })
+          : null,
+        typeLabel: {
+          baseGroup: ActivityFilterType.Receives,
+          overrideLabelKey: 'transaction.status.withdraw.success',
+        },
+        protocolInfo: toProtocolInfo(typeInfo.dappInfo),
+      }
+    }
     case TransactionType.CreatePool:
     case TransactionType.CreatePair:
       return {
@@ -229,7 +255,6 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
         },
         protocolInfo: toProtocolInfo(typeInfo.dappInfo),
       }
-
     case TransactionType.LiquidityIncrease:
       return {
         amount: {
@@ -248,7 +273,6 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
         },
         protocolInfo: toProtocolInfo(typeInfo.dappInfo),
       }
-
     case TransactionType.LiquidityDecrease:
       return {
         amount: {
@@ -328,6 +352,82 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
       }
     }
 
+    case TransactionType.ToucanBid: {
+      const currencyId = isNativeCurrencyAddress(chainId, typeInfo.bidTokenAddress)
+        ? buildNativeCurrencyId(chainId)
+        : buildCurrencyId(chainId, typeInfo.bidTokenAddress)
+      return {
+        amount: {
+          kind: 'single',
+          currencyId,
+          amountRaw: typeInfo.amountRaw,
+        },
+        counterparty: null,
+        typeLabel: {
+          baseGroup: ActivityFilterType.Sends,
+          overrideLabelKey: 'transaction.status.submitBid.success',
+        },
+        protocolInfo: toProtocolInfo(typeInfo.dappInfo),
+      }
+    }
+
+    case TransactionType.AuctionBid: {
+      const currencyId = isNativeCurrencyAddress(chainId, typeInfo.bidTokenAddress)
+        ? buildNativeCurrencyId(chainId)
+        : buildCurrencyId(chainId, typeInfo.bidTokenAddress)
+      return {
+        amount: {
+          kind: 'single',
+          currencyId,
+          amountRaw: typeInfo.amountRaw,
+        },
+        counterparty: null,
+        typeLabel: {
+          baseGroup: ActivityFilterType.Sends,
+          overrideLabelKey: 'transaction.status.submitBid.success',
+        },
+        protocolInfo: toProtocolInfo(typeInfo.dappInfo),
+      }
+    }
+
+    case TransactionType.AuctionClaimed: {
+      const currencyId = isNativeCurrencyAddress(chainId, typeInfo.tokenAddress)
+        ? buildNativeCurrencyId(chainId)
+        : buildCurrencyId(chainId, typeInfo.tokenAddress)
+      return {
+        amount: {
+          kind: 'single',
+          currencyId,
+          amountRaw: typeInfo.amountRaw,
+        },
+        counterparty: null,
+        typeLabel: {
+          baseGroup: ActivityFilterType.Receives,
+          overrideLabelKey: 'transaction.status.auctionClaimed.success',
+        },
+        protocolInfo: toProtocolInfo(typeInfo.dappInfo),
+      }
+    }
+
+    case TransactionType.AuctionExited: {
+      const currencyId = isNativeCurrencyAddress(chainId, typeInfo.tokenAddress)
+        ? buildNativeCurrencyId(chainId)
+        : buildCurrencyId(chainId, typeInfo.tokenAddress)
+      return {
+        amount: {
+          kind: 'single',
+          currencyId,
+          amountRaw: typeInfo.amountRaw,
+        },
+        counterparty: null,
+        typeLabel: {
+          baseGroup: ActivityFilterType.Receives,
+          overrideLabelKey: 'transaction.status.withdrawBid.success',
+        },
+        protocolInfo: toProtocolInfo(typeInfo.dappInfo),
+      }
+    }
+
     case TransactionType.ClaimUni: {
       const tokenAddress = UNI_ADDRESSES[chainId]
       const currencyId = tokenAddress ? buildCurrencyId(chainId, tokenAddress) : undefined
@@ -363,4 +463,16 @@ function buildActivityRowFragmentsInternal(details: TransactionDetails): Activit
     default:
       return {}
   }
+}
+
+const logInvalidTransactionType = (typeInfo: TransactionTypeInfo): void => {
+  logger.error(new Error('Invalid transaction type ' + typeInfo.type), {
+    tags: {
+      file: 'buildActivityRowFragments',
+      function: 'buildActivityRowFragmentsInternal',
+    },
+    extra: {
+      typeInfo,
+    },
+  })
 }

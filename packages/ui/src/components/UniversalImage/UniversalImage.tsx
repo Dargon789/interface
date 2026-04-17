@@ -1,11 +1,10 @@
-/* eslint-disable complexity */
+/* oxlint-disable complexity */
 import { useEffect, useState } from 'react'
-import { ColorTokens, Image } from 'tamagui'
+import { type ColorTokens, Image } from 'tamagui'
 import { Flex } from 'ui/src/components/layout/Flex'
-import { FastImageWrapper } from 'ui/src/components/UniversalImage/internal/FastImageWrapper'
 import { PlainImage } from 'ui/src/components/UniversalImage/internal/PlainImage'
 import { SvgImage } from 'ui/src/components/UniversalImage/internal/SvgImage'
-import { UniversalImageProps, UniversalImageSize } from 'ui/src/components/UniversalImage/types'
+import { type UniversalImageProps, type UniversalImageSize } from 'ui/src/components/UniversalImage/types'
 import { Loader } from 'ui/src/loading/Loader'
 import { isSVGUri, uriToHttpUrls } from 'utilities/src/format/urls'
 import { logger } from 'utilities/src/logger/logger'
@@ -17,11 +16,11 @@ export function UniversalImage({
   size,
   style,
   fallback,
-  fastImage = false,
   testID,
   onLoad,
   allowLocalUri = false,
   autoplay = true,
+  allowUndefinedSize = false,
 }: UniversalImageProps): JSX.Element | null {
   // Allow calculation of fields as needed
   const [width, setWidth] = useState(size.width)
@@ -42,11 +41,12 @@ export function UniversalImage({
     setHeight(size.height)
   }, [size.height, size.width])
 
-  // Calculate width/height and check for an error in the image retrieval for fast images
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +width, height
+  // Calculate width/height and check for an error in the image retrieval
+  // TODO(apps-infra): See if we can remove this when Expo Image is fully enabled
+  // oxlint-disable-next-line react/exhaustive-deps -- +width, height
   useEffect(() => {
-    // If we know dimension or this isn't a fast image, skip calculating width/height
-    if (!uri || sizeKnown || !fastImage || isRequireSource) {
+    // If we know dimension skip calculating width/height
+    if (!uri || sizeKnown || isRequireSource) {
       return
     }
 
@@ -59,7 +59,7 @@ export function UniversalImage({
       },
       () => setErrored(true),
     )
-  }, [width, height, sizeKnown, uri, fastImage, isRequireSource])
+  }, [width, height, sizeKnown, uri, isRequireSource])
 
   // Handle local URI
   if (isRequireSource) {
@@ -72,7 +72,8 @@ export function UniversalImage({
   }
 
   // Show a loader while the URI is populating or size is calculating when there's no fallback
-  if (!uri || (!sizeKnown && !errored)) {
+  // Skip this check if allowUndefinedSize is true (for cases where parent container handles sizing)
+  if (!uri || (!sizeKnown && !errored && !allowUndefinedSize)) {
     if (style?.loadingContainer) {
       return <Flex style={style.loadingContainer}>{LOADING_FALLBACK}</Flex>
     }
@@ -93,18 +94,6 @@ export function UniversalImage({
     return fallback ?? null
   }
 
-  // Handle images requested to use fast image
-  if (fastImage && sizeKnown) {
-    return (
-      <FastImageWrapper
-        setError={() => setErrored(true)}
-        size={computedSize}
-        testID={testID ? `svg-${testID}` : undefined}
-        uri={uri}
-      />
-    )
-  }
-
   // Handle any svg separate from plain images
   if (isSVGUri(imageHttpUrl)) {
     return (
@@ -113,12 +102,19 @@ export function UniversalImage({
         backgroundColor={style?.image?.backgroundColor as ColorTokens}
         borderRadius={style?.image?.borderRadius}
         verticalAlign={style?.image?.verticalAlign}
-        height={size.height}
+        height={style?.image?.height ?? size.height}
         overflow="hidden"
         testID={testID ? `svg-${testID}` : undefined}
-        width={size.width}
+        width={style?.image?.width ?? size.width}
       >
-        <SvgImage autoplay={autoplay} fallback={fallback} size={size} uri={imageHttpUrl} />
+        <SvgImage
+          autoplay={autoplay}
+          fallback={fallback}
+          resizeMode={size.resizeMode}
+          size={size}
+          style={style?.image}
+          uri={imageHttpUrl}
+        />
       </Flex>
     )
   }

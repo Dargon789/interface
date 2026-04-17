@@ -1,5 +1,5 @@
-/* eslint-disable max-depth */
-/* eslint-disable complexity */
+/* oxlint-disable max-depth */
+/* oxlint-disable complexity */
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
 import { formatUnits as formatUnitsEthers } from 'ethers/lib/utils'
 import { useDappLastChainId } from 'src/app/features/dapp/hooks'
@@ -221,7 +221,7 @@ function getTokenDetailsFromV4SwapCommands(command: UniversalRouterCommand): {
           }
 
           for (const p of parsed.data.value) {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            // oxlint-disable-next-line typescript/no-unnecessary-condition
             if (p.name === 'swap') {
               const swap = p.value
 
@@ -246,7 +246,7 @@ function getTokenDetailsFromV4SwapCommands(command: UniversalRouterCommand): {
           }
 
           for (const p of parsed.data.value) {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            // oxlint-disable-next-line typescript/no-unnecessary-condition
             if (p.name === 'swap') {
               const swap = p.value
 
@@ -271,7 +271,7 @@ function getTokenDetailsFromV4SwapCommands(command: UniversalRouterCommand): {
           }
 
           for (const p of parsed.data.value) {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            // oxlint-disable-next-line typescript/no-unnecessary-condition
             if (p.name === 'swap') {
               const swap = p.value
 
@@ -298,7 +298,7 @@ function getTokenDetailsFromV4SwapCommands(command: UniversalRouterCommand): {
           }
 
           for (const p of parsed.data.value) {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            // oxlint-disable-next-line typescript/no-unnecessary-condition
             if (p.name === 'swap') {
               const swap = p.value
 
@@ -337,6 +337,7 @@ function getFallbackOutputValue(allCommands?: UniversalRouterCommand[]): string 
   const sweepAmountOutParam = sweepCommand?.params.find(isAmountMinParam)
   const unwrapWethAmountOutParam = unwrapWethCommand?.params.find(isAmountMinParam)
 
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   return sweepAmountOutParam?.value || unwrapWethAmountOutParam?.value || '0'
 }
 
@@ -345,6 +346,7 @@ function getFallbackInputValue(command: UniversalRouterCommand): string {
   const potentialSettleParam = command.params.find(isSettleParam)
   const settleParam = potentialSettleParam && isSettleParam(potentialSettleParam) ? potentialSettleParam : undefined
   const settleAmountValue = settleParam?.value.find((item) => item.name === 'amount')
+  // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
   return settleAmountValue?.value || '0'
 }
 

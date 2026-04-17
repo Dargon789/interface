@@ -12,12 +12,17 @@ export class LocalOverrideAdapterWrapper extends LocalOverrideAdapter {
   refreshStatsig(): void {
     const statsigClient = getStatsigClient()
     const statsigUser = statsigClient.getContext().user
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    // oxlint-disable-next-line typescript/no-floating-promises
     statsigClient.updateUserAsync(statsigUser)
   }
 
   overrideGate(name: string, value: boolean): void {
     super.overrideGate(name, value)
+    this.refreshStatsig()
+  }
+
+  removeGateOverride(name: string): void {
+    super.removeGateOverride(name)
     this.refreshStatsig()
   }
 

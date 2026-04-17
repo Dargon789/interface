@@ -4,7 +4,6 @@ import { persistReducer, persistStore, Storage } from 'redux-persist'
 import { MOBILE_STATE_VERSION, migrations } from 'src/app/migrations'
 import { MobileState, mobilePersistedStateList, mobileReducer } from 'src/app/mobileReducer'
 import { rootMobileSaga } from 'src/app/saga'
-import { fiatOnRampAggregatorApi } from 'uniswap/src/features/fiatOnRamp/api'
 import { delegationListenerMiddleware } from 'uniswap/src/features/smartWallet/delegation/slice'
 import { isNonTestDev } from 'utilities/src/environment/constants'
 import { createDatadogReduxEnhancer } from 'utilities/src/logger/datadog/Datadog'
@@ -53,11 +52,11 @@ if (isNonTestDev) {
   enhancers.push(reactotron.createEnhancer())
 }
 
-const middlewares: Middleware[] = [fiatOnRampAggregatorApi.middleware, delegationListenerMiddleware.middleware]
+const middlewares: Middleware[] = [delegationListenerMiddleware.middleware]
 
 const setupStore = (
   preloadedState?: PreloadedState<MobileState>,
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  // oxlint-disable-next-line typescript/explicit-function-return-type
 ) => {
   return createStore({
     reducer: persistedReducer,

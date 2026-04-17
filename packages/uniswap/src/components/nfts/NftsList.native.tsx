@@ -25,7 +25,7 @@ const LOADING_ITEM = 'loading'
 const keyExtractor = (item: NFTItem | string): string =>
   typeof item === 'string' ? item : getNFTAssetKey(item.contractAddress ?? '', item.tokenId ?? '')
 
-export const NftsList = forwardRef<FlashList<unknown>, NftsListProps>(function _NftsTab(
+export const NftsList = forwardRef<FlashList<unknown>, NftsListProps>(function NftsTabInner(
   {
     owner,
     footerHeight,
@@ -93,8 +93,9 @@ export const NftsList = forwardRef<FlashList<unknown>, NftsListProps>(function _
   }, [hiddenNftsExpanded, numHidden, setHiddenNftsExpanded])
 
   const renderItem = useCallback(
-    ({ item, index }: ListRenderItemInfo<string | NFTItem>) => {
+    ({ item, index }: ListRenderItemInfo<string | NFTItem>): JSX.Element | null => {
       if (typeof item !== 'string') {
+        // oxlint-disable-next-line typescript/no-unsafe-return -- renderNFTItem is typed as (item: NFTItem, index: number) => JSX.Element
         return renderNFTItem(item, index)
       }
 

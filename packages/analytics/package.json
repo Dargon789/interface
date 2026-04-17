@@ -1,0 +1,27 @@
+{
+  "name": "@universe/analytics",
+  "version": "0.0.0",
+  "dependencies": {
+    "@amplitude/analytics-node": "1.5.36"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.1",
+    "@typescript/native-preview": "7.0.0-dev.20260311.1",
+    "depcheck": "1.4.7",
+    "typescript": "5.8.3"
+  },
+  "scripts": {
+    "typecheck": "nx typecheck analytics",
+    "lint": "nx lint analytics",
+    "lint:fix": "nx lint:fix analytics",
+    "check": "nx check analytics",
+    "check:fast": "nx check:fast analytics",
+    "check:deps:usage": "nx check:deps:usage analytics"
+  },
+  "nx": {
+    "includedScripts": []
+  },
+  "main": "src/index.ts",
+  "private": true,
+  "sideEffects": false
+}

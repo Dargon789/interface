@@ -1,12 +1,17 @@
 import { Currency } from '@uniswap/sdk-core'
-import { getNativeAddress, getWrappedNativeAddress } from 'uniswap/src/constants/addresses'
+import { TradingApi } from '@universe/api'
+import {
+  getNativeAddress,
+  getWrappedNativeAddress,
+  getWrappedNativeAddressWithThrow,
+} from 'uniswap/src/constants/addresses'
 import { normalizeCurrencyIdForMapLookup, normalizeTokenAddressForCache } from 'uniswap/src/data/cache'
 import { TradeableAsset } from 'uniswap/src/entities/assets'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { DEFAULT_NATIVE_ADDRESS, DEFAULT_NATIVE_ADDRESS_LEGACY } from 'uniswap/src/features/chains/evm/defaults'
 import { DEFAULT_NATIVE_ADDRESS_SOLANA } from 'uniswap/src/features/chains/svm/defaults'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { toSupportedChainId } from 'uniswap/src/features/chains/utils'
+import { isUniverseChainId, toSupportedChainId } from 'uniswap/src/features/chains/utils'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { isSVMChain } from 'uniswap/src/features/platforms/utils/chains'
 import { CurrencyId } from 'uniswap/src/types/currency'
@@ -57,8 +62,17 @@ export function buildNativeCurrencyId(chainId: UniverseChainId): string {
   return buildCurrencyId(chainId, getNativeAddress(chainId))
 }
 
-export function buildWrappedNativeCurrencyId(chainId: UniverseChainId): string {
-  return buildCurrencyId(chainId, getWrappedNativeAddress(chainId))
+export function buildWrappedNativeCurrencyId(chainId: UniverseChainId): string | undefined {
+  const address = getWrappedNativeAddress(chainId)
+  if (!address) {
+    return undefined
+  }
+  return buildCurrencyId(chainId, address)
+}
+
+export function buildWrappedNativeCurrencyIdWithThrow(chainId: UniverseChainId): string {
+  const address = getWrappedNativeAddressWithThrow(chainId)
+  return buildCurrencyId(chainId, address)
 }
 
 export function areCurrencyIdsEqual(id1: CurrencyId, id2: CurrencyId): boolean {
@@ -91,10 +105,19 @@ export function getCurrencyAddressForAnalytics(currency: Currency): string {
 }
 
 export const isNativeCurrencyAddress = (chainId: UniverseChainId, address: Maybe<Address>): boolean => {
+  // Cast to include undefined since getChainInfo can return undefined at runtime for invalid chainIds
+  // even though TypeScript types say it always returns UniverseChainInfo
+  const chainInfo = getChainInfo(chainId) as ReturnType<typeof getChainInfo> | undefined
+
+  // Defensive check: if chainInfo is undefined (invalid chainId), treat as non-native
+  if (!chainInfo) {
+    return false
+  }
+
   if (!address) {
     return true
   }
-  const chainInfo = getChainInfo(chainId)
+
   const { platform } = chainInfo
   // sometimes the native token symbol is returned as the native token address
   if (address === chainInfo.nativeCurrency.symbol) {
@@ -178,4 +201,35 @@ export function isDefaultNativeAddress({ address, platform }: { address: string;
     addressInput1: { address, platform },
     addressInput2: { address: DEFAULT_NATIVE_ADDRESS_LEGACY, platform },
   })
+}
+
+export type MaybeChainId = number | UniverseChainId | null | undefined | TradingApi.ChainId
+
+/**
+ * Takes in tokens and chains from an external source and validates that a currencyId can be built from them.
+ * Returns null if validation fails.
+ */
+export function validateAndBuildCurrencyId(params: {
+  chainId: MaybeChainId
+  // oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
+  tokenAddress: Address | string | undefined
+}): {
+  chainId: UniverseChainId
+  currencyId: CurrencyId
+  tokenAddress: Address
+} | null {
+  const { chainId, tokenAddress } = params
+  const chainIdValidated = isUniverseChainId(chainId) ? (chainId as UniverseChainId) : undefined
+
+  const _currencyId =
+    isUniverseChainId(chainIdValidated) && tokenAddress ? buildCurrencyId(chainIdValidated, tokenAddress) : undefined
+
+  if (!chainIdValidated || !_currencyId || !tokenAddress) {
+    return null
+  }
+  return {
+    chainId: chainIdValidated,
+    currencyId: _currencyId,
+    tokenAddress,
+  }
 }

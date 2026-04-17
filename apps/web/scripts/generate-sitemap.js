@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 const fs = require('fs')
 const { parseStringPromise, Builder } = require('xml2js')
 

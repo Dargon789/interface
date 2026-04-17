@@ -12,8 +12,8 @@ import { AppNotificationType, CopyNotificationType } from 'uniswap/src/features/
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { MobileScreens } from 'uniswap/src/types/screens/mobile'
-import { setClipboard } from 'uniswap/src/utils/clipboard'
 import { currencyIdToAddress, currencyIdToChain } from 'uniswap/src/utils/currencyId'
+import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 
 type TokenDetailsContextState = {
@@ -33,9 +33,9 @@ type TokenDetailsContextState = {
   isContractAddressExplainerModalOpen: boolean
   openContractAddressExplainerModal: () => void
   closeContractAddressExplainerModal: (markViewed: boolean) => void
-  isAztecWarningModalOpen: boolean
-  openAztecWarningModal: () => void
-  closeAztecWarningModal: () => void
+  isMultichainAddressSheetOpen: boolean
+  openMultichainAddressSheet: () => void
+  closeMultichainAddressSheet: () => void
   copyAddressToClipboard: (address: string) => Promise<void>
   error: unknown | undefined
   setError: (error: unknown | undefined) => void
@@ -58,6 +58,13 @@ export function TokenDetailsContextProvider({
 
   const [isContractAddressExplainerModalOpen, setIsContractAddressExplainerModalOpen] = useState(false)
   const openContractAddressExplainerModal = useCallback(() => setIsContractAddressExplainerModalOpen(true), [])
+
+  const {
+    value: isMultichainAddressSheetOpen,
+    setTrue: openMultichainAddressSheet,
+    setFalse: closeMultichainAddressSheet,
+  } = useBooleanState(false)
+
   const closeContractAddressExplainerModal = useCallback(
     (markViewed: boolean) => {
       if (markViewed) {
@@ -67,12 +74,6 @@ export function TokenDetailsContextProvider({
     },
     [dispatch],
   )
-
-  const {
-    value: isAztecWarningModalOpen,
-    setTrue: openAztecWarningModal,
-    setFalse: closeAztecWarningModal,
-  } = useBooleanState(false)
 
   const copyAddressToClipboard = useCallback(
     async (address: string): Promise<void> => {
@@ -123,9 +124,9 @@ export function TokenDetailsContextProvider({
       isContractAddressExplainerModalOpen,
       openContractAddressExplainerModal,
       closeContractAddressExplainerModal,
-      isAztecWarningModalOpen,
-      openAztecWarningModal,
-      closeAztecWarningModal,
+      isMultichainAddressSheetOpen,
+      openMultichainAddressSheet,
+      closeMultichainAddressSheet,
       copyAddressToClipboard,
       error,
       setError,
@@ -134,17 +135,17 @@ export function TokenDetailsContextProvider({
     activeTransactionType,
     closeTokenWarningModal,
     closeContractAddressExplainerModal,
-    closeAztecWarningModal,
+    closeMultichainAddressSheet,
     currencyId,
     currencyInfo,
     enabledChains,
     error,
-    isAztecWarningModalOpen,
     isContractAddressExplainerModalOpen,
+    isMultichainAddressSheetOpen,
     isTokenWarningModalOpen,
     navigation,
-    openAztecWarningModal,
     openContractAddressExplainerModal,
+    openMultichainAddressSheet,
     openTokenWarningModal,
     tokenColor,
     tokenColorLoading,

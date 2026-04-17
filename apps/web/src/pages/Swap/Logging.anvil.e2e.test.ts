@@ -1,11 +1,11 @@
-import { createExpectMultipleTransactions } from 'playwright/anvil/transactions'
-import { expect, getTest } from 'playwright/fixtures'
-import { stubTradingApiEndpoint } from 'playwright/fixtures/tradingApi'
-import { TEST_WALLET_ADDRESS } from 'playwright/fixtures/wallets'
 import { USDC_MAINNET } from 'uniswap/src/constants/tokens'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { SwapEventName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { createExpectMultipleTransactions } from '~/playwright/anvil/transactions'
+import { expect, getTest } from '~/playwright/fixtures'
+import { stubTradingApiEndpoint } from '~/playwright/fixtures/tradingApi'
+import { TEST_WALLET_ADDRESS } from '~/playwright/fixtures/wallets'
 
 const test = getTest({ withAnvil: true })
 

@@ -1,5 +1,5 @@
 import { Path, Svg } from 'react-native-svg'
-import { createIcon } from '../factories/createIcon'
+import { createIcon } from 'ui/src/components/factories/createIcon'
 
 export const [EmptyPoolsIcon, AnimatedEmptyPoolsIcon] = createIcon({
   name: 'EmptyPoolsIcon',

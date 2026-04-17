@@ -19,8 +19,11 @@ export function getSymbolDisplayText(symbol: Maybe<string>): Maybe<string> {
     : symbol
 }
 
-export function wrappedNativeCurrency(chainId: UniverseChainId): Token {
+export function wrappedNativeCurrency(chainId: UniverseChainId): Token | undefined {
   const wrappedCurrencyInfo = getChainInfo(chainId).wrappedNativeCurrency
+  if (!wrappedCurrencyInfo) {
+    return undefined
+  }
   return new Token(
     chainId,
     wrappedCurrencyInfo.address,

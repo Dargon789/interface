@@ -1,12 +1,6 @@
 import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
-import { popupRegistry } from 'components/Popups/registry'
-import { PopupType } from 'components/Popups/types'
-import { INTERNAL_JSON_RPC_ERROR_CODE } from 'constants/misc'
-import { useAccount } from 'hooks/useAccount'
-import useSelectChain from 'hooks/useSelectChain'
 import { useCallback } from 'react'
 import { useDispatch } from 'react-redux'
-import { handleOnChainStep } from 'state/sagas/transactions/utils'
 import { call } from 'typed-redux-saga'
 import { isTestnetChain } from 'uniswap/src/features/chains/utils'
 import { HandleOnChainStepParams, TransactionStepType } from 'uniswap/src/features/transactions/steps/types'
@@ -16,8 +10,15 @@ import { TransactionType, WrapTransactionInfo } from 'uniswap/src/features/trans
 import { createSaga } from 'uniswap/src/utils/saga'
 import { logger } from 'utilities/src/logger/logger'
 import { noop } from 'utilities/src/react/noop'
-import { didUserReject } from 'utils/swapErrorToUserReadableMessage'
+import { popupRegistry } from '~/components/Popups/registry'
+import { PopupType } from '~/components/Popups/types'
+import { INTERNAL_JSON_RPC_ERROR_CODE } from '~/constants/misc'
+import { useAccount } from '~/hooks/useAccount'
+import useSelectChain from '~/hooks/useSelectChain'
+import { handleOnChainStep } from '~/state/sagas/transactions/utils'
+import { didUserReject } from '~/utils/swapErrorToUserReadableMessage'
 
+// oxlint-disable-next-line typescript/no-empty-interface -- biome-parity: oxlint is stricter here
 interface HandleWrapStepParams extends Omit<HandleOnChainStepParams<WrapTransactionStep>, 'info'> {}
 function* handleWrapStep(params: HandleWrapStepParams) {
   const info = getWrapTransactionInfo(params.step.amount)
@@ -28,7 +29,7 @@ type WrapParams = WrapCallbackParams & { selectChain: (chainId: number) => Promi
 
 function* wrap(params: WrapParams) {
   try {
-    const { account, inputCurrencyAmount, selectChain, txRequest, startChainId, onFailure } = params
+    const { address, inputCurrencyAmount, selectChain, txRequest, startChainId, onFailure } = params
 
     // Switch chains if needed
     if (txRequest.chainId !== startChainId) {
@@ -43,7 +44,7 @@ function* wrap(params: WrapParams) {
 
     const hash = yield* call(handleWrapStep, {
       step,
-      address: account.address,
+      address,
       setCurrentStep: noop,
       shouldWaitForConfirmation: false,
       allowDuplicativeTx: true, // Compared to UniswapX wraps, the user should not be stopped from wrapping in quick succession

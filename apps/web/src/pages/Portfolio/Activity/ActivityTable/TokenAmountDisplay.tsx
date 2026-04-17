@@ -9,7 +9,7 @@ interface TokenAmountDisplayProps {
   usdValue: string | null
 }
 
-function _TokenAmountDisplay({ currencyInfo, formattedAmount, usdValue }: TokenAmountDisplayProps) {
+function TokenAmountDisplayInner({ currencyInfo, formattedAmount, usdValue }: TokenAmountDisplayProps) {
   if (!currencyInfo || !formattedAmount) {
     return null
   }
@@ -31,4 +31,4 @@ function _TokenAmountDisplay({ currencyInfo, formattedAmount, usdValue }: TokenA
   )
 }
 
-export const TokenAmountDisplay = memo(_TokenAmountDisplay)
+export const TokenAmountDisplay = memo(TokenAmountDisplayInner)

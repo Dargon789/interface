@@ -4,9 +4,11 @@ ignores: [
     "@typechain/ethers-v5",
     "jest-presets",
     "depcheck",
-    "get-graphql-schema",
+    "typescript",
+    "@typescript/native-preview",
     "typechain",
-    'tamagui',
+    "tamagui",
+    "@shopify/react-native-skia",
     # Dependencies that depcheck thinks are missing but are actually present or never used
     ## Internal packages / workspaces
     "uniswap",
@@ -18,6 +20,9 @@ ignores: [
     "@graphql-codegen/*",
     # i18n
     "i18next-resources-for-ts",
+    # Crypto deps used via deep imports (@noble/hashes/sha2.js, etc.)
+    "@noble/*",
+    "@cloudflare/*",
     # zustand store dev tooling
     "@redux-devtools/extension",
   ]

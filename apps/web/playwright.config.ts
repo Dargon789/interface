@@ -1,7 +1,7 @@
+import path from 'path'
 import { defineConfig, devices } from '@playwright/test'
 import { config } from 'dotenv'
 import ms from 'ms'
-import path from 'path'
 
 // Load environment variables from .env file
 // This ensures the VSCode Playwright extension has access to env vars
@@ -10,7 +10,7 @@ config({ path: path.resolve(__dirname, '.env') })
 const IS_CI = process.env.CI === 'true'
 
 // Handle asset files and platform-specific imports for Node.js
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// oxlint-disable-next-line typescript/no-var-requires
 const Module = require('module')
 
 // Override module resolution to handle platform-specific files like Vite does

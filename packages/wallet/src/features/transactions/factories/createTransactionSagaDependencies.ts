@@ -6,13 +6,13 @@ import { getDelegationInfoForTransaction } from 'wallet/src/features/smartWallet
 import { createAnalyticsService } from 'wallet/src/features/transactions/executeTransaction/services/analyticsServiceImpl'
 import { createFeatureFlagService } from 'wallet/src/features/transactions/executeTransaction/services/featureFlagServiceImpl'
 import { createProviderService } from 'wallet/src/features/transactions/executeTransaction/services/providerServiceImpl'
+import { createTransactionConfigService } from 'wallet/src/features/transactions/executeTransaction/services/transactionConfigServiceImpl'
 import { createTransactionRepositoryRedux } from 'wallet/src/features/transactions/executeTransaction/services/TransactionRepository/transactionRepositoryImplRedux'
 import { createTransactionService } from 'wallet/src/features/transactions/executeTransaction/services/TransactionService/transactionServiceImpl'
 import {
   createBundledDelegationTransactionSignerService,
   createTransactionSignerService,
 } from 'wallet/src/features/transactions/executeTransaction/services/TransactionSignerService/transactionSignerServiceImpl'
-import { createTransactionConfigService } from 'wallet/src/features/transactions/executeTransaction/services/transactionConfigServiceImpl'
 import { createTransactionExecutor } from 'wallet/src/features/transactions/swap/services/transactionExecutor'
 import { createTransactionParamsFactory } from 'wallet/src/features/transactions/swap/services/transactionParamsFactory'
 import type { TransactionSagaDependencies } from 'wallet/src/features/transactions/types/transactionSagaDependencies'

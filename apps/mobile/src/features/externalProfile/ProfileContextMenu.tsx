@@ -16,8 +16,8 @@ import { ElementName, WalletEventName } from 'uniswap/src/features/telemetry/con
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { MobileScreens } from 'uniswap/src/types/screens/mobile'
 import { ShareableEntity } from 'uniswap/src/types/sharing'
-import { setClipboard } from 'uniswap/src/utils/clipboard'
-import { ExplorerDataType, getExplorerLink, getProfileUrl, openUri } from 'uniswap/src/utils/linking'
+import { ExplorerDataType, getExplorerLink, getPortfolioUrl, openUri } from 'uniswap/src/utils/linking'
+import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { logger } from 'utilities/src/logger/logger'
 import { noop } from 'utilities/src/react/noop'
 
@@ -69,7 +69,7 @@ export function ProfileContextMenu({ address }: { address: Address }): JSX.Eleme
       return
     }
     try {
-      const url = getProfileUrl(address)
+      const url = getPortfolioUrl(address)
       await Share.share({
         message: url,
       })
@@ -117,6 +117,7 @@ export function ProfileContextMenu({ address }: { address: Address }): JSX.Eleme
       actions={menuActions}
       dropdownMenuMode={true}
       onPress={async (e: NativeSyntheticEvent<ContextMenuOnPressNativeEvent>): Promise<void> => {
+        // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
         await menuActions[e.nativeEvent.index]?.action()
       }}
     >

@@ -1,11 +1,10 @@
-import { TokenData } from 'pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
-import { TokensContextMenuWrapper } from 'pages/Portfolio/Tokens/Table/TokensContextMenuWrapper'
 import { memo } from 'react'
 import { Flex, useIsTouchDevice } from 'ui/src'
-import { MoreHorizontal } from 'ui/src/components/icons/MoreHorizontal'
+import { ContextMenuTriggerButton } from 'uniswap/src/components/menus/ContextMenuTriggerButton'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
-
-const ICON_BUTTON_SIZE = 28
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
+import { TokensContextMenuWrapper } from '~/pages/Portfolio/Tokens/Table/TokensContextMenuWrapper'
 
 interface ContextMenuButtonProps {
   tokenData: TokenData
@@ -18,6 +17,7 @@ export const ContextMenuButton = memo(function ContextMenuButton({ tokenData }: 
     <TokensContextMenuWrapper tokenData={tokenData} triggerMode={ContextMenuTriggerMode.Primary}>
       <Flex
         aria-label="View transaction details"
+        testID={TestID.TokenTableRowContextMenuButton}
         opacity={isTouchDevice ? 1 : 0}
         transition="opacity 0.2s ease"
         centered
@@ -26,16 +26,7 @@ export const ContextMenuButton = memo(function ContextMenuButton({ tokenData }: 
         mr="$spacing8"
         ml="$spacing4"
       >
-        <Flex
-          height={ICON_BUTTON_SIZE}
-          width={ICON_BUTTON_SIZE}
-          borderRadius="$rounded12"
-          hoverStyle={{ backgroundColor: '$surface3' }}
-          centered
-          animation="fast"
-        >
-          <MoreHorizontal size="$icon.16" color="$neutral2" />
-        </Flex>
+        <ContextMenuTriggerButton />
       </Flex>
     </TokensContextMenuWrapper>
   )

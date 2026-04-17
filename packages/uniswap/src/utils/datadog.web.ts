@@ -13,6 +13,7 @@ import {
   WEB_FEATURE_FLAG_NAMES,
 } from '@universe/gating'
 import { config } from 'uniswap/src/config'
+import { TradingApiHeaders } from 'uniswap/src/data/apiClients/tradingApi/TradingApiClient'
 import { getUniqueId } from 'utilities/src/device/uniqueId'
 import { datadogEnabledBuild, localDevDatadogEnabled } from 'utilities/src/environment/constants'
 import { isBetaEnv } from 'utilities/src/environment/env'
@@ -65,6 +66,31 @@ function beforeSend(event: RumEvent, context: RumEventDomainContext): boolean {
     }
   }
 
+  if (event.type === 'resource' && event.resource.url.includes('gateway.uniswap.org')) {
+    const requestHeaders = (context as RumFetchResourceEventDomainContext).requestInit?.headers
+    if (requestHeaders) {
+      const headersRecord =
+        requestHeaders instanceof Headers
+          ? Object.fromEntries(requestHeaders.entries())
+          : Array.isArray(requestHeaders)
+            ? Object.fromEntries(requestHeaders)
+            : requestHeaders
+      const tradingApiHeaderValues = new Set<string>(Object.values(TradingApiHeaders))
+      const featureFlagHeaders: Record<string, string> = {}
+      for (const [key, value] of Object.entries(headersRecord)) {
+        if (tradingApiHeaderValues.has(key)) {
+          featureFlagHeaders[key] = String(value)
+        }
+      }
+      if (Object.keys(featureFlagHeaders).length > 0) {
+        event.context = {
+          ...event.context,
+          tradingApiHeaders: featureFlagHeaders,
+        }
+      }
+    }
+  }
+
   return true
 }
 
@@ -93,7 +119,7 @@ export async function initializeDatadog(appName: string): Promise<void> {
     trackingConsent: undefined,
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const shouldUseFullSampleRate = localDevDatadogEnabled || (isWebApp && isBetaEnv())
 
   datadogRum.init({

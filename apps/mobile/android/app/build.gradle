@@ -67,9 +67,9 @@ if (isCI && datadogPropertiesAvailable) {
   apply from: "../../../../node_modules/@datadog/mobile-react-native/datadog-sourcemaps.gradle"
 }
 
-def devVersionName = "1.64.1"
-def betaVersionName = "1.64.1"
-def prodVersionName = "1.64.1"
+def devVersionName = "1.70"
+def betaVersionName = "1.70"
+def prodVersionName = "1.70"
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -202,7 +202,7 @@ android {
     sourceSets {
         main {
           jniLibs {
-            srcDir '../../../../node_modules/@uniswap/ethers-rs-mobile/android/jniLibs'
+            srcDir '../jniLibs'
           }
         }
     }
@@ -251,7 +251,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:$compose")
 
     implementation "androidx.security:security-crypto:1.0.0"
-    implementation 'com.lambdapioneer.argon2kt:argon2kt:1.3.0'
+    implementation 'com.lambdapioneer.argon2kt:argon2kt:1.6.0'
 
     implementation "com.google.accompanist:accompanist-flowlayout:$flowlayout"
 

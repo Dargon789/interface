@@ -9,7 +9,7 @@ export enum ExtensionToInterfaceRequestType {
 export const PasskeyRequestSchema = MessageSchema.extend({
   type: z.literal(ExtensionToInterfaceRequestType.PasskeyRequest),
   requestId: z.string(),
-  challengeJson: z.string(),
+  challengeJson: z.string().optional(),
 })
 export type PasskeyRequest = z.infer<typeof PasskeyRequestSchema>
 

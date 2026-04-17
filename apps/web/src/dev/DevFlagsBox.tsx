@@ -1,33 +1,128 @@
-import { getOverrides, StatsigContext } from '@universe/gating'
-import { RowBetween } from 'components/deprecated/Row'
-import { MouseoverTooltip, TooltipSize } from 'components/Tooltip'
-import { useModalState } from 'hooks/useModalState'
-import { useContext, useState } from 'react'
-import { Flag, Settings } from 'react-feather'
+import {
+  getOverrideAdapter,
+  getOverrides,
+  LayerProperties,
+  Layers,
+  StatsigContext,
+  useGateValue,
+  useLayer,
+} from '@universe/gating'
+import { memo, useContext, useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { ThemedText } from 'theme/components'
-import { Button, Flex, useShadowPropsShort } from 'ui/src'
+import { Button, Flex, Switch, Text, useShadowPropsShort } from 'ui/src'
+import { Flag } from 'ui/src/components/icons/Flag'
+import { Settings } from 'ui/src/components/icons/Settings'
 import { resetUniswapBehaviorHistory } from 'uniswap/src/features/behaviorHistory/slice'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { isBetaEnv, isDevEnv } from 'utilities/src/environment/env'
+import { useEvent } from 'utilities/src/react/hooks'
+import { GatingRowContent, GatingSwitch } from '~/components/FeatureFlagModal/FeatureFlagModal'
+import { MouseoverTooltip, TooltipSize } from '~/components/Tooltip'
+import { usePinnedExperiments, usePinnedFeatureFlags } from '~/dev/usePinnedFeatureFlags'
+import { useModalState } from '~/hooks/useModalState'
+import { EllipsisTamaguiStyle } from '~/theme/components/styles'
 
-const Override = (name: string, value: any) => {
+const FLAG_BOX_MAX_WIDTH = 300
+
+function findLayerForParam(paramKey: string): { layerName: Layers; experimentName: string } | null {
+  for (const layerName of Object.values(Layers)) {
+    if (LayerProperties[layerName].includes(paramKey)) {
+      return { layerName: layerName as Layers, experimentName: paramKey }
+    }
+  }
+  return null
+}
+
+const Override = (name: string, value: unknown) => {
   return (
-    <ThemedText.LabelSmall key={name}>
+    <Text key={name} variant="body3" color="$neutral2">
       {name}: {JSON.stringify(value)}
-    </ThemedText.LabelSmall>
+    </Text>
   )
 }
 
+const PinnedFlagRow = memo(function PinnedFlagRow({ gateName }: { gateName: string }): JSX.Element {
+  const checked = useGateValue(gateName, { disableExposureLog: true })
+
+  const onCheckedChange = useEvent((value: boolean): void => {
+    getOverrideAdapter().overrideGate(gateName, value)
+  })
+
+  return (
+    <Flex
+      key={gateName}
+      row
+      alignItems="center"
+      justifyContent="space-between"
+      gap="$spacing8"
+      py="$spacing4"
+      onPress={(e: { stopPropagation: () => void }) => e.stopPropagation()}
+    >
+      <Text {...EllipsisTamaguiStyle}>{gateName}</Text>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} variant="branded" />
+    </Flex>
+  )
+})
+
+const PinnedExperimentRow = memo(function PinnedExperimentRow({
+  layerName,
+  experimentName,
+}: {
+  layerName: Layers
+  experimentName: string
+}): JSX.Element {
+  const { get: getLayerValue } = useLayer(layerName)
+  const keys = LayerProperties[layerName]
+  const value = keys.reduce<Record<string, unknown>>((acc, key) => ({ ...acc, [key]: getLayerValue(key) ?? false }), {})
+  const checked = Boolean(value[experimentName])
+  const onCheckedChange = useEvent((newValue: boolean): void => {
+    getOverrideAdapter().overrideLayer(layerName, { ...value, [experimentName]: newValue })
+  })
+
+  return (
+    <Flex onPress={(e: { stopPropagation: () => void }) => e.stopPropagation()}>
+      <GatingRowContent
+        title={experimentName}
+        label={layerName}
+        rightContent={<GatingSwitch checked={checked} onCheckedChange={onCheckedChange} />}
+      />
+    </Flex>
+  )
+})
+
 export default function DevFlagsBox() {
   const { client: statsigClient } = useContext(StatsigContext)
-  const { gateOverrides, configOverrides } = getOverrides(statsigClient)
+  const latest = getOverrides(statsigClient)
+  const [displayOverrides, setDisplayOverrides] = useState(latest)
+
+  // When Statsig refreshes after a toggle, getOverrides briefly returns empty. Keep showing the last
+  // non-empty list until we get a new one so the list doesn't flash.
+  useEffect(() => {
+    const next = getOverrides(statsigClient)
+    const hasAny = next.gateOverrides.length > 0 || next.configOverrides.length > 0
+    if (hasAny) {
+      setDisplayOverrides({
+        gateOverrides: next.gateOverrides,
+        configOverrides: next.configOverrides,
+      })
+    }
+  }, [statsigClient, statsigClient.loadingStatus])
+
+  const { gateOverrides, configOverrides } = displayOverrides
+  const { pinnedFlags } = usePinnedFeatureFlags()
+  const { pinnedExperiments } = usePinnedExperiments()
   const shadowProps = useShadowPropsShort()
 
-  const overrides = [...gateOverrides, ...configOverrides].map(([name, value]) => Override(name, value))
+  const allOverrides = [...gateOverrides, ...configOverrides]
 
-  const hasOverrides = overrides.length > 0
+  const overrides = allOverrides
+    .filter(([name]) => !pinnedFlags.includes(name))
+    .map(([name, value]) => Override(name, value))
+
+  const hasFilteredOverrides = overrides.length > 0
+  const hasPinnedFlags = pinnedFlags.length > 0
+  const hasPinnedExperiments = pinnedExperiments.length > 0
 
   const [isOpen, setIsOpen] = useState(false)
   const { toggleModal: toggleFeatureFlagsModal } = useModalState(ModalName.FeatureFlags)
@@ -51,7 +146,7 @@ export default function DevFlagsBox() {
       left="$spacing20"
       zIndex="$modal"
       padding={10}
-      borderWidth={1}
+      borderWidth="$spacing1"
       borderColor="$surface3"
       borderRadius="$rounded8"
       cursor="pointer"
@@ -63,44 +158,70 @@ export default function DevFlagsBox() {
       onPress={() => {
         setIsOpen((prev) => !prev)
       }}
+      maxWidth={FLAG_BOX_MAX_WIDTH}
     >
       {isOpen ? (
-        <RowBetween>
-          <ThemedText.SubHeader>
-            {isDevEnv() && 'Local Overrides'}
-            {isBetaEnv() && 'Staging Overrides'}
-          </ThemedText.SubHeader>
-          <MouseoverTooltip
-            size={TooltipSize.Small}
-            text="Protip: Set feature flags by adding '?featureFlagOverride={flag_name}' to the URL"
-          >
-            <Flex
-              centered
-              width={30}
-              height={30}
-              borderRadius="$rounded8"
-              testID={TestID.DevFlagsSettingsToggle}
-              hoverStyle={{
-                backgroundColor: '$surface1Hovered',
-              }}
-              onPress={(e) => {
-                e.stopPropagation()
-                toggleFeatureFlagsModal()
-              }}
+        <>
+          <Flex row justifyContent="space-between" alignItems="center">
+            <Text variant="subheading2">
+              {isDevEnv() && 'Local Overrides'}
+              {isBetaEnv() && 'Staging Overrides'}
+            </Text>
+            <MouseoverTooltip
+              size={TooltipSize.Small}
+              text="Protip: Set feature flags by adding '?featureFlagOverride={flag_name}' to the URL"
             >
-              <Settings width={15} height={15} />
+              <Flex
+                centered
+                width={30}
+                height={30}
+                borderRadius="$rounded8"
+                testID={TestID.DevFlagsSettingsToggle}
+                hoverStyle={{
+                  backgroundColor: '$surface1Hovered',
+                }}
+                onPress={(e) => {
+                  e.stopPropagation()
+                  toggleFeatureFlagsModal()
+                }}
+              >
+                <Settings size="$icon.16" />
+              </Flex>
+            </MouseoverTooltip>
+          </Flex>
+          {hasFilteredOverrides && overrides}
+          {allOverrides.length === 0 && (
+            <Text variant="body3" color="$neutral2">
+              No overrides
+            </Text>
+          )}
+          {hasPinnedFlags && (
+            <Flex gap="$spacing4" mt="$spacing8" flexDirection="column">
+              {pinnedFlags.map((gateName) => (
+                <PinnedFlagRow key={gateName} gateName={gateName} />
+              ))}
             </Flex>
-          </MouseoverTooltip>
-        </RowBetween>
+          )}
+          {hasPinnedExperiments && (
+            <Flex gap="$spacing4" mt="$spacing8" flexDirection="column">
+              {pinnedExperiments
+                .map((key) => findLayerForParam(key))
+                .filter((resolved): resolved is { layerName: Layers; experimentName: string } => resolved !== null)
+                .map(({ layerName, experimentName }) => (
+                  <PinnedExperimentRow
+                    key={`${layerName}:${experimentName}`}
+                    layerName={layerName}
+                    experimentName={experimentName}
+                  />
+                ))}
+            </Flex>
+          )}
+          <Button variant="branded" emphasis="secondary" size="small" onPress={onPressReset} mt="$spacing8">
+            Reset behavior history
+          </Button>
+        </>
       ) : (
-        <Flag />
-      )}
-
-      {isOpen && (hasOverrides ? overrides : <ThemedText.LabelSmall>No overrides</ThemedText.LabelSmall>)}
-      {isOpen && (
-        <Button variant="branded" emphasis="secondary" size="small" onPress={onPressReset} mt="$spacing8">
-          Reset behavior history
-        </Button>
+        <Flag size="$icon.16" />
       )}
     </Flex>
   )

@@ -4,6 +4,7 @@ import { BiometricAuthenticationStatus } from 'src/features/biometrics/biometric
 import {
   selectAuthenticationStatus,
   selectDeviceSupportsBiometrics,
+  selectIsBiometricsDisabledInOSSettings,
   setAuthenticationStatus as setAuthenticationStatusAction,
 } from 'src/features/biometrics/biometricsSlice'
 
@@ -11,12 +12,14 @@ interface UseBiometricsStateResult {
   authenticationStatus: BiometricAuthenticationStatus
   setAuthenticationStatus: (value: BiometricAuthenticationStatus) => void
   deviceSupportsBiometrics: boolean | undefined
+  isBiometricsDisabledInOSSettings: boolean | undefined
 }
 
 export function useBiometricsState(): UseBiometricsStateResult {
   const dispatch = useDispatch()
   const authenticationStatus = useSelector(selectAuthenticationStatus)
   const deviceSupportsBiometrics = useSelector(selectDeviceSupportsBiometrics)
+  const isBiometricsDisabledInOSSettings = useSelector(selectIsBiometricsDisabledInOSSettings)
 
   const setAuthenticationStatus = useCallback(
     (value: BiometricAuthenticationStatus): void => {
@@ -29,5 +32,6 @@ export function useBiometricsState(): UseBiometricsStateResult {
     authenticationStatus,
     setAuthenticationStatus,
     deviceSupportsBiometrics,
+    isBiometricsDisabledInOSSettings,
   }
 }

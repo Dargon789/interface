@@ -3,9 +3,10 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { DAI_CURRENCY_INFO, daiCurrencyInfo, ETH_CURRENCY_INFO, ethCurrencyInfo } from 'uniswap/src/test/fixtures'
 import { render, within } from 'uniswap/src/test/test-utils'
 
-jest.mock('ui/src/components/UniversalImage/internal/PlainImage', () => ({
-  ...jest.requireActual('ui/src/components/UniversalImage/internal/PlainImage.web'),
-}))
+vi.mock('ui/src/components/UniversalImage/internal/PlainImage', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('ui/src/components/UniversalImage/internal/PlainImage.web')>()
+  return { ...actual }
+})
 
 describe(SplitLogo, () => {
   it('renders without error', () => {
@@ -114,6 +115,33 @@ describe(SplitLogo, () => {
       const icon = queryByTestId('network-logo')
 
       expect(icon).toBeFalsy()
+    })
+
+    it('does not render icon for Mainnet when showMainnetNetworkLogo is false', () => {
+      const { queryByTestId } = render(
+        <SplitLogo
+          chainId={UniverseChainId.Mainnet}
+          inputCurrencyInfo={daiCurrencyInfo()}
+          outputCurrencyInfo={ethCurrencyInfo()}
+          size={10}
+        />,
+      )
+
+      expect(queryByTestId('network-logo')).toBeFalsy()
+    })
+
+    it('renders icon for Mainnet when showMainnetNetworkLogo is true', () => {
+      const { getByTestId } = render(
+        <SplitLogo
+          showMainnetNetworkLogo
+          chainId={UniverseChainId.Mainnet}
+          inputCurrencyInfo={daiCurrencyInfo()}
+          outputCurrencyInfo={ethCurrencyInfo()}
+          size={10}
+        />,
+      )
+
+      expect(getByTestId('network-logo')).toBeTruthy()
     })
   })
 })

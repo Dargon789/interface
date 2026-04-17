@@ -81,6 +81,8 @@ export function fromGraphQLChain(chain: GraphQLApi.Chain | string | undefined): 
       return UniverseChainId.Blast
     case GraphQLApi.Chain.Celo:
       return UniverseChainId.Celo
+    case GraphQLApi.Chain.Linea:
+      return UniverseChainId.Linea
     case GraphQLApi.Chain.Monad:
       return UniverseChainId.Monad
     case GraphQLApi.Chain.Optimism:
@@ -95,6 +97,8 @@ export function fromGraphQLChain(chain: GraphQLApi.Chain | string | undefined): 
       return UniverseChainId.Solana
     case GraphQLApi.Chain.Soneium:
       return UniverseChainId.Soneium
+    case GraphQLApi.Chain.Xlayer:
+      return UniverseChainId.XLayer
     case GraphQLApi.Chain.AstrochainSepolia:
       return UniverseChainId.UnichainSepolia
     case GraphQLApi.Chain.Worldchain:
@@ -103,6 +107,8 @@ export function fromGraphQLChain(chain: GraphQLApi.Chain | string | undefined): 
       return UniverseChainId.Zksync
     case GraphQLApi.Chain.Zora:
       return UniverseChainId.Zora
+    case GraphQLApi.Chain.Tempo:
+      return UniverseChainId.Tempo
   }
 
   return null
@@ -128,6 +134,8 @@ export function fromUniswapWebAppLink(network: string | null): UniverseChainId {
       return UniverseChainId.Bnb
     case GraphQLApi.Chain.Celo.toLowerCase():
       return UniverseChainId.Celo
+    case GraphQLApi.Chain.Linea.toLowerCase():
+      return UniverseChainId.Linea
     case GraphQLApi.Chain.Monad.toLowerCase():
       return UniverseChainId.Monad
     case GraphQLApi.Chain.Optimism.toLowerCase():
@@ -140,7 +148,10 @@ export function fromUniswapWebAppLink(network: string | null): UniverseChainId {
       return UniverseChainId.Unichain
     case GraphQLApi.Chain.Soneium.toLowerCase():
       return UniverseChainId.Soneium
+    case GraphQLApi.Chain.Xlayer.toLowerCase():
+      return UniverseChainId.XLayer
     case GraphQLApi.Chain.AstrochainSepolia.toLowerCase():
+    case 'unichain_sepolia':
       return UniverseChainId.UnichainSepolia
     case GraphQLApi.Chain.Worldchain.toLowerCase():
       return UniverseChainId.WorldChain
@@ -148,57 +159,49 @@ export function fromUniswapWebAppLink(network: string | null): UniverseChainId {
       return UniverseChainId.Zksync
     case GraphQLApi.Chain.Zora.toLowerCase():
       return UniverseChainId.Zora
+    case GraphQLApi.Chain.Tempo.toLowerCase():
+      return UniverseChainId.Tempo
     default:
       throw new Error(`Network "${network}" can not be mapped`)
   }
 }
 
-export function toUniswapWebAppLink(chainId: UniverseChainId): string | null {
-  switch (chainId) {
-    case UniverseChainId.Mainnet:
-      return GraphQLApi.Chain.Ethereum.toLowerCase()
-    case UniverseChainId.ArbitrumOne:
-      return GraphQLApi.Chain.Arbitrum.toLowerCase()
-    case UniverseChainId.Avalanche:
-      return GraphQLApi.Chain.Avalanche.toLowerCase()
-    case UniverseChainId.Base:
-      return GraphQLApi.Chain.Base.toLowerCase()
-    case UniverseChainId.Blast:
-      return GraphQLApi.Chain.Blast.toLowerCase()
-    case UniverseChainId.Bnb:
-      return GraphQLApi.Chain.Bnb.toLowerCase()
-    case UniverseChainId.Celo:
-      return GraphQLApi.Chain.Celo.toLowerCase()
-    case UniverseChainId.Monad:
-      return GraphQLApi.Chain.Monad.toLowerCase()
-    case UniverseChainId.Optimism:
-      return GraphQLApi.Chain.Optimism.toLowerCase()
-    case UniverseChainId.Polygon:
-      return GraphQLApi.Chain.Polygon.toLowerCase()
-    case UniverseChainId.Sepolia:
-      return GraphQLApi.Chain.EthereumSepolia.toLowerCase()
-    case UniverseChainId.Unichain:
-      return GraphQLApi.Chain.Unichain.toLowerCase()
-    case UniverseChainId.Soneium:
-      return GraphQLApi.Chain.Soneium.toLowerCase()
-    case UniverseChainId.UnichainSepolia:
-      return GraphQLApi.Chain.AstrochainSepolia.toLowerCase()
-    case UniverseChainId.WorldChain:
-      return GraphQLApi.Chain.Worldchain.toLowerCase()
-    case UniverseChainId.Zksync:
-      return GraphQLApi.Chain.Zksync.toLowerCase()
-    case UniverseChainId.Zora:
-      return GraphQLApi.Chain.Zora.toLowerCase()
-    default:
-      throw new Error(`ChainID "${chainId}" can not be mapped`)
-  }
+const CHAIN_ID_TO_UNISWAP_WEB_APP_LINK: Partial<Record<UniverseChainId, string>> = {
+  [UniverseChainId.ArbitrumOne]: GraphQLApi.Chain.Arbitrum.toLowerCase(),
+  [UniverseChainId.Avalanche]: GraphQLApi.Chain.Avalanche.toLowerCase(),
+  [UniverseChainId.Base]: GraphQLApi.Chain.Base.toLowerCase(),
+  [UniverseChainId.Blast]: GraphQLApi.Chain.Blast.toLowerCase(),
+  [UniverseChainId.Bnb]: GraphQLApi.Chain.Bnb.toLowerCase(),
+  [UniverseChainId.Celo]: GraphQLApi.Chain.Celo.toLowerCase(),
+  [UniverseChainId.Linea]: GraphQLApi.Chain.Linea.toLowerCase(),
+  [UniverseChainId.Mainnet]: GraphQLApi.Chain.Ethereum.toLowerCase(),
+  [UniverseChainId.Monad]: GraphQLApi.Chain.Monad.toLowerCase(),
+  [UniverseChainId.Optimism]: GraphQLApi.Chain.Optimism.toLowerCase(),
+  [UniverseChainId.Polygon]: GraphQLApi.Chain.Polygon.toLowerCase(),
+  [UniverseChainId.Sepolia]: GraphQLApi.Chain.EthereumSepolia.toLowerCase(),
+  [UniverseChainId.Soneium]: GraphQLApi.Chain.Soneium.toLowerCase(),
+  [UniverseChainId.Tempo]: GraphQLApi.Chain.Tempo.toLowerCase(),
+  [UniverseChainId.Unichain]: GraphQLApi.Chain.Unichain.toLowerCase(),
+  [UniverseChainId.UnichainSepolia]: 'unichain_sepolia',
+  [UniverseChainId.WorldChain]: GraphQLApi.Chain.Worldchain.toLowerCase(),
+  [UniverseChainId.XLayer]: GraphQLApi.Chain.Xlayer.toLowerCase(),
+  [UniverseChainId.Zksync]: GraphQLApi.Chain.Zksync.toLowerCase(),
+  [UniverseChainId.Zora]: GraphQLApi.Chain.Zora.toLowerCase(),
 }
 
-export function filterChainIdsByFeatureFlag(
-  featureFlaggedChainIds: {
-    [key in UniverseChainId]?: boolean
-  },
-): UniverseChainId[] {
+export function toUniswapWebAppLink(chainId: UniverseChainId): string | null {
+  const network = CHAIN_ID_TO_UNISWAP_WEB_APP_LINK[chainId]
+
+  if (!network) {
+    throw new Error(`ChainID "${chainId}" can not be mapped`)
+  }
+
+  return network
+}
+
+export function filterChainIdsByFeatureFlag(featureFlaggedChainIds: {
+  [key in UniverseChainId]?: boolean
+}): UniverseChainId[] {
   return ALL_CHAIN_IDS.filter((chainId) => {
     return featureFlaggedChainIds[chainId] ?? true
   })
@@ -286,6 +289,16 @@ function getDefaultChainId({
 /** Returns all stablecoins for a given chainId. */
 export function getStablecoinsForChain(chainId: UniverseChainId): Token[] {
   return getChainInfo(chainId).tokens.stablecoins
+}
+
+/** Checks if a token address is a stablecoin on the given chain. */
+export function isStablecoinAddress(chainId: UniverseChainId, tokenAddress: string): boolean {
+  try {
+    const stablecoins = getStablecoinsForChain(chainId)
+    return stablecoins.some((stablecoin) => stablecoin.address.toLowerCase() === tokenAddress.toLowerCase())
+  } catch {
+    return false
+  }
 }
 
 /** Returns the primary stablecoin for a given chainId. */

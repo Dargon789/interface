@@ -5,7 +5,6 @@ import {
 } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { TradeType } from '@uniswap/sdk-core'
 import { TradingApi } from '@universe/api'
-
 import {
   TransactionDetails,
   TransactionOriginType,
@@ -23,9 +22,10 @@ function mapUniswapXStatusToLocalTxStatus(status: UniswapXTransactionStatus): Tr
       return TransactionStatus.Pending
     case UniswapXTransactionStatus.CANCELLED:
       return TransactionStatus.Canceled
+    case UniswapXTransactionStatus.INSUFFICIENT_FUNDS:
+      return TransactionStatus.InsufficientFunds
     case UniswapXTransactionStatus.ERROR:
     case UniswapXTransactionStatus.EXPIRED:
-    case UniswapXTransactionStatus.INSUFFICIENT_FUNDS:
       return TransactionStatus.Failed
     default:
       return TransactionStatus.Unknown
@@ -48,6 +48,8 @@ export default function extractRestUniswapXOrderDetails(transaction: UniswapXTra
       outputTokenAmount,
       status,
       orderType,
+      encodedOrder,
+      expiryMillis,
     } = transaction
 
     if (!orderHash || !chainId || !inputToken || !outputToken) {
@@ -59,14 +61,16 @@ export default function extractRestUniswapXOrderDetails(transaction: UniswapXTra
 
     return {
       id: orderHash,
-      // TODO(PORT-429): update to only TradingApi.Routing.DUTCH_V2 once limit orders can be excluded from REST query
+      // TODO(CONS-722): update to only TradingApi.Routing.DUTCH_V2 once limit orders can be excluded from REST query
       routing: orderType === UniswapXOrderType.LIMIT ? TradingApi.Routing.DUTCH_LIMIT : TradingApi.Routing.DUTCH_V2,
       chainId,
       orderHash,
+      encodedOrder: encodedOrder || undefined,
       addedTime: Number(timestampMillis),
       status: mapUniswapXStatusToLocalTxStatus(status),
       from: offerer, // This transaction is not on-chain, so use the offerer address as the from address
-      // TODO(PORT-429): remove special limit typeInfo once limit orders can be excluded from REST query
+      expiry: expiryMillis ? Number(expiryMillis) / 1000 : undefined,
+      // TODO(CONS-722): remove special limit typeInfo once limit orders can be excluded from REST query
       typeInfo:
         orderType === UniswapXOrderType.LIMIT
           ? {

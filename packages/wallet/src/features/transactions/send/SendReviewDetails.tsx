@@ -1,4 +1,4 @@
-/* eslint-disable complexity */
+/* oxlint-disable complexity */
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
@@ -28,7 +28,7 @@ import {
   TransactionScreen,
   useTransactionModalContext,
 } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
 import { TransactionDetails } from 'uniswap/src/features/transactions/TransactionDetails/TransactionDetails'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { currencyAddress } from 'uniswap/src/utils/currencyId'
@@ -142,6 +142,7 @@ export function SendReviewDetails({
       submitTranaction()
     }
 
+    // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
     await onSubmitSend?.()
   }, [authTrigger, setScreen, submitTranaction, onSubmitSend])
 
@@ -296,12 +297,10 @@ export function SendReviewDetails({
       <TransactionDetails
         AccountDetails={
           <Flex row alignItems="center" justifyContent="space-between">
-            <Text color="$neutral2" variant="body3">
+            <Text color="$neutral2" variant="body3" pr="$spacing8">
               {t('common.wallet.label')}
             </Text>
             <AddressDisplay
-              disableForcedWidth
-              flexGrow={false}
               address={account.address}
               hideAddressInSubtitle={true}
               horizontalGap="$spacing4"

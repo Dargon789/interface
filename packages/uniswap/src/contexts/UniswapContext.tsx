@@ -6,34 +6,38 @@ import { DisplayName } from 'uniswap/src/features/accounts/types'
 import { WalletDisplayNameOptions } from 'uniswap/src/features/accounts/useOnchainDisplayName'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { FiatOnRampCurrency } from 'uniswap/src/features/fiatOnRamp/types'
-import { NFTItem } from 'uniswap/src/features/nfts/types'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { SwapDelegationInfo } from 'uniswap/src/features/smartWallet/delegation/types'
+import { CurrencyField } from 'uniswap/src/types/currency'
 import { useEvent } from 'utilities/src/react/hooks'
 
 export type NavigateToNftItemArgs = {
   owner?: Address
   contractAddress: Address
   tokenId: string
-  fallbackChainId: UniverseChainId
-  chainId?: UniverseChainId
-  isSpam?: boolean
-  fallbackData?: NFTItem
+  chainId: UniverseChainId
+}
+
+export type NavigateToSwapFlowArgs = {
+  inputCurrencyId?: string
+  outputCurrencyId?: string
+  exactCurrencyField?: CurrencyField
+  exactAmountToken?: string
 }
 
 /** Stores objects/utils that exist on all platforms, abstracting away app-level specifics for each, in order to allow usage in cross-platform code. */
 interface UniswapContextValue {
   navigateToBuyOrReceiveWithEmptyWallet?: () => void
   navigateToFiatOnRamp: (args: { prefilledCurrency?: FiatOnRampCurrency }) => void
-  navigateToSwapFlow: (args: { inputCurrencyId?: string; outputCurrencyId?: string }) => void
-  navigateToSendFlow: (args: { chainId: UniverseChainId; currencyAddress?: Address }) => void
+  navigateToSwapFlow: (args: NavigateToSwapFlowArgs) => void
+  navigateToSendFlow: (args: { chainId: UniverseChainId; currencyAddress?: Address; recipient?: Address }) => void
   navigateToReceive: () => void
   navigateToTokenDetails: (currencyId: string) => void
   navigateToExternalProfile: (args: { address: Address }) => void
   navigateToNftDetails: (args: NavigateToNftItemArgs) => void
-  navigateToNftCollection: (args: { collectionAddress: Address; chainId: UniverseChainId }) => void
   navigateToPoolDetails: (args: { poolId: Address; chainId: UniverseChainId }) => void
   handleShareToken: (args: { currencyId: string }) => void
+  navigateToAdvancedSettings: () => void
   onSwapChainsChanged: (args: {
     chainId: UniverseChainId
     prevChainId?: UniverseChainId
@@ -57,8 +61,6 @@ interface UniswapContextValue {
   getCanBatchTransactions?: (chainId: UniverseChainId | undefined) => boolean
   getSwapDelegationInfo?: (chainId: UniverseChainId | undefined) => SwapDelegationInfo
   useAccountsStoreContextHook: () => AccountsStore
-  // Function to check if current wallet can pay gas fees in any token
-  getCanPayGasInAnyToken?: () => boolean
 }
 
 export const UniswapContext = createContext<UniswapContextValue | null>(null)
@@ -73,9 +75,9 @@ export function UniswapProvider({
   navigateToTokenDetails,
   navigateToExternalProfile,
   navigateToNftDetails,
-  navigateToNftCollection,
   navigateToPoolDetails,
   handleShareToken,
+  navigateToAdvancedSettings,
   onSwapChainsChanged,
   signer,
   useProviderHook,
@@ -87,7 +89,6 @@ export function UniswapProvider({
   getCanBatchTransactions,
   getSwapDelegationInfo,
   useAccountsStoreContextHook,
-  getCanPayGasInAnyToken,
 }: PropsWithChildren<
   Omit<UniswapContextValue, 'isSwapTokenSelectorOpen' | 'setIsSwapTokenSelectorOpen' | 'setSwapOutputChainId'>
 >): JSX.Element {
@@ -104,10 +105,10 @@ export function UniswapProvider({
       navigateToReceive,
       navigateToTokenDetails,
       navigateToExternalProfile,
-      navigateToNftCollection,
       navigateToNftDetails,
       navigateToPoolDetails,
       handleShareToken,
+      navigateToAdvancedSettings,
       onSwapChainsChanged: ({
         chainId,
         prevChainId,
@@ -136,7 +137,6 @@ export function UniswapProvider({
       getCanBatchTransactions,
       getSwapDelegationInfo,
       useAccountsStoreContextHook,
-      getCanPayGasInAnyToken,
     }),
     [
       navigateToBuyOrReceiveWithEmptyWallet,
@@ -146,10 +146,10 @@ export function UniswapProvider({
       navigateToReceive,
       navigateToTokenDetails,
       navigateToExternalProfile,
-      navigateToNftCollection,
       navigateToNftDetails,
       navigateToPoolDetails,
       handleShareToken,
+      navigateToAdvancedSettings,
       signer,
       useProviderHook,
       useWalletDisplayName,
@@ -164,7 +164,6 @@ export function UniswapProvider({
       getSwapDelegationInfo,
       onSwapChainsChanged,
       useAccountsStoreContextHook,
-      getCanPayGasInAnyToken,
     ],
   )
 

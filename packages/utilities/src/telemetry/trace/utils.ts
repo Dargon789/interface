@@ -1,6 +1,6 @@
 import { logger } from 'utilities/src/logger/logger'
 import { isWebApp } from 'utilities/src/platform'
-// biome-ignore lint/style/noRestrictedImports: Platform-specific implementation needs internal types
+// oxlint-disable-next-line no-restricted-imports -- Platform-specific implementation needs internal types
 import { analytics } from 'utilities/src/telemetry/analytics/analytics'
 import { ITraceContext } from 'utilities/src/telemetry/trace/TraceContext'
 

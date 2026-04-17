@@ -37,8 +37,8 @@ export function setupSharedApolloCache(): InMemoryCache {
                   read(_, { args, toReference }): Reference | undefined {
                     return toReference({
                       __typename: 'Token',
-                      chain: args?.chain,
-                      address: normalizeTokenAddressForCache(args?.address),
+                      chain: args?.['chain'],
+                      address: normalizeTokenAddressForCache(args?.['address']),
                     })
                   },
                 },
@@ -111,7 +111,7 @@ export function setupSharedApolloCache(): InMemoryCache {
 
 type ReferenceOrStoreObject = Reference | StoreObject
 
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 function ignoreIncomingNullValue(
   existing: ReferenceOrStoreObject | undefined,
   incoming: ReferenceOrStoreObject | null,
@@ -121,7 +121,7 @@ function ignoreIncomingNullValue(
     return incoming
   }
   // TODO(API-482): remove this once the backend bug is fixed.
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (incoming === null || incoming === undefined) {
     return existing
   }

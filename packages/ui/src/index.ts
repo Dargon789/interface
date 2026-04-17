@@ -1,5 +1,4 @@
 export { PortalProvider } from '@tamagui/portal'
-export { RemoveScroll } from '@tamagui/remove-scroll'
 export type {
   Adapt,
   AnchorProps,
@@ -10,6 +9,7 @@ export type {
   GetThemeValueForKey,
   ImageProps,
   InputProps,
+  MediaQueryState,
   PopperProps,
   SpaceTokens,
   TabLayout,
@@ -45,6 +45,7 @@ export {
   ScrollView,
   Select,
   Sheet,
+  Slider,
   Spacer,
   Square,
   styled,
@@ -63,7 +64,10 @@ export {
 export { LinearGradient, type LinearGradientProps } from 'tamagui/linear-gradient'
 export * from 'ui/src/animations'
 export * from './components/AnimatableCopyIcon/AnimatableCopyIcon'
+export * from './components/AnimatedCopyLabel/AnimatedCopyLabel'
 export { Button } from './components/buttons/Button/Button'
+export { CustomButtonFrame } from './components/buttons/Button/components/CustomButtonFrame/CustomButtonFrame'
+export { ThemedSpinningLoader } from './components/buttons/Button/components/ThemedSpinnerLoader'
 export type { ButtonEmphasis, ButtonProps, ButtonVariant } from './components/buttons/Button/types'
 export { DropdownButton } from './components/buttons/DropdownButton/DropdownButton'
 export type { DropdownButtonProps } from './components/buttons/DropdownButton/types'
@@ -75,13 +79,21 @@ export { getMenuItemColor } from './components/dropdownMenuSheet/utils'
 export type { GeneratedIcon, IconProps } from './components/factories/createIcon'
 export * from './components/InlineCard/InlineCard'
 export * from './components/input/utils'
-export { Flex, type FlexProps, flexStyles, Inset, Separator } from './components/layout'
+export { type AnimatedScrollView, Flex, type FlexProps, flexStyles, Inset, Separator } from './components/layout'
+export { HorizontalDottedLineSeparator } from './components/lines/HorizontalDottedLineSeparator'
 export { VerticalDottedLineSeparator } from './components/lines/VerticalDottedLineSeparator'
-export { ModalCloseIcon, WebBottomSheet } from './components/modal/AdaptiveWebModal'
+export {
+  EffectiveModalOrSheetZIndexContext,
+  ModalCloseIcon,
+  useEffectiveModalOrSheetZIndex,
+  WebBottomSheet,
+} from './components/modal/AdaptiveWebModal'
 export * from './components/OverKeyboardContent/OverKeyboardContent'
 export { AdaptiveWebPopoverContent } from './components/popover/AdaptiveWebPopoverContent'
 export { QRCodeDisplay } from './components/QRCode/QRCodeDisplay'
 export { RefreshButton } from './components/RefreshButton/RefreshButton'
+export type { RemoveScrollProps } from './components/RemoveScroll/RemoveScroll'
+export * from './components/RemoveScroll/RemoveScroll'
 export * from './components/radio/Radio'
 export * from './components/SegmentedControl/SegmentedControl'
 export { ClickableWithinGesture } from './components/swipeablecards/ClickableWithinGesture'
@@ -93,6 +105,7 @@ export { Tooltip } from './components/tooltip/Tooltip'
 export * from './components/touchable'
 export { Unicon } from './components/Unicon'
 export * from './components/Unicon/utils'
+export * from './components/UniversalImage/ImageSettingsContext'
 export * from './components/UniversalImage/types'
 export * from './components/UniversalImage/UniversalImage'
 export * from './components/UniversalImage/utils'

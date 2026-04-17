@@ -10,8 +10,9 @@ import { useENS } from 'uniswap/src/features/ens/useENS'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { UNITAG_SUFFIX } from 'uniswap/src/features/unitags/constants'
 import { getValidAddress } from 'uniswap/src/utils/addresses'
+import { isWebApp } from 'utilities/src/platform'
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function useWalletSearchResults(
   query: string,
   selectedChain: UniverseChainId | null,
@@ -23,10 +24,21 @@ export function useWalletSearchResults(
 } {
   const { defaultChainId } = useEnabledChains()
 
-  const validAddress: Address | undefined = useMemo(
+  const validEvmAddress: Address | undefined = useMemo(
     () => getValidAddress({ address: query, platform: Platform.EVM, withEVMChecksum: true, log: false }) ?? undefined,
     [query],
   )
+
+  // Check for valid Solana address on web only
+  const validSvmAddress: string | undefined = useMemo(() => {
+    if (validEvmAddress || !isWebApp) {
+      return undefined
+    }
+    return getValidAddress({ address: query, platform: Platform.SVM, log: false }) ?? undefined
+  }, [query, validEvmAddress])
+
+  // Use EVM address for ENS/Unitag lookups (Solana doesn't have these)
+  const validAddress = validEvmAddress
 
   const querySkippedIfValidAddress = validAddress ? null : query
 
@@ -73,10 +85,10 @@ export function useWalletSearchResults(
 
   // Prioritize unitags
 
-  if (unitagByName?.address?.address && unitagByName.username) {
+  if (unitagByName?.address && unitagByName.username) {
     results.push({
       type: OnchainItemListOptionType.Unitag,
-      address: unitagByName.address.address,
+      address: unitagByName.address,
       unitag: unitagByName.username,
     })
   }
@@ -91,7 +103,7 @@ export function useWalletSearchResults(
   const nameMatch = unitagByAddress?.username && query.startsWith(unitagByAddress.username)
   const addressOrNameMatch = addressMatch || (nameMatch && showUnitagOverEns)
   const showUnitagByAddress =
-    !unitagByName?.address?.address && unitagByAddress?.address && unitagByAddress.username && addressOrNameMatch
+    !unitagByName?.address && unitagByAddress?.address && unitagByAddress.username && addressOrNameMatch
   if (showUnitagByAddress) {
     results.push({
       type: OnchainItemListOptionType.Unitag,
@@ -117,7 +129,7 @@ export function useWalletSearchResults(
   if (
     !validAddress &&
     hasENSResult &&
-    dotEthAddress !== unitagByName?.address?.address &&
+    dotEthAddress !== unitagByName?.address &&
     differentFromUnitagByAddress &&
     dotEthAddress !== ensAddress
   ) {
@@ -133,6 +145,14 @@ export function useWalletSearchResults(
     results.push({
       type: OnchainItemListOptionType.WalletByAddress,
       address: validAddress,
+    })
+  }
+
+  // Add Solana wallet result on web only
+  if (validSvmAddress) {
+    results.push({
+      type: OnchainItemListOptionType.WalletByAddress,
+      address: validSvmAddress,
     })
   }
 

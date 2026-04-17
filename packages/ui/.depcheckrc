@@ -4,8 +4,14 @@ ignores: [
     '@tamagui/font-inter',
     '@tamagui/theme-base',
     'jest-presets',
+    'typescript',
+    '@typescript/native-preview',
     ## Internal packages / workspaces
     'ui',
     # used in package.json
     'esbuild-register',
+  ]
+ignore-patterns: [
+    'src/components/icons',
+    'src/components/logos',
   ]

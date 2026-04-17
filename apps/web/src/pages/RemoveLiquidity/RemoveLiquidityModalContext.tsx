@@ -1,12 +1,12 @@
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { Currency } from '@uniswap/sdk-core'
-import { getCurrencyWithOptionalUnwrap } from 'components/Liquidity/utils/currency'
-import { useModalInitialState } from 'hooks/useModalInitialState'
 import { createContext, Dispatch, PropsWithChildren, SetStateAction, useContext, useMemo, useState } from 'react'
-import { LiquidityModalInitialState } from 'state/application/reducer'
-import { PositionField } from 'types/position'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TransactionStep } from 'uniswap/src/features/transactions/steps/types'
+import { getCurrencyWithOptionalUnwrap } from '~/components/Liquidity/utils/currency'
+import { useModalInitialState } from '~/hooks/useModalInitialState'
+import { LiquidityModalInitialState } from '~/state/application/reducer'
+import { PositionField } from '~/types/position'
 
 export enum DecreaseLiquidityStep {
   Input = 0,
@@ -97,7 +97,7 @@ export function RemoveLiquidityModalContextProvider({ children }: PropsWithChild
 export function useRemoveLiquidityModalContext() {
   const removeModalContext = useContext(RemoveLiquidityModalContext)
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (removeModalContext === undefined) {
     throw new Error('`useRemoveLiquidityTxContext` must be used inside of `RemoveLiquidityTxContextProvider`')
   }

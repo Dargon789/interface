@@ -8,17 +8,24 @@
     "@statsig/react-bindings": "3.12.2",
     "@statsig/react-native-bindings": "3.12.2",
     "@universe/api": "workspace:*",
+    "@universe/config": "workspace:*",
     "utilities": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "22.13.1",
-    "@uniswap/eslint-config": "workspace:^",
+    "@typescript/native-preview": "7.0.0-dev.20260311.1",
     "depcheck": "1.4.7",
-    "eslint": "8.57.1",
-    "typescript": "5.8.3"
+    "typescript": "5.8.3",
+    "vitest": "3.2.1"
   },
   "scripts": {
     "typecheck": "nx typecheck gating",
+    "check": "nx check gating",
+    "check:fast": "nx check:fast gating",
+    "check:deps:usage": "nx check:deps:usage gating",
+    "test": "nx test gating",
+    "format": "nx format gating",
+    "format:check": "nx format:check gating",
     "lint": "nx lint gating",
     "lint:fix": "nx lint:fix gating"
   },

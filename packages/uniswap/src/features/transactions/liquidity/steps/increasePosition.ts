@@ -1,5 +1,20 @@
-import { TradingApi } from '@universe/api'
-import { TradingApiClient } from 'uniswap/src/data/apiClients/tradingApi/TradingApiClient'
+import {
+  CreateLPPositionRequest,
+  IncreaseLPPositionRequest,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
+import {
+  V2CreateLPPosition,
+  V3CreateLPPosition,
+  V4CreateLPPosition,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
+import {
+  CreatePositionRequest,
+  IncreasePositionRequest,
+} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
+import {
+  V1LiquidityServiceClient,
+  V2LiquidityServiceClient,
+} from 'uniswap/src/data/apiClients/liquidityService/LiquidityServiceClient'
 import { InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { parseErrorMessageTitle } from 'uniswap/src/features/transactions/liquidity/utils'
@@ -15,53 +30,93 @@ import { logger } from 'utilities/src/logger/logger'
 export interface IncreasePositionTransactionStep extends OnChainTransactionFields {
   // Doesn't require permit
   type: TransactionStepType.IncreasePositionTransaction
-  sqrtRatioX96: string | undefined
 }
 
 export interface IncreasePositionTransactionStepAsync {
   // Requires permit
   type: TransactionStepType.IncreasePositionTransactionAsync
-  getTxRequest(
-    signature: string,
-  ): Promise<{ txRequest: ValidatedTransactionRequest | undefined; sqrtRatioX96: string | undefined }>
+  getTxRequest(signature: string): Promise<{ txRequest: ValidatedTransactionRequest | undefined }>
 }
 
 export interface IncreasePositionTransactionStepBatched extends OnChainTransactionFieldsBatched {
   type: TransactionStepType.IncreasePositionTransactionBatched
-  sqrtRatioX96: string | undefined
 }
 
-export function createIncreasePositionStep(
-  txRequest: ValidatedTransactionRequest,
-  sqrtRatioX96: string | undefined,
-): IncreasePositionTransactionStep {
+export function createIncreasePositionStep(txRequest: ValidatedTransactionRequest): IncreasePositionTransactionStep {
   return {
     type: TransactionStepType.IncreasePositionTransaction,
     txRequest,
-    sqrtRatioX96,
   }
 }
 
 export function createCreatePositionAsyncStep(
-  createPositionRequestArgs: TradingApi.CreateLPPositionRequest | undefined,
+  createPositionRequestArgs: CreateLPPositionRequest | CreatePositionRequest | undefined,
+  delegatedAddress?: string | null,
 ): IncreasePositionTransactionStepAsync {
   return {
     type: TransactionStepType.IncreasePositionTransactionAsync,
-    getTxRequest: async (
-      signature: string,
-    ): Promise<{ txRequest: ValidatedTransactionRequest | undefined; sqrtRatioX96: string | undefined }> => {
+    getTxRequest: async (signature: string): Promise<{ txRequest: ValidatedTransactionRequest | undefined }> => {
       if (!createPositionRequestArgs) {
-        return { txRequest: undefined, sqrtRatioX96: undefined }
+        return { txRequest: undefined }
       }
 
       try {
-        const { create, sqrtRatioX96 } = await TradingApiClient.createLpPosition({
-          ...createPositionRequestArgs,
-          signature,
-          simulateTransaction: true,
-        })
+        if (createPositionRequestArgs instanceof CreatePositionRequest) {
+          const updatedRequest = new CreatePositionRequest({
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+            ...createPositionRequestArgs,
+            signature,
+            simulateTransaction: true,
+          })
+          const result = await V2LiquidityServiceClient.createPosition(updatedRequest)
+          return { txRequest: validateTransactionRequest(result.create) }
+        }
 
-        return { txRequest: validateTransactionRequest(create), sqrtRatioX96 }
+        const { createLpPosition } = createPositionRequestArgs
+        let updatedCreateLpPosition
+
+        if (createLpPosition.case === 'v4CreateLpPosition') {
+          updatedCreateLpPosition = {
+            case: 'v4CreateLpPosition' as const,
+            value: new V4CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+              ...createLpPosition.value,
+              signature,
+              simulateTransaction: true,
+            }),
+          }
+        } else if (createLpPosition.case === 'v3CreateLpPosition') {
+          updatedCreateLpPosition = {
+            case: 'v3CreateLpPosition' as const,
+            value: new V3CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+              ...createLpPosition.value,
+              signature,
+              simulateTransaction: true,
+            }),
+          }
+        } else if (createLpPosition.case === 'v2CreateLpPosition') {
+          // V2 does not support signatures, only simulate flag
+          updatedCreateLpPosition = {
+            case: 'v2CreateLpPosition' as const,
+            value: new V2CreateLPPosition({
+              // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+              ...createLpPosition.value,
+              simulateTransaction: true,
+            }),
+          }
+        } else {
+          updatedCreateLpPosition = createLpPosition
+        }
+
+        const result = await V1LiquidityServiceClient.createLpPosition(
+          new CreateLPPositionRequest({
+            createLpPosition: updatedCreateLpPosition,
+          }),
+        )
+        const create = result.create
+
+        return { txRequest: validateTransactionRequest(create) }
       } catch (e) {
         const message = parseErrorMessageTitle(e, { includeRequestId: true })
         if (message) {
@@ -70,10 +125,15 @@ export function createCreatePositionAsyncStep(
               file: 'increasePosition',
               function: 'createCreatePositionAsyncStep',
             },
+            extra: {
+              canBatchTransactions: false, // if in this step then the tx was not batched
+              delegatedAddress: delegatedAddress ?? null,
+            },
           })
 
           sendAnalyticsEvent(InterfaceEventName.CreatePositionFailed, {
             message,
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
             ...createPositionRequestArgs,
           })
         }
@@ -85,25 +145,51 @@ export function createCreatePositionAsyncStep(
 }
 
 export function createIncreasePositionAsyncStep(
-  increasePositionRequestArgs: TradingApi.IncreaseLPPositionRequest | undefined,
+  increasePositionRequestArgs: IncreaseLPPositionRequest | IncreasePositionRequest | undefined,
+  delegatedAddress?: string | null,
 ): IncreasePositionTransactionStepAsync {
   return {
     type: TransactionStepType.IncreasePositionTransactionAsync,
-    getTxRequest: async (
-      signature: string,
-    ): Promise<{ txRequest: ValidatedTransactionRequest | undefined; sqrtRatioX96: string | undefined }> => {
+    getTxRequest: async (signature: string): Promise<{ txRequest: ValidatedTransactionRequest | undefined }> => {
       if (!increasePositionRequestArgs) {
-        return { txRequest: undefined, sqrtRatioX96: undefined }
+        return { txRequest: undefined }
       }
 
       try {
-        const { increase, sqrtRatioX96 } = await TradingApiClient.increaseLpPosition({
-          ...increasePositionRequestArgs,
-          signature,
-          simulateTransaction: true,
-        })
+        if (increasePositionRequestArgs instanceof IncreasePositionRequest) {
+          const updatedRequest = new IncreasePositionRequest({
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+            ...increasePositionRequestArgs,
+            signature,
+            simulateTransaction: true,
+          })
+          const result = await V2LiquidityServiceClient.increasePosition(updatedRequest)
+          return { txRequest: validateTransactionRequest(result.increase) }
+        }
 
-        return { txRequest: validateTransactionRequest(increase), sqrtRatioX96 }
+        const { increaseLpPosition } = increasePositionRequestArgs
+        const updatedIncreaseLpPosition =
+          increaseLpPosition.case === 'v4IncreaseLpPosition'
+            ? {
+                case: 'v4IncreaseLpPosition' as const,
+                // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+                value: { ...increaseLpPosition.value, signature, simulateTransaction: true },
+              }
+            : increaseLpPosition.case === 'v3IncreaseLpPosition'
+              ? {
+                  case: 'v3IncreaseLpPosition' as const,
+                  // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
+                  value: { ...increaseLpPosition.value, signature, simulateTransaction: true },
+                }
+              : increaseLpPosition
+        const result = await V1LiquidityServiceClient.increaseLpPosition(
+          new IncreaseLPPositionRequest({
+            increaseLpPosition: updatedIncreaseLpPosition,
+          }),
+        )
+        const increase = result.increase
+
+        return { txRequest: validateTransactionRequest(increase) }
       } catch (e) {
         const message = parseErrorMessageTitle(e, { includeRequestId: true })
         if (message) {
@@ -112,9 +198,14 @@ export function createIncreasePositionAsyncStep(
               file: 'generateTransactionSteps',
               function: 'createIncreasePositionAsyncStep',
             },
+            extra: {
+              canBatchTransactions: false, // if in this step then the tx was not batched
+              delegatedAddress: delegatedAddress ?? null,
+            },
           })
           sendAnalyticsEvent(InterfaceEventName.IncreaseLiquidityFailed, {
             message,
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
             ...increasePositionRequestArgs,
           })
         }
@@ -127,11 +218,9 @@ export function createIncreasePositionAsyncStep(
 
 export function createIncreasePositionStepBatched(
   txRequests: ValidatedTransactionRequest[],
-  sqrtRatioX96: string | undefined,
 ): IncreasePositionTransactionStepBatched {
   return {
     type: TransactionStepType.IncreasePositionTransactionBatched,
     batchedTxRequests: txRequests,
-    sqrtRatioX96,
   }
 }

@@ -1,21 +1,19 @@
 // From https://reactnavigation.org/docs/testing/#setting-up-jest
-import 'react-native-gesture-handler/jestSetup';
-import { setUpTests } from 'react-native-reanimated';
+import 'react-native-gesture-handler/jestSetup'
 // Other
 import 'core-js' // necessary so setImmediate works in tests
 import 'utilities/jest-package-mocks'
 import 'uniswap/jest-package-mocks'
 import 'wallet/jest-package-mocks'
 import 'config/jest-presets/ui/ui-package-mocks'
-
 import 'uniswap/src/i18n' // Uses real translations for tests
-
 import mockRNCNetInfo from '@react-native-community/netinfo/jest/netinfo-mock.js'
+import { setUpTests } from 'react-native-reanimated'
 
 setUpTests()
 
 // Silence the warning: Animated: `useNativeDriver` is not supported because the native animated module is missing
-jest.mock('react-native/Libraries/Animated/NativeAnimatedModule');
+jest.mock('react-native/Libraries/Animated/NativeAnimatedModule')
 
 jest.mock('@uniswap/client-explore/dist/uniswap/explore/v1/service-ExploreStatsService_connectquery', () => {})
 
@@ -39,9 +37,9 @@ jest.mock('react-native-onesignal', () => {
         getOnesignalId: jest.fn(() => 'dummyUserId'),
         pushSubscription: {
           getTokenAsync: jest.fn(() => 'dummyPushToken'),
-        }
+        },
       },
-    }
+    },
   }
 })
 
@@ -100,7 +98,7 @@ jest.mock('@react-native-firebase/auth', () => () => ({
   signInAnonymously: jest.fn(),
 }))
 
-jest.mock("react-native-bootsplash", () => {
+jest.mock('react-native-bootsplash', () => {
   return {
     hide: jest.fn().mockResolvedValue(),
     isVisible: jest.fn().mockResolvedValue(false),
@@ -109,9 +107,20 @@ jest.mock("react-native-bootsplash", () => {
       logo: { source: 0 },
       brand: { source: 0 },
     }),
-  };
-});
+  }
+})
 
-jest.mock("react-native-keyboard-controller", () =>
-  require("react-native-keyboard-controller/jest"),
-);
+jest.mock('react-native-keyboard-controller', () => require('react-native-keyboard-controller/jest'))
+
+// Mock @gorhom/bottom-sheet with plain View components
+jest.mock('@gorhom/bottom-sheet', () => {
+  const reactNative = jest.requireActual('react-native')
+  const { View } = reactNative
+  return {
+    __esModule: true,
+    default: View,
+    BottomSheetModal: View,
+    BottomSheetModalProvider: View,
+    BottomSheetView: View,
+  }
+})

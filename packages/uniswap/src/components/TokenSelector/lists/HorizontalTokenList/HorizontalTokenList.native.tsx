@@ -12,7 +12,7 @@ const CONTENT_CONTAINER_STYLE = {
   paddingVertical: spacing.spacing4,
 }
 
-export const HorizontalTokenList = memo(function _HorizontalTokenList({
+export const HorizontalTokenList = memo(function HorizontalTokenListInner({
   tokens,
   onSelectCurrency,
   index,
@@ -52,9 +52,9 @@ function keyExtractor(token: TokenOption): string {
 function areTokenCurrencyIdsEqual(tokensA: TokenOption[] | undefined, tokensB: TokenOption[] | undefined): boolean {
   return Boolean(
     tokensA?.length === tokensB?.length &&
-      tokensA?.every(
-        (token, tokenIndex) => token.currencyInfo.currencyId === tokensB?.[tokenIndex]?.currencyInfo.currencyId,
-      ),
+    tokensA?.every(
+      (token, tokenIndex) => token.currencyInfo.currencyId === tokensB?.[tokenIndex]?.currencyInfo.currencyId,
+    ),
   )
 }
 

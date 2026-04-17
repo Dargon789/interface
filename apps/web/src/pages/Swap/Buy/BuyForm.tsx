@@ -1,26 +1,3 @@
-import { popupRegistry } from 'components/Popups/registry'
-import { SwitchNetworkAction } from 'components/Popups/types'
-import { PAGE_WRAPPER_MAX_WIDTH } from 'components/swap/styled'
-import { NATIVE_CHAIN_ID } from 'constants/tokens'
-import { useAccount } from 'hooks/useAccount'
-import { BuyFormButton } from 'pages/Swap/Buy/BuyFormButton'
-import { BuyFormContextProvider, useBuyFormContext } from 'pages/Swap/Buy/BuyFormContext'
-import { ChooseProviderModal } from 'pages/Swap/Buy/ChooseProviderModal'
-import { CountryListModal } from 'pages/Swap/Buy/CountryListModal'
-import { FiatOnRampCurrencyModal } from 'pages/Swap/Buy/FiatOnRampCurrencyModal'
-import { fallbackCurrencyInfo, useOffRampTransferDetailsRequest } from 'pages/Swap/Buy/hooks'
-import { OffRampConfirmTransferModal } from 'pages/Swap/Buy/OffRampConfirmTransferModal'
-import { PredefinedAmount } from 'pages/Swap/Buy/PredefinedAmount'
-import { formatFiatOnRampFiatAmount, getCountryFromLocale } from 'pages/Swap/Buy/shared'
-import { AlternateCurrencyDisplay } from 'pages/Swap/common/AlternateCurrencyDisplay'
-import { SelectTokenPanel } from 'pages/Swap/common/SelectTokenPanel'
-import {
-  NumericalInputMimic,
-  NumericalInputSymbolContainer,
-  NumericalInputWrapper,
-  StyledNumericalInput,
-  useWidthAdjustedDisplayValue,
-} from 'pages/Swap/common/shared'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router'
@@ -33,21 +10,44 @@ import { TradeableAsset } from 'uniswap/src/entities/assets'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { usePortfolioBalances } from 'uniswap/src/features/dataApi/balances/balances'
 import { useAppFiatCurrency, useFiatCurrencyComponents } from 'uniswap/src/features/fiatCurrency/hooks'
-import { useFiatOnRampAggregatorGetCountryQuery } from 'uniswap/src/features/fiatOnRamp/api'
 import { FiatOnRampCountryPicker } from 'uniswap/src/features/fiatOnRamp/FiatOnRampCountryPicker'
+import { useFiatOnRampAggregatorGetCountryQuery } from 'uniswap/src/features/fiatOnRamp/hooks/useFiatOnRampQueries'
 import { FiatOnRampCurrency, RampDirection } from 'uniswap/src/features/fiatOnRamp/types'
 import UnsupportedTokenModal from 'uniswap/src/features/fiatOnRamp/UnsupportedTokenModal'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { FiatOffRampEventName, FiatOnRampEventName, InterfacePageName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import Trace from 'uniswap/src/features/telemetry/Trace'
-import { useWallet } from 'uniswap/src/features/wallet/hooks/useWallet'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { currencyId } from 'uniswap/src/utils/currencyId'
 import useResizeObserver from 'use-resize-observer'
+import { isSafeNumber } from 'utilities/src/primitives/integer'
 import { usePrevious } from 'utilities/src/react/hooks'
-import { getChainUrlParam } from 'utils/chainParams'
-import { showSwitchNetworkNotification } from 'utils/showSwitchNetworkNotification'
+import { popupRegistry } from '~/components/Popups/registry'
+import { SwitchNetworkAction } from '~/components/Popups/types'
+import { PAGE_WRAPPER_MAX_WIDTH } from '~/components/swap/styled'
+import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { useActiveAddresses } from '~/features/accounts/store/hooks'
+import { getChainUrlParam } from '~/features/params/chainParams'
+import { useAccount } from '~/hooks/useAccount'
+import { BuyFormButton } from '~/pages/Swap/Buy/BuyFormButton'
+import { BuyFormContextProvider, useBuyFormContext } from '~/pages/Swap/Buy/BuyFormContext'
+import { ChooseProviderModal } from '~/pages/Swap/Buy/ChooseProviderModal'
+import { CountryListModal } from '~/pages/Swap/Buy/CountryListModal'
+import { FiatOnRampCurrencyModal } from '~/pages/Swap/Buy/FiatOnRampCurrencyModal'
+import { fallbackCurrencyInfo, useOffRampTransferDetailsRequest } from '~/pages/Swap/Buy/hooks'
+import { OffRampConfirmTransferModal } from '~/pages/Swap/Buy/OffRampConfirmTransferModal'
+import { PredefinedAmount } from '~/pages/Swap/Buy/PredefinedAmount'
+import { formatFiatOnRampFiatAmount, getCountryFromLocale } from '~/pages/Swap/Buy/shared'
+import { AlternateCurrencyDisplay } from '~/pages/Swap/common/AlternateCurrencyDisplay'
+import { SelectTokenPanel } from '~/pages/Swap/common/SelectTokenPanel'
+import {
+  NumericalInputMimic,
+  NumericalInputSymbolContainer,
+  NumericalInputWrapper,
+  StyledNumericalInput,
+} from '~/pages/Swap/common/shared'
+import { showSwitchNetworkNotification } from '~/utils/showSwitchNetworkNotification'
 
 const InputWrapper = styled(Flex, {
   backgroundColor: '$surface1',
@@ -85,7 +85,7 @@ type BuyFormProps = {
 
 function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
   const account = useAccount()
-  const wallet = useWallet()
+  const addresses = useActiveAddresses()
   const { t } = useTranslation()
   const { convertFiatAmount } = useLocalizationContext()
   const fiatCurrency = useAppFiatCurrency()
@@ -108,7 +108,6 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
   const navigate = useNavigate()
 
   const prevQuoteCurrency = usePrevious(quoteCurrency)
-  const postWidthAdjustedDisplayValue = useWidthAdjustedDisplayValue(inputAmount)
   const hiddenObserver = useResizeObserver<HTMLElement>()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -133,6 +132,11 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
 
   const handleUserInput = useCallback(
     (value: string) => {
+      // Omit parsing errors by checking if amount exceeds Number range limit
+      if (!isSafeNumber(value)) {
+        return
+      }
+
       onSetFontSize(value)
       setBuyFormState((state) => ({ ...state, inputAmount: value }))
     },
@@ -143,7 +147,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
   const DEFAULT_COUNTRY = useMemo(() => getCountryFromLocale(), [])
   const { data: countryResult } = useFiatOnRampAggregatorGetCountryQuery()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +buyFormState.selectedCountry, +selectedCountry
+  // oxlint-disable-next-line react/exhaustive-deps -- +buyFormState.selectedCountry, +selectedCountry
   useEffect(() => {
     if (!selectedCountry) {
       // Use API result if available, otherwise default to locale-based country immediately
@@ -226,10 +230,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
     }
   }, [account.chainId, parsedQs, initialCurrency, setBuyFormState, supportedTokens])
 
-  const { data: balancesById } = usePortfolioBalances({
-    evmAddress: wallet.evmAccount?.address,
-    svmAddress: wallet.svmAccount?.address,
-  })
+  const { data: balancesById } = usePortfolioBalances(addresses)
 
   // Tokens that have balance that aren't FOR supported
   const unsupportedCurrencies = useMemo(() => {
@@ -265,7 +266,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
       showSwitchNetworkNotification({
         prevChainId: prevQuoteCurrency.currencyInfo.currency.chainId,
         chainId: quoteCurrency.currencyInfo.currency.chainId,
-        action: rampDirection === RampDirection.ONRAMP ? SwitchNetworkAction.Buy : SwitchNetworkAction.Sell,
+        action: rampDirection === RampDirection.ON_RAMP ? SwitchNetworkAction.Buy : SwitchNetworkAction.Sell,
       })
     }
   }, [quoteCurrency?.currencyInfo?.currency, prevQuoteCurrency?.currencyInfo?.currency, rampDirection])
@@ -276,7 +277,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
         <InputWrapper>
           <HeaderRow>
             <Text variant="body3" userSelect="none" color="$neutral2">
-              {rampDirection === RampDirection.ONRAMP ? t('common.youreBuying') : t('common.youreSelling')}
+              {rampDirection === RampDirection.ON_RAMP ? t('common.youreBuying') : t('common.youreSelling')}
             </Text>
             <FiatOnRampCountryPicker
               onPress={() => {
@@ -306,7 +307,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
                 </NumericalInputSymbolContainer>
               )}
               <StyledNumericalInput
-                value={postWidthAdjustedDisplayValue}
+                value={inputAmount}
                 disabled={disabled}
                 onUserInput={handleUserInput}
                 placeholder="0"
@@ -339,7 +340,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
                 />
               </Flex>
             )}
-            {!inputAmount && rampDirection === RampDirection.ONRAMP && (
+            {!inputAmount && rampDirection === RampDirection.ON_RAMP && (
               <Flex row alignItems="center" gap="$spacing8" justifyContent="center">
                 {PREDEFINED_AMOUNTS.map((amount: number) => (
                   <PredefinedAmount
@@ -361,7 +362,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
                 ))}
               </Flex>
             )}
-            {!inputAmount && rampDirection === RampDirection.OFFRAMP && (
+            {!inputAmount && rampDirection === RampDirection.OFF_RAMP && (
               <Flex row alignItems="center" gap="$spacing8" justifyContent="center">
                 {PREDEFINED_PERCENTAGES.map((value: number) => (
                   <PredefinedAmount
@@ -424,6 +425,7 @@ function BuyFormInner({ disabled, initialCurrency }: BuyFormProps) {
       )}
       <UnsupportedTokenModal
         isVisible={!!selectedUnsupportedCurrency}
+        rampDirection={rampDirection}
         onAccept={() => {
           const currencyInfo = selectedUnsupportedCurrency?.currencyInfo
           if (!currencyInfo) {

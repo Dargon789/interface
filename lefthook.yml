@@ -13,7 +13,8 @@ pre-commit:
       env:
         CI: "true"
         FORCE_COLOR: "0"
-      run: TERM=dumb bun g:pre-commit-checks
+      run: TERM=dumb bun g:check:fast
+      stage_fixed: true
 
     git-secrets:
       run: |
@@ -37,9 +38,15 @@ pre-commit:
 
 post-checkout:
   commands:
-    generate-biome-config:
-      files: git diff --name-only {1} {2}
-      glob: "packages/biome-config/**"
-      run: |
-        echo "Biome config files changed, regenerating config..."
-        bun biome-config prepare
+    check-deps-sync:
+      run: ./scripts/check-deps-sync.sh
+
+post-merge:
+  commands:
+    check-deps-sync:
+      run: ./scripts/check-deps-sync.sh
+
+post-rewrite:
+  commands:
+    check-deps-sync:
+      run: ./scripts/check-deps-sync.sh

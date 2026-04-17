@@ -1,16 +1,17 @@
 import { Data } from 'functions/utils/cache'
 import getPool from 'functions/utils/getPool'
+import getPosition from 'functions/utils/getPosition'
 import { getRequest } from 'functions/utils/getRequest'
 import getToken from 'functions/utils/getToken'
 import { Context, Next } from 'hono'
 import { encode } from 'html-entities'
-import { MetaTagInjectorInput } from 'shared-cloud/metatags'
-import { paths } from 'src/pages/paths'
+import { paths } from '~/pages/paths'
+import { MetaTagInjectorInput } from '~/shared-cloud/metatags'
 
 function doesMatchPath(path: string): boolean {
   const regexPaths = paths.map((p) => '^' + p.replace(/:[^/]+/g, '[^/]+').replace(/\*/g, '.*') + '$')
   // These come from a constant we define (paths.ts), so we don't need to worry about them being malicious.
-  // eslint-disable-next-line security/detect-non-literal-regexp
+  // oxlint-disable-next-line security/detect-non-literal-regexp
   return regexPaths.some((regex) => new RegExp(regex).test(path))
 }
 
@@ -34,7 +35,21 @@ function parseExplorePath(pathname: string): { type: 'token' | 'pool'; networkNa
   return null
 }
 
-// eslint-disable-next-line max-params
+function parsePositionPath(
+  pathname: string,
+): { version: 'v2' | 'v3' | 'v4'; chainName: string; identifier: string } | null {
+  const match = pathname.match(/^\/positions\/(v2|v3|v4)\/([^/]+)\/([^/]+)$/)
+  if (match) {
+    return {
+      version: match[1] as 'v2' | 'v3' | 'v4',
+      chainName: match[2],
+      identifier: match[3],
+    }
+  }
+  return null
+}
+
+// oxlint-disable-next-line max-params
 function append(tags: string, attribute: string, content: string): string {
   return tags + `<meta ${attribute} content="${encode(content)}" data-rh="true">\n`
 }
@@ -100,6 +115,30 @@ async function fetchExploreData({
   return data ? { title: data.title, image: data.image, url: requestUrl } : null
 }
 
+async function fetchPositionData({
+  version,
+  chainName,
+  identifier,
+  origin,
+  requestUrl,
+}: {
+  version: 'v2' | 'v3' | 'v4'
+  chainName: string
+  identifier: string
+  origin: string
+  requestUrl: string
+}): Promise<MetaTagInjectorInput | null> {
+  const cacheUrl = `${origin}/positions/${version}/${chainName}/${identifier}`
+
+  const data = await getRequest({
+    url: cacheUrl,
+    getData: () => getPosition({ version, chainName, identifier, url: cacheUrl }),
+    validateData: (data): data is NonNullable<Awaited<ReturnType<typeof getPosition>>> => Boolean(data.title),
+  })
+
+  return data ? { title: data.title, image: data.image, url: requestUrl } : null
+}
+
 export async function metaTagInjectionMiddleware(c: Context, next: Next): Promise<Response> {
   const requestURL = new URL(c.req.url)
 
@@ -122,6 +161,7 @@ export async function metaTagInjectionMiddleware(c: Context, next: Next): Promis
     const html = await clonedResponse.text()
 
     const exploreData = parseExplorePath(requestURL.pathname)
+    const positionData = parsePositionPath(requestURL.pathname)
     let data: MetaTagInjectorInput
 
     if (exploreData) {
@@ -139,6 +179,21 @@ export async function metaTagInjectionMiddleware(c: Context, next: Next): Promis
       }
 
       data = exploreMeta
+    } else if (positionData) {
+      const origin = requestURL.origin
+      const positionMeta = await fetchPositionData({
+        version: positionData.version,
+        chainName: positionData.chainName,
+        identifier: positionData.identifier,
+        origin,
+        requestUrl: c.req.url,
+      })
+
+      if (!positionMeta) {
+        return originalResponse
+      }
+
+      data = positionMeta
     } else {
       const imageUri = requestURL.origin + '/images/1200x630_Rich_Link_Preview_Image.png'
       data = {

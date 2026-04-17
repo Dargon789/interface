@@ -1,7 +1,7 @@
 import isArray from 'lodash/isArray'
 import isEqual from 'lodash/isEqual'
 import React, { CSSProperties, Fragment, Key, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
+// oxlint-disable-next-line typescript/no-restricted-imports
 import { LayoutChangeEvent } from 'react-native'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { VariableSizeList as List } from 'react-window'
@@ -86,6 +86,7 @@ export function OnchainItemList<T extends OnchainItemListOption>({
             sectionKey: section.sectionKey,
             rightElement: section.rightElement,
             endElement: section.endElement,
+            sectionHeader: section.sectionHeader,
           },
           key: section.sectionKey,
           renderSectionHeader,
@@ -116,7 +117,7 @@ export function OnchainItemList<T extends OnchainItemListOption>({
 
   // Used for rendering the sticky header
   const activeSessionIndex = useMemo(() => {
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     return items.slice(0, firstVisibleIndex + 1).reduceRight((acc, item, index) => {
       return acc === -1 && isSectionHeader(item) ? index : acc
     }, -1)
@@ -156,6 +157,7 @@ export function OnchainItemList<T extends OnchainItemListOption>({
   )
 
   const ListContent = useCallback(
+    // oxlint-disable-next-line universe-custom/no-nested-component-definitions -- react-window requires inline component for row renderer
     ({ data, index, style }: { data: OnchainItemListData<T>[]; index: number; style: CSSProperties }) => {
       if (activeSessionIndex === index) {
         return null
@@ -245,6 +247,9 @@ export function OnchainItemList<T extends OnchainItemListOption>({
           if (!sections.length) {
             return <Fragment />
           }
+
+          // Prevent overfitting the list, resulting in showing double scroll bar
+          const correctedHeight = height - 1
           return (
             <Flex position="relative">
               <Flex position="absolute" top={0} width="100%" zIndex={zIndexes.sticky}>
@@ -255,7 +260,7 @@ export function OnchainItemList<T extends OnchainItemListOption>({
               <List
                 ref={ref}
                 outerRef={listOuterRef}
-                height={height}
+                height={correctedHeight}
                 itemCount={items.length}
                 itemData={items}
                 itemSize={getRowHeight}
@@ -311,7 +316,12 @@ type RowProps<T extends OnchainItemListOption> = {
   windowWidth: number
   updateRowHeight?: (index: number, height: number) => void
 }
-function _Row<T extends OnchainItemListOption>({ index, itemData, style, updateRowHeight }: RowProps<T>): JSX.Element {
+function RowInner<T extends OnchainItemListOption>({
+  index,
+  itemData,
+  style,
+  updateRowHeight,
+}: RowProps<T>): JSX.Element {
   const rowRef = useRef<HTMLElement>(null)
 
   const handleLayout = useCallback(
@@ -341,4 +351,4 @@ function _Row<T extends OnchainItemListOption>({ index, itemData, style, updateR
   )
 }
 
-const Row = React.memo(_Row, isEqual)
+const Row = React.memo(RowInner, isEqual)

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Checkbox, Flex, Popover, Text, TouchableArea, useSporeColors } from 'ui/src'
-import { DoubleChevronInverted } from 'ui/src/components/icons'
+import { ChevronsOut } from 'ui/src/components/icons'
 import { iconSizes, spacing } from 'ui/src/theme'
 import { AddressDisplay } from 'uniswap/src/components/accounts/AddressDisplay'
 import { UniswapContext, useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
@@ -55,7 +55,7 @@ export function AccountSelectPopover({
           <Popover.Trigger asChild>
             <Flex row alignItems="center" justifyContent="flex-end" gap="$spacing4">
               <OverlappingAccountIcons accountAddresses={selectedAccountAddresses} iconSize={iconSizes.icon24} />
-              {accountIsSwitchable && <DoubleChevronInverted color="$neutral3" size={iconSizes.icon16} />}
+              {accountIsSwitchable && <ChevronsOut color="$neutral3" size={iconSizes.icon16} />}
             </Flex>
           </Popover.Trigger>
         </Flex>
@@ -64,7 +64,7 @@ export function AccountSelectPopover({
       <Popover.Content
         elevate
         borderRadius="$rounded20"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$surface3"
         backgroundColor="$surface1"
         p="$spacing16"
@@ -86,11 +86,12 @@ export function AccountSelectPopover({
                 px="$spacing8"
                 py="$spacing4"
                 pressStyle={{ backgroundColor: '$surface2' }}
+                maxWidth="100%"
                 onPress={() => handleAccountSelect(address)}
               >
                 <AddressDisplay
+                  grow
                   showAccountIcon
-                  flexGrow={false}
                   address={address}
                   hideAddressInSubtitle={false}
                   size={iconSizes.icon24}
@@ -98,7 +99,6 @@ export function AccountSelectPopover({
                   variant="buttonLabel3"
                   captionVariant="body4"
                 />
-                <Flex grow={true} />
                 <Checkbox
                   checked={isChecked}
                   size="$icon.16"

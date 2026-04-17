@@ -1,9 +1,9 @@
-import { brushHandleAccentPath, brushHandlePath, OffScreenHandle } from 'components/Charts/LiquidityRangeInput/svg'
 import { BrushBehavior, brushY, D3BrushEvent, ScaleLinear, select } from 'd3'
-import usePrevious from 'hooks/usePrevious'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSporeColors } from 'ui/src'
+import { brushHandleAccentPath, brushHandlePath, OffScreenHandle } from '~/components/Charts/LiquidityRangeInput/svg'
+import usePrevious from '~/hooks/usePrevious'
 
 // flips the handles draggers when close to the container edges
 const FLIP_HANDLE_THRESHOLD_PX = 20
@@ -15,7 +15,7 @@ const BRUSH_EXTENT_MARGIN_PX = 2
  * Returns true if every element in `a` maps to the
  * same pixel coordinate as elements in `b`
  */
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 const compare = (a: [number, number], b: [number, number], yScale: ScaleLinear<number, number>): boolean => {
   // normalize pixels to 1 decimals
   const aNorm = a.map((y) => yScale(y).toFixed(1))

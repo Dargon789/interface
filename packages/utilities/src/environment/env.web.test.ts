@@ -17,9 +17,6 @@ describe('env', () => {
   })
 
   afterEach(() => {
-    if ('__playwright__binding__' in window) {
-      delete (window as any).__playwright__binding__
-    }
     process.env = originalEnv
   })
 
@@ -42,23 +39,13 @@ describe('env', () => {
       expect(isPlaywrightEnv()).toBe(false)
     })
 
-    it('should return true', async () => {
-      // eslint-disable-next-line no-extra-semi
-      ;(globalThis as any).__playwright__binding__ = {}
-
-      ;(window as any).__playwright__binding__ = {}
+    it('should return true when REACT_APP_IS_PLAYWRIGHT_ENV is set', async () => {
+      process.env.REACT_APP_IS_PLAYWRIGHT_ENV = 'true'
 
       mockPlatform()
 
       const { isPlaywrightEnv } = await import('utilities/src/environment/env.web')
-
-      const result = isPlaywrightEnv()
-
-      delete (globalThis as any).__playwright__binding__
-
-      delete (window as any).__playwright__binding__
-
-      expect(result).toBe(true)
+      expect(isPlaywrightEnv()).toBe(true)
     })
   })
 

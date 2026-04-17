@@ -1,13 +1,14 @@
 import { provideDeviceIdService } from '@universe/api/src/provideDeviceIdService'
 import { provideSessionStorage } from '@universe/api/src/provideSessionStorage'
 import { provideUniswapIdentifierService } from '@universe/api/src/provideUniswapIdentifierService'
-import { getTransport } from '@universe/api/src/transport'
+import { getTransport, type Interceptors } from '@universe/api/src/transport'
 import {
   createNoopSessionService,
   createSessionClient,
   createSessionRepository,
   createSessionService,
   type SessionService,
+  type UniswapIdentifierService,
 } from '@universe/sessions'
 import type { Logger } from 'utilities/src/logger/logger'
 import { isWebApp } from 'utilities/src/platform'
@@ -17,6 +18,10 @@ function provideSessionService(ctx: {
   getBaseUrl: () => string
   getIsSessionServiceEnabled: () => boolean
   getLogger?: () => Logger
+  /** Optional custom UniswapIdentifierService. If not provided, uses default localStorage-based service. */
+  uniswapIdentifierService?: UniswapIdentifierService
+  /** Optional ConnectRPC interceptors for the session transport */
+  interceptors?: Interceptors
 }): SessionService {
   if (!ctx.getIsSessionServiceEnabled()) {
     return createNoopSessionService()
@@ -34,11 +39,17 @@ function provideSessionService(ctx: {
  *
  * When more services are added to the Entry Gateway, we can remove this and rely on those typical requests to instantiate the cookie.
  */
-function getWebAppSessionService(ctx: { getBaseUrl: () => string; getLogger?: () => Logger }): SessionService {
+function getWebAppSessionService(ctx: {
+  getBaseUrl: () => string
+  getLogger?: () => Logger
+  uniswapIdentifierService?: UniswapIdentifierService
+  interceptors?: Interceptors
+}): SessionService {
   const sessionClient = createSessionClient({
     transport: getTransport({
       getBaseUrl: ctx.getBaseUrl,
       getHeaders: () => ({ 'x-request-source': REQUEST_SOURCE }),
+      interceptors: ctx.interceptors,
       options: {
         credentials: 'include',
       },
@@ -50,12 +61,16 @@ function getWebAppSessionService(ctx: { getBaseUrl: () => string; getLogger?: ()
   return createSessionService({
     sessionStorage: provideSessionStorage(),
     deviceIdService: provideDeviceIdService(),
-    uniswapIdentifierService: provideUniswapIdentifierService(),
+    uniswapIdentifierService: ctx.uniswapIdentifierService ?? provideUniswapIdentifierService(),
     sessionRepository,
   })
 }
 
-function getExtensionSessionService(ctx: { getBaseUrl: () => string; getLogger?: () => Logger }): SessionService {
+function getExtensionSessionService(ctx: {
+  getBaseUrl: () => string
+  getLogger?: () => Logger
+  uniswapIdentifierService?: UniswapIdentifierService
+}): SessionService {
   const sessionClient = createSessionClient({
     transport: getTransport({
       getBaseUrl: ctx.getBaseUrl,
@@ -68,7 +83,7 @@ function getExtensionSessionService(ctx: { getBaseUrl: () => string; getLogger?:
   return createSessionService({
     sessionStorage: provideSessionStorage(),
     deviceIdService: provideDeviceIdService(),
-    uniswapIdentifierService: provideUniswapIdentifierService(),
+    uniswapIdentifierService: ctx.uniswapIdentifierService ?? provideUniswapIdentifierService(),
     sessionRepository,
   })
 }

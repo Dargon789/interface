@@ -18,6 +18,7 @@ export enum TokenDataReportOption {
   Volume = 'volume',
   PriceChart = 'price_chart',
   TokenDetails = 'token_details',
+  Performance = 'performance',
   Other = 'other',
 }
 
@@ -29,6 +30,11 @@ export enum PoolDataReportOption {
   Other = 'other',
 }
 
+export enum PortfolioDataReportOption {
+  Performance = 'performance',
+  Other = 'other',
+}
+
 export function submitTokenIssueReport({
   source,
   chainId,
@@ -36,7 +42,7 @@ export function submitTokenIssueReport({
   tokenName,
   isMarkedSpam,
   reportOptions,
-  reportText,
+  reportTexts,
 }: {
   source: 'portfolio' | 'token-details'
   chainId: UniverseChainId
@@ -44,7 +50,7 @@ export function submitTokenIssueReport({
   tokenName?: string
   isMarkedSpam?: Maybe<boolean>
   reportOptions: TokenReportOption[]
-  reportText: string
+  reportTexts: Map<TokenReportOption, string>
 }): void {
   sendAnalyticsEvent(UniswapEventName.SpamReportSubmitted, {
     type: 'token',
@@ -57,7 +63,7 @@ export function submitTokenIssueReport({
     imposter_token: reportOptions.includes(TokenReportOption.Imposter),
     hidden_fees: reportOptions.includes(TokenReportOption.HiddenFees),
     something_else: reportOptions.includes(TokenReportOption.Other),
-    text: reportOptions.includes(TokenReportOption.Other) ? reportText : undefined,
+    text: reportTexts.get(TokenReportOption.Other),
   })
 }
 
@@ -67,14 +73,14 @@ export function submitTokenDataReport({
   tokenName,
   isMarkedSpam,
   reportOptions,
-  reportText,
+  reportTexts,
 }: {
   chainId: UniverseChainId
   tokenAddress?: string
   tokenName?: string
   isMarkedSpam?: Maybe<boolean>
   reportOptions: TokenDataReportOption[]
-  reportText: string
+  reportTexts: Map<TokenDataReportOption, string>
 }): void {
   sendAnalyticsEvent(UniswapEventName.DataReportSubmitted, {
     type: 'data',
@@ -86,8 +92,10 @@ export function submitTokenDataReport({
     volume: reportOptions.includes(TokenDataReportOption.Volume),
     price_chart: reportOptions.includes(TokenDataReportOption.PriceChart),
     token_details: reportOptions.includes(TokenDataReportOption.TokenDetails),
+    performance: reportOptions.includes(TokenDataReportOption.Performance),
+    performance_text: reportTexts.get(TokenDataReportOption.Performance),
     something_else: reportOptions.includes(TokenDataReportOption.Other),
-    text: reportOptions.includes(TokenDataReportOption.Other) ? reportText : undefined,
+    text: reportTexts.get(TokenDataReportOption.Other),
   })
 }
 
@@ -169,7 +177,7 @@ export function submitPoolDataReport({
   token0,
   token1,
   reportOptions,
-  reportText,
+  reportTexts,
 }: {
   poolId: string
   chainId: UniverseChainId
@@ -177,7 +185,7 @@ export function submitPoolDataReport({
   token0: Currency
   token1: Currency
   reportOptions: PoolDataReportOption[]
-  reportText: string
+  reportTexts: Map<PoolDataReportOption, string>
 }): void {
   sendAnalyticsEvent(UniswapEventName.DataReportSubmitted, {
     type: 'pool',
@@ -191,6 +199,22 @@ export function submitPoolDataReport({
     volume: reportOptions.includes(PoolDataReportOption.Volume),
     liquidity: reportOptions.includes(PoolDataReportOption.Liquidity),
     something_else: reportOptions.includes(PoolDataReportOption.Other),
-    text: reportOptions.includes(PoolDataReportOption.Other) ? reportText : undefined,
+    text: reportTexts.get(PoolDataReportOption.Other),
+  })
+}
+
+export function submitPortfolioDataReport({
+  reportOptions,
+  reportTexts,
+}: {
+  reportOptions: PortfolioDataReportOption[]
+  reportTexts: Map<PortfolioDataReportOption, string>
+}): void {
+  sendAnalyticsEvent(UniswapEventName.DataReportSubmitted, {
+    type: 'portfolio',
+    performance: reportOptions.includes(PortfolioDataReportOption.Performance),
+    performance_text: reportTexts.get(PortfolioDataReportOption.Performance),
+    something_else: reportOptions.includes(PortfolioDataReportOption.Other),
+    text: reportTexts.get(PortfolioDataReportOption.Other),
   })
 }

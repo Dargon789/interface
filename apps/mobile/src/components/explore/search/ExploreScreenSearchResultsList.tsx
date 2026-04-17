@@ -40,7 +40,7 @@ const MobileSearchTab = ({
   )
 }
 
-export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearchResultsList({
+export const ExploreScreenSearchResultsList = memo(function ExploreScreenSearchResultsListInner({
   searchQuery,
   parsedSearchQuery,
   chainFilter,
@@ -60,7 +60,7 @@ export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearch
 
   const getTabLabel = useCallback(
     // So that the linter errors if someone adds a new tab without updating the switch statement
-    // eslint-disable-next-line consistent-return
+    // oxlint-disable-next-line consistent-return
     (tab: SearchTab): string => {
       switch (tab) {
         case SearchTab.All:
@@ -71,8 +71,6 @@ export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearch
           return t('common.pools')
         case SearchTab.Wallets:
           return t('explore.search.section.wallets')
-        case SearchTab.NFTCollections:
-          return t('common.nfts')
       }
     },
     [t],

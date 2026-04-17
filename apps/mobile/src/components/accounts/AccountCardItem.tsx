@@ -19,7 +19,7 @@ import { AppNotificationType, CopyNotificationType } from 'uniswap/src/features/
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { UnitagScreens } from 'uniswap/src/types/screens/mobile'
-import { setClipboard } from 'uniswap/src/utils/clipboard'
+import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { NumberType } from 'utilities/src/format/types'
 import { noop } from 'utilities/src/react/noop'
 import { useAccountListData } from 'wallet/src/features/accounts/useAccountListData'
@@ -203,6 +203,7 @@ export function AccountCardItem({
     <ContextMenu
       actions={menuActions}
       onPress={async (e): Promise<void> => {
+        // oxlint-disable-next-line typescript/await-thenable, typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
         await menuActions[e.nativeEvent.index]?.onPress?.()
       }}
     >

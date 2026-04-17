@@ -17,7 +17,7 @@ interface SelectTokenButtonProps {
   tokenColor?: string
 }
 
-export const SelectTokenButton = memo(function _SelectTokenButton({
+export const SelectTokenButton = memo(function SelectTokenButtonInner({
   selectedCurrencyInfo,
   onPress,
   testID,
@@ -77,7 +77,7 @@ export const SelectTokenButton = memo(function _SelectTokenButton({
             : t('tokens.selector.button.choose')}
         </Text>
         {!isCompact && (
-          <RotatableChevron color={chevronColor} direction="down" height="$spacing24" mx={-spacing.spacing2} />
+          <RotatableChevron color={chevronColor} direction="down" size="$icon.24" mx={-spacing.spacing2} />
         )}
       </Flex>
     </TouchableArea>

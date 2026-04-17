@@ -1,18 +1,19 @@
 {
+  "tags": ["scope:wallet", "type:lib"],
   "targets": {
-    "check:deps:usage": {
-      "command": "depcheck",
-      "options": {
-        "cwd": "{projectRoot}"
-      }
-    },
+    "check:deps:usage": {},
     "typecheck": {},
-    "lint:biome": {},
-    "lint:biome:fix": {},
-    "lint:eslint": {},
-    "lint:eslint:fix": {},
+    "typecheck:tsc": {},
+    "typecheck:tsgo": {},
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
     "lint": {},
     "lint:fix": {},
+    "check": {},
+    "check:fast": {},
     "test": {
       "command": "jest",
       "options": {

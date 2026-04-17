@@ -1,11 +1,12 @@
-import { CHART_DIMENSIONS } from 'components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/constants'
+import * as d3 from 'd3'
+import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityChartShared/constants'
 import type {
   ChartActions,
   ChartState,
   Renderer,
   RenderingContext,
-} from 'components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/types'
-import * as d3 from 'd3'
+} from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/store/types'
+import { getCurrentTickDotY } from '~/components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/utils/tickToY'
 
 export function createLiquidityRangeAreaRenderer({
   g,
@@ -24,53 +25,95 @@ export function createLiquidityRangeAreaRenderer({
     // Clear previous range area elements
     rangeAreaGroup.selectAll('*').remove()
 
-    const { colors, dimensions, priceToY } = context
-    const { minPrice, maxPrice, isFullRange } = getState()
+    const { dimensions, tickToY, currentTick, token0Color, token1Color } = context
+    const { minTick, maxTick, isFullRange } = getState()
 
     // Get drag behaviors
     const actions = getActions()
     const tickBasedDragBehavior = actions.createTickBasedDragBehavior()
 
     // Only draw if both prices are set
-    if (minPrice === undefined || maxPrice === undefined) {
+    if (minTick === undefined || maxTick === undefined) {
       return
     }
 
-    // Draw visual pink background that extends over liquidity area (no interactions)
-    rangeAreaGroup
-      .append('rect')
-      .attr('class', `price-range-element visual-bg`)
-      .attr('x', 0)
-      .attr('y', priceToY({ price: maxPrice, tickAlignment: 'top' }))
-      .attr(
-        'width',
-        dimensions.width + CHART_DIMENSIONS.LIQUIDITY_CHART_WIDTH - CHART_DIMENSIONS.LIQUIDITY_SECTION_OFFSET,
-      )
-      .attr(
-        'height',
-        priceToY({ price: minPrice, tickAlignment: 'bottom' }) - priceToY({ price: maxPrice, tickAlignment: 'top' }),
-      )
-      .attr('fill', colors.accent1.val)
-      .attr('opacity', 0.2)
-      .attr('stroke', 'none')
-      .style('pointer-events', 'none')
+    const rangeTopY = tickToY({ tick: maxTick, tickAlignment: 'top' })
+    const rangeBottomY = tickToY({ tick: minTick, tickAlignment: 'bottom' })
+    const rangeWidth =
+      dimensions.width + CHART_DIMENSIONS.LIQUIDITY_CHART_WIDTH - CHART_DIMENSIONS.LIQUIDITY_SECTION_OFFSET
+
+    const { renderedBuckets } = getState()
+    const { tickScale } = context
+    const dotY = getCurrentTickDotY({ currentTick, renderedBuckets, tickScale })
+
+    if (rangeTopY >= dotY && rangeBottomY >= dotY) {
+      // Entirely below the dot → token1Color
+      rangeAreaGroup
+        .append('rect')
+        .attr('class', 'price-range-element visual-bg')
+        .attr('x', 0)
+        .attr('y', rangeTopY)
+        .attr('width', rangeWidth)
+        .attr('height', rangeBottomY - rangeTopY)
+        .attr('fill', token1Color)
+        .attr('opacity', 0.2)
+        .attr('stroke', 'none')
+        .style('pointer-events', 'none')
+    } else if (rangeBottomY <= dotY) {
+      // Entirely above the dot → token0Color
+      rangeAreaGroup
+        .append('rect')
+        .attr('class', 'price-range-element visual-bg')
+        .attr('x', 0)
+        .attr('y', rangeTopY)
+        .attr('width', rangeWidth)
+        .attr('height', rangeBottomY - rangeTopY)
+        .attr('fill', token0Color)
+        .attr('opacity', 0.2)
+        .attr('stroke', 'none')
+        .style('pointer-events', 'none')
+    } else {
+      // Spans the dot → split at dotY
+      // Token0 portion (above dot)
+      rangeAreaGroup
+        .append('rect')
+        .attr('class', 'price-range-element visual-bg')
+        .attr('x', 0)
+        .attr('y', rangeTopY)
+        .attr('width', rangeWidth)
+        .attr('height', dotY - rangeTopY)
+        .attr('fill', token0Color)
+        .attr('opacity', 0.2)
+        .attr('stroke', 'none')
+        .style('pointer-events', 'none')
+
+      // Token1 portion (below dot)
+      rangeAreaGroup
+        .append('rect')
+        .attr('class', 'price-range-element visual-bg')
+        .attr('x', 0)
+        .attr('y', dotY)
+        .attr('width', rangeWidth)
+        .attr('height', rangeBottomY - dotY)
+        .attr('fill', token1Color)
+        .attr('opacity', 0.2)
+        .attr('stroke', 'none')
+        .style('pointer-events', 'none')
+    }
 
     if (isFullRange) {
       return
     }
 
-    // Draw interactive pink background only over main chart area (for dragging)
+    // Draw interactive background only over main chart area (for dragging)
     rangeAreaGroup
       .append('rect')
-      .attr('class', `price-range-element interactive-bg`)
-      .attr('x', 0) // Extend left to cover the margin area
-      .attr('y', priceToY({ price: maxPrice, tickAlignment: 'top' }))
-      .attr('width', dimensions.width) // Stop before liquidity area
-      .attr(
-        'height',
-        priceToY({ price: minPrice, tickAlignment: 'bottom' }) - priceToY({ price: maxPrice, tickAlignment: 'top' }),
-      )
-      .attr('fill', 'transparent') // Invisible, just for interactions
+      .attr('class', 'price-range-element interactive-bg')
+      .attr('x', 0)
+      .attr('y', rangeTopY)
+      .attr('width', dimensions.width)
+      .attr('height', rangeBottomY - rangeTopY)
+      .attr('fill', 'transparent')
       .attr('stroke', 'none')
       .attr('cursor', 'move')
       .call(tickBasedDragBehavior)

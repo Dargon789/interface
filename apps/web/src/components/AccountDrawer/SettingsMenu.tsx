@@ -1,57 +1,32 @@
-import { AnalyticsToggle } from 'components/AccountDrawer/AnalyticsToggle'
-import { AppVersionRow } from 'components/AccountDrawer/AppVersionRow'
-import { SlideOutMenu } from 'components/AccountDrawer/SlideOutMenu'
-import { TestnetsToggle } from 'components/AccountDrawer/TestnetsToggle'
-import Column from 'components/deprecated/Column'
-import Row from 'components/deprecated/Row'
-import { useAccount } from 'hooks/useAccount'
-import { deprecatedStyled } from 'lib/styled-components'
-import { ReactNode } from 'react'
-import { ChevronRight } from 'react-feather'
-import { Trans, useTranslation } from 'react-i18next'
-import { ThemedText } from 'theme/components'
-import ThemeToggle from 'theme/components/ThemeToggle'
-import { Flex, Text } from 'ui/src'
+import { useTranslation } from 'react-i18next'
+import { Button, Flex, Text } from 'ui/src'
+import { ChartBar } from 'ui/src/components/icons/ChartBar'
+import { Coins } from 'ui/src/components/icons/Coins'
+import { DocumentList } from 'ui/src/components/icons/DocumentList'
+import { Language } from 'ui/src/components/icons/Language'
+import { Power } from 'ui/src/components/icons/Power'
+import { ShieldCheck } from 'ui/src/components/icons/ShieldCheck'
 import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
 import { useAppFiatCurrency } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useCurrentLanguage, useLanguageInfo } from 'uniswap/src/features/language/hooks'
+import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import Trace from 'uniswap/src/features/telemetry/Trace'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { AnalyticsToggle } from '~/components/AccountDrawer/AnalyticsToggle'
+import { useOnDisconnect } from '~/components/AccountDrawer/DisconnectButton'
+import { SettingsButton } from '~/components/AccountDrawer/SettingsButton'
+import { SlideOutMenu } from '~/components/AccountDrawer/SlideOutMenu'
+import { TestnetsToggle } from '~/components/AccountDrawer/TestnetsToggle'
+import { useAccount } from '~/hooks/useAccount'
+import { ThemeToggleWithLabel } from '~/theme/components/ThemeToggle'
 
-const Container = deprecatedStyled(Column)`
-  height: 100%;
-`
-
-const StyledChevron = deprecatedStyled(ChevronRight)`
-  color: ${({ theme }) => theme.neutral2};
-`
-
-const LanguageLabel = deprecatedStyled(Row)`
-  white-space: nowrap;
-`
-
-const SettingsButton = ({
-  title,
-  currentState,
-  onClick,
-  testId,
-  showArrow = true,
-}: {
-  title: ReactNode
-  currentState?: ReactNode
-  onClick: () => void
-  testId?: string
-  showArrow?: boolean
-}) => (
-  <Flex row justifyContent="space-between" py="$padding12" onPress={onClick} testID={testId}>
-    <Text variant="body3" color="$neutral1">
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <Text variant="subheading2" color="$neutral2">
       {title}
     </Text>
-    <LanguageLabel gap="xs" align="center" width="min-content">
-      {currentState && <ThemedText.LabelSmall color="neutral2">{currentState}</ThemedText.LabelSmall>}
-      {showArrow && <StyledChevron size={20} />}
-    </LanguageLabel>
-  </Flex>
-)
+  )
+}
 
 export default function SettingsMenu({
   onClose,
@@ -59,48 +34,88 @@ export default function SettingsMenu({
   openLocalCurrencySettings,
   openPasskeySettings,
   openPortfolioBalanceSettings,
+  openStorageSettings,
 }: {
   onClose: () => void
   openLanguageSettings: () => void
   openLocalCurrencySettings: () => void
   openPasskeySettings: () => void
   openPortfolioBalanceSettings: () => void
+  openStorageSettings: () => void
 }) {
   const { t } = useTranslation()
   const activeLanguage = useCurrentLanguage()
   const activeLocalCurrency = useAppFiatCurrency()
   const languageInfo = useLanguageInfo(activeLanguage)
   const connectedWithEmbeddedWallet =
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
     useAccount().connector?.id === CONNECTION_PROVIDER_IDS.EMBEDDED_WALLET_CONNECTOR_ID
+  const onLogOut = useOnDisconnect()
 
   return (
-    <SlideOutMenu title={<Trans i18nKey="common.settings" />} onClose={onClose} versionComponent={<AppVersionRow />}>
-      <Container>
-        <Flex gap="$gap12">
-          <ThemeToggle />
-
+    <SlideOutMenu title={t('common.settings')} onClose={onClose} height="100%">
+      <Flex gap="$gap24" px="$padding12">
+        <Flex gap="$gap8">
+          <SectionHeader title={t('settings.section.preferences')} />
+          <ThemeToggleWithLabel />
           <SettingsButton
+            icon={<Coins size="$icon.24" color="$neutral2" />}
             title={t('settings.setting.currency.title')}
             currentState={activeLocalCurrency}
             onClick={openLocalCurrencySettings}
             testId="local-currency-settings-button"
           />
           <SettingsButton
+            icon={<Language size="$icon.24" color="$neutral2" />}
             title={t('common.language')}
             currentState={languageInfo.displayName}
             onClick={openLanguageSettings}
             testId={TestID.LanguageSettingsButton}
           />
           <SettingsButton
+            icon={<ChartBar size="$icon.24" color="$neutral2" />}
             title={t('settings.setting.balancesActivity.title')}
             onClick={openPortfolioBalanceSettings}
             testId="portfolio-balance-settings-button"
           />
-          {connectedWithEmbeddedWallet && <SettingsButton title={t('common.passkeys')} onClick={openPasskeySettings} />}
         </Flex>
-        <TestnetsToggle />
-        <AnalyticsToggle />
-      </Container>
+
+        <Flex gap="$gap8">
+          <SectionHeader title={t('settings.section.privacyAndSecurity')} />
+          {connectedWithEmbeddedWallet && (
+            <SettingsButton
+              icon={<ShieldCheck size="$icon.24" color="$neutral2" />}
+              title={t('settings.setting.loginMethods')}
+              onClick={openPasskeySettings}
+              testId={TestID.PasskeySettings}
+            />
+          )}
+          <AnalyticsToggle />
+        </Flex>
+
+        <Flex gap="$gap8">
+          <SectionHeader title={t('common.advanced')} />
+          <SettingsButton
+            icon={<DocumentList size="$icon.24" color="$neutral2" />}
+            title={t('settings.setting.storage.title')}
+            onClick={openStorageSettings}
+          />
+          <TestnetsToggle />
+        </Flex>
+
+        <Trace logPress element={ElementName.SignOut}>
+          <Flex row alignSelf="stretch" display={connectedWithEmbeddedWallet ? 'flex' : 'none'} mb="$padding8">
+            <Button
+              size="medium"
+              emphasis="secondary"
+              icon={<Power size="$icon.20" color="$neutral2" />}
+              onPress={onLogOut}
+            >
+              {t('settings.logOut')}
+            </Button>
+          </Flex>
+        </Trace>
+      </Flex>
     </SlideOutMenu>
   )
 }

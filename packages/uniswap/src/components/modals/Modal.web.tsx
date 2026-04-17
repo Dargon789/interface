@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-// biome-ignore lint/style/noRestrictedImports: needed here
+// oxlint-disable-next-line no-restricted-imports -- needed here
 import { AdaptiveWebModal, WebModalWithBottomAttachment } from 'ui/src/components/modal/AdaptiveWebModal'
 import { INTERFACE_NAV_HEIGHT } from 'ui/src/theme'
 import type { ModalProps } from 'uniswap/src/components/modals/ModalProps'
@@ -8,6 +8,7 @@ import { isExtensionApp, isWebApp } from 'utilities/src/platform'
 
 const ANIMATION_MS = 200
 
+// oxlint-disable-next-line complexity
 export function Modal({
   children,
   name,
@@ -35,6 +36,11 @@ export function Modal({
   isDismissible = true,
   hideHandlebar,
   borderWidth,
+  borderColor,
+  overlayOpacity,
+  snapPointsMode,
+  snapPoints,
+  testID,
 }: ModalProps): JSX.Element {
   const [fullyClosed, setFullyClosed] = useState(false)
 
@@ -65,8 +71,11 @@ export function Modal({
         <ModalComponent
           position={position}
           bottomAttachment={bottomAttachment}
+          data-testid={testID}
           shadowOpacity={isExtensionApp ? 0 : undefined}
-          borderWidth={borderWidth !== undefined ? borderWidth : isExtensionApp ? 0 : undefined}
+          borderWidth={borderWidth !== undefined ? borderWidth : isExtensionApp ? 1 : undefined}
+          borderColor={borderColor !== undefined ? borderColor : isExtensionApp ? '$surface2' : undefined}
+          overlayOpacity={overlayOpacity !== undefined ? overlayOpacity : isExtensionApp ? 1 : undefined}
           adaptToSheet={isWebApp}
           alignment={alignment}
           backgroundColor={backgroundColor}
@@ -79,7 +88,9 @@ export function Modal({
           gap={gap}
           zIndex={zIndex}
           hideHandlebar={hideHandlebar}
-          $sm={{
+          snapPointsMode={snapPointsMode}
+          snapPoints={snapPoints}
+          $md={{
             p: padding ?? '$spacing12',
             ...(isWebApp && {
               '$platform-web': {

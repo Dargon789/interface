@@ -16,6 +16,7 @@ function provideSessionService(ctx: {
   getBaseUrl: () => string
   getIsSessionServiceEnabled: () => boolean
   getLogger?: () => Logger
+  interceptors?: import('@universe/api/src/transport').Interceptors
 }): SessionService {
   if (!ctx.getIsSessionServiceEnabled()) {
     return createNoopSessionService()

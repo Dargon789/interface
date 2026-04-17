@@ -155,7 +155,8 @@ export function addFiatSymbolToNumber({
   const isSymbolAtFront = parts[0]?.type === 'currency'
   const extra = isSymbolAtFront // Some locales have something like an extra space after symbol
     ? parts[1]?.type === 'literal'
-      ? parts[1]?.value
+      ? // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
+        parts[1]?.value
       : ''
     : parts[parts.length - 2]?.type === 'literal'
       ? parts[parts.length - 2]?.value

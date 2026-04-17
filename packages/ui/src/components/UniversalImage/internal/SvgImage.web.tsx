@@ -1,16 +1,8 @@
-import { Flex } from 'ui/src/components/layout/Flex'
 import { PlainImage } from 'ui/src/components/UniversalImage/internal/PlainImage'
-import { SvgImageProps } from 'ui/src/components/UniversalImage/types'
-import { useSvgData } from 'ui/src/components/UniversalImage/utils'
+import { type SvgImageProps } from 'ui/src/components/UniversalImage/types'
 
-export function SvgImage({ uri, size, autoplay, fallback }: SvgImageProps): JSX.Element | null {
-  const svgData = useSvgData(uri, autoplay)
-
-  if (!svgData?.content || !svgData.aspectRatio) {
-    return fallback ?? <Flex />
-  }
-
+export function SvgImage({ uri, size, fallback, style, resizeMode }: SvgImageProps): JSX.Element | null {
   // Since this would violate HTTP CSP for images to use the direct data
   // from a fetch call, we use plain image for SVG's on web
-  return <PlainImage fallback={fallback} size={size} uri={uri} />
+  return <PlainImage fallback={fallback} resizeMode={resizeMode} size={size} style={style} uri={uri} />
 }

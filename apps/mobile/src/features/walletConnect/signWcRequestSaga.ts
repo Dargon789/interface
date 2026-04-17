@@ -1,4 +1,4 @@
-/* eslint-disable complexity */
+/* oxlint-disable complexity */
 import { buildAuthObject, getSdkError } from '@walletconnect/utils'
 import { providers } from 'ethers'
 import { wcWeb3Wallet } from 'src/features/walletConnect/walletConnectClient'
@@ -121,7 +121,7 @@ function* signWcRequest(params: SignMessageParams | SignTransactionParams) {
           chainId: txParams.chainId,
         }),
       )
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
     } else if (method === EthMethod.WalletSendCalls && params.request.type === EthMethod.WalletSendCalls) {
       const txParams: ExecuteTransactionParams = {
         chainId: params.request.chainId,
@@ -195,7 +195,7 @@ function* signWcRequest(params: SignMessageParams | SignTransactionParams) {
           result,
         },
       })
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
     } else if (params.dappRequestInfo.requestType === DappRequestType.UwULink && params.dappRequestInfo.webhook) {
       fetch(params.dappRequestInfo.webhook, {
         method: 'POST',

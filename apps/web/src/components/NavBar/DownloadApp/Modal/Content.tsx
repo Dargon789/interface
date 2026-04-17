@@ -1,10 +1,11 @@
 import { PropsWithChildren, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ExternalLink } from 'theme/components/Links'
 import { Flex, FlexProps, Image, ModalCloseIcon, Text, TouchableArea } from 'ui/src'
 import { UNISWAP_LOGO } from 'ui/src/assets'
 import { BackArrow } from 'ui/src/components/icons/BackArrow'
 import { iconSizes } from 'ui/src/theme'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { ExternalLink } from '~/theme/components/Links'
 
 export function ModalContent({
   title,
@@ -33,7 +34,7 @@ export function ModalContent({
       <Flex pt="$padding16">
         <Flex row mt="$spacing6" mb="$spacing6" px="$spacing20" width="100%">
           {goBack && (
-            <TouchableArea onPress={goBack}>
+            <TouchableArea testID={TestID.Back} onPress={goBack}>
               <BackArrow size="$icon.20" color="$neutral2" hoverColor="$neutral2Hovered" />
             </TouchableArea>
           )}

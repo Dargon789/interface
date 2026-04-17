@@ -1,8 +1,8 @@
 import { Web3Provider } from '@ethersproject/providers'
-import { useAccount } from 'hooks/useAccount'
 import { useMemo } from 'react'
 import type { Chain, Client, Transport } from 'viem'
 import { useClient, useConnectorClient } from 'wagmi'
+import { useAccount } from '~/hooks/useAccount'
 
 const providers = new WeakMap<Client, Web3Provider>()
 
@@ -12,7 +12,7 @@ export function clientToProvider(client?: Client<Transport, Chain>, chainId?: nu
   }
   const { chain, transport } = client
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const network = chain
     ? {
         chainId: chain.id,

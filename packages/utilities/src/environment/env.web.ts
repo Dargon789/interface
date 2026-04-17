@@ -12,10 +12,7 @@ export function isTestEnv(): boolean {
 }
 
 export function isPlaywrightEnv(): boolean {
-  return (
-    (typeof window !== 'undefined' && typeof window.__playwright__binding__ !== 'undefined') ||
-    process.env.REACT_APP_IS_PLAYWRIGHT_ENV === 'true'
-  )
+  return process.env.REACT_APP_IS_PLAYWRIGHT_ENV === 'true'
 }
 
 export function isDevEnv(): boolean {
@@ -25,7 +22,7 @@ export function isDevEnv(): boolean {
     const chromeRuntime = getChromeRuntime()
 
     if (!chromeRuntime) {
-      // biome-ignore lint/suspicious/noConsole: Console logging needed for debugging
+      // oxlint-disable-next-line no-console -- Console logging needed for debugging
       console.warn(
         'Avoid using `isDevEnv()` inside the injected script. Use `__DEV__` instead. ' +
           '`chrome.runtime` is only available when the injected script is running inside a trusted site (`app.uniswap.org`). ' +
@@ -53,7 +50,7 @@ export function isBetaEnv(): boolean {
   } else if (isExtensionApp) {
     const chromeRuntime = getChromeRuntime()
     if (!chromeRuntime) {
-      // biome-ignore lint/suspicious/noConsole: Console logging needed for debugging
+      // oxlint-disable-next-line no-console -- Console logging needed for debugging
       console.warn(
         'Avoid using `isBetaEnv()` inside the injected script. ' +
           '`chrome.runtime` is only available when the injected script is running inside a trusted site (`app.uniswap.org`). ' +
@@ -76,7 +73,7 @@ export function isProdEnv(): boolean {
   } else if (isExtensionApp) {
     const chromeRuntime = getChromeRuntime()
     if (!chromeRuntime) {
-      // biome-ignore lint/suspicious/noConsole: Console logging needed for debugging
+      // oxlint-disable-next-line no-console -- Console logging needed for debugging
       console.warn(
         'Avoid using `isProdEnv()` inside the injected script. ' +
           '`chrome.runtime` is only available when the injected script is running inside a trusted site (`app.uniswap.org`). ' +
@@ -95,7 +92,7 @@ export function isProdEnv(): boolean {
 
 function createAndLogError(funcName: string): Error {
   const e = new Error('Unsupported app environment that failed all checks')
-  // biome-ignore lint/suspicious/noConsole: Console logging needed for debugging
+  // oxlint-disable-next-line no-console -- Console logging needed for debugging
   console.error(`[utilities/env.web.ts/${funcName}]`, e)
   return e
 }

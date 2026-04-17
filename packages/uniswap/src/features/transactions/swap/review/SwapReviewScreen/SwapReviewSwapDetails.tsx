@@ -3,13 +3,13 @@ import {
   useTransactionSettingsAutoSlippageToleranceStore,
   useTransactionSettingsStore,
 } from 'uniswap/src/features/transactions/components/settings/stores/transactionSettingsStore/useTransactionSettingsStore'
-import { SwapDetails } from 'uniswap/src/features/transactions/swap/review/SwapDetails/SwapDetails'
 import { useSwapReviewCallbacksStore } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewCallbacksStore/useSwapReviewCallbacksStore'
 import { useSwapReviewTransactionStore } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewTransactionStore/useSwapReviewTransactionStore'
 import {
   useSwapReviewWarningStateActions,
   useSwapReviewWarningStore,
 } from 'uniswap/src/features/transactions/swap/review/stores/swapReviewWarningStore/useSwapReviewWarningStore'
+import { SwapDetails } from 'uniswap/src/features/transactions/swap/review/SwapDetails/SwapDetails'
 
 export const SwapReviewSwapDetails = memo(function SwapReviewSwapDetails(): JSX.Element | null {
   const {
@@ -23,6 +23,7 @@ export const SwapReviewSwapDetails = memo(function SwapReviewSwapDetails(): JSX.
     reviewScreenWarning,
     txSimulationErrors,
     swapTxContext,
+    onAcceptTrade,
   } = useSwapReviewTransactionStore((s) => ({
     acceptedDerivedSwapInfo: s.acceptedDerivedSwapInfo,
     derivedSwapInfo: s.derivedSwapInfo,
@@ -34,13 +35,11 @@ export const SwapReviewSwapDetails = memo(function SwapReviewSwapDetails(): JSX.
     reviewScreenWarning: s.reviewScreenWarning,
     txSimulationErrors: s.txSimulationErrors,
     swapTxContext: s.swapTxContext,
+    onAcceptTrade: s.onAcceptTrade,
   }))
   const tokenWarningChecked = useSwapReviewWarningStore((s) => s.tokenWarningChecked)
   const { setTokenWarningChecked } = useSwapReviewWarningStateActions()
-  const { onAcceptTrade, onShowWarning } = useSwapReviewCallbacksStore((s) => ({
-    onAcceptTrade: s.onAcceptTrade,
-    onShowWarning: s.onShowWarning,
-  }))
+  const onShowWarning = useSwapReviewCallbacksStore((s) => s.onShowWarning)
   const customSlippageTolerance = useTransactionSettingsStore((s) => s.customSlippageTolerance)
   const autoSlippageTolerance = useTransactionSettingsAutoSlippageToleranceStore((s) => s.autoSlippageTolerance)
 

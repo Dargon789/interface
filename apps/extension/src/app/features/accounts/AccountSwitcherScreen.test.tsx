@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* oxlint-disable typescript/no-var-requires */
 import { AccountSwitcherScreen } from 'src/app/features/accounts/AccountSwitcherScreen'
 import { preloadedExtensionState } from 'src/test/fixtures/redux'
 import { cleanup, render } from 'src/test/test-utils'

@@ -1,6 +1,7 @@
 import { Token } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
 import { ETH_LOGO, WORLD_CHAIN_LOGO } from 'ui/src/assets'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import { DEFAULT_NATIVE_ADDRESS_LEGACY, getQuicknodeEndpointUrl } from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
 import { GENERIC_L2_GAS_CONFIG } from 'uniswap/src/features/chains/gasDefaults'
@@ -16,14 +17,7 @@ import { ElementName } from 'uniswap/src/features/telemetry/constants'
 
 const tokens = buildChainTokens({
   stables: {
-    // Worldchain USDC.e has non standard symbol and name
-    USDC: new Token(
-      UniverseChainId.WorldChain,
-      '0x79A02482A880bCE3F13e09Da970dC34db4CD24d1',
-      6,
-      'USDC.e',
-      'Bridged USDC',
-    ),
+    USDC: new Token(UniverseChainId.WorldChain, '0x79A02482A880bCE3F13e09Da970dC34db4CD24d1', 6, 'USDC', 'USD Coin'),
   },
 })
 
@@ -44,10 +38,11 @@ export const WORLD_CHAIN_INFO = {
   docs: 'https://docs.worldcoin.org/',
   elementName: ElementName.ChainWorldChain,
   explorer: {
-    name: 'World Chain Mainnet Explorer',
+    name: 'WorldScan',
     url: 'https://worldscan.org/',
   },
   interfaceName: 'worldchain',
+  searchAliases: ['world chain'],
   label: 'World Chain',
   logo: WORLD_CHAIN_LOGO,
   nativeCurrency: {
@@ -58,6 +53,7 @@ export const WORLD_CHAIN_INFO = {
     logo: ETH_LOGO,
   },
   networkLayer: NetworkLayer.L2,
+  blockTimeMs: 2000,
   pendingTransactionsRetryOptions: undefined,
   rpcUrls: {
     [RPCType.Public]: {
@@ -68,7 +64,7 @@ export const WORLD_CHAIN_INFO = {
       http: [getQuicknodeEndpointUrl(UniverseChainId.WorldChain)],
     },
   },
-  urlParam: 'worldchain',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.WorldChain],
   statusPage: undefined,
   tokens,
   supportsV4: true,

@@ -1,4 +1,4 @@
-/* eslint-disable react-native/no-unused-styles */
+/* oxlint-disable react-native/no-unused-styles */
 import { FlashList, FlashListProps } from '@shopify/flash-list'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React, { RefObject, useCallback, useMemo } from 'react'
@@ -151,6 +151,7 @@ export const useScrollSync = ({
   scrollPairs: ScrollPair[]
   headerConfig: HeaderConfig
 }): { sync: (event: NativeSyntheticEvent<NativeScrollEvent>) => void } => {
+  // oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
   const sync: FlatListProps<unknown>['onMomentumScrollEnd'] | FlashListProps<unknown>['onMomentumScrollEnd'] =
     useCallback(
       (event: { nativeEvent: NativeScrollEvent }) => {

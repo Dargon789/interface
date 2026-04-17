@@ -1,9 +1,9 @@
 import { Currency, CurrencyAmount, Price, TradeType } from '@uniswap/sdk-core'
 import JSBI from 'jsbi'
 import { useEffect, useMemo, useState } from 'react'
-import { PositionField } from 'types/position'
 import { PollingInterval } from 'uniswap/src/constants/misc'
 import { useTrade } from 'uniswap/src/features/transactions/swap/hooks/useTrade'
+import { PositionField } from '~/types/position'
 
 export function useDefaultInitialPrice({
   currencies,
@@ -36,7 +36,7 @@ export function useDefaultInitialPrice({
   })
 
   // Reset price when currencyIn or currencyOut changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +currencyIn, +currencyOut
+  // oxlint-disable-next-line react/exhaustive-deps -- +currencyIn, +currencyOut
   useEffect(() => {
     setPrice(undefined)
   }, [currencyIn, currencyOut])

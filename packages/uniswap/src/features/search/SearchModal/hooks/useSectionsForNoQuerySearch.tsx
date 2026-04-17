@@ -8,6 +8,7 @@ import { useFavoriteWalletOptions } from 'uniswap/src/components/lists/items/wal
 import { OnchainItemSection, OnchainItemSectionName } from 'uniswap/src/components/lists/OnchainItemList/types'
 import { useOnchainItemListSection } from 'uniswap/src/components/lists/utils'
 import { useCurrencyInfosToTokenOptions } from 'uniswap/src/components/TokenSelector/hooks/useCurrencyInfosToTokenOptions'
+import { useMultichainSearchResultsToOptions } from 'uniswap/src/components/TokenSelector/hooks/useMultichainSearchResultsToOptions'
 import { useTrendingTokensCurrencyInfos } from 'uniswap/src/components/TokenSelector/hooks/useTrendingTokensCurrencyInfos'
 import { useExploreStatsQuery } from 'uniswap/src/data/rest/exploreStats'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -18,6 +19,7 @@ import {
   NUMBER_OF_RESULTS_SHORT,
 } from 'uniswap/src/features/search/SearchModal/constants'
 import { useRecentlySearchedOptions } from 'uniswap/src/features/search/SearchModal/hooks/useRecentlySearchedOptions'
+import { useSearchMultichainListTokens } from 'uniswap/src/features/search/SearchModal/hooks/useSearchMultichainListTokens'
 import { SearchTab } from 'uniswap/src/features/search/SearchModal/types'
 import { isMobileApp, isWebApp, isWebPlatform } from 'utilities/src/platform'
 
@@ -28,9 +30,6 @@ export function useSectionsForNoQuerySearch({
   chainFilter: UniverseChainId | null
   activeTab: SearchTab
 }): GqlResult<OnchainItemSection<SearchModalOption>[]> {
-  const viewExternalWalletsFeatureEnabled = useFeatureFlag(FeatureFlags.ViewExternalWalletsOnWeb)
-  const walletSearchEnabledOnWeb = isWebApp && viewExternalWalletsFeatureEnabled
-
   const recentlySearchedOptions: SearchModalOption[] = useRecentlySearchedOptions({
     chainFilter,
     activeTab,
@@ -43,6 +42,9 @@ export function useSectionsForNoQuerySearch({
     endElement: <ClearRecentSearchesButton />,
   })
 
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const isMultichainPath = multichainTokenUxEnabled && chainFilter === null
+
   const numberOfTrendingTokens =
     activeTab === SearchTab.All
       ? isMobileApp
@@ -50,16 +52,37 @@ export function useSectionsForNoQuerySearch({
         : NUMBER_OF_RESULTS_SHORT
       : NUMBER_OF_RESULTS_LONG
   const skipTrendingTokensQuery = activeTab !== SearchTab.Tokens && activeTab !== SearchTab.All
+
   const {
     data: tokens,
-    error: tokensError,
-    refetch: refetchTokens,
-    loading: loadingTokens,
-  } = useTrendingTokensCurrencyInfos(chainFilter, skipTrendingTokensQuery)
-  const trendingTokenOptions = useCurrencyInfosToTokenOptions({ currencyInfos: tokens })
+    error: flatTokensError,
+    refetch: refetchFlatTokens,
+    loading: flatTokensLoading,
+  } = useTrendingTokensCurrencyInfos(chainFilter, skipTrendingTokensQuery || isMultichainPath)
+
+  const {
+    data: multichainResults,
+    error: multichainTokensError,
+    refetch: refetchMultichainTokens,
+    loading: multichainTokensLoading,
+  } = useSearchMultichainListTokens({
+    pageSize: numberOfTrendingTokens,
+    skip: skipTrendingTokensQuery || !isMultichainPath,
+  })
+
+  const flatTokenOptions = useCurrencyInfosToTokenOptions({ currencyInfos: tokens })
+  const multichainTokenOptions = useMultichainSearchResultsToOptions({ results: multichainResults })
+
+  const tokensError = isMultichainPath ? multichainTokensError : flatTokensError
+  const loadingTokens = isMultichainPath ? multichainTokensLoading : flatTokensLoading
+  const refetchTokens = isMultichainPath ? refetchMultichainTokens : refetchFlatTokens
+  const trendingTokenOptions: SearchModalOption[] = isMultichainPath
+    ? (multichainTokenOptions ?? [])
+    : (flatTokenOptions ?? [])
+
   const trendingTokenSection = useOnchainItemListSection({
     sectionKey: OnchainItemSectionName.TrendingTokens,
-    options: trendingTokenOptions?.slice(0, numberOfTrendingTokens),
+    options: trendingTokenOptions.slice(0, numberOfTrendingTokens),
   })
 
   // Load trending pools by 24H volume
@@ -87,15 +110,14 @@ export function useSectionsForNoQuerySearch({
     options: trendingPoolOptions,
   })
 
-  const skipFavoriteWallets =
-    activeTab !== SearchTab.Wallets && !(isWebApp && walletSearchEnabledOnWeb && activeTab === SearchTab.All)
+  const skipFavoriteWallets = activeTab !== SearchTab.Wallets && !(isWebApp && activeTab === SearchTab.All)
   const favoriteWalletsOptions = useFavoriteWalletOptions({ skip: skipFavoriteWallets })
   const favoriteWalletsSection = useOnchainItemListSection({
     sectionKey: OnchainItemSectionName.FavoriteWallets,
     options: favoriteWalletsOptions,
   })
 
-  // eslint-disable-next-line complexity
+  // oxlint-disable-next-line complexity
   return useMemo((): GqlResult<OnchainItemSection<SearchModalOption>[]> => {
     let sections: OnchainItemSection<SearchModalOption>[] = []
 
@@ -121,20 +143,15 @@ export function useSectionsForNoQuerySearch({
           data: [...(recentSearchSection ?? []), ...(favoriteWalletsSection ?? [])],
           loading: false,
         }
-      case SearchTab.NFTCollections:
-        return {
-          data: [...(recentSearchSection ?? [])],
-          loading: false,
-        }
       default:
       case SearchTab.All:
         if (isWebPlatform) {
-          const webSections = [
+          sections = [
             ...(recentSearchSection ?? []),
             ...(trendingTokenSection ?? []),
             ...(trendingPoolSection ?? []),
+            ...(favoriteWalletsSection ?? []),
           ]
-          sections = walletSearchEnabledOnWeb ? [...webSections, ...(favoriteWalletsSection ?? [])] : webSections
         } else {
           sections = [...(recentSearchSection ?? []), ...(trendingTokenSection ?? [])]
         }
@@ -160,6 +177,5 @@ export function useSectionsForNoQuerySearch({
     tokensError,
     trendingPoolSection,
     trendingTokenSection,
-    walletSearchEnabledOnWeb,
   ])
 }

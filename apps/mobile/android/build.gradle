@@ -47,6 +47,19 @@ allprojects {
     }
   }
 
+  // Ensure all native libraries support 16KB page sizes (required for Android 15+)
+  pluginManager.withPlugin("com.android.library") {
+    project.android {
+      defaultConfig {
+        externalNativeBuild {
+          cmake {
+            arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+          }
+        }
+      }
+    }
+  }
+
   repositories {
     google()
     mavenCentral()

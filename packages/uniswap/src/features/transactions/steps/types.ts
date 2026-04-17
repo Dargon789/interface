@@ -1,24 +1,30 @@
 import type { TransactionResponse } from '@ethersproject/abstract-provider'
-import { Currency } from '@uniswap/sdk-core'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import type { Currency } from '@uniswap/sdk-core'
+import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import type { CollectFeesSteps } from 'uniswap/src/features/transactions/liquidity/steps/collectFeesSteps'
 import type { CollectLpIncentiveRewardsSteps } from 'uniswap/src/features/transactions/liquidity/steps/collectIncentiveRewardsSteps'
 import type { DecreaseLiquiditySteps } from 'uniswap/src/features/transactions/liquidity/steps/decreaseLiquiditySteps'
 import type { IncreaseLiquiditySteps } from 'uniswap/src/features/transactions/liquidity/steps/increaseLiquiditySteps'
 import type { MigrationSteps } from 'uniswap/src/features/transactions/liquidity/steps/migrationSteps'
-import { TokenApprovalTransactionStep } from 'uniswap/src/features/transactions/steps/approve'
+import type { TokenApprovalTransactionStep } from 'uniswap/src/features/transactions/steps/approve'
 import type { SignTypedDataStepFields } from 'uniswap/src/features/transactions/steps/permit2Signature'
 import type { Permit2TransactionStep } from 'uniswap/src/features/transactions/steps/permit2Transaction'
-import { TokenRevocationTransactionStep } from 'uniswap/src/features/transactions/steps/revoke'
-import { WrapTransactionStep } from 'uniswap/src/features/transactions/steps/wrap'
-import { PlanSagaAnalytics } from 'uniswap/src/features/transactions/swap/plan/types'
+import type { TokenRevocationTransactionStep } from 'uniswap/src/features/transactions/steps/revoke'
+import type { WrapTransactionStep } from 'uniswap/src/features/transactions/steps/wrap'
+import type { PlanSagaAnalytics } from 'uniswap/src/features/transactions/swap/plan/types'
 import type { ClassicSwapSteps } from 'uniswap/src/features/transactions/swap/steps/classicSteps'
-import { UniswapXPlanSignatureStep } from 'uniswap/src/features/transactions/swap/steps/signOrder'
-import { SwapTransactionStep, SwapTransactionStepAsync } from 'uniswap/src/features/transactions/swap/steps/swap'
+import type { UniswapXPlanSignatureStep } from 'uniswap/src/features/transactions/swap/steps/signOrder'
+import type {
+  SwapTransactionStep,
+  SwapTransactionStepAsync,
+  SwapTransactionStepBatched,
+} from 'uniswap/src/features/transactions/swap/steps/swap'
 import type { UniswapXSwapSteps } from 'uniswap/src/features/transactions/swap/steps/uniswapxSteps'
-import { SetCurrentStepFn } from 'uniswap/src/features/transactions/swap/types/swapCallback'
-import { BridgeTrade, ChainedActionTrade, ClassicTrade } from 'uniswap/src/features/transactions/swap/types/trade'
-import { TransactionTypeInfo } from 'uniswap/src/features/transactions/types/transactionDetails'
+import type { SetCurrentStepFn } from 'uniswap/src/features/transactions/swap/types/swapCallback'
+import type { BridgeTrade, ChainedActionTrade, ClassicTrade } from 'uniswap/src/features/transactions/swap/types/trade'
+import type { ToucanBidTransactionStep } from 'uniswap/src/features/transactions/toucan/steps/submitBid'
+import type { ToucanWithdrawBidAndClaimTokensTransactionStep } from 'uniswap/src/features/transactions/toucan/steps/withdrawBidAndClaimTokens'
+import type { TransactionTypeInfo } from 'uniswap/src/features/transactions/types/transactionDetails'
 import type { ValidatedTransactionRequest } from 'uniswap/src/features/transactions/types/transactionRequests'
 
 export enum TransactionStepType {
@@ -45,6 +51,8 @@ export enum TransactionStepType {
   MigratePositionTransactionAsync = 'MigratePositionTransactionAsync',
   CollectFeesTransactionStep = 'CollectFeesTransaction',
   CollectLpIncentiveRewardsTransactionStep = 'CollectLpIncentiveRewardsTransactionStep',
+  ToucanBidTransactionStep = 'ToucanBidTransactionStep',
+  ToucanWithdrawBidAndClaimTokensTransactionStep = 'ToucanWithdrawBidAndClaimTokensTransactionStep',
 }
 
 // TODO: add v4 lp flow
@@ -58,6 +66,8 @@ export type TransactionStep =
   | CollectFeesSteps
   | CollectLpIncentiveRewardsSteps
   | WrapTransactionStep
+  | ToucanBidTransactionStep
+  | ToucanWithdrawBidAndClaimTokensTransactionStep
 export type OnChainTransactionStep = TransactionStep & OnChainTransactionFields
 export type OnChainTransactionStepBatched = TransactionStep & OnChainTransactionFieldsBatched
 export type SignatureTransactionStep = TransactionStep & SignTypedDataStepFields
@@ -97,6 +107,8 @@ export interface HandleOnChainStepParams<
   onModification?: (
     response: Pick<TransactionResponse, 'hash' | 'nonce' | 'data'>,
   ) => void | Generator<unknown, void, unknown>
+  /** Set if this step is part of a larger plan. Notifications are suppressed and managed by the plan.*/
+  planId?: string
 }
 
 export interface HandleSignatureStepParams<
@@ -107,6 +119,8 @@ export interface HandleSignatureStepParams<
   step: T & TExtra
   setCurrentStep: SetCurrentStepFn
   ignoreInterrupt?: boolean
+  /** Set if this step is part of a larger plan. Notifications are suppressed and managed by the plan.*/
+  planId?: string
 }
 
 export type HandleApprovalStepParams<TExtra extends object = object> = Omit<
@@ -116,8 +130,10 @@ export type HandleApprovalStepParams<TExtra extends object = object> = Omit<
 
 export type HandleOnChainPermit2TransactionStep = Omit<HandleOnChainStepParams<Permit2TransactionStep>, 'info'>
 
-export interface HandleSwapStepParams<TExtra extends object = object>
-  extends Omit<HandleOnChainStepParams<OnChainTransactionStep, TExtra>, 'step' | 'info'> {
+export interface HandleSwapStepParams<TExtra extends object = object> extends Omit<
+  HandleOnChainStepParams<OnChainTransactionStep, TExtra>,
+  'step' | 'info'
+> {
   step: (SwapTransactionStep | SwapTransactionStepAsync) & TExtra
   signature?: string
   trade: ClassicTrade | BridgeTrade | ChainedActionTrade
@@ -125,6 +141,16 @@ export interface HandleSwapStepParams<TExtra extends object = object>
   onTransactionHash?: (hash: string) => void
 }
 
+export interface HandleSwapStepSyncParams<TExtra extends object = object> extends HandleSwapStepParams<TExtra> {
+  step: SwapTransactionStep & TExtra
+}
+
+export interface HandleSwapBatchedStepParams extends Omit<HandleOnChainStepParams, 'step' | 'info'> {
+  step: SwapTransactionStepBatched
+  trade: ClassicTrade | BridgeTrade | ChainedActionTrade
+  analytics: PlanSagaAnalytics
+  disableOneClickSwap: () => void
+}
 export interface HandleUniswapXPlanSignatureStepParams extends HandleSignatureStepParams<UniswapXPlanSignatureStep> {
   analytics: PlanSagaAnalytics
 }

@@ -1,34 +1,51 @@
 import { Cell, flexRender, Row, RowData } from '@tanstack/react-table'
-import { ROW_HEIGHT_DESKTOP, ROW_HEIGHT_MOBILE_WEB } from 'components/Table/constants'
-import { CellContainer, DataRow, TableRowLink } from 'components/Table/styled'
-import { useTableSize } from 'components/Table/TableSizeProvider'
-import { getCommonPinningStyles } from 'components/Table/utils'
 import { memo, useMemo } from 'react'
-import { LinkProps } from 'react-router'
-import { Flex } from 'ui/src'
-import { UseSporeColorsReturn, useSporeColors } from 'ui/src/hooks/useSporeColors'
+import { Link, LinkProps, useLocation } from 'react-router'
+import { Flex, styled } from 'ui/src'
+import { useSporeColors } from 'ui/src/hooks/useSporeColors'
 import { breakpoints } from 'ui/src/theme'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import { ROW_HEIGHT_DESKTOP, ROW_HEIGHT_MOBILE_WEB } from '~/components/Table/constants'
+import { getCommonPinningStyles } from '~/components/Table/PinnedColumns/getCommonPinningStyles'
+import { CellContainer, DataRow } from '~/components/Table/styled'
+import { useTableSize } from '~/components/Table/TableSizeProvider'
+
+const TableRowLink = styled(Link, {
+  cursor: 'pointer',
+  '$platform-web': {
+    textDecoration: 'none',
+  },
+})
 
 interface TableCellProps<T extends RowData> {
   cell: Cell<T, unknown>
-  colors: UseSporeColorsReturn
   v2?: boolean
+  /** Passed so memo re-renders when row expansion toggles (cell reference may not change). */
+  isExpanded?: boolean
 }
 
-function TableCellComponent<T extends RowData>({ cell, colors, v2 = true }: TableCellProps<T>): JSX.Element {
+function TableCellComponent<T extends RowData>({
+  cell,
+  v2 = true,
+  isExpanded: _isExpanded,
+}: TableCellProps<T>): JSX.Element {
   const isPinned = cell.column.getIsPinned()
   const isFirstPinnedColumn = isPinned && cell.column.getIsFirstColumn('left')
-  const pinnedStyles = getCommonPinningStyles({ column: cell.column, colors, v2, isHeader: false })
+  const colors = useSporeColors()
+  const { background, ...positionStyles } = getCommonPinningStyles({ column: cell.column, colors, v2, isHeader: false })
 
   return (
     <CellContainer
-      style={pinnedStyles}
+      style={positionStyles}
+      backgroundColor={background}
       borderTopLeftRadius={v2 && isFirstPinnedColumn ? '$rounded12' : undefined}
       borderBottomLeftRadius={v2 && isFirstPinnedColumn ? '$rounded12' : undefined}
       overflow="hidden"
+      $group-hover={{
+        backgroundColor: isPinned && v2 ? '$surface1Hovered' : 'unset',
+      }}
     >
       {flexRender(cell.column.columnDef.cell, cell.getContext())}
     </CellContainer>
@@ -43,6 +60,10 @@ interface TableRowProps<T extends RowData> {
   rowWrapper?: (row: Row<T>, content: JSX.Element) => JSX.Element
   rowHeight?: number
   compactRowHeight?: number
+  subRowHeight?: number
+  /** Passed so memo re-renders when expansion toggles (row reference may not change). */
+  isExpanded?: boolean
+  dimmed?: boolean
 }
 
 function TableRowComponent<T extends RowData>({
@@ -51,6 +72,9 @@ function TableRowComponent<T extends RowData>({
   rowWrapper,
   rowHeight: propRowHeight,
   compactRowHeight: propCompactRowHeight,
+  subRowHeight: propSubRowHeight,
+  isExpanded: _isExpanded,
+  dimmed,
 }: TableRowProps<T>): JSX.Element {
   const analyticsContext = useTrace()
   const rowOriginal = row.original as {
@@ -61,20 +85,23 @@ function TableRowComponent<T extends RowData>({
       properties: Record<string, unknown>
     }
   }
-  const linkState = rowOriginal.linkState
+  const { pathname } = useLocation()
+  const navState = { ...rowOriginal.linkState, from: pathname }
+
   const rowTestId = rowOriginal.testId
-  const colors = useSporeColors()
   const { width: tableWidth } = useTableSize()
-  const rowHeight = useMemo(
-    () =>
-      tableWidth <= breakpoints.lg
-        ? (propCompactRowHeight ?? ROW_HEIGHT_MOBILE_WEB)
-        : (propRowHeight ?? ROW_HEIGHT_DESKTOP),
-    [tableWidth, propCompactRowHeight, propRowHeight],
-  )
+  const rowHeight = useMemo(() => {
+    if (row.depth > 0 && propSubRowHeight !== undefined) {
+      return propSubRowHeight
+    }
+    return tableWidth <= breakpoints.lg
+      ? (propCompactRowHeight ?? ROW_HEIGHT_MOBILE_WEB)
+      : (propRowHeight ?? ROW_HEIGHT_DESKTOP)
+  }, [row.depth, propSubRowHeight, tableWidth, propCompactRowHeight, propRowHeight])
+
   const cells = row
     .getVisibleCells()
-    .map((cell: Cell<T, unknown>) => <TableCell<T> key={cell.id} cell={cell} colors={colors} v2={v2} />)
+    .map((cell: Cell<T, unknown>) => <TableCell<T> key={cell.id} cell={cell} v2={v2} isExpanded={_isExpanded} />)
 
   const rowContent = (
     <Trace
@@ -87,13 +114,13 @@ function TableRowComponent<T extends RowData>({
     >
       <Flex group>
         {'link' in rowOriginal && typeof rowOriginal.link === 'string' ? (
-          <TableRowLink to={rowOriginal.link} state={linkState} data-testid={rowTestId}>
-            <DataRow height={rowHeight} v2={v2}>
+          <TableRowLink to={rowOriginal.link} state={navState} data-testid={rowTestId}>
+            <DataRow height={rowHeight} v2={v2} dimmed={dimmed}>
               {cells}
             </DataRow>
           </TableRowLink>
         ) : (
-          <DataRow height={rowHeight} data-testid={rowTestId} v2={v2}>
+          <DataRow height={rowHeight} data-testid={rowTestId} v2={v2} dimmed={dimmed}>
             {cells}
           </DataRow>
         )}

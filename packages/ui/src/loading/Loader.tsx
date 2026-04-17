@@ -15,7 +15,7 @@ const Transaction = memo(function _Transaction({ repeat = 1 }: { repeat?: number
   return (
     <Skeleton>
       <Flex>
-        {/* eslint-disable-next-line max-params */}
+        {/* oxlint-disable-next-line max-params */}
         {new Array(repeat).fill(null).map((_, i, { length }) => (
           <React.Fragment key={i}>
             <TransactionLoader opacity={(length - i) / length} />
@@ -33,7 +33,7 @@ const SearchResult = memo(function _SearchResult({ repeat = 1 }: { repeat?: numb
   return <Transaction repeat={repeat} />
 })
 
-const TransferInstitution = memo(function _TransferInstitution({
+const TransferInstitution = memo(function TransferInstitutionIcon({
   itemsCount,
   iconSize,
 }: {
@@ -79,7 +79,7 @@ function Token({
   return (
     <Skeleton contrast={contrast}>
       <Flex grow gap={gap}>
-        {/* eslint-disable-next-line max-params */}
+        {/* oxlint-disable-next-line max-params */}
         {new Array(repeat).fill(null).map((_, i, { length }) => (
           <React.Fragment key={i}>
             <TokenLoader opacity={(length - i) / length} withPrice={withPrice} />
@@ -112,7 +112,7 @@ function NFT({ repeat = 1 }: { repeat?: number }): JSX.Element {
         <NftCardLoader opacity={1} />
       ) : (
         <Flex>
-          {/* eslint-disable-next-line max-params */}
+          {/* oxlint-disable-next-line max-params */}
           {new Array(Math.floor(repeat / 2)).fill(null).map((_, i, { length }) => {
             const opacity = (length - i) / length
             return (
@@ -142,7 +142,7 @@ function Wallets({ repeat = 1 }: { repeat?: number }): JSX.Element {
   return (
     <Skeleton>
       <Flex gap="$spacing12">
-        {/* eslint-disable-next-line max-params */}
+        {/* oxlint-disable-next-line max-params */}
         {new Array(repeat).fill(null).map((_, i, { length }) => (
           <React.Fragment key={i}>
             <WalletLoader opacity={(length - i) / length} />

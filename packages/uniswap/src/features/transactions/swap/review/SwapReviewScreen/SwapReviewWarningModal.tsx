@@ -32,6 +32,7 @@ export const SwapReviewWarningModal = memo(function SwapReviewWarningModal(): JS
       modalName={ModalName.SwapWarning}
       severity={reviewScreenWarning.warning.severity}
       title={reviewScreenWarning.warning.title}
+      analyticsProperties={{ warning_type: reviewScreenWarning.warning.type }}
       onReject={onCancelWarning}
       onClose={onCloseWarning}
       onAcknowledge={onConfirmWarning}

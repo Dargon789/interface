@@ -1,41 +1,50 @@
 import { GraphQLApi } from '@universe/api'
-import React, { memo, useState } from 'react'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import React, { memo, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
-import { useTokenDetailsContext } from 'src/components/TokenDetails/TokenDetailsContext'
 import { LongText } from 'src/components/text/LongText'
+import { useTokenDetailsContext } from 'src/components/TokenDetails/TokenDetailsContext'
 import { Flex, Text, TouchableArea, useSporeColors } from 'ui/src'
 import { ChartBar, ChartPie, ChartPyramid, Language as LanguageIcon, TrendDown, TrendUp } from 'ui/src/components/icons'
+import { InfoCircleFilled } from 'ui/src/components/icons/InfoCircleFilled'
 import { DEP_accentColors, validColor } from 'ui/src/theme'
+import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
+import { WarningModal } from 'uniswap/src/components/modals/WarningModal/WarningModal'
 import {
   useTokenBasicInfoPartsFragment,
   useTokenBasicProjectPartsFragment,
 } from 'uniswap/src/data/graphql/uniswap-data-api/fragments'
+import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useTokenMarketStats } from 'uniswap/src/features/dataApi/tokenDetails/useTokenDetailsData'
 import { currencyIdToContractInput } from 'uniswap/src/features/dataApi/utils/currencyIdToContractInput'
 import { Language } from 'uniswap/src/features/language/constants'
 import { useCurrentLanguage, useCurrentLanguageInfo } from 'uniswap/src/features/language/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { NumberType } from 'utilities/src/format/types'
 
-const StatsRow = memo(function _StatsRow({
+const StatsRow = memo(function StatsRowInner({
   label,
   children,
   statsIcon,
+  labelAfter,
 }: {
   label: string
   children: JSX.Element
   statsIcon: JSX.Element
+  labelAfter?: JSX.Element
 }): JSX.Element {
   return (
     <Flex row justifyContent="space-between" pl="$spacing2">
       <Flex row alignItems="center" flex={1} gap="$spacing8" justifyContent="flex-start">
         <Flex>{statsIcon}</Flex>
-        <Flex flex={1}>
+        <Flex row flex={1} alignItems="center" gap="$spacing4">
           <Text color="$neutral1" variant="body2">
             {label}
           </Text>
+          {labelAfter}
         </Flex>
       </Flex>
       <Flex>{children}</Flex>
@@ -43,16 +52,45 @@ const StatsRow = memo(function _StatsRow({
   )
 })
 
-const TokenDetailsMarketData = memo(function _TokenDetailsMarketData(): JSX.Element {
+const TokenDetailsMarketData = memo(function TokenDetailsMarketDataInner(): JSX.Element {
   const { t } = useTranslation()
   const colors = useSporeColors()
   const defaultTokenColor = colors.neutral3.get()
   const { convertFiatAmountFormatted } = useLocalizationContext()
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
 
-  const { currencyId, tokenColor } = useTokenDetailsContext()
+  const { currencyId, chainId, tokenColor } = useTokenDetailsContext()
+  const [showVolumeInfo, setShowVolumeInfo] = useState(false)
 
-  // Use shared hook for unified data fetching (CoinGecko-first strategy)
-  const { marketCap, fdv, volume, high52w, low52w } = useTokenMarketStats(currencyId)
+  const { data: screenData } = GraphQLApi.useTokenDetailsScreenQuery({
+    variables: {
+      ...currencyIdToContractInput(currencyId),
+      multichain: multichainTokenUxEnabled,
+    },
+    fetchPolicy: 'cache-only',
+  })
+
+  const aggregatedData = useMemo(() => {
+    if (!multichainTokenUxEnabled || !screenData?.token?.multichainMarket) {
+      return undefined
+    }
+    return {
+      market: screenData.token.multichainMarket,
+      project: { markets: screenData.token.project?.markets },
+    }
+  }, [multichainTokenUxEnabled, screenData?.token?.multichainMarket, screenData?.token?.project?.markets])
+
+  const { marketCap, fdv, volume, high52w, low52w } = useTokenMarketStats(currencyId, { aggregatedData })
+
+  const hasLimitedVolumeData = chainId === UniverseChainId.Tempo
+
+  const maybeLimitedVolumeDataInfoIcon = useMemo(() => {
+    return hasLimitedVolumeData ? (
+      <TouchableArea hitSlop={8} onPress={(): void => setShowVolumeInfo(true)}>
+        <InfoCircleFilled color="$neutral3" size="$icon.16" />
+      </TouchableArea>
+    ) : undefined
+  }, [hasLimitedVolumeData])
 
   return (
     <Flex gap="$spacing8">
@@ -77,11 +115,30 @@ const TokenDetailsMarketData = memo(function _TokenDetailsMarketData(): JSX.Elem
       <StatsRow
         label={t('token.stats.volume')}
         statsIcon={<ChartBar color={tokenColor ?? defaultTokenColor} size="$icon.16" />}
+        labelAfter={maybeLimitedVolumeDataInfoIcon}
       >
         <Text textAlign="right" variant="body2">
           {convertFiatAmountFormatted(volume, NumberType.FiatTokenStats)}
         </Text>
       </StatsRow>
+
+      {hasLimitedVolumeData && (
+        <WarningModal
+          isOpen={showVolumeInfo}
+          captionComponent={
+            <Text color="$neutral2" textAlign="center" variant="body2">
+              {t('stats.volume.1d.description.tempo')}
+            </Text>
+          }
+          icon={<ChartBar color="$neutral2" size="$icon.24" />}
+          backgroundIconColor={colors.surface2.get()}
+          modalName={ModalName.VolumeInfo}
+          rejectText={t('common.button.close')}
+          severity={WarningSeverity.None}
+          title={t('stats.volume.1d')}
+          onClose={(): void => setShowVolumeInfo(false)}
+        />
+      )}
 
       <StatsRow
         label={t('token.stats.priceHighYear')}
@@ -104,7 +161,8 @@ const TokenDetailsMarketData = memo(function _TokenDetailsMarketData(): JSX.Elem
   )
 })
 
-export const TokenDetailsStats = memo(function _TokenDetailsStats(): JSX.Element {
+// oxlint-disable-next-line complexity -- biome-parity: oxlint is stricter here
+export const TokenDetailsStats = memo(function TokenDetailsStatsInner(): JSX.Element {
   const { t } = useTranslation()
   const colors = useSporeColors()
   const currentLanguage = useCurrentLanguage()

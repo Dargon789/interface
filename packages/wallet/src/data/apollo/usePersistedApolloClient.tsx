@@ -148,7 +148,7 @@ function makeApolloClientInit(ctx: {
     const linkList: ApolloLink[] = [
       getErrorLink(),
       // requires typing outside of wallet package
-      // biome-ignore lint/suspicious/noExplicitAny: PerformanceLink args come from Apollo and require typing outside wallet package
+      // oxlint-disable-next-line typescript/no-explicit-any -- PerformanceLink args come from Apollo and require typing outside wallet package
       getPerformanceLink((args: any) => sendAnalyticsEvent(WalletEventName.PerformanceGraphql, args)),
       getInstantTokenBalanceUpdateApolloLink({ reduxStore }),
       restLink,

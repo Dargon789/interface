@@ -1,12 +1,5 @@
-import { EmptyWalletCards } from 'components/emptyWallet/EmptyWalletCards'
-import { PageType, useIsPage } from 'hooks/useIsPage'
 import { useMemo } from 'react'
-import { ArrowUpRight } from 'react-feather'
 import { useTranslation } from 'react-i18next'
-import { useMultichainContext } from 'state/multichain/useMultichainContext'
-import { ExternalLink } from 'theme/components/Links'
-import { ClickableTamaguiStyle } from 'theme/components/styles'
-import { useIsDarkMode } from 'theme/components/ThemeToggle'
 import {
   AnimatePresence,
   ElementAfterText,
@@ -14,8 +7,10 @@ import {
   Text,
   TouchableArea,
   TouchableAreaEvent,
+  useIsDarkMode,
   useSporeColors,
 } from 'ui/src'
+import { ArrowUpRight } from 'ui/src/components/icons/ArrowUpRight'
 import { X } from 'ui/src/components/icons/X'
 import { opacify } from 'ui/src/theme'
 import { CardImage } from 'uniswap/src/components/cards/image'
@@ -27,6 +22,11 @@ import { useIsSupportedChainId } from 'uniswap/src/features/chains/hooks/useSupp
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useIsShowingWebFORNudge } from 'uniswap/src/features/providers/webForNudgeProvider'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import { EmptyWalletCards } from '~/components/emptyWallet/EmptyWalletCards'
+import { PageType, useIsPage } from '~/hooks/useIsPage'
+import { useMultichainContext } from '~/state/multichain/useMultichainContext'
+import { ExternalLink } from '~/theme/components/Links'
+import { ClickableTamaguiStyle } from '~/theme/components/styles'
 
 export function SwapBottomCard() {
   const { chainId: oldFlowChainId } = useMultichainContext()
@@ -72,7 +72,7 @@ export function SwapBottomCard() {
 }
 
 // keeping this code for any future web banners
-// eslint-disable-next-line import/no-unused-modules
+// oxlint-disable-next-line import/no-unused-modules
 export function ImagePromoBanner({
   title,
   subtitle,
@@ -119,12 +119,15 @@ const CHAIN_THEME_LIGHT: Record<UniverseChainId, ChainTheme> = {
   [UniverseChainId.Blast]: { bgColor: 'rgba(252, 252, 3, 0.16)', textColor: 'rgba(17, 20, 12, 1)' },
   [UniverseChainId.Bnb]: { bgColor: '#EAB20033', textColor: '#EAB200' },
   [UniverseChainId.Celo]: { bgColor: '#FCFF5233', textColor: '#FCFF52' },
+  [UniverseChainId.Linea]: { bgColor: 'rgba(97, 223, 255, 0.12)', textColor: '#121212' },
   [UniverseChainId.Monad]: { bgColor: 'rgba(115, 91, 248, 0.08)', textColor: '#735BF8' },
   [UniverseChainId.Optimism]: { bgColor: '#FF042033', textColor: '#FF0420' },
   [UniverseChainId.Polygon]: { bgColor: '#9558FF33', textColor: '#9558FF' },
   [UniverseChainId.Sepolia]: { bgColor: '#6B8AFF33', textColor: '#6B8AFF' },
   [UniverseChainId.Solana]: { bgColor: '#9945FF33', textColor: '#000000' },
   [UniverseChainId.Soneium]: { bgColor: '#FFFFFF', textColor: '#000000' },
+  [UniverseChainId.Tempo]: { bgColor: 'rgba(26, 26, 46, 0.08)', textColor: '#1A1A2E' },
+  [UniverseChainId.XLayer]: { bgColor: '#A7A7A724', textColor: '#FFFFFF' },
   [UniverseChainId.Unichain]: { bgColor: '#F50DB433', textColor: '#F50DB4' },
   [UniverseChainId.UnichainSepolia]: { bgColor: '#F50DB433', textColor: '#F50DB4' },
   [UniverseChainId.WorldChain]: { bgColor: 'rgba(0, 0, 0, 0.12)', textColor: '#000000' },
@@ -137,7 +140,10 @@ const CHAIN_THEME_DARK: Record<UniverseChainId, ChainTheme> = {
   [UniverseChainId.Blast]: { bgColor: 'rgba(252, 252, 3, 0.12)', textColor: 'rgba(252, 252, 3, 1) ' },
   [UniverseChainId.Celo]: { bgColor: '#FCFF5299', textColor: '#655947' },
   [UniverseChainId.Monad]: { bgColor: 'rgba(131, 110, 249, 0.14)', textColor: '#836EF9' },
+  [UniverseChainId.Linea]: { bgColor: 'rgba(97, 223, 255, 0.12)', textColor: '#61DFFF' },
   [UniverseChainId.Soneium]: { bgColor: '#000000', textColor: '#FFFFFF' },
+  [UniverseChainId.Tempo]: { bgColor: 'rgba(232, 232, 240, 0.14)', textColor: '#E8E8F0' },
+  [UniverseChainId.XLayer]: { bgColor: '#A7A7A747', textColor: '#121212' },
   [UniverseChainId.WorldChain]: { bgColor: 'rgba(255, 255, 255, 0.12)', textColor: '#FFFFFF' },
   [UniverseChainId.Zksync]: { bgColor: 'rgba(97, 137, 255, 0.12)', textColor: '#6189FF' },
   [UniverseChainId.Zora]: { bgColor: 'rgba(255, 255, 255, 0.12)', textColor: '#FFFFFF' },
@@ -145,7 +151,7 @@ const CHAIN_THEME_DARK: Record<UniverseChainId, ChainTheme> = {
 
 function useChainTheme(chainId: UniverseChainId): ChainTheme {
   const isDarkMode = useIsDarkMode()
-  return isDarkMode ? CHAIN_THEME_LIGHT[chainId] : CHAIN_THEME_DARK[chainId]
+  return isDarkMode ? CHAIN_THEME_DARK[chainId] : CHAIN_THEME_LIGHT[chainId]
 }
 
 function MaybeExternalBridgeCard({ chainId }: { chainId: UniverseChainId }) {
@@ -169,7 +175,7 @@ function MaybeExternalBridgeCard({ chainId }: { chainId: UniverseChainId }) {
 }
 
 const ICON_SIZE = 20
-const ICON_SIZE_PX = `${ICON_SIZE}px`
+const ICON_SIZE_TOKEN = `$icon.20`
 
 function CardInner({
   image,
@@ -230,11 +236,11 @@ function CardInner({
               onDismiss()
             }}
           >
-            <X color="$neutral3" size={ICON_SIZE} />
+            <X color="$neutral3" size={ICON_SIZE_TOKEN} />
           </TouchableArea>
         ) : (
           <TouchableArea alignSelf="flex-start" $md={{ alignSelf: 'center' }}>
-            <ArrowUpRight width={ICON_SIZE_PX} height={ICON_SIZE_PX} color={textColor} />
+            <ArrowUpRight size="$icon.20" color={textColor} strokeWidth={0} />
           </TouchableArea>
         )}
       </Flex>

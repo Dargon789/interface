@@ -91,8 +91,16 @@ export function createApiNotificationTracker(ctx: ApiNotificationTrackerContext)
     // where data source refetches before storage write completes
     pendingAcks.add(notificationId)
 
-    // Check if this is a local-only notification (client-defined, not from backend)
+    // Check notification type by prefix
     const isLocalNotification = notificationId.startsWith('local:')
+    const isSessionScopedNotification = notificationId.startsWith('local:session:')
+
+    // Session-scoped notifications only track in memory (pendingAcks), not storage.
+    // They will reset on app restart, allowing the notification to show again if
+    // the condition is still true (e.g., offline banner shows again after restart).
+    if (isSessionScopedNotification) {
+      return
+    }
 
     // Attempt to call the backend API to acknowledge the notification
     try {
@@ -105,16 +113,14 @@ export function createApiNotificationTracker(ctx: ApiNotificationTrackerContext)
         // Tradeoff: If localStorage is later cleared but the backend never received the ack,
         // the notification could reappear. However, by the time localStorage is cleaned up
         // or cleared, the notification will typically be expired on the backend anyway.
-        storage
-          .add(notificationId, { timestamp: metadata.timestamp })
-          .catch((storageError) => {
-            getLogger().error(
-              `Storage write failed for notification ${notificationId}: ${storageError instanceof Error ? storageError.message : String(storageError)}`,
-              {
-                tags: { file: 'createApiNotificationTracker', function: 'track' },
-              },
-            )
-          }),
+        storage.add(notificationId, { timestamp: metadata.timestamp }).catch((storageError) => {
+          getLogger().error(
+            `Storage write failed for notification ${notificationId}: ${storageError instanceof Error ? storageError.message : String(storageError)}`,
+            {
+              tags: { file: 'createApiNotificationTracker', function: 'track' },
+            },
+          )
+        }),
       ])
     } catch (error) {
       getLogger().error(

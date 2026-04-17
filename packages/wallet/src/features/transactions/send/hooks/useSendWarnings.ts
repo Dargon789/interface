@@ -46,10 +46,10 @@ export function getSendWarnings({
       severity: WarningSeverity.None,
       action: WarningAction.DisableReview,
       title: t('send.warning.insufficientFunds.title', {
-        currencySymbol: currencyAmountIn.currency.symbol,
+        currencySymbol: currencyAmountIn.currency.symbol ?? '',
       }),
       message: t('send.warning.insufficientFunds.message', {
-        currencySymbol: currencyAmountIn.currency.symbol,
+        currencySymbol: currencyAmountIn.currency.symbol ?? '',
       }),
     })
   }

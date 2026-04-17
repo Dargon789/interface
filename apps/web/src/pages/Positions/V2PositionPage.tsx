@@ -1,26 +1,10 @@
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { BreadcrumbNavContainer, BreadcrumbNavLink } from 'components/BreadcrumbNav'
-import { useGetPoolTokenPercentage } from 'components/Liquidity/hooks/useGetPoolTokenPercentage'
-import { LiquidityPositionInfo, LiquidityPositionInfoLoader } from 'components/Liquidity/LiquidityPositionInfo'
-import { TextLoader } from 'components/Liquidity/Loader'
-import { PositionPageActionButtons } from 'components/Liquidity/PositionPageActionButtons'
-import { parseRestPosition } from 'components/Liquidity/utils/parseFromRest'
-import { DoubleCurrencyLogo } from 'components/Logo/DoubleLogo'
-import { useAccount } from 'hooks/useAccount'
-import { usePositionOwnerV2 } from 'hooks/usePositionOwnerV2'
-import { useV2Pair } from 'hooks/useV2Pairs'
-import NotFound from 'pages/NotFound'
 import { useMemo } from 'react'
-import { ChevronRight } from 'react-feather'
 import { Helmet } from 'react-helmet-async/lib/index'
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router'
-import { useAppSelector } from 'state/hooks'
-import { MultichainContextProvider } from 'state/multichain/MultichainContext'
-import { usePendingLPTransactionsChangeListener } from 'state/transactions/hooks'
-import { usePairAdder } from 'state/user/hooks'
 import { Button, Circle, Flex, Main, Shine, styled, Text } from 'ui/src'
+import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { useGetPositionQuery } from 'uniswap/src/data/rest/getPosition'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
@@ -28,11 +12,24 @@ import { useSupportedChainId } from 'uniswap/src/features/chains/hooks/useSuppor
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { isEVMChain } from 'uniswap/src/features/platforms/utils/chains'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
 import { shortenAddress } from 'utilities/src/addresses'
 import { NumberType } from 'utilities/src/format/types'
 import { useEvent } from 'utilities/src/react/hooks'
-import { useChainIdFromUrlParam } from 'utils/chainParams'
+import { BreadcrumbNavContainer, BreadcrumbNavLink } from '~/components/BreadcrumbNav'
+import { useGetPoolTokenPercentage } from '~/components/Liquidity/hooks/useGetPoolTokenPercentage'
+import { LiquidityPositionInfo, LiquidityPositionInfoLoader } from '~/components/Liquidity/LiquidityPositionInfo'
+import { TextLoader } from '~/components/Liquidity/Loader'
+import { PositionPageActionButtons } from '~/components/Liquidity/PositionPageActionButtons'
+import { parseRestPosition } from '~/components/Liquidity/utils/parseFromRest'
+import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
+import { useChainIdFromUrlParam } from '~/features/params/chainParams'
+import { useAccount } from '~/hooks/useAccount'
+import { usePositionOwnerV2 } from '~/hooks/usePositionOwnerV2'
+import { useDynamicMetatags } from '~/pages/metatags'
+import NotFound from '~/pages/NotFound'
+import { MultichainContextProvider } from '~/state/multichain/MultichainContext'
+import { usePendingLPTransactionsChangeListener } from '~/state/transactions/hooks'
 
 const BodyWrapper = styled(Main, {
   backgroundColor: '$surface1',
@@ -86,7 +83,6 @@ function V2PositionPage() {
   const account = useAccount()
   const supportedAccountChainId = useSupportedChainId(account.chainId)
   const chainInfo = getChainInfo(chainId ?? UniverseChainId.Mainnet)
-  const isMigrateV2Enabled = useFeatureFlag(FeatureFlags.MigrateV2)
 
   const {
     data,
@@ -105,17 +101,29 @@ function V2PositionPage() {
   const { formatCurrencyAmount, formatPercent } = useLocalizationContext()
   const { t } = useTranslation()
 
-  const savedSerializedPairs = useAppSelector(({ user: { pairs } }) => pairs)
-  const [, pair] = useV2Pair(positionInfo?.currency0Amount.currency, positionInfo?.currency1Amount.currency)
-  const addPair = usePairAdder()
-
   usePendingLPTransactionsChangeListener(refetch)
 
   const { currency0Amount, currency1Amount, liquidityAmount } = positionInfo ?? {}
 
+  const metatagProperties = useMemo(() => {
+    const token0Symbol = currency0Amount?.currency.symbol
+    const token1Symbol = currency1Amount?.currency.symbol
+    if (!token0Symbol || !token1Symbol || !pairAddress) {
+      return { title: 'Position on Uniswap', url: window.location.href }
+    }
+    const poolName = `${token0Symbol}/${token1Symbol}`
+    return {
+      title: `${poolName} on Uniswap`,
+      url: window.location.href,
+      image: `${window.location.origin}/api/image/positions/v2/${chainInfo.urlParam}/${pairAddress}`,
+    }
+  }, [currency0Amount?.currency.symbol, currency1Amount?.currency.symbol, chainInfo.urlParam, pairAddress])
+  const metatags = useDynamicMetatags(metatagProperties)
+
   const token0USDValue = useUSDCValue(currency0Amount)
   const token1USDValue = useUSDCValue(currency1Amount)
   const poolTokenPercentage = useGetPoolTokenPercentage(positionInfo)
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
   const liquidityTokenAddress = positionInfo?.liquidityToken?.isToken ? positionInfo.liquidityToken.address : undefined
   const isOwner = usePositionOwnerV2({
     account: account.address,
@@ -124,11 +132,7 @@ function V2PositionPage() {
   })
 
   const onMigrate = useEvent(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (pair && chainId && pairAddress && !savedSerializedPairs[chainId]?.[pairAddress]) {
-      addPair(pair)
-    }
-    navigate(isMigrateV2Enabled ? `/migrate/v2/${chainInfo.urlParam}/${pairAddress}` : `/migrate/v2`, {
+    navigate(`/migrate/v2/${chainInfo.urlParam}/${pairAddress}`, {
       state: {
         from: location.pathname,
       },
@@ -166,13 +170,16 @@ function V2PositionPage() {
             baseSymbol: currency0Amount?.currency.symbol,
           })}
         </title>
+        {metatags.map((tag, index) => (
+          <meta key={index} {...tag} />
+        ))}
       </Helmet>
       <BodyWrapper>
         <Flex gap="$gap20" width="100%">
           <Flex row width="100%" justifyContent="flex-start" alignItems="center">
             <BreadcrumbNavContainer aria-label="breadcrumb-nav">
               <BreadcrumbNavLink to="/positions">
-                <Trans i18nKey="pool.positions.title" /> <ChevronRight size={14} />
+                {t('pool.positions.title')} <RotatableChevron direction="right" size="$icon.16" />
               </BreadcrumbNavLink>
               {positionInfo && <Text variant="subheading2">{shortenAddress({ address: positionInfo.poolId })}</Text>}
             </BreadcrumbNavContainer>
@@ -203,7 +210,7 @@ function V2PositionPage() {
               <>
                 <Flex row width="100%" justifyContent="space-between">
                   <Text variant="subheading2" color="$neutral2">
-                    <Trans i18nKey="position.currentValue" />
+                    {t('position.currentValue')}
                   </Text>
                   <Text variant="body2">
                     {token0USDValue && token1USDValue
@@ -216,7 +223,7 @@ function V2PositionPage() {
                 </Flex>
                 <Flex row width="100%" justifyContent="space-between">
                   <Text variant="subheading2" color="$neutral2">
-                    <Trans i18nKey="pool.totalTokens" />
+                    {t('pool.totalTokens')}
                   </Text>
                   <Flex row gap="$gap8">
                     <Text variant="body2">
@@ -227,10 +234,7 @@ function V2PositionPage() {
                 </Flex>
                 <Flex row width="100%" justifyContent="space-between">
                   <Text variant="subheading2" color="$neutral2">
-                    <Trans
-                      i18nKey="position.depositedCurrency"
-                      values={{ currencySymbol: currency0Amount.currency.symbol }}
-                    />
+                    {t('position.depositedCurrency', { currencySymbol: currency0Amount.currency.symbol })}
                   </Text>
                   <Flex row gap="$gap8">
                     <Text variant="body2">
@@ -241,10 +245,7 @@ function V2PositionPage() {
                 </Flex>
                 <Flex row width="100%" justifyContent="space-between">
                   <Text variant="subheading2" color="$neutral2">
-                    <Trans
-                      i18nKey="position.depositedCurrency"
-                      values={{ currencySymbol: currency1Amount.currency.symbol }}
-                    />
+                    {t('position.depositedCurrency', { currencySymbol: currency1Amount.currency.symbol })}
                   </Text>
                   <Flex row gap="$gap8">
                     <Text variant="body2">
@@ -255,7 +256,7 @@ function V2PositionPage() {
                 </Flex>
                 <Flex row width="100%" justifyContent="space-between">
                   <Text variant="subheading2" color="$neutral2">
-                    <Trans i18nKey="addLiquidity.shareOfPool" />
+                    {t('addLiquidity.shareOfPool')}
                   </Text>
                   <Text variant="body2">{formatPercent(poolTokenPercentage?.toSignificant(6))}</Text>
                 </Flex>

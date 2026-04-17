@@ -1,12 +1,17 @@
 import type { ImageRequireSource } from 'react-native'
 import type { FlexProps } from 'ui/src/components/layout/Flex'
 
+/** Dimension value compatible with both web CSS and React Native */
+export type UniversalImageStyleDimensionValue = number | `${number}%` | 'auto' | undefined
+
 export interface UniversalImageStyle {
   backgroundColor?: string
   borderRadius?: number
   verticalAlign?: FlexProps['verticalAlign']
   zIndex?: number
   transition?: string
+  width?: UniversalImageStyleDimensionValue
+  height?: UniversalImageStyleDimensionValue
 }
 
 export enum UniversalImageResizeMode {
@@ -39,11 +44,14 @@ export interface UniversalImageProps {
   size: UniversalImageSize
   fallback?: JSX.Element
   style?: UniversalImageStyleProps
-  fastImage?: boolean
   testID?: string
   allowLocalUri?: boolean
   autoplay?: boolean
   onLoad?: () => void
+  /** Native iOS only: Renders the image to a bitmap for improved performance with complex/animated content like GIFs */
+  shouldRasterizeIOS?: boolean
+  /** Allow rendering without explicit dimensions. Use when parent container has fixed size and image should fill it. */
+  allowUndefinedSize?: boolean
 }
 
 export interface PlainImageProps {
@@ -54,10 +62,11 @@ export interface PlainImageProps {
   resizeMode?: UniversalImageResizeMode
   testID?: string
   onLoad?: () => void
+  onError?: () => void
 }
 
-export type FastImageWrapperProps = PlainImageProps & {
-  setError: () => void
+export type PlainImageExpoProps = PlainImageProps & {
+  cacheInMemory?: boolean
 }
 
 export type SvgImageProps = {
@@ -65,4 +74,6 @@ export type SvgImageProps = {
   size: SharedImageSizeProps
   autoplay: boolean
   fallback?: JSX.Element
+  style?: UniversalImageStyle
+  resizeMode?: UniversalImageResizeMode
 }

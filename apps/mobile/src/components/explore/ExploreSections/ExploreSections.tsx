@@ -75,7 +75,7 @@ const renderItem = ({
   )
 }
 
-function _ExploreSections({
+function ExploreSectionsInner({
   listRef,
   showFavorites = true,
   orderByMetric,
@@ -354,7 +354,7 @@ const ListHeader = memo(function ListHeader({
   return (
     <Sortable.Layer>
       {showFavorites && <FavoritesSection showLoading={showLoading} listRef={listRef} />}
-      <Flex row alignItems="center" justifyContent="space-between" px="$spacing20">
+      <Flex row alignItems="center" justifyContent="space-between" px="$spacing12">
         <Text color="$neutral2" flexShrink={0} paddingEnd="$spacing8" variant="subheading1">
           {t('explore.tokens.top.title')}
         </Text>
@@ -444,4 +444,4 @@ function useOrderBy(): {
   return { uiOrderBy, orderBy, onOrderByChange }
 }
 
-export const ExploreSections = memo(_ExploreSections)
+export const ExploreSections = memo(ExploreSectionsInner)

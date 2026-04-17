@@ -2,14 +2,16 @@ import { PartialMessage } from '@bufbuild/protobuf'
 import { ConnectError } from '@connectrpc/connect'
 import { createQueryOptions, useQuery } from '@connectrpc/connect-query'
 import { UseQueryResult } from '@tanstack/react-query'
+import { searchTokens } from '@uniswap/client-search/dist/search/v1/api-searchService_connectquery'
 import {
+  type ChainToken,
+  type MultichainToken,
   Pool,
   type Token as SearchToken,
   SearchTokensRequest,
   SearchTokensResponse,
   SearchType,
 } from '@uniswap/client-search/dist/search/v1/api_pb'
-import { searchTokens } from '@uniswap/client-search/dist/search/v1/api-searchService_connectquery'
 import { parseProtectionInfo, parseRestProtocolVersion, parseSafetyLevel, SharedQueryClient } from '@universe/api'
 import { getNativeAddress } from 'uniswap/src/constants/addresses'
 import { uniswapPostTransport } from 'uniswap/src/data/rest/base'
@@ -120,6 +122,53 @@ export function searchTokenToCurrencyInfo(token: SearchToken): CurrencyInfo | nu
   }
 
   return buildCurrencyInfo({ currency, currencyId: currencyId(currency), logoUrl, safetyInfo })
+}
+
+/**
+ * Converts a single ChainToken into a CurrencyInfo, using shared metadata from the
+ * parent MultichainToken. Per-chain feeData/protectionInfo/safetyLevel override
+ * the parent when present. Returns null if the currency can't be constructed.
+ */
+export function chainTokenToCurrencyInfo(
+  chainToken: ChainToken,
+  multichainToken: MultichainToken,
+): CurrencyInfo | null {
+  // safetyLevel is a string proto field (defaults to '' not undefined), so || correctly treats empty as "not set"
+  const safetyLevel = parseSafetyLevel(chainToken.safetyLevel || multichainToken.safetyLevel)
+  const protectionInfo = parseProtectionInfo(chainToken.protectionInfo ?? multichainToken.protectionInfo)
+  const feeData = chainToken.feeData ?? multichainToken.feeData
+
+  const currency = buildCurrency({
+    chainId: chainToken.chainId,
+    // TODO: backend currently returns 'ETH' for some native tokens, remove this check once BE fixes
+    address: chainToken.address === 'ETH' ? getNativeAddress(chainToken.chainId) : chainToken.address,
+    decimals: chainToken.decimals,
+    symbol: multichainToken.symbol,
+    name: multichainToken.name,
+    buyFeeBps: feeData?.buyFeeBps,
+    sellFeeBps: feeData?.sellFeeBps,
+  })
+
+  if (!currency) {
+    return null
+  }
+
+  const safetyInfo = getCurrencySafetyInfo(safetyLevel, protectionInfo)
+  return buildCurrencyInfo({
+    currency,
+    currencyId: currencyId(currency),
+    logoUrl: multichainToken.logoUrl || undefined,
+    safetyInfo,
+  })
+}
+
+/**
+ * Flattens a MultichainToken into one CurrencyInfo per chain.
+ */
+export function multichainTokenToCurrencyInfos(multichainToken: MultichainToken): CurrencyInfo[] {
+  return multichainToken.chainTokens
+    .map((chainToken) => chainTokenToCurrencyInfo(chainToken, multichainToken))
+    .filter((c): c is CurrencyInfo => c !== null)
 }
 
 export function searchPoolToPoolSearchResult(pool: Pool): PoolSearchHistoryResult | undefined {

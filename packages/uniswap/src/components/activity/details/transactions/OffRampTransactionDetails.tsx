@@ -19,7 +19,7 @@ export function OffRampTransactionDetails({
   const formatter = useLocalizationContext()
   const currencyInfo = useCurrencyInfo(buildCurrencyId(transactionDetails.chainId, typeInfo.destinationTokenAddress))
 
-  const { amount, value } = useFormattedCurrencyAmountAndUSDValue({
+  const { amount, value, isLoading } = useFormattedCurrencyAmountAndUSDValue({
     currency: currencyInfo?.currency,
     currencyAmountRaw: typeInfo.sourceAmount?.toString(),
     formatter,
@@ -33,6 +33,7 @@ export function OffRampTransactionDetails({
   return (
     <CurrencyTransferContent
       currencyInfo={currencyInfo}
+      isLoading={isLoading}
       showValueAsHeading={true}
       tokenAmountWithSymbol={tokenAmountWithSymbol}
       value={value}

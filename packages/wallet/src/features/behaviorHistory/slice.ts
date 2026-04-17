@@ -40,7 +40,7 @@ export interface BehaviorHistoryState {
    */
   hasCopiedPrivateKeys?: boolean
   isAllSmartWalletNudgesDisabled?: boolean
-  hasDismissedMonadAnnouncement?: boolean
+
   hasDismissedNoAppFeesAnnouncement?: boolean
 }
 
@@ -56,7 +56,7 @@ export const initialBehaviorHistoryState: BehaviorHistoryState = {
   hasViewedDappRequestBridgingBanner: {},
   smartWalletNudge: {},
   hasCopiedPrivateKeys: false,
-  hasDismissedMonadAnnouncement: false,
+
   hasDismissedNoAppFeesAnnouncement: false,
 }
 
@@ -64,9 +64,6 @@ const slice = createSlice({
   name: 'behaviorHistory',
   initialState: initialBehaviorHistoryState,
   reducers: {
-    setHasViewedConnectionMigration: (state, action: PayloadAction<boolean>) => {
-      state.hasViewedConnectionMigration = action.payload
-    },
     setHasSkippedUnitagPrompt: (state, action: PayloadAction<boolean>) => {
       state.hasSkippedUnitagPrompt = action.payload
     },
@@ -78,12 +75,6 @@ const slice = createSlice({
     },
     setBackupReminderLastSeenTs: (state, action: PayloadAction<number | undefined>) => {
       state.backupReminderLastSeenTs = action.payload
-    },
-    setHasViewedBridgedAssetsCard: (state, action: PayloadAction<boolean>) => {
-      state.hasViewedBridgedAssetsCard = action.payload
-    },
-    setHasViewedBridgedAssetsV2Card: (state, action: PayloadAction<boolean>) => {
-      state.hasViewedBridgedAssetsV2Card = action.payload
     },
     setHasViewedOffRampTooltip: (state, action: PayloadAction<boolean>) => {
       state.hasViewedOffRampTooltip = action.payload
@@ -164,9 +155,7 @@ const slice = createSlice({
         isAllSmartWalletNudgesDisabled: action.payload.isDisabled,
       }
     },
-    setHasDismissedMonadAnnouncement: (state, action: PayloadAction<boolean>) => {
-      state.hasDismissedMonadAnnouncement = action.payload
-    },
+
     setHasDismissedNoAppFeesAnnouncement: (state, action: PayloadAction<boolean>) => {
       state.hasDismissedNoAppFeesAnnouncement = action.payload
     },
@@ -174,7 +163,6 @@ const slice = createSlice({
 })
 
 export const {
-  setHasViewedConnectionMigration,
   setHasSkippedUnitagPrompt,
   setHasCompletedUnitagsIntroModal,
   setHasUsedExplore,
@@ -183,8 +171,6 @@ export const {
   setHasViewedDappRequestBridgingBanner,
   resetWalletBehaviorHistory,
   setHasViewedNotificationsCard,
-  setHasViewedBridgedAssetsCard,
-  setHasViewedBridgedAssetsV2Card,
   setHasDismissedSmartWalletHomeScreenNudge,
   setHasCopiedPrivateKeys,
   setHasShown5792Nudge,
@@ -192,7 +178,7 @@ export const {
   setHasSeenSmartWalletCreatedWalletModal,
   setIsAllSmartWalletNudgesDisabled,
   setHasShownSmartWalletHomeScreenNudge,
-  setHasDismissedMonadAnnouncement,
+
   setHasDismissedNoAppFeesAnnouncement,
 } = slice.actions
 

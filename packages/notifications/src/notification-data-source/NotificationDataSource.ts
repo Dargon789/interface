@@ -5,4 +5,6 @@ export interface NotificationDataSource {
   start(onNotifications: (notifications: InAppNotification[], source: string) => void): void
   // Stop receiving notifications and cleanup
   stop(): Promise<void>
+  // Trigger an immediate poll outside of the normal interval (optional)
+  refresh?(): Promise<void>
 }

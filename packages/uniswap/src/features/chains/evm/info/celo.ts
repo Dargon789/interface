@@ -2,6 +2,7 @@ import { GraphQLApi } from '@universe/api'
 import { SwapConfigKey } from '@universe/gating'
 import { CELO_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import { getQuicknodeEndpointUrl } from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
 import {
@@ -38,7 +39,7 @@ export const CELO_CHAIN_INFO = {
   docs: 'https://docs.celo.org/',
   elementName: ElementName.ChainCelo,
   explorer: {
-    name: 'Celoscan',
+    name: 'CeloScan',
     url: 'https://celoscan.io/',
     apiURL: 'https://api.celoscan.io',
   },
@@ -54,12 +55,13 @@ export const CELO_CHAIN_INFO = {
     logo: CELO_LOGO,
   },
   networkLayer: NetworkLayer.L1,
+  blockTimeMs: 5000,
   pendingTransactionsRetryOptions: undefined,
   tokens,
   statusPage: undefined,
   supportsV4: true,
   supportsNFTs: false,
-  urlParam: 'celo',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Celo],
   rpcUrls: {
     [RPCType.Public]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Celo)] },
     [RPCType.Default]: { http: [`https://forno.celo.org`] },

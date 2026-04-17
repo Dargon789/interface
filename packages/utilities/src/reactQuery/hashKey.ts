@@ -12,6 +12,7 @@ import { MutationKey, hashKey as originalHashKey, QueryKey } from '@tanstack/rea
  * hashKey(['token', { chainId: ['2', '1'] }])
  *
  */
+// oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
 export function hashKey(queryKey: QueryKey | MutationKey): string {
   const normalizedKey = normalizeArrays(queryKey)
   return originalHashKey(normalizedKey)

@@ -45,7 +45,7 @@ export function useSendTransactionRequest(
   )
 }
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 async function getSendTransaction({
   provider,
   contractManager,
@@ -69,13 +69,15 @@ async function getSendTransaction({
     case AssetType.ERC721:
       return getErc721SendRequest({ params, provider, contractManager })
     case AssetType.Currency:
-      return isNativeCurrencyAddress(chainId, tokenAddress)
+      // On Tempo, CALLVALUE always returns 0, so native sends via the value field
+      // silently fail. Always use the ERC-20 transfer path for Tempo.
+      return isNativeCurrencyAddress(chainId, tokenAddress) && chainId !== UniverseChainId.Tempo
         ? getNativeSendRequest(params)
         : getTokenSendRequest({ params, provider, contractManager })
   }
 }
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 function getSendParams(
   account: SignerMnemonicAccountMeta,
   derivedSendInfo: DerivedSendInfo,

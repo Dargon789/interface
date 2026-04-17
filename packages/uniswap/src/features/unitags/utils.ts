@@ -1,18 +1,18 @@
-import { UnitagErrorCodes } from '@universe/api'
+import { UnitagErrorCode } from '@universe/api'
 import { TFunction } from 'i18next'
 import { UNITAG_VALID_REGEX } from 'uniswap/src/features/unitags/constants'
 
-export function parseUnitagErrorCode(t: TFunction, errorCode: UnitagErrorCodes): string {
+export function parseUnitagErrorCode(t: TFunction, errorCode: UnitagErrorCode): string {
   switch (errorCode) {
-    case UnitagErrorCodes.UnitagNotAvailable:
+    case UnitagErrorCode.UNITAG_ERROR_NOT_AVAILABLE:
       return t('unitags.claim.error.unavailable')
-    case UnitagErrorCodes.IPLimitReached:
-    case UnitagErrorCodes.AddressLimitReached:
-    case UnitagErrorCodes.DeviceLimitReached:
+    case UnitagErrorCode.UNITAG_ERROR_IP_LIMIT_REACHED:
+    case UnitagErrorCode.UNITAG_ERROR_ADDRESS_LIMIT_REACHED:
+    case UnitagErrorCode.UNITAG_ERROR_DEVICE_LIMIT_REACHED:
       return t('unitags.claim.error.general')
-    case UnitagErrorCodes.DeviceActiveLimitReached:
+    case UnitagErrorCode.UNITAG_ERROR_DEVICE_ACTIVE_LIMIT:
       return t('unitags.claim.error.deviceLimit')
-    case UnitagErrorCodes.AddressActiveLimitReached:
+    case UnitagErrorCode.UNITAG_ERROR_ADDRESS_ACTIVE_LIMIT:
       return t('unitags.claim.error.addressLimit')
     default:
       return t('unitags.claim.error.unknown')

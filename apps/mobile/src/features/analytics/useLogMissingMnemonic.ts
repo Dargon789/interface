@@ -11,9 +11,7 @@ export function useLogMissingMnemonic(): void {
   const signerMnemonicAccounts = useSignerAccounts()
   const mnemonicId = signerMnemonicAccounts[0]?.mnemonicId
 
-  /* biome-ignore lint/correctness/useExhaustiveDependencies: There's a lot of content in the signerMnemonicAccounts array, 
-  so we don't want to re-run this effect on every render, just when the count of accounts changes
-  */
+  // oxlint-disable-next-line react/exhaustive-deps -- only re-run when account count changes, not full array content
   useEffect(() => {
     const logMissingMnemonic = async (): Promise<void> => {
       if (!mnemonicId) {
@@ -53,5 +51,6 @@ export function useLogMissingMnemonic(): void {
         tags: { file: 'useLogMissingMnemonic.ts', function: 'logMissingMnemonic' },
       })
     })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [mnemonicId, signerMnemonicAccounts.length])
 }

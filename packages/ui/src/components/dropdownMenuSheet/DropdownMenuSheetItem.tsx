@@ -23,6 +23,7 @@ export type DropdownMenuSheetItemProps = {
   height?: number
   role?: Role
   subheader?: string
+  rightElement?: React.ReactNode
   onPress: () => void
   handleCloseMenu?: () => void
 }
@@ -40,6 +41,7 @@ export const DropdownMenuSheetItem = ({
   height,
   role = 'button',
   subheader,
+  rightElement,
   onPress,
   handleCloseMenu,
 }: DropdownMenuSheetItemProps): JSX.Element => {
@@ -69,6 +71,11 @@ export const DropdownMenuSheetItem = ({
     [destructive, textColor, disabled],
   )
 
+  // Prevents press events from bubbling to parent touchable areas (e.g., row wrappers)
+  const stopPressEventPropagation = useEvent((e: BaseSyntheticEvent): void => {
+    e.stopPropagation()
+  })
+
   return (
     <TouchableArea
       group
@@ -88,6 +95,8 @@ export const DropdownMenuSheetItem = ({
       backgroundColor="$background"
       height={height}
       hoverStyle={touchableAreaHoverStyle}
+      onPressIn={stopPressEventPropagation}
+      onPressOut={stopPressEventPropagation}
       onPress={handlePress}
     >
       <Flex shrink flexDirection={flexDirection} alignItems="center">
@@ -120,6 +129,7 @@ export const DropdownMenuSheetItem = ({
             color="$neutral2"
           />
         )}
+        {rightElement}
       </Flex>
 
       {isSelected !== undefined && (

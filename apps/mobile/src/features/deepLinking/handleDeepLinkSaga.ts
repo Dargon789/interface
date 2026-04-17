@@ -1,5 +1,5 @@
 import { createAction } from '@reduxjs/toolkit'
-import { FeatureFlags, getFeatureFlagName, getStatsigClient } from '@universe/gating'
+import { FeatureFlags, getFeatureFlagName, getOverrideAdapter, getStatsigClient } from '@universe/gating'
 import { parseUri } from '@walletconnect/utils'
 import { Alert } from 'react-native'
 import { navigate } from 'src/app/navigation/rootNavigation'
@@ -28,6 +28,7 @@ import { pairWithWalletConnectURI } from 'src/features/walletConnect/utils'
 import { waitForWcWeb3WalletIsReady } from 'src/features/walletConnect/walletConnectClient'
 import { addRequest, setDidOpenFromDeepLink } from 'src/features/walletConnect/walletConnectSlice'
 import { call, delay, put, select, takeLatest } from 'typed-redux-saga'
+import { config } from 'uniswap/src/config'
 import { AccountType } from 'uniswap/src/features/accounts/types'
 import { MobileEventName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
@@ -55,11 +56,18 @@ export function* deepLinkWatcher() {
   yield* takeLatest(openDeepLink.type, handleDeepLink)
 }
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export function* handleDeepLink(action: ReturnType<typeof openDeepLink>) {
   try {
     const { coldStart } = action.payload
     const deepLinkAction = parseDeepLinkUrl(action.payload.url)
+
+    // Handle E2E gate overrides early, before account check, since tests may call this at any point
+    if (deepLinkAction.action === DeepLinkAction.E2EOverrideGates) {
+      yield* call(handleE2EOverrideGates, deepLinkAction.data)
+      return
+    }
+
     const activeAccount = yield* select(selectActiveAccount)
 
     if (!activeAccount) {
@@ -323,5 +331,18 @@ function* handleUwuLinkDeepLink(uri: string): Generator {
       },
     ])
     return
+  }
+}
+
+function handleE2EOverrideGates({ enable }: { enable: string[] }): void {
+  if (!config.isE2ETest) {
+    return
+  }
+
+  const overrideAdapter = getOverrideAdapter()
+  overrideAdapter.removeAllOverrides()
+
+  for (const gate of enable) {
+    overrideAdapter.overrideGate(gate, true)
   }
 }

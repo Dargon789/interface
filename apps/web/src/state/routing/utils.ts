@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { BigNumber } from '@ethersproject/bignumber'
 import { MixedRouteSDK } from '@uniswap/router-sdk'
 import { Currency, CurrencyAmount, Percent, Token, TradeType } from '@uniswap/sdk-core'
@@ -17,7 +17,12 @@ import {
 } from '@uniswap/uniswapx-sdk'
 import { Pair, Route as V2Route } from '@uniswap/v2-sdk'
 import { FeeAmount, Pool, Route as V3Route } from '@uniswap/v3-sdk'
-import { getApproveInfo, getWrapInfo } from 'state/routing/gas'
+import { BIPS_BASE } from 'uniswap/src/constants/misc'
+import { nativeOnChain } from 'uniswap/src/constants/tokens'
+import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { isEVMChain } from 'uniswap/src/features/platforms/utils/chains'
+import { logger } from 'utilities/src/logger/logger'
+import { getApproveInfo } from '~/state/routing/gas'
 import {
   ClassicQuoteData,
   ClassicTrade,
@@ -50,13 +55,9 @@ import {
   V2PoolInRoute,
   V3DutchOrderTrade,
   V3PoolInRoute,
-} from 'state/routing/types'
-import { BIPS_BASE } from 'uniswap/src/constants/misc'
-import { nativeOnChain } from 'uniswap/src/constants/tokens'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { isEVMChain } from 'uniswap/src/features/platforms/utils/chains'
-import { logger } from 'utilities/src/logger/logger'
-import { toSlippagePercent } from 'utils/slippage'
+  WrapInfo,
+} from '~/state/routing/types'
+import { toSlippagePercent } from '~/utils/slippage'
 
 interface RouteResult {
   routev3: V3Route<Currency, Currency> | null
@@ -206,10 +207,9 @@ function toUnsignedPriorityOrderInfo(orderInfoJSON: UnsignedPriorityOrderInfoJSO
 }
 
 // Prepares the currencies used for the actual Swap (either UniswapX or Universal Router)
-// May not match `currencyIn` that the user selected because for ETH inputs in UniswapX, the actual
-// swap will use WETH.
 function getTradeCurrencies({
   args,
+  // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
   isUniswapXTrade,
   routes,
 }: {
@@ -255,11 +255,7 @@ function getTradeCurrencies({
         sellFeeBps: serializedTokenOut?.sellFeeBps,
       })
 
-  if (!isUniswapXTrade) {
-    return [currencyIn, currencyOut]
-  }
-
-  return [currencyIn.isNative ? currencyIn.wrapped : currencyIn, currencyOut]
+  return [currencyIn, currencyOut]
 }
 
 function getSwapFee(
@@ -326,7 +322,7 @@ export async function transformQuoteToTrade({
   data: URAQuoteResponse
   quoteMethod: QuoteMethod
 }): Promise<TradeResult> {
-  const { tradeType, needsWrapIfUniswapX, routerPreference, account, amount, routingType } = args
+  const { tradeType, routerPreference, account, amount, routingType } = args
 
   const showUniswapXTrade =
     (routingType === URAQuoteType.DUTCH_V2 ||
@@ -397,13 +393,8 @@ export async function transformQuoteToTrade({
     data.routing === URAQuoteType.PRIORITY
   if (isUniswapXBetter) {
     const swapFee = getSwapFee(data.quote)
-    const wrapInfo = await getWrapInfo({
-      needsWrap: needsWrapIfUniswapX,
-      account,
-      chainId: currencyIn.chainId,
-      amount,
-      usdCostPerGas,
-    })
+    // UniswapX no longer requires wrapping native ETH to WETH
+    const wrapInfo: WrapInfo = { needsWrap: false }
 
     if (data.routing === URAQuoteType.DUTCH_V3) {
       const orderInfo = toUnsignedV3DutchOrderInfo(data.quote.orderInfo)
@@ -470,7 +461,7 @@ export async function transformQuoteToTrade({
         state: QuoteState.SUCCESS,
         trade: uniswapXTrade,
       }
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
     } else if (data.routing === URAQuoteType.PRIORITY) {
       const orderInfo = toUnsignedPriorityOrderInfo(data.quote.orderInfo)
       const priorityOrderTrade = new PriorityOrderTrade({

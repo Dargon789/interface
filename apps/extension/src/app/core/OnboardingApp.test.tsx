@@ -7,7 +7,7 @@ jest.mock('wallet/src/features/transactions/contexts/WalletUniswapContext', () =
 }))
 
 describe('OnboardingApp', () => {
-  // eslint-disable-next-line jest/expect-expect
+  // oxlint-disable-next-line jest/expect-expect
   it('renders without error', async () => {
     initializeReduxStore()
     render(<OnboardingApp />)

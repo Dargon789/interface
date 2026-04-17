@@ -4,9 +4,9 @@ import { EVMUniverseChainId } from 'uniswap/src/features/chains/types'
 import {
   type Register,
   type UseAccountReturnType as UseAccountReturnTypeWagmi,
-  // biome-ignore lint/style/noRestrictedImports: wagmi account hook needed for wallet integration
+  // oxlint-disable-next-line no-restricted-imports -- wagmi account hook needed for wallet integration
   useAccount as useAccountWagmi,
-  // biome-ignore lint/style/noRestrictedImports: wagmi chain hook needed for chain management
+  // oxlint-disable-next-line no-restricted-imports -- wagmi chain hook needed for chain management
   useChainId,
 } from 'wagmi'
 

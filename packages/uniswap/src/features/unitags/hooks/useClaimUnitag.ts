@@ -1,7 +1,7 @@
-import { SignMessageFunc, UnitagClaim, UnitagClaimContext } from '@universe/api'
+import { ensureNewErrorCode, SignMessageFunc } from '@universe/api'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
-import { UnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
+import { useUnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
 import { useResetUnitagsQueries } from 'uniswap/src/data/apiClients/unitagsApi/useResetUnitagsQueries'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
@@ -9,6 +9,7 @@ import { UnitagEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { uploadAndUpdateAvatarAfterClaim } from 'uniswap/src/features/unitags/avatars'
 import { isLocalFileUri } from 'uniswap/src/features/unitags/fileUtils'
+import { UnitagClaim, UnitagClaimContext } from 'uniswap/src/features/unitags/types'
 import { parseUnitagErrorCode } from 'uniswap/src/features/unitags/utils'
 import { getUniqueId } from 'utilities/src/device/uniqueId'
 import { logger } from 'utilities/src/logger/logger'
@@ -27,6 +28,7 @@ export const useClaimUnitag = (): ((input: ClaimUnitagInput) => Promise<{ claimE
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const resetUnitagsQueries = useResetUnitagsQueries()
+  const unitagsApiClient = useUnitagsApiClient()
 
   return async ({ claim, context, signMessage }: ClaimUnitagInput) => {
     const deviceId = await getUniqueId()
@@ -39,7 +41,7 @@ export const useClaimUnitag = (): ((input: ClaimUnitagInput) => Promise<{ claimE
     }
 
     try {
-      const claimResponse = await UnitagsApiClient.claimUnitag({
+      const claimResponse = await unitagsApiClient.claimUnitag({
         data: {
           username: claim.username,
           deviceId,
@@ -52,7 +54,7 @@ export const useClaimUnitag = (): ((input: ClaimUnitagInput) => Promise<{ claimE
       })
 
       if (claimResponse.errorCode) {
-        return { claimError: parseUnitagErrorCode(t, claimResponse.errorCode) }
+        return { claimError: parseUnitagErrorCode(t, ensureNewErrorCode(claimResponse.errorCode)) }
       }
 
       resetUnitagsQueries()
@@ -62,6 +64,7 @@ export const useClaimUnitag = (): ((input: ClaimUnitagInput) => Promise<{ claimE
         sendAnalyticsEvent(UnitagEventName.UnitagClaimed, context)
         if (claim.avatarUri && isLocalFileUri(claim.avatarUri)) {
           const { success: uploadUpdateAvatarSuccess } = await uploadAndUpdateAvatarAfterClaim({
+            unitagsApiClient,
             username: claim.username,
             imageUri: claim.avatarUri,
             address: claim.address,

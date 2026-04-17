@@ -38,6 +38,7 @@ export function EditLabelModal({ isOpen, address, onClose }: EditLabelModalProps
   const { canClaimUnitag } = useCanActiveAddressClaimUnitag(address)
 
   const onConfirm = useCallback(async () => {
+    // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
     await dispatch(
       editAccountActions.trigger({
         type: EditAccountAction.Rename,

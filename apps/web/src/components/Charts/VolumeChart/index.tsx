@@ -1,22 +1,21 @@
-import { TimePeriod, toHistoryDuration } from 'appGraphql/data/util'
 import { GraphQLApi } from '@universe/api'
-import { ChartHeader } from 'components/Charts/ChartHeader'
-import { Chart, ChartModelParams } from 'components/Charts/ChartModel'
-import { useHeaderDateFormatter } from 'components/Charts/hooks/useHeaderDateFormatter'
-import {
-  CustomVolumeChartModel,
-  CustomVolumeChartModelParams,
-} from 'components/Charts/VolumeChart/CustomVolumeChartModel'
-import { SingleHistogramData } from 'components/Charts/VolumeChart/renderer'
-import { getCumulativeVolume } from 'components/Charts/VolumeChart/utils'
 import { TFunction } from 'i18next'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ThemedText } from 'theme/components'
 import { useSporeColors } from 'ui/src'
 import { BIPS_BASE } from 'uniswap/src/constants/misc'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
+import { TimePeriod, toHistoryDuration } from '~/appGraphql/data/util'
+import { ChartHeader } from '~/components/Charts/ChartHeader'
+import { Chart, ChartModelParams } from '~/components/Charts/ChartModel'
+import { useHeaderDateFormatter } from '~/components/Charts/hooks/useHeaderDateFormatter'
+import {
+  CustomVolumeChartModel,
+  CustomVolumeChartModelParams,
+} from '~/components/Charts/VolumeChart/CustomVolumeChartModel'
+import { getCumulativeVolume, SingleHistogramData } from '~/components/Charts/VolumeChart/utils'
+import { ThemedText } from '~/theme/components'
 
 interface VolumeChartModelParams extends ChartModelParams<SingleHistogramData>, CustomVolumeChartModelParams {
   TooltipBody?: React.FunctionComponent<{ data: SingleHistogramData }>
@@ -49,7 +48,7 @@ class VolumeChartModel extends CustomVolumeChartModel<SingleHistogramData> {
   }
 }
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 function formatHistoryDuration(t: TFunction, duration: GraphQLApi.HistoryDuration): string {
   switch (duration) {
     case GraphQLApi.HistoryDuration.FiveMinute:

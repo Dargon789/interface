@@ -21,21 +21,19 @@ function getEntryGatewayProxyTarget(): string {
   const isBeta = process.env.REACT_APP_STAGING === 'true'
 
   // Determine URL based on environment
-  if (nodeEnv === 'development') {
-    return DEV_ENTRY_GATEWAY_API_BASE_URL
-  } else if (isBeta) {
+  if (nodeEnv === 'development' || isBeta) {
     return STAGING_ENTRY_GATEWAY_API_BASE_URL
   } else {
     return PROD_ENTRY_GATEWAY_API_BASE_URL
   }
 }
 
-// eslint-disable-next-line import/no-unused-modules -- used in vite.config.mts
+// oxlint-disable-next-line import/no-unused-modules -- used in vite.config.mts
 export function createEntryGatewayProxy(ctx: {
   getLogger: () => {
     log: typeof console.log
   }
-}) {
+}): ProxyOptions {
   const { getLogger } = ctx
   // Use VITE_BACKEND_URL if set, otherwise use environment-aware URL
   const target = process.env.VITE_BACKEND_URL || getEntryGatewayProxyTarget()
@@ -141,10 +139,10 @@ export function createEntryGatewayProxy(ctx: {
       })
 
       // Log any errors
-      // eslint-disable-next-line max-params
+      // oxlint-disable-next-line max-params
       proxy.on('error', (err, req, res) => {
         getLogger().log('[Proxy] Error:', err)
       })
     },
-  } satisfies ProxyOptions
+  }
 }

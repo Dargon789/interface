@@ -1,11 +1,12 @@
 import { flush, getUserId, Identify, identify, init, setDeviceId, track } from '@amplitude/analytics-react-native'
 import { ANONYMOUS_DEVICE_ID } from '@uniswap/analytics'
+// oxlint-disable-next-line no-restricted-imports -- platform implementation file
 import {
   Analytics,
   AnalyticsInitConfig,
   TestnetModeConfig,
   UserPropertyValue,
-  // biome-ignore lint/style/noRestrictedImports: needed here
+  // oxlint-disable-next-line no-restricted-imports -- needed here
 } from 'utilities/src/telemetry/analytics/analytics'
 import {
   AMPLITUDE_NATIVE_TRACKING_OPTIONS,
@@ -104,7 +105,7 @@ export const analytics: Analytics = {
     loggers.flushEvents()
     flush()
   },
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   setUserProperty(property: string, value: UserPropertyValue, insert?: boolean): void {
     if (!allowAnalytics && initCalled) {
       return

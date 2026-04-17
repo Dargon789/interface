@@ -1,5 +1,4 @@
 import 'symbol-observable' // Needed by `reduxed-chrome-storage` as polyfill, order matters
-
 import { AUTO_LOCK_ALARM_NAME } from 'src/app/components/AutoLockProvider'
 import { initStatSigForBrowserScripts } from 'src/app/core/initStatSigForBrowserScripts'
 import { focusOrCreateOnboardingTab } from 'src/app/navigation/focusOrCreateOnboardingTab'
@@ -109,6 +108,7 @@ function makeBackground(): void {
           }
 
           // Schedule alarm
+          // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
           chrome.alarms.create(AUTO_LOCK_ALARM_NAME, { delayInMinutes })
           logger.debug('background', 'port.onDisconnect', `Scheduled auto-lock alarm for ${delayInMinutes} minutes`)
         } catch (error) {
@@ -184,7 +184,7 @@ function makeBackground(): void {
   })
 }
 
-// eslint-disable-next-line import/no-unused-modules
+// oxlint-disable-next-line import/no-unused-modules
 export default defineBackground({
   type: 'module',
   main() {

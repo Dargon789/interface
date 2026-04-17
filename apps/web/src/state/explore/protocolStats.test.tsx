@@ -1,9 +1,10 @@
 import { ProtocolStatsResponse } from '@uniswap/client-explore/dist/uniswap/explore/v1/service_pb'
 import { useFeatureFlagWithLoading } from '@universe/gating'
-import { ExploreContext } from 'state/explore'
-import { use24hProtocolVolume, useDailyTVLWithChange } from 'state/explore/protocolStats'
-import { render, screen } from 'test-utils/render'
 import type { Mock } from 'vitest'
+import { vi } from 'vitest'
+import { ExploreContextProvider } from '~/state/explore'
+import { use24hProtocolVolume, useDailyTVLWithChange } from '~/state/explore/protocolStats'
+import { render, screen } from '~/test-utils/render'
 
 vi.mock('@universe/gating', async (importOriginal) => {
   return {
@@ -11,6 +12,11 @@ vi.mock('@universe/gating', async (importOriginal) => {
     useFeatureFlagWithLoading: vi.fn(() => ({ value: true, isLoading: false })), // Ensure mock returns value immediately
   }
 })
+
+const mockUseProtocolStatsQuery = vi.fn()
+vi.mock('uniswap/src/data/rest/protocolStats', () => ({
+  useProtocolStatsQuery: (input: unknown) => mockUseProtocolStatsQuery(input),
+}))
 
 const createTimestampedAmount = (timestamp: number, value: number) => ({ timestamp, value })
 
@@ -40,9 +46,11 @@ const mockProtocolStatsData = {
   dailyProtocolTvl: mockDailyProtocolTvl,
 } as unknown as ProtocolStatsResponse
 
-const mockContextValue = {
-  exploreStats: { data: undefined, isLoading: false, error: false },
-  protocolStats: { data: mockProtocolStatsData, isLoading: false, error: false },
+const defaultMockQueryResult = {
+  data: mockProtocolStatsData,
+  isLoading: false,
+  isError: false,
+  error: null,
 }
 
 const TestComponent24hProtocolVolume = () => {
@@ -55,17 +63,18 @@ const TestComponent24HrTVL = () => {
   return <div data-testid="result-tvl">{JSON.stringify(result)}</div>
 }
 
+function renderWithProvider(ui: React.ReactElement) {
+  return render(<ExploreContextProvider>{ui}</ExploreContextProvider>)
+}
+
 beforeEach(() => {
   ;(useFeatureFlagWithLoading as Mock).mockReturnValue({ value: true, isLoading: false })
+  mockUseProtocolStatsQuery.mockReturnValue(defaultMockQueryResult)
 })
 
 describe('use24hProtocolVolume', () => {
   it('calculates total volume and percent change correctly', () => {
-    render(
-      <ExploreContext.Provider value={mockContextValue}>
-        <TestComponent24hProtocolVolume />
-      </ExploreContext.Provider>,
-    )
+    renderWithProvider(<TestComponent24hProtocolVolume />)
     const resultDiv = screen.getByTestId('result-24h')
     const result = JSON.parse(resultDiv.textContent || '{}')
 
@@ -76,29 +85,22 @@ describe('use24hProtocolVolume', () => {
   })
 
   it('uses latest available data per protocol when timestamps differ', () => {
-    // Simulate mismatched timestamps for volume data
     const mismatchedVolumeData = {
       Month: {
         v2: [createTimestampedAmount(1, 100), createTimestampedAmount(2, 200), createTimestampedAmount(3, 400)],
-        v3: [createTimestampedAmount(1, 150), createTimestampedAmount(2, 300)], // Missing timestamp 3
-        v4: [createTimestampedAmount(1, 200)], // Only has timestamp 1
+        v3: [createTimestampedAmount(1, 150), createTimestampedAmount(2, 300)],
+        v4: [createTimestampedAmount(1, 200)],
       },
     }
 
-    const mismatchedContextValue = {
-      exploreStats: { data: undefined, isLoading: false, error: false },
-      protocolStats: {
-        data: { historicalProtocolVolume: mismatchedVolumeData } as unknown as ProtocolStatsResponse,
-        isLoading: false,
-        error: false,
-      },
-    }
+    mockUseProtocolStatsQuery.mockReturnValue({
+      ...defaultMockQueryResult,
+      data: {
+        historicalProtocolVolume: mismatchedVolumeData,
+      } as unknown as ProtocolStatsResponse,
+    })
 
-    render(
-      <ExploreContext.Provider value={mismatchedContextValue}>
-        <TestComponent24hProtocolVolume />
-      </ExploreContext.Provider>,
-    )
+    renderWithProvider(<TestComponent24hProtocolVolume />)
     const resultDiv = screen.getByTestId('result-24h')
     const result = JSON.parse(resultDiv.textContent || '{}')
 
@@ -129,27 +131,20 @@ describe('use24hProtocolVolume', () => {
       },
     }
 
-    const emptyContextValue = {
-      exploreStats: { data: undefined, isLoading: false, error: false },
-      protocolStats: {
-        data: { historicalProtocolVolume: emptyVolumeData } as unknown as ProtocolStatsResponse,
-        isLoading: false,
-        error: false,
-      },
-    }
+    mockUseProtocolStatsQuery.mockReturnValue({
+      ...defaultMockQueryResult,
+      data: {
+        historicalProtocolVolume: emptyVolumeData,
+      } as unknown as ProtocolStatsResponse,
+    })
 
-    render(
-      <ExploreContext.Provider value={emptyContextValue}>
-        <TestComponent24hProtocolVolume />
-      </ExploreContext.Provider>,
-    )
+    renderWithProvider(<TestComponent24hProtocolVolume />)
     const resultDiv = screen.getByTestId('result-24h')
     const result = JSON.parse(resultDiv.textContent || '{}')
 
     expect(result.totalVolume).toBe(0)
     expect(result.totalChangePercent).toBe(0)
     expect(result.protocolVolumes).toEqual({ v2: 0, v3: 0, v4: 0 })
-
     // Verify warnings were logged for missing data
     expect(mockWarn).toHaveBeenCalled()
     mockWarn.mockRestore()
@@ -158,11 +153,7 @@ describe('use24hProtocolVolume', () => {
 
 describe('useDailyTVLWithChange', () => {
   it('calculates total TVL and individual protocol TVL with percent changes correctly', () => {
-    render(
-      <ExploreContext.Provider value={mockContextValue}>
-        <TestComponent24HrTVL />
-      </ExploreContext.Provider>,
-    )
+    renderWithProvider(<TestComponent24HrTVL />)
     const resultDiv = screen.getByTestId('result-tvl')
     const result = JSON.parse(resultDiv.textContent || '{}')
 
@@ -181,20 +172,14 @@ describe('useDailyTVLWithChange', () => {
       v4: [createTimestampedAmount(1, 200)], // Only has timestamp 1
     }
 
-    const mismatchedContextValue = {
-      exploreStats: { data: undefined, isLoading: false, error: false },
-      protocolStats: {
-        data: { dailyProtocolTvl: mismatchedTvlData } as unknown as ProtocolStatsResponse,
-        isLoading: false,
-        error: false,
-      },
-    }
+    mockUseProtocolStatsQuery.mockReturnValue({
+      ...defaultMockQueryResult,
+      data: {
+        dailyProtocolTvl: mismatchedTvlData,
+      } as unknown as ProtocolStatsResponse,
+    })
 
-    render(
-      <ExploreContext.Provider value={mismatchedContextValue}>
-        <TestComponent24HrTVL />
-      </ExploreContext.Provider>,
-    )
+    renderWithProvider(<TestComponent24HrTVL />)
     const resultDiv = screen.getByTestId('result-tvl')
     const result = JSON.parse(resultDiv.textContent || '{}')
 
@@ -204,7 +189,6 @@ describe('useDailyTVLWithChange', () => {
     expect(result.protocolTVL.v3).toBe(250)
     // V4 should use timestamp 1 (value: 200), NOT 0
     expect(result.protocolTVL.v4).toBe(200)
-
     // Total should be sum of latest available values
     expect(result.totalTVL).toBe(750)
 
@@ -230,20 +214,14 @@ describe('useDailyTVLWithChange', () => {
       v4: [],
     }
 
-    const emptyContextValue = {
-      exploreStats: { data: undefined, isLoading: false, error: false },
-      protocolStats: {
-        data: { dailyProtocolTvl: emptyTvlData } as unknown as ProtocolStatsResponse,
-        isLoading: false,
-        error: false,
-      },
-    }
+    mockUseProtocolStatsQuery.mockReturnValue({
+      ...defaultMockQueryResult,
+      data: {
+        dailyProtocolTvl: emptyTvlData,
+      } as unknown as ProtocolStatsResponse,
+    })
 
-    render(
-      <ExploreContext.Provider value={emptyContextValue}>
-        <TestComponent24HrTVL />
-      </ExploreContext.Provider>,
-    )
+    renderWithProvider(<TestComponent24HrTVL />)
     const resultDiv = screen.getByTestId('result-tvl')
     const result = JSON.parse(resultDiv.textContent || '{}')
 
@@ -251,7 +229,6 @@ describe('useDailyTVLWithChange', () => {
     expect(result.totalChangePercent).toBe(0)
     expect(result.protocolTVL).toEqual({ v2: 0, v3: 0, v4: 0 })
     expect(result.protocolChangePercent).toEqual({ v2: 0, v3: 0, v4: 0 })
-
     // Verify warnings were logged for missing data
     expect(mockWarn).toHaveBeenCalled()
     mockWarn.mockRestore()

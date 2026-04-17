@@ -2,14 +2,20 @@ import { WalletKitTypes } from '@reown/walletkit'
 import { ProposalTypes, Verify } from '@walletconnect/types'
 import { buildApprovedNamespaces, populateAuthPayload } from '@walletconnect/utils'
 import { expectSaga } from 'redux-saga-test-plan'
-import { handleSessionAuthenticate, handleSessionProposal } from 'src/features/walletConnect/saga'
+import {
+  disconnectSessionsForRemovedAccounts,
+  handleSessionAuthenticate,
+  handleSessionProposal,
+  populateActiveSessions,
+} from 'src/features/walletConnect/saga'
 import { parseVerifyStatus } from 'src/features/walletConnect/utils'
 import { wcWeb3Wallet } from 'src/features/walletConnect/walletConnectClient'
-import { addPendingSession } from 'src/features/walletConnect/walletConnectSlice'
+import { addPendingSession, addSession, removeSession } from 'src/features/walletConnect/walletConnectSlice'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { DappRequestInfo, DappRequestType, EthEvent } from 'uniswap/src/types/walletConnect'
 import { DappVerificationStatus } from 'wallet/src/features/dappRequests/types'
 import { selectActiveAccountAddress } from 'wallet/src/features/wallet/selectors'
+import { removeAccounts as removeAccountsAction } from 'wallet/src/features/wallet/slice'
 
 // Mock for WalletConnect utils
 jest.mock('@walletconnect/utils', () => ({
@@ -25,6 +31,8 @@ jest.mock('./walletConnectClient', () => ({
   wcWeb3Wallet: {
     rejectSession: jest.fn(),
     formatAuthMessage: jest.fn(),
+    getActiveSessions: jest.fn(),
+    disconnectSession: jest.fn(),
   },
 }))
 
@@ -319,6 +327,229 @@ describe('WalletConnect Saga', () => {
         })
         .put(addPendingSession(expectedPendingSession))
         .run()
+    })
+  })
+
+  describe('populateActiveSessions', () => {
+    const mockAccount = '0xabc123'
+    const mockAccounts = { [mockAccount]: { address: mockAccount } }
+
+    beforeEach(() => {
+      jest.clearAllMocks()
+    })
+
+    it('restores valid sessions to store', async () => {
+      const validSession = {
+        topic: 'valid-topic',
+        expiry: Math.floor(Date.now() / 1000) + 3600, // expires in 1 hour
+        namespaces: {
+          eip155: {
+            accounts: [`eip155:1:${mockAccount}`],
+            chains: ['eip155:1'],
+            methods: [],
+            events: [],
+          },
+        },
+        peer: {
+          metadata: { name: 'Test Dapp', url: 'https://test.com', icons: ['https://test.com/icon.png'] },
+        },
+      }
+
+      ;(wcWeb3Wallet.getActiveSessions as jest.Mock).mockReturnValue({ 'valid-topic': validSession })
+
+      await expectSaga(populateActiveSessions)
+        .withState({ wallet: { accounts: mockAccounts } })
+        .put(
+          addSession({
+            wcSession: {
+              id: 'valid-topic',
+              dappRequestInfo: {
+                name: 'Test Dapp',
+                url: 'https://test.com',
+                icon: 'https://test.com/icon.png',
+                requestType: DappRequestType.WalletConnectSessionRequest,
+              },
+              chains: [UniverseChainId.Mainnet],
+              namespaces: validSession.namespaces,
+              activeAccount: mockAccount,
+            },
+          }),
+        )
+        .run()
+    })
+
+    it('disconnects expired sessions instead of restoring them', async () => {
+      const expiredSession = {
+        topic: 'expired-topic',
+        expiry: Math.floor(Date.now() / 1000) - 3600, // expired 1 hour ago
+        namespaces: {
+          eip155: {
+            accounts: [`eip155:1:${mockAccount}`],
+            chains: ['eip155:1'],
+            methods: [],
+            events: [],
+          },
+        },
+        peer: {
+          metadata: { name: 'Expired Dapp', url: 'https://expired.com', icons: [] },
+        },
+      }
+
+      ;(wcWeb3Wallet.getActiveSessions as jest.Mock).mockReturnValue({ 'expired-topic': expiredSession })
+      ;(wcWeb3Wallet.disconnectSession as jest.Mock).mockResolvedValue(undefined)
+
+      const result = await expectSaga(populateActiveSessions)
+        .withState({ wallet: { accounts: mockAccounts } })
+        .call([wcWeb3Wallet, wcWeb3Wallet.disconnectSession], {
+          topic: 'expired-topic',
+          reason: 'mocked-error',
+        })
+        .not.put.actionType('walletConnect/addSession')
+        .run()
+
+      expect(result.effects.put).toBeUndefined()
+    })
+
+    it('disconnects orphaned sessions whose accounts no longer exist', async () => {
+      const orphanedSession = {
+        topic: 'orphaned-topic',
+        expiry: Math.floor(Date.now() / 1000) + 3600,
+        namespaces: {
+          eip155: {
+            accounts: ['eip155:1:0xremoved_account'],
+            chains: ['eip155:1'],
+            methods: [],
+            events: [],
+          },
+        },
+        peer: {
+          metadata: { name: 'Orphaned Dapp', url: 'https://orphaned.com', icons: [] },
+        },
+      }
+
+      ;(wcWeb3Wallet.getActiveSessions as jest.Mock).mockReturnValue({ 'orphaned-topic': orphanedSession })
+      ;(wcWeb3Wallet.disconnectSession as jest.Mock).mockResolvedValue(undefined)
+
+      const result = await expectSaga(populateActiveSessions)
+        .withState({ wallet: { accounts: mockAccounts } })
+        .call([wcWeb3Wallet, wcWeb3Wallet.disconnectSession], {
+          topic: 'orphaned-topic',
+          reason: 'mocked-error',
+        })
+        .not.put.actionType('walletConnect/addSession')
+        .run()
+
+      expect(result.effects.put).toBeUndefined()
+    })
+
+    it('continues restoring other sessions if one disconnect fails', async () => {
+      const expiredSession = {
+        topic: 'expired-topic',
+        expiry: Math.floor(Date.now() / 1000) - 3600,
+        namespaces: {
+          eip155: { accounts: [`eip155:1:${mockAccount}`], chains: ['eip155:1'], methods: [], events: [] },
+        },
+        peer: { metadata: { name: 'Expired', url: 'https://expired.com', icons: [] } },
+      }
+      const validSession = {
+        topic: 'valid-topic',
+        expiry: Math.floor(Date.now() / 1000) + 3600,
+        namespaces: {
+          eip155: { accounts: [`eip155:1:${mockAccount}`], chains: ['eip155:1'], methods: [], events: [] },
+        },
+        peer: { metadata: { name: 'Valid', url: 'https://valid.com', icons: ['https://valid.com/icon.png'] } },
+      }
+
+      ;(wcWeb3Wallet.getActiveSessions as jest.Mock).mockReturnValue({
+        'expired-topic': expiredSession,
+        'valid-topic': validSession,
+      })
+      ;(wcWeb3Wallet.disconnectSession as jest.Mock).mockRejectedValue(new Error('network error'))
+
+      await expectSaga(populateActiveSessions)
+        .withState({ wallet: { accounts: mockAccounts } })
+        .put(
+          addSession({
+            wcSession: {
+              id: 'valid-topic',
+              dappRequestInfo: {
+                name: 'Valid',
+                url: 'https://valid.com',
+                icon: 'https://valid.com/icon.png',
+                requestType: DappRequestType.WalletConnectSessionRequest,
+              },
+              chains: [UniverseChainId.Mainnet],
+              namespaces: validSession.namespaces,
+              activeAccount: mockAccount,
+            },
+          }),
+        )
+        .run()
+    })
+  })
+
+  describe('disconnectSessionsForRemovedAccounts', () => {
+    const removedAddress = '0xremoved'
+
+    beforeEach(() => {
+      jest.clearAllMocks()
+    })
+
+    it('disconnects sessions associated with removed accounts', async () => {
+      const session = {
+        id: 'session-topic',
+        chains: [UniverseChainId.Mainnet],
+        dappRequestInfo: {
+          name: 'Dapp',
+          url: 'https://dapp.com',
+          icon: null,
+          requestType: DappRequestType.WalletConnectSessionRequest,
+        },
+        namespaces: {
+          eip155: { accounts: [`eip155:1:${removedAddress}`], chains: ['eip155:1'], methods: [], events: [] },
+        },
+        activeAccount: removedAddress,
+      }
+
+      ;(wcWeb3Wallet.disconnectSession as jest.Mock).mockResolvedValue(undefined)
+
+      await expectSaga(disconnectSessionsForRemovedAccounts)
+        .withState({
+          walletConnect: { sessions: { 'session-topic': session } },
+        })
+        .dispatch(removeAccountsAction([removedAddress]))
+        .call([wcWeb3Wallet, wcWeb3Wallet.disconnectSession], {
+          topic: 'session-topic',
+          reason: 'mocked-error',
+        })
+        .put(removeSession({ sessionId: 'session-topic' }))
+        .silentRun()
+    })
+
+    it('does not disconnect sessions for unrelated accounts', async () => {
+      const session = {
+        id: 'session-topic',
+        chains: [UniverseChainId.Mainnet],
+        dappRequestInfo: {
+          name: 'Dapp',
+          url: 'https://dapp.com',
+          icon: null,
+          requestType: DappRequestType.WalletConnectSessionRequest,
+        },
+        namespaces: {
+          eip155: { accounts: ['eip155:1:0xkeeping_this_account'], chains: ['eip155:1'], methods: [], events: [] },
+        },
+        activeAccount: '0xkeeping_this_account',
+      }
+
+      await expectSaga(disconnectSessionsForRemovedAccounts)
+        .withState({
+          walletConnect: { sessions: { 'session-topic': session } },
+        })
+        .dispatch(removeAccountsAction([removedAddress]))
+        .not.call.fn(wcWeb3Wallet.disconnectSession)
+        .not.put.actionType('walletConnect/removeSession')
+        .silentRun()
     })
   })
 

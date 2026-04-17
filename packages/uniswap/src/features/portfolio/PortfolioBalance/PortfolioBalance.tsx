@@ -1,6 +1,8 @@
+import { ChartPeriod } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { isWarmLoadingStatus } from '@universe/api'
 import { memo, useMemo } from 'react'
-import { Flex, RefreshButton, Shine, useIsDarkMode } from 'ui/src'
+import { useTranslation } from 'react-i18next'
+import { Flex, RefreshButton, Shine, Text, useIsDarkMode } from 'ui/src'
 import AnimatedNumber, {
   BALANCE_CHANGE_INDICATION_DURATION,
 } from 'uniswap/src/components/AnimatedNumber/AnimatedNumber'
@@ -11,6 +13,7 @@ import { usePortfolioTotalValue } from 'uniswap/src/features/dataApi/balances/ba
 import { FiatCurrency } from 'uniswap/src/features/fiatCurrency/constants'
 import { useAppFiatCurrency, useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { chartPeriodToTimeLabel } from 'uniswap/src/features/portfolio/chartPeriod'
 import i18next from 'uniswap/src/i18n'
 import { NumberType } from 'utilities/src/format/types'
 import { isWebPlatform } from 'utilities/src/platform'
@@ -20,14 +23,29 @@ interface PortfolioBalanceProps {
   svmOwner?: Address
   endText?: JSX.Element | string
   chainIds?: UniverseChainId[]
+  chartPeriod?: ChartPeriod
+  /** When set, overrides the displayed balance (e.g. during chart scrubbing) */
+  overrideBalanceUSD?: number
+  /** When set, overrides the backend 1-day percent change with a period-aware value */
+  overridePercentChange?: number
+  /** When set, overrides the backend 1-day absolute change with a period-aware value */
+  overrideAbsoluteChangeUSD?: number
+  /** When true, hides the percent change (absolute change still shown) */
+  hidePercentChange?: boolean
 }
 
-export const PortfolioBalance = memo(function _PortfolioBalance({
+export const PortfolioBalance = memo(function PortfolioBalanceInner({
   evmOwner,
   svmOwner,
   endText,
   chainIds,
+  chartPeriod,
+  overrideBalanceUSD,
+  overridePercentChange,
+  overrideAbsoluteChangeUSD,
+  hidePercentChange,
 }: PortfolioBalanceProps): JSX.Element {
+  const { t } = useTranslation()
   const { data, loading, networkStatus, refetch } = usePortfolioTotalValue({
     evmAddress: evmOwner,
     svmAddress: svmOwner,
@@ -47,11 +65,15 @@ export const PortfolioBalance = memo(function _PortfolioBalance({
   const isLoading = loading && !data
   const isWarmLoading = !!data && isWarmLoadingStatus(networkStatus)
 
-  const { percentChange, absoluteChangeUSD, balanceUSD } = data || {}
+  const { percentChange: backendPercentChange, absoluteChangeUSD: backendAbsoluteChangeUSD, balanceUSD } = data || {}
+
+  const percentChange = hidePercentChange ? undefined : (overridePercentChange ?? backendPercentChange)
+  const absoluteChangeUSD = overrideAbsoluteChangeUSD ?? backendAbsoluteChangeUSD
 
   const isRightToLeft = i18next.dir() === 'rtl'
 
-  const totalBalance = convertFiatAmountFormatted(balanceUSD, NumberType.PortfolioBalance)
+  const displayBalanceUSD = overrideBalanceUSD ?? balanceUSD
+  const totalBalance = convertFiatAmountFormatted(displayBalanceUSD, NumberType.PortfolioBalance)
   const absoluteChange = absoluteChangeUSD && convertFiatAmount(absoluteChangeUSD).amount
   // TODO gary re-enabling this for USD/Euros only, replace with more scalable approach
   const shouldFadePortfolioDecimals =
@@ -67,8 +89,9 @@ export const PortfolioBalance = memo(function _PortfolioBalance({
   return (
     <Flex gap="$spacing4">
       <AnimatedNumber
-        balance={balanceUSD}
-        colorIndicationDuration={BALANCE_CHANGE_INDICATION_DURATION}
+        balance={displayBalanceUSD}
+        colorIndicationDuration={overrideBalanceUSD !== undefined ? 0 : BALANCE_CHANGE_INDICATION_DURATION}
+        disableAnimations={overrideBalanceUSD !== undefined}
         loading={isLoading}
         loadingPlaceholderText="000000.00"
         shouldFadeDecimals={shouldFadePortfolioDecimals}
@@ -89,6 +112,12 @@ export const PortfolioBalance = memo(function _PortfolioBalance({
             variant="body3"
           />
         </Shine>
+        {/* Hide period label during chart scrub (overrideBalanceUSD is set while scrubbing) */}
+        {chartPeriod !== undefined && overrideBalanceUSD === undefined && (
+          <Text variant="body3" color="$neutral3" ml="$spacing4">
+            {chartPeriodToTimeLabel(t, chartPeriod).toLocaleLowerCase()}
+          </Text>
+        )}
         {endText}
       </Flex>
     </Flex>

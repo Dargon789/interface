@@ -2,7 +2,7 @@ import { SharedEventName } from '@uniswap/analytics-events'
 import { ExtensionEventName } from 'uniswap/src/features/telemetry/constants/extension'
 import { SwapEventName } from 'uniswap/src/features/telemetry/constants/features'
 import { UniswapEventName } from 'uniswap/src/features/telemetry/constants/uniswap'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import type { TestnetModeConfig } from 'utilities/src/telemetry/analytics/analytics'
 
 export enum WalletEventName {

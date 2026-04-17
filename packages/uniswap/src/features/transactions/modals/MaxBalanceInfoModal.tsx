@@ -21,6 +21,7 @@ export function MaxBalanceInfoModal({
   children,
   isModalOpen,
   isTooltipEnabled,
+  // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
   currencySymbol,
   onClose,
 }: PropsWithChildren<MaxBalanceInfoModalProps>): JSX.Element {

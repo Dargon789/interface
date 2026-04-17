@@ -2,7 +2,7 @@ import { NetworkStatus, WatchQueryFetchPolicy } from '@apollo/client'
 import { GqlResult, GraphQLApi } from '@universe/api'
 import { useMemo } from 'react'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
-// biome-ignore lint/style/noRestrictedImports: This is the wrapper hook that uses the restricted hook properly
+// oxlint-disable-next-line no-restricted-imports -- This is the wrapper hook that uses the restricted hook properly
 import { usePortfolioValueModifiers } from 'uniswap/src/features/dataApi/balances/balances'
 
 export function useAccountListData({

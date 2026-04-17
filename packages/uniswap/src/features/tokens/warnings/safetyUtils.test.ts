@@ -17,7 +17,7 @@ import {
 import { TokenProtectionWarning } from 'uniswap/src/features/tokens/warnings/types'
 import { logger } from 'utilities/src/logger/logger'
 
-jest.mock('react-i18next', () => ({
+vi.mock('react-i18next', () => ({
   useTranslation: (): { t: (str: string) => string } => {
     return {
       t: (str: string): string => str,
@@ -198,7 +198,7 @@ describe('getFeeColor', () => {
     [18, '$statusCritical', 'high fee'],
     [85, '$statusCritical', 'very high fee'],
     [100, '$statusCritical', 'honeypot fee'],
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
   ])('should return %s for %s', (fee, expectedColor, _) => {
     expect(getFeeColor(fee)).toBe(expectedColor)
   })
@@ -399,7 +399,7 @@ describe('getTokenProtectionWarning', () => {
       TokenProtectionWarning.FotVeryHigh,
       'malicious high fees attack -> FotVeryHigh',
     ],
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
   ])('%s', (currencyInfo, expectedWarning, _) => {
     expect(getTokenProtectionWarning(currencyInfo)).toBe(expectedWarning)
   })
@@ -426,7 +426,7 @@ describe('getFeeWarning', () => {
     // Honeypot (100%)
     [100, TokenProtectionWarning.MaliciousHoneypot, '100% -> MaliciousHoneypot'],
     [100, TokenProtectionWarning.MaliciousHoneypot, '100% -> MaliciousHoneypot'],
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
   ])('%s', (fee, expectedWarning, _) => {
     expect(getFeeWarning(fee)).toBe(expectedWarning)
   })
@@ -438,7 +438,7 @@ describe('useModalHeaderText', () => {
   })
 
   it('logs error when tokenSymbol1 provided without plural treatment', () => {
-    const mockLogger = jest.spyOn(logger, 'error')
+    const mockLogger = vi.spyOn(logger, 'error')
     useModalHeaderText({
       tokenProtectionWarning: TokenProtectionWarning.FotLow,
       tokenSymbol0: 'ABC',

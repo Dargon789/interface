@@ -1,19 +1,19 @@
 import { Currency, CurrencyAmount, Token } from '@uniswap/sdk-core'
-import { useAccount } from 'hooks/useAccount'
-import { useTokenBalances } from 'hooks/useTokenBalances'
 import JSBI from 'jsbi'
 import { useMemo } from 'react'
 import { getCurrencyAmount, ValueType } from 'uniswap/src/features/tokens/getCurrencyAmount'
 import { isEVMAddress } from 'utilities/src/addresses/evm/evm'
-import { currencyKey } from 'utils/currencyKey'
-import { assume0xAddress } from 'utils/wagmi'
 import { erc20Abi } from 'viem'
 import { useBalance, useReadContracts } from 'wagmi'
+import { useAccount } from '~/hooks/useAccount'
+import { useTokenBalances } from '~/hooks/useTokenBalances'
+import { currencyKey } from '~/utils/currencyKey'
+import { assume0xAddress } from '~/utils/wagmi'
 
 /**
  * Returns a map of token addresses to their eventually consistent token balances for a single account.
  */
-export function useRpcTokenBalancesWithLoadingIndicator({
+function useRpcTokenBalancesWithLoadingIndicator({
   address,
   tokens,
   skip,
@@ -53,7 +53,7 @@ export function useRpcTokenBalancesWithLoadingIndicator({
   return useMemo(
     () => [
       address && validatedTokens.length > 0
-        ? // eslint-disable-next-line max-params
+        ? // oxlint-disable-next-line max-params
           validatedTokens.reduce<{ [tokenAddress: string]: CurrencyAmount<Token> | undefined }>((memo, token, i) => {
             const value = data?.[i].result
             if (!value) {
@@ -126,7 +126,7 @@ function useGqlCurrencyBalances(
   account?: string,
   currencies?: (Currency | undefined)[],
 ): (CurrencyAmount<Currency> | undefined)[] {
-  const { balanceMap } = useTokenBalances({ cacheOnly: true })
+  const { balanceMap } = useTokenBalances({ cacheFirst: true })
 
   return useMemo(() => {
     if (!account || !currencies) {
@@ -141,7 +141,7 @@ function useGqlCurrencyBalances(
       const key = currencyKey(currency)
       const balance = balanceMap[key]
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (balance) {
         const currencyAmount = getCurrencyAmount({
           value: balance.balance.toString(),

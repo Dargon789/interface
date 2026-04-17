@@ -26,7 +26,7 @@ interface MenuAction {
   active: boolean
 }
 
-function _SortButton({ orderBy, onOrderByChange }: FilterGroupProps): JSX.Element {
+function SortButtonInner({ orderBy, onOrderByChange }: FilterGroupProps): JSX.Element {
   const { t } = useTranslation()
 
   const menuActions = useMemo<MenuAction[]>(() => {
@@ -124,8 +124,8 @@ function _SortButton({ orderBy, onOrderByChange }: FilterGroupProps): JSX.Elemen
       backgroundColor="$surface3"
       borderRadius="$rounded20"
       gap="$spacing4"
-      pl="$spacing12"
-      pr="$spacing8"
+      pl="$spacing16"
+      pr="$spacing12"
       testID={TestID.ExploreSortButton}
     >
       <ActionSheetDropdown showArrow options={options} styles={{ alignment: 'right' }}>
@@ -137,4 +137,4 @@ function _SortButton({ orderBy, onOrderByChange }: FilterGroupProps): JSX.Elemen
   )
 }
 
-export const SortButton = memo(_SortButton)
+export const SortButton = memo(SortButtonInner)

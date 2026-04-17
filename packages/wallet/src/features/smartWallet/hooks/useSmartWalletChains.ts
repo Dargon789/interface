@@ -27,6 +27,7 @@ export function useSmartWalletChains(): UniverseChainId[] {
       return []
     }
 
+    // oxlint-disable-next-line guard-for-in -- biome-parity: oxlint is stricter here
     for (const chainId in chainData) {
       const chain = toSupportedChainId(chainId)
       if (!chain) {

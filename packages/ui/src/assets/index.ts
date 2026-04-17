@@ -12,8 +12,12 @@ export const CELO_LOGO = require('./logos/png/celo-logo.png')
 export const WORLD_CHAIN_LOGO = require('./logos/png/world-chain-logo.png')
 export const ZORA_LOGO = require('./logos/png/zora-logo.png')
 export const ZKSYNC_LOGO = require('./logos/png/zksync-logo.png')
+export const LINEA_LOGO = require('./logos/png/linea-logo.png')
 export const SOLANA_LOGO = require('./logos/png/solana-logo.png')
 export const SONEIUM_LOGO = require('./logos/png/soneium-logo.png')
+export const TEMPO_LOGO = require('./logos/png/tempo-logo.png')
+export const XLAYER_LOGO = require('./logos/png/xlayer-logo.png')
+export const OKB_LOGO = require('./logos/png/okb-logo.png')
 export const UNICHAIN_LOGO = require('./logos/png/unichain-logo.png')
 export const UNICHAIN_SEPOLIA_LOGO = require('./logos/png/unichain-sepolia-logo.png')
 export const UNISWAP_LOGO = require('./logos/png/uniswap-logo.png')
@@ -21,6 +25,7 @@ export const UNISWAP_LOGO_LARGE = require('./logos/png/uniswap-logo-large.png')
 export const UNISWAP_MONO_LOGO_LARGE = require('./logos/png/uniswap-mono-logo-large.png')
 export const UNISWAP_APP_ICON = require('./logos/png/uniswap-app-icon.png')
 export const BINANCE_WALLET_ICON = require('./logos/png/binance-icon.png')
+export const BETA_LOGO = require('./logos/png/beta-logo.png')
 
 export const ONBOARDING_QR_ETCHING_VIDEO_LIGHT = require('./videos/light-etching.mp4')
 export const ONBOARDING_QR_ETCHING_VIDEO_DARK = require('./videos/dark-etching.mp4')
@@ -54,10 +59,6 @@ export const UNITAG_DARK_SMALL = require('./graphics/unitag-dark-small.png')
 export const UNITAG_LIGHT_SMALL = require('./graphics/unitag-light-small.png')
 
 export const PUSH_NOTIFICATIONS_CARD_BANNER = require('./graphics/push-notifications-card-banner.png')
-export const BRIDGED_ASSETS_CARD_BANNER = require('./graphics/bridged-assets-card-banner.png')
-export const BRIDGED_ASSETS_V2_CARD_BANNER_DARK = require('./graphics/bridged-assets-v2-card-banner-dark.png')
-export const BRIDGED_ASSETS_V2_CARD_BANNER_LIGHT = require('./graphics/bridged-assets-v2-card-banner-light.png')
-export const BRIDGED_ASSETS_V2_WEB_BANNER = require('./graphics/bridged-assets-v2-web-banner.png')
 
 export const ONBOARDING_NOTIFICATIONS_DARK = {
   ios: require(`./backgrounds/ios/notifications-dark.png`),
@@ -75,7 +76,6 @@ export const CRYPTO_PURCHASE_BACKGROUND_DARK = require('./backgrounds/coins-back
 
 export const SOLANA_BANNER_LIGHT = require('./backgrounds/solana-banner-light.png')
 export const SOLANA_BANNER_DARK = require('./backgrounds/solana-banner-dark.png')
-export const MONAD_TEST_BANNER_LIGHT = require('./backgrounds/monad-test-banner-light.png')
 
 export const SECURITY_SCREEN_BACKGROUND_DARK = {
   ios: require(`./backgrounds/ios/security-background-dark.png`),

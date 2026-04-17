@@ -8,7 +8,7 @@ import { OnSelectCurrency } from 'uniswap/src/components/TokenSelector/types'
 import { getChainLabel } from 'uniswap/src/features/chains/utils'
 import { getSymbolDisplayText } from 'uniswap/src/utils/currency'
 
-function _TokenCard({
+function TokenCardInner({
   onSelectCurrency,
   token,
   index,
@@ -76,4 +76,4 @@ function _TokenCard({
   return tokenCard
 }
 
-export const TokenCard = memo(_TokenCard)
+export const TokenCard = memo(TokenCardInner)

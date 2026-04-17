@@ -4,8 +4,8 @@ import {
   OnChainTransactionStatus,
 } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { TradingApi } from '@universe/api'
-
 import { parseRestApproveTransaction } from 'uniswap/src/features/activity/parse/parseApproveTransaction'
+import { parseRestAuctionTransaction } from 'uniswap/src/features/activity/parse/parseAuctionTransaction'
 import { parseRestBridgeTransaction } from 'uniswap/src/features/activity/parse/parseBridgingTransaction'
 import {
   buildExecuteTransactionDetails,
@@ -17,9 +17,11 @@ import { parseRestReceiveTransaction } from 'uniswap/src/features/activity/parse
 import { parseRestSendTransaction } from 'uniswap/src/features/activity/parse/parseSendTransaction'
 import {
   parseRestSwapTransaction,
+  parseRestWithdrawTransaction,
   parseRestWrapTransaction,
 } from 'uniswap/src/features/activity/parse/parseTradeTransaction'
 import { parseRestUnknownTransaction } from 'uniswap/src/features/activity/parse/parseUnknownTransaction'
+import { ValueType } from 'uniswap/src/features/tokens/getCurrencyAmount'
 import {
   TransactionDetails,
   TransactionOriginType,
@@ -47,7 +49,7 @@ function mapRestStatusToLocal(status: OnChainTransactionStatus, isCancel: boolea
  * Extract transaction details from an onChain transaction in the REST format
  * Returns an array to support batched transactions (e.g., EXECUTE label with swap + approve)
  */
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export default function extractRestOnChainTransactionDetails(transaction: OnChainTransaction): TransactionDetails[] {
   const { chainId, transactionHash, timestampMillis, from, label, status, fee } = transaction
 
@@ -76,9 +78,11 @@ export default function extractRestOnChainTransactionDetails(transaction: OnChai
       break
     case OnChainTransactionLabel.WRAP:
     case OnChainTransactionLabel.UNWRAP:
-    case OnChainTransactionLabel.WITHDRAW:
     case OnChainTransactionLabel.LEND:
       typeInfo = parseRestWrapTransaction(transaction)
+      break
+    case OnChainTransactionLabel.WITHDRAW:
+      typeInfo = parseRestWithdrawTransaction(transaction)
       break
     case OnChainTransactionLabel.APPROVE:
       typeInfo = parseRestApproveTransaction(transaction)
@@ -96,6 +100,13 @@ export default function extractRestOnChainTransactionDetails(transaction: OnChai
     case OnChainTransactionLabel.DECREASE_LIQUIDITY:
       typeInfo = parseRestLiquidityTransaction(transaction)
       break
+    case OnChainTransactionLabel.AUCTION_SUBMIT_BID:
+    case OnChainTransactionLabel.AUCTION_CLAIM_TOKENS:
+    case OnChainTransactionLabel.AUCTION_EXIT_BID:
+    case OnChainTransactionLabel.AUCTION_EXIT_PARTIALLY_FILLED_BID:
+    case OnChainTransactionLabel.AUCTION_CLAIM_TOKENS_BATCHED:
+      typeInfo = parseRestAuctionTransaction(transaction)
+      break
   }
 
   if (!typeInfo) {
@@ -108,6 +119,7 @@ export default function extractRestOnChainTransactionDetails(transaction: OnChai
         tokenSymbol: fee.symbol,
         tokenAddress: fee.address,
         chainId,
+        valueType: ValueType.Exact,
       }
     : undefined
 

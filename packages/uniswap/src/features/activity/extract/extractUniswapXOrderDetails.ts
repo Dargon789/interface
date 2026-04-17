@@ -1,5 +1,4 @@
 import { GraphQLApi, TradingApi } from '@universe/api'
-
 import { deriveCurrencyAmountFromAssetResponse } from 'uniswap/src/features/activity/utils/remote'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
@@ -39,6 +38,7 @@ export function extractUniswapXOrderDetails(transaction: TransactionListQueryRes
     status: remoteOrderStatusToLocalTxStatus(transaction.details.orderStatus),
     from: transaction.details.offerer, // This transaction is not on-chain, so use the offerer address as the from address
     orderHash: transaction.details.hash,
+    encodedOrder: transaction.details.encodedOrder,
     typeInfo,
     transactionOriginType: TransactionOriginType.Internal,
   }

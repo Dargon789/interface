@@ -1,6 +1,3 @@
-import dayjs, { Dayjs } from 'dayjs'
-import localizedFormat from 'dayjs/plugin/localizedFormat'
-
 import 'dayjs/locale/en'
 import 'dayjs/locale/es'
 import 'dayjs/locale/fr'
@@ -13,6 +10,8 @@ import 'dayjs/locale/tr'
 import 'dayjs/locale/vi'
 import 'dayjs/locale/zh-cn'
 import 'dayjs/locale/zh-tw'
+import dayjs, { Dayjs } from 'dayjs'
+import localizedFormat from 'dayjs/plugin/localizedFormat'
 import { Locale } from 'uniswap/src/features/language/constants'
 import { useCurrentLanguageInfo } from 'uniswap/src/features/language/hooks'
 

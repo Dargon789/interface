@@ -10,7 +10,7 @@ import { useEvent } from 'utilities/src/react/hooks'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { usePortfolioEmptyStateBackground } from 'wallet/src/components/portfolio/empty'
 
-export const ExtensionTokenBalanceList = memo(function _ExtensionTokenBalanceList({
+export const ExtensionTokenBalanceList = memo(function ExtensionTokenBalanceListInner({
   owner,
 }: {
   owner: Address

@@ -1,5 +1,5 @@
-import { TradingApi } from '@universe/api'
-import { TradingApiClient } from 'uniswap/src/data/apiClients/tradingApi/TradingApiClient'
+import { MigrateV3ToV4LPPositionRequest } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
+import { V1LiquidityServiceClient } from 'uniswap/src/data/apiClients/liquidityService/LiquidityServiceClient'
 import { InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { parseErrorMessageTitle } from 'uniswap/src/features/transactions/liquidity/utils'
@@ -16,9 +16,7 @@ export interface MigratePositionTransactionStep extends OnChainTransactionFields
 export interface MigratePositionTransactionStepAsync {
   // Migrations that require permit
   type: TransactionStepType.MigratePositionTransactionAsync
-  getTxRequest(
-    signature: string,
-  ): Promise<{ txRequest: ValidatedTransactionRequest | undefined; sqrtRatioX96?: string }>
+  getTxRequest(signature: string): Promise<{ txRequest: ValidatedTransactionRequest | undefined }>
 }
 
 export function createMigratePositionStep(txRequest: ValidatedTransactionRequest): MigratePositionTransactionStep {
@@ -29,26 +27,25 @@ export function createMigratePositionStep(txRequest: ValidatedTransactionRequest
 }
 
 export function createMigratePositionAsyncStep(
-  migratePositionRequestArgs: TradingApi.MigrateLPPositionRequest | undefined,
+  migratePositionRequestArgs: MigrateV3ToV4LPPositionRequest | undefined,
   signatureDeadline: number | undefined,
 ): MigratePositionTransactionStepAsync {
   return {
     type: TransactionStepType.MigratePositionTransactionAsync,
-    getTxRequest: async (
-      signature: string,
-    ): Promise<{ txRequest: ValidatedTransactionRequest | undefined; sqrtRatioX96?: string }> => {
+    getTxRequest: async (signature: string): Promise<{ txRequest: ValidatedTransactionRequest | undefined }> => {
       if (!migratePositionRequestArgs || !signatureDeadline) {
         return { txRequest: undefined }
       }
 
       try {
-        const { migrate } = await TradingApiClient.migrateV3ToV4LpPosition({
+        const updatedRequest = new MigrateV3ToV4LPPositionRequest({
+          // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
           ...migratePositionRequestArgs,
           signature,
-          signatureDeadline,
+          signatureDeadline: Number(signatureDeadline),
           simulateTransaction: true,
         })
-
+        const migrate = (await V1LiquidityServiceClient.migrateV3ToV4LpPosition(updatedRequest)).migrate
         return { txRequest: validateTransactionRequest(migrate) }
       } catch (e) {
         const message = parseErrorMessageTitle(e, { includeRequestId: true })
@@ -61,6 +58,7 @@ export function createMigratePositionAsyncStep(
           })
           sendAnalyticsEvent(InterfaceEventName.MigrateLiquidityFailed, {
             message,
+            // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
             ...migratePositionRequestArgs,
           })
         }

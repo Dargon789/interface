@@ -1,7 +1,7 @@
-import { rejectNextTransaction } from 'components/Web3Provider/rejectableConnector'
-import { expect, getTest } from 'playwright/fixtures'
-import { HAYDEN_ADDRESS, TEST_WALLET_ADDRESS } from 'playwright/fixtures/wallets'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { rejectNextTransaction } from '~/components/Web3Provider/rejectableConnector'
+import { expect, getTest } from '~/playwright/fixtures'
+import { HAYDEN_ADDRESS, TEST_WALLET_ADDRESS } from '~/playwright/fixtures/wallets'
 
 const test = getTest({ withAnvil: true })
 

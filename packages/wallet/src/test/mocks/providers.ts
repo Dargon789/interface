@@ -3,7 +3,7 @@ import { BigNumber, providers } from 'ethers'
 import ERC20_ABI from 'uniswap/src/abis/erc20.json'
 import { Erc20 } from 'uniswap/src/abis/types'
 import WETH_ABI from 'uniswap/src/abis/weth.json'
-import { getWrappedNativeAddress } from 'uniswap/src/constants/addresses'
+import { getWrappedNativeAddressWithThrow } from 'uniswap/src/constants/addresses'
 import { DAI } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { ethersTransactionReceipt } from 'uniswap/src/test/fixtures'
@@ -70,7 +70,7 @@ contractManager.getOrCreateContract({
 })
 contractManager.getOrCreateContract({
   chainId: UniverseChainId.Mainnet,
-  address: getWrappedNativeAddress(UniverseChainId.Mainnet),
+  address: getWrappedNativeAddressWithThrow(UniverseChainId.Mainnet),
   provider,
   ABI: WETH_ABI,
 })

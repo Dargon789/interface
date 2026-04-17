@@ -3,12 +3,13 @@ import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { default as React, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ListRenderItemInfo } from 'react-native'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { OnboardingStackNavigationProp, SettingsStackNavigationProp } from 'src/app/navigation/types'
 import { ScreenWithHeader } from 'src/components/layout/screens/ScreenWithHeader'
 import { useReactNavigationModal } from 'src/components/modals/useReactNavigationModal'
 import { WalletRestoreType } from 'src/components/RestoreWalletModal/RestoreWalletModalState'
 import { FooterSettings } from 'src/components/Settings/FooterSettings'
+import { ForceReduxDataLossRow } from 'src/components/Settings/ForceReduxDataLossRow'
 import { SettingsList } from 'src/components/Settings/lists/SettingsList'
 import { SectionData } from 'src/components/Settings/lists/types'
 import { OnboardingRow } from 'src/components/Settings/OnboardingRow'
@@ -20,6 +21,7 @@ import {
   SettingsSectionItemComponent,
 } from 'src/components/Settings/SettingsRow'
 import { WalletSettings } from 'src/components/Settings/WalletSettings'
+import { useBiometricsAlert } from 'src/features/biometrics/useBiometricsAlert'
 import { useBiometricsState } from 'src/features/biometrics/useBiometricsState'
 import { useDeviceSupportsBiometricAuth } from 'src/features/biometrics/useDeviceSupportsBiometricAuth'
 import { useBiometricName } from 'src/features/biometricsSettings/hooks'
@@ -27,6 +29,7 @@ import {
   NotificationPermission,
   useNotificationOSPermissionsEnabled,
 } from 'src/features/notifications/hooks/useNotificationOSPermissionsEnabled'
+import { useAdvancedSettingsMenuState } from 'src/features/settings/hooks/useAdvancedSettingsMenuState'
 import { useWalletRestore } from 'src/features/wallet/useWalletRestore'
 import { importFromCloudBackupOption, restoreFromCloudBackupOption } from 'src/screens/Import/constants'
 import { Flex, IconProps, Text, useSporeColors } from 'ui/src'
@@ -55,20 +58,18 @@ import {
 } from 'ui/src/components/icons'
 import { iconSizes } from 'ui/src/theme'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
+import { useCurrentAppearanceSetting } from 'uniswap/src/features/appearance/hooks'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useCurrentLanguageInfo } from 'uniswap/src/features/language/hooks'
-import { setIsTestnetModeEnabled } from 'uniswap/src/features/settings/slice'
 import { useHapticFeedback } from 'uniswap/src/features/settings/useHapticFeedback/useHapticFeedback'
-import { ModalName, WalletEventName } from 'uniswap/src/features/telemetry/constants'
-import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
+import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { OnboardingEntryPoint } from 'uniswap/src/types/onboarding'
 import { MobileScreens } from 'uniswap/src/types/screens/mobile'
 import { getCloudProviderName } from 'uniswap/src/utils/cloud-backup/getCloudProviderName'
 import { isDevEnv } from 'utilities/src/environment/env'
 import { isAndroid } from 'utilities/src/platform'
-import { useCurrentAppearanceSetting } from 'wallet/src/features/appearance/hooks'
 import { selectHasCopiedPrivateKeys } from 'wallet/src/features/behaviorHistory/selectors'
 import { BackupType } from 'wallet/src/features/wallet/accounts/types'
 import { hasBackup } from 'wallet/src/features/wallet/accounts/utils'
@@ -80,12 +81,12 @@ const AVOID_RENDER_DURING_ANIMATION_MS = 100
 
 export function SettingsScreen(): JSX.Element {
   const navigation = useNavigation<SettingsStackNavigationProp & OnboardingStackNavigationProp>()
-  const dispatch = useDispatch()
   const colors = useSporeColors()
   const hasCopiedPrivateKeys = useSelector(selectHasCopiedPrivateKeys)
   const shouldShowPrivateKeys = useFeatureFlag(FeatureFlags.EnableExportPrivateKeys)
-  const { deviceSupportsBiometrics } = useBiometricsState()
+  const { isBiometricsDisabledInOSSettings } = useBiometricsState()
   const { t } = useTranslation()
+  const { showBiometricsAlert } = useBiometricsAlert({ t })
   const { onClose } = useReactNavigationModal()
 
   // check if device supports biometric authentication, if not, hide option
@@ -108,37 +109,11 @@ export function SettingsScreen(): JSX.Element {
   const { notificationPermissionsEnabled: notificationOSPermission } = useNotificationOSPermissionsEnabled()
 
   const { isTestnetModeEnabled } = useEnabledChains()
-  const handleTestnetModeToggle = useCallback((): void => {
-    const newIsTestnetMode = !isTestnetModeEnabled
 
-    const fireAnalytic = (): void =>
-      sendAnalyticsEvent(WalletEventName.TestnetModeToggled, {
-        enabled: newIsTestnetMode,
-        location: 'settings',
-      })
-
-    if (isSmartWalletSettingsEnabled) {
-      // this assumes that we can only navigate to this toggle from the advanced settings modal
-      navigation.goBack()
-    } else {
-      onClose()
-    }
-
-    setTimeout(() => {
-      // trigger before toggling on (ie disabling analytics)
-      if (newIsTestnetMode) {
-        fireAnalytic()
-        navigation.navigate(ModalName.TestnetMode, {})
-      }
-
-      dispatch(setIsTestnetModeEnabled(newIsTestnetMode))
-
-      // trigger after toggling off (ie enabling analytics)
-      if (!newIsTestnetMode) {
-        fireAnalytic()
-      }
-    }, AVOID_RENDER_DURING_ANIMATION_MS)
-  }, [dispatch, onClose, isSmartWalletSettingsEnabled, isTestnetModeEnabled, navigation])
+  // For non-smart-wallet mode, we need to close the settings modal instead of going back
+  const advancedSettingsState = useAdvancedSettingsMenuState({
+    onClose: isSmartWalletSettingsEnabled ? undefined : onClose,
+  })
 
   // Signer account info
   const signerAccount = useSignerAccounts()[0]
@@ -162,6 +137,7 @@ export function SettingsScreen(): JSX.Element {
           navigation={navigation}
           page={item}
           checkIfCanProceed={item.checkIfCanProceed}
+          cantProceedFallback={item.cantProceedFallback}
           testID={item.testID}
         />
       )
@@ -241,13 +217,7 @@ export function SettingsScreen(): JSX.Element {
                   navigationModal: ModalName.SmartWalletAdvancedSettingsModal,
                   text: t('settings.setting.advanced.title'),
                   icon: <Sliders {...iconProps} />,
-                  navigationProps: {
-                    isTestnetEnabled: isTestnetModeEnabled,
-                    onTestnetModeToggled: handleTestnetModeToggle,
-                    onPressSmartWallet: (): void => {
-                      navigation.navigate(MobileScreens.SettingsSmartWallet)
-                    },
-                  },
+                  navigationProps: advancedSettingsState,
                 },
               ]
             : [
@@ -255,7 +225,7 @@ export function SettingsScreen(): JSX.Element {
                   text: t('settings.setting.wallet.testnetMode.title'),
                   icon: <Wrench {...iconProps} size="$icon.20" />,
                   isToggleEnabled: isTestnetModeEnabled,
-                  onToggle: handleTestnetModeToggle,
+                  onToggle: advancedSettingsState.handleTestnetModeToggle,
                 },
               ]),
         ],
@@ -264,22 +234,22 @@ export function SettingsScreen(): JSX.Element {
         subTitle: t('settings.section.privacyAndSecurity'),
         isHidden: noSignerAccountImported,
         data: [
-          ...(deviceSupportsBiometrics
-            ? [
-                {
-                  navigationModal: ModalName.BiometricsModal,
-                  isHidden: !isTouchIdSupported && !isFaceIdSupported,
-                  text: isAndroid ? t('settings.setting.biometrics.title') : biometricsMethod,
-                  icon: isAndroid ? (
-                    <TouchId size="$icon.20" />
-                  ) : isTouchIdSupported ? (
-                    <Fingerprint {...svgProps} />
-                  ) : (
-                    <Faceid {...svgProps} />
-                  ),
-                },
-              ]
-            : []),
+          {
+            navigationModal: ModalName.BiometricsModal,
+            isHidden: !isTouchIdSupported && !isFaceIdSupported,
+            checkIfCanProceed: (): boolean => !isBiometricsDisabledInOSSettings,
+            cantProceedFallback: (): void => {
+              showBiometricsAlert(biometricsMethod)
+            },
+            text: isAndroid ? t('settings.setting.biometrics.title') : biometricsMethod,
+            icon: isAndroid ? (
+              <TouchId size="$icon.20" />
+            ) : isTouchIdSupported ? (
+              <Fingerprint {...svgProps} />
+            ) : (
+              <Faceid {...svgProps} />
+            ),
+          },
           {
             screen: MobileScreens.SettingsViewSeedPhrase,
             text: t('settings.setting.recoveryPhrase.title'),
@@ -406,8 +376,14 @@ export function SettingsScreen(): JSX.Element {
             text: 'Dev options',
             icon: <UniswapLogo {...svgProps} />,
           },
+          {
+            screen: MobileScreens.DebugScreens,
+            text: 'Debug Screens',
+            icon: <UniswapLogo {...svgProps} />,
+          },
           { component: <OnboardingRow iconProps={svgProps} /> },
           { component: <ResetBehaviorHistoryRow iconProps={svgProps} /> },
+          { component: <ForceReduxDataLossRow iconProps={svgProps} /> },
         ],
       },
     ]
@@ -420,7 +396,6 @@ export function SettingsScreen(): JSX.Element {
     hapticsEnabled,
     onToggleEnableHaptics,
     noSignerAccountImported,
-    deviceSupportsBiometrics,
     isTouchIdSupported,
     isFaceIdSupported,
     biometricsMethod,
@@ -430,12 +405,14 @@ export function SettingsScreen(): JSX.Element {
     hasPasskeyBackup,
     isTestnetModeEnabled,
     isSmartWalletSettingsEnabled,
-    handleTestnetModeToggle,
+    advancedSettingsState,
     notificationOSPermission,
     navigation,
     hasCopiedPrivateKeys,
     shouldShowPrivateKeys,
     walletRestoreType,
+    isBiometricsDisabledInOSSettings,
+    showBiometricsAlert,
   ])
 
   return (

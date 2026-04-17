@@ -4,7 +4,6 @@ import type { Currency } from '@uniswap/sdk-core'
 import { TradingApi } from '@universe/api'
 import { useMemo } from 'react'
 import { getSwappableTokensQueryData } from 'uniswap/src/data/apiClients/tradingApi/useTradingApiSwappableTokensQuery'
-
 import type { TradeableAsset } from 'uniswap/src/entities/assets'
 import { AssetType } from 'uniswap/src/entities/assets'
 import { useTokenProjects } from 'uniswap/src/features/dataApi/tokenProjects/tokenProjects'
@@ -59,7 +58,7 @@ export function useOnSelectCurrency({
   const queryClient = useQueryClient()
 
   return useEvent(
-    // eslint-disable-next-line complexity
+    // oxlint-disable-next-line complexity
     ({
       currency,
       field,
@@ -127,7 +126,7 @@ export function useOnSelectCurrency({
       }
 
       if (!isBridgePair) {
-        const newFilteredChainIds = { ...(filteredChainIds ?? {}) }
+        const newFilteredChainIds = { ...filteredChainIds }
 
         newFilteredChainIds[CurrencyField.INPUT] = currency.chainId
         newFilteredChainIds[CurrencyField.OUTPUT] = currency.chainId

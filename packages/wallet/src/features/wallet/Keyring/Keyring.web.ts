@@ -1,7 +1,7 @@
-/* eslint-disable max-params */
-/* eslint-disable max-lines */
-import { HDKey } from '@scure/bip32'
 import { Buffer } from 'buffer'
+/* oxlint-disable max-params */
+/* oxlint-disable max-lines */
+import { HDKey } from '@scure/bip32'
 import { Signature, utils, Wallet } from 'ethers'
 import { defaultPath, joinSignature, SigningKey } from 'ethers/lib/utils'
 import { logger } from 'utilities/src/logger/logger'
@@ -628,7 +628,7 @@ export class WebKeyring implements IKeyring {
 
       // validate private key (will throw if invalid)
       const wallet = new Wallet(privateKey)
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (!wallet) {
         throw new Error('Invalid private key')
       }

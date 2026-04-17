@@ -136,7 +136,7 @@ export async function focusOrCreateTokensExploreTab({ currencyId }: { currencyId
   return focusOrCreateUniswapInterfaceTab({
     url,
     // We want to reuse the active tab only if it's already in any other TDP.
-    // eslint-disable-next-line security/detect-non-literal-regexp
+    // oxlint-disable-next-line security/detect-non-literal-regexp
     reuseActiveTabIfItMatches: new RegExp(`^${escapeRegExp(uniswapUrls.webInterfaceTokensUrl)}`),
   })
 }

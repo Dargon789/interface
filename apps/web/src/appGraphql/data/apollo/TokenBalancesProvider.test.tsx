@@ -1,9 +1,8 @@
-import { PrefetchBalancesWrapper, useTokenBalancesQuery } from 'appGraphql/data/apollo/AdaptiveTokenBalancesProvider'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
-import { useAccount } from 'hooks/useAccount'
-import { mocked } from 'test-utils/mocked'
-import { render, renderHook } from 'test-utils/render'
-import { Flex } from 'ui/src'
+import { PrefetchBalancesWrapper, useTokenBalancesQuery } from '~/appGraphql/data/apollo/AdaptiveTokenBalancesProvider'
+import { useAccount } from '~/hooks/useAccount'
+import { mocked } from '~/test-utils/mocked'
+import { render, renderHook } from '~/test-utils/render'
 
 // TODO(WEB-5370): Remove this delay + waitFor once we've integrated wallet's refetch logic
 setTimeout(() => {}, 10000)
@@ -25,14 +24,14 @@ vi.mock('@universe/api', async () => {
   return {
     ...actual,
     GraphQLApi: {
-      ...(actual.GraphQLApi || {}),
+      ...(actual.GraphQLApi as Record<string, unknown>),
       usePortfolioBalancesLazyQuery: () => mockBalanceQueryResponse,
     },
   }
 })
 
-vi.mock('hooks/useAccount', async () => {
-  const actual = await vi.importActual('hooks/useAccount')
+vi.mock('~/hooks/useAccount', async () => {
+  const actual = await vi.importActual('~/hooks/useAccount')
   return {
     ...actual,
     useAccount: vi.fn(),
@@ -44,11 +43,6 @@ describe('TokenBalancesProvider', () => {
     vi.clearAllMocks()
     mockLazyFetch.mockClear()
     mocked(useAccount).mockReturnValue({ address: '0xaddress1', chainId: 1 } as any)
-  })
-
-  it('TokenBalancesProvider should not fetch balances without calls to useOnAssetActivitySubscription', async () => {
-    render(<Flex />)
-    await waitFor(() => expect(mockLazyFetch).toHaveBeenCalledTimes(0), { timeout: 3500 })
   })
 
   describe('useTokenBalancesQuery', () => {

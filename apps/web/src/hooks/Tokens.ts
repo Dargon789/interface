@@ -1,6 +1,4 @@
-import { Currency, Token } from '@uniswap/sdk-core'
-import { NATIVE_CHAIN_ID } from 'constants/tokens'
-import { useAccount } from 'hooks/useAccount'
+import { Currency } from '@uniswap/sdk-core'
 import { useMemo } from 'react'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { useSupportedChainId } from 'uniswap/src/features/chains/hooks/useSupportedChainId'
@@ -10,8 +8,10 @@ import {
   useCurrencyInfo as useUniswapCurrencyInfo,
   useCurrencyInfoWithLoading as useUniswapCurrencyInfoWithLoading,
 } from 'uniswap/src/features/tokens/useCurrencyInfo'
-import { AddressStringFormat, getValidAddress, normalizeAddress } from 'uniswap/src/utils/addresses'
+import { AddressStringFormat, normalizeAddress } from 'uniswap/src/utils/addresses'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
+import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { useAccount } from '~/hooks/useAccount'
 
 type Maybe<T> = T | undefined
 
@@ -61,9 +61,11 @@ export function useCurrencyWithLoading(
  * @deprecated useCurrencyInfo from packages/uniswap instead
  * Returns a CurrencyInfo from the tokenAddress+chainId pair.
  */
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 export function useCurrencyInfo(currency?: Currency, chainId?: UniverseChainId, skip?: boolean): Maybe<CurrencyInfo>
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 export function useCurrencyInfo(address?: string, chainId?: UniverseChainId, skip?: boolean): Maybe<CurrencyInfo>
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 export function useCurrencyInfo(
   addressOrCurrency?: string | Currency,
   chainId?: UniverseChainId,
@@ -84,17 +86,19 @@ export function useCurrencyInfo(
   }, [processedAddress, skip, currencyInfo])
 }
 
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 function useCurrencyInfoWithLoading(
   currency?: Currency,
   chainId?: UniverseChainId,
   skip?: boolean,
 ): { currencyInfo: Maybe<CurrencyInfo>; loading: boolean }
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 function useCurrencyInfoWithLoading(
   address?: string,
   chainId?: UniverseChainId,
   skip?: boolean,
 ): { currencyInfo: Maybe<CurrencyInfo>; loading: boolean }
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 function useCurrencyInfoWithLoading(
   addressOrCurrency?: string | Currency,
   chainId?: UniverseChainId,
@@ -149,25 +153,4 @@ function getAddress({
   }
 
   return undefined
-}
-
-export function useToken(tokenAddress?: string, chainId?: UniverseChainId): Maybe<Token> {
-  const { chainId: connectedChainId } = useAccount()
-
-  const formattedAddress = getValidAddress({
-    address: tokenAddress,
-    chainId: chainId ?? connectedChainId ?? UniverseChainId.Mainnet,
-    withEVMChecksum: true,
-  })
-  const currency = useCurrency({
-    address: formattedAddress ? formattedAddress : undefined,
-    chainId: chainId ?? connectedChainId,
-  })
-
-  return useMemo(() => {
-    if (currency && currency.isToken) {
-      return currency
-    }
-    return undefined
-  }, [currency])
 }

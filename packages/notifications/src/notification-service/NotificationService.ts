@@ -42,6 +42,8 @@ export interface NotificationService {
    * @param notificationId - ID of the notification that was shown
    */
   onNotificationShown(notificationId: string): void
+  // Trigger an immediate re-poll on all data sources that support it
+  refresh(): Promise<void>
   // Cleanup and teardown
   destroy(): void
 }

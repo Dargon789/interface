@@ -91,14 +91,14 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
         class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _width-10037 _pt-t-space-spa1360334076 _pr-t-space-spa1360334076 _pl-t-space-spa1360334076"
       >
         <span
-          class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-bo3548"
+          class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh507465454"
           data-disable-theme="true"
         >
           You’re sending
         </span>
       </div>
       <div
-        class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _pr-t-space-spa1360334076 _pl-t-space-spa1360334076 _pt-t-space-spa1360333927 _pb-t-space-spa1360333927 _gap-t-space-spa1360334076 _maxWidth-10037"
+        class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _pr-t-space-spa1360334076 _pl-t-space-spa1360334076 _pt-t-space-spa1360333927 _pb-t-space-spa1360333927 _gap-t-space-spa1360334076 _width-10037 _alignItems-center"
       >
         <div
           class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _maxWidth-10037 _position-relative _width-max-content"
@@ -139,7 +139,7 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
           style="transition: 100ms;"
         >
           <span
-            class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-bo3548"
+            class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh507465454"
             data-disable-theme="true"
           >
             100.00 DAI
@@ -223,7 +223,7 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
             class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row"
           >
             <div
-              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: 999999px; border-top-right-radius: 999999px; border-bottom-right-radius: 999999px; border-bottom-left-radius: 999999px; transform: [object Object];"
+              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: var(--t-radius-roundedFull); border-top-right-radius: var(--t-radius-roundedFull); border-bottom-right-radius: var(--t-radius-roundedFull); border-bottom-left-radius: var(--t-radius-roundedFull); transform: rotate(270deg); transition: all 100ms cubic-bezier(0.17, 0.67, 0.45, 1);"
             >
               <svg
                 fill="none"
@@ -265,7 +265,7 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                   class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _justifyContent-space-betwe3241 _pt-t-space-spa1360334076 _pr-t-space-spa1360334076 _pl-t-space-spa1360334076"
                 >
                   <span
-                    class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-larg101 _lineHeight-f-lineHeigh1262266530 _fontWeight-f-weight-bo3548"
+                    class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-larg101 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1262266530"
                     data-disable-theme="true"
                   >
                     Select a token
@@ -273,7 +273,7 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                   <div
                     class="is_TouchableArea  t_group_true"
                     role="button"
-                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-color: transparent; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: [object Object];"
+                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: scale(1);"
                     tabindex="0"
                   >
                     <div
@@ -297,7 +297,7 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                   class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-1 _flexDirection-row _alignItems-center _mr-16px _ml-16px"
                 >
                   <div
-                    style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; flex-grow: 1; align-items: center; background-color: rgb(249, 249, 249); border-top-left-radius: 999999px; border-top-right-radius: 999999px; border-bottom-right-radius: 999999px; border-bottom-left-radius: 999999px; gap: 8px; min-height: 48px; margin: 4px 0px 4px 0px; padding: 0px 16px 0px 16px;"
+                    style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; flex-grow: 1; align-items: center; border-top-left-radius: var(--t-radius-rounded16); border-top-right-radius: var(--t-radius-rounded16); border-bottom-right-radius: var(--t-radius-rounded16); border-bottom-left-radius: var(--t-radius-rounded16); gap: var(--t-space-spacing8); min-height: 48px; margin-left: 0px; margin-right: 0px; border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transition: marginRight 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);"
                   >
                     <div
                       class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _pt-t-space-spa94665589 _pb-t-space-spa94665589"
@@ -345,7 +345,7 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                       </span>
                     </div>
                     <div
-                      style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column;"
+                      style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; transition: all 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);"
                     >
                       <div
                         class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _alignItems-center"
@@ -353,7 +353,7 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                         <div
                           class="is_TouchableArea  t_group_true"
                           role="button"
-                          style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-color: transparent; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: [object Object];"
+                          style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: scale(1);"
                           tabindex="0"
                         >
                           <div
@@ -366,10 +366,10 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                             >
                               <div
                                 class="css-view-175oi2r r-flexBasis-1mlwlqe r-overflow-1udh08x r-zIndex-417010"
-                                style="width: 20px; height: 20px;"
+                                style="object-fit: contain; width: 20px; height: 20px;"
                               >
                                 <div
-                                  class="css-view-175oi2r r-backgroundColor-1niwhzg r-backgroundPosition-vvn4in r-backgroundRepeat-u6sd8q r-bottom-1p0dtai r-height-1pi2tsx r-left-1d2f490 r-position-u8s1d r-right-zchlnj r-top-ipm5af r-width-13qz1uu r-zIndex-1wyyakw r-backgroundSize-ehq7j7"
+                                  class="css-view-175oi2r r-backgroundColor-1niwhzg r-backgroundPosition-vvn4in r-backgroundRepeat-u6sd8q r-bottom-1p0dtai r-height-1pi2tsx r-left-1d2f490 r-position-u8s1d r-right-zchlnj r-top-ipm5af r-width-13qz1uu r-zIndex-1wyyakw r-backgroundSize-4gszlv"
                                   style="background-image: url(all-networks-logo.png);"
                                 />
                                 <img
@@ -381,7 +381,7 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                               </div>
                             </div>
                             <div
-                              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: 999999px; border-top-right-radius: 999999px; border-bottom-right-radius: 999999px; border-bottom-left-radius: 999999px; transform: [object Object];"
+                              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: var(--t-radius-roundedFull); border-top-right-radius: var(--t-radius-roundedFull); border-bottom-right-radius: var(--t-radius-roundedFull); border-bottom-left-radius: var(--t-radius-roundedFull); transform: rotate(270deg); transition: all 100ms ease-in-out;"
                             >
                               <svg
                                 fill="none"
@@ -418,7 +418,7 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                     />
                   </svg>
                   <span
-                    class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _lineHeight-f-lineHeigh1269072494 _fontWeight-f-weight-bo3548"
+                    class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494"
                     data-disable-theme="true"
                   >
                     Only Mainnet tokens are available for limits.
@@ -428,7 +428,7 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                   class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _flexGrow-1"
                 >
                   <div
-                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; opacity: 1; width: 100%; flex-grow: 1; transform: [object Object];"
+                    class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _flexGrow-1"
                   >
                     <div
                       class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _flexGrow-1 _maxHeight-100dvh"
@@ -458,7 +458,7 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                               class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-1 _flexDirection-row _alignItems-center _flexGrow-1"
                             >
                               <span
-                                class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _lineHeight-f-lineHeigh1269072494 _fontWeight-f-weight-bo3548"
+                                class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494"
                                 data-disable-theme="true"
                               >
                                 Your tokens
@@ -479,13 +479,13 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                                 class="_display-flex _alignItems-center _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _justifyContent-center _gap-t-space-spa94665593 _mt-t-space-spa94665593"
                               >
                                 <span
-                                  class="font_button _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-me3083741"
+                                  class="font_button _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh507465454"
                                   data-disable-theme="true"
                                 >
                                   No tokens yet
                                 </span>
                                 <span
-                                  class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-bo3548"
+                                  class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh507465454"
                                   data-disable-theme="true"
                                 >
                                   Buy crypto with a card or bank to send tokens.
@@ -498,11 +498,11 @@ exports[`SendCurrencyInputform > renders input in fiat correctly 1`] = `
                               <div
                                 class="is_TouchableArea  t_group_true"
                                 role="button"
-                                style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-color: transparent; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: [object Object];"
+                                style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: scale(1);"
                                 tabindex="0"
                               >
                                 <span
-                                  class="font_button _color-_grouptrue-hover_accent1Hove112785 _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-accent1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-me3083741"
+                                  class="font_button _color-_grouptrue-hover_accent1Hove112785 _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-accent1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh507465454"
                                   data-disable-theme="true"
                                 >
                                   Buy crypto
@@ -613,14 +613,14 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
         class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _width-10037 _pt-t-space-spa1360334076 _pr-t-space-spa1360334076 _pl-t-space-spa1360334076"
       >
         <span
-          class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-bo3548"
+          class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh507465454"
           data-disable-theme="true"
         >
           You’re sending
         </span>
       </div>
       <div
-        class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _pr-t-space-spa1360334076 _pl-t-space-spa1360334076 _pt-t-space-spa1360333927 _pb-t-space-spa1360333927 _gap-t-space-spa1360334076 _maxWidth-10037"
+        class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _pr-t-space-spa1360334076 _pl-t-space-spa1360334076 _pt-t-space-spa1360333927 _pb-t-space-spa1360333927 _gap-t-space-spa1360334076 _width-10037 _alignItems-center"
       >
         <div
           class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _maxWidth-10037 _position-relative _width-max-content"
@@ -655,7 +655,7 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
           style="transition: 100ms;"
         >
           <span
-            class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-bo3548"
+            class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh507465454"
             data-disable-theme="true"
           >
             $100.00
@@ -739,7 +739,7 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
             class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row"
           >
             <div
-              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: 999999px; border-top-right-radius: 999999px; border-bottom-right-radius: 999999px; border-bottom-left-radius: 999999px; transform: [object Object];"
+              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: var(--t-radius-roundedFull); border-top-right-radius: var(--t-radius-roundedFull); border-bottom-right-radius: var(--t-radius-roundedFull); border-bottom-left-radius: var(--t-radius-roundedFull); transform: rotate(270deg); transition: all 100ms cubic-bezier(0.17, 0.67, 0.45, 1);"
             >
               <svg
                 fill="none"
@@ -781,7 +781,7 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                   class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _justifyContent-space-betwe3241 _pt-t-space-spa1360334076 _pr-t-space-spa1360334076 _pl-t-space-spa1360334076"
                 >
                   <span
-                    class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-larg101 _lineHeight-f-lineHeigh1262266530 _fontWeight-f-weight-bo3548"
+                    class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-larg101 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1262266530"
                     data-disable-theme="true"
                   >
                     Select a token
@@ -789,7 +789,7 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                   <div
                     class="is_TouchableArea  t_group_true"
                     role="button"
-                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-color: transparent; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: [object Object];"
+                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: scale(1);"
                     tabindex="0"
                   >
                     <div
@@ -813,7 +813,7 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                   class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-1 _flexDirection-row _alignItems-center _mr-16px _ml-16px"
                 >
                   <div
-                    style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; flex-grow: 1; align-items: center; background-color: rgb(249, 249, 249); border-top-left-radius: 999999px; border-top-right-radius: 999999px; border-bottom-right-radius: 999999px; border-bottom-left-radius: 999999px; gap: 8px; min-height: 48px; margin: 4px 0px 4px 0px; padding: 0px 16px 0px 16px;"
+                    style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; flex-grow: 1; align-items: center; border-top-left-radius: var(--t-radius-rounded16); border-top-right-radius: var(--t-radius-rounded16); border-bottom-right-radius: var(--t-radius-rounded16); border-bottom-left-radius: var(--t-radius-rounded16); gap: var(--t-space-spacing8); min-height: 48px; margin-left: 0px; margin-right: 0px; border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transition: marginRight 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);"
                   >
                     <div
                       class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _pt-t-space-spa94665589 _pb-t-space-spa94665589"
@@ -861,7 +861,7 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                       </span>
                     </div>
                     <div
-                      style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column;"
+                      style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; transition: all 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);"
                     >
                       <div
                         class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _alignItems-center"
@@ -869,7 +869,7 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                         <div
                           class="is_TouchableArea  t_group_true"
                           role="button"
-                          style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-color: transparent; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: [object Object];"
+                          style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: scale(1);"
                           tabindex="0"
                         >
                           <div
@@ -882,10 +882,10 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                             >
                               <div
                                 class="css-view-175oi2r r-flexBasis-1mlwlqe r-overflow-1udh08x r-zIndex-417010"
-                                style="width: 20px; height: 20px;"
+                                style="object-fit: contain; width: 20px; height: 20px;"
                               >
                                 <div
-                                  class="css-view-175oi2r r-backgroundColor-1niwhzg r-backgroundPosition-vvn4in r-backgroundRepeat-u6sd8q r-bottom-1p0dtai r-height-1pi2tsx r-left-1d2f490 r-position-u8s1d r-right-zchlnj r-top-ipm5af r-width-13qz1uu r-zIndex-1wyyakw r-backgroundSize-ehq7j7"
+                                  class="css-view-175oi2r r-backgroundColor-1niwhzg r-backgroundPosition-vvn4in r-backgroundRepeat-u6sd8q r-bottom-1p0dtai r-height-1pi2tsx r-left-1d2f490 r-position-u8s1d r-right-zchlnj r-top-ipm5af r-width-13qz1uu r-zIndex-1wyyakw r-backgroundSize-4gszlv"
                                   style="background-image: url(all-networks-logo.png);"
                                 />
                                 <img
@@ -897,7 +897,7 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                               </div>
                             </div>
                             <div
-                              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: 999999px; border-top-right-radius: 999999px; border-bottom-right-radius: 999999px; border-bottom-left-radius: 999999px; transform: [object Object];"
+                              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: var(--t-radius-roundedFull); border-top-right-radius: var(--t-radius-roundedFull); border-bottom-right-radius: var(--t-radius-roundedFull); border-bottom-left-radius: var(--t-radius-roundedFull); transform: rotate(270deg); transition: all 100ms ease-in-out;"
                             >
                               <svg
                                 fill="none"
@@ -934,7 +934,7 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                     />
                   </svg>
                   <span
-                    class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _lineHeight-f-lineHeigh1269072494 _fontWeight-f-weight-bo3548"
+                    class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494"
                     data-disable-theme="true"
                   >
                     Only Mainnet tokens are available for limits.
@@ -944,7 +944,7 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                   class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _flexGrow-1"
                 >
                   <div
-                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; opacity: 1; width: 100%; flex-grow: 1; transform: [object Object];"
+                    class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _flexGrow-1"
                   >
                     <div
                       class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _flexGrow-1 _maxHeight-100dvh"
@@ -974,7 +974,7 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                               class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-1 _flexDirection-row _alignItems-center _flexGrow-1"
                             >
                               <span
-                                class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _lineHeight-f-lineHeigh1269072494 _fontWeight-f-weight-bo3548"
+                                class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494"
                                 data-disable-theme="true"
                               >
                                 Your tokens
@@ -995,13 +995,13 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                                 class="_display-flex _alignItems-center _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _justifyContent-center _gap-t-space-spa94665593 _mt-t-space-spa94665593"
                               >
                                 <span
-                                  class="font_button _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-me3083741"
+                                  class="font_button _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh507465454"
                                   data-disable-theme="true"
                                 >
                                   No tokens yet
                                 </span>
                                 <span
-                                  class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-bo3548"
+                                  class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh507465454"
                                   data-disable-theme="true"
                                 >
                                   Buy crypto with a card or bank to send tokens.
@@ -1014,11 +1014,11 @@ exports[`SendCurrencyInputform > renders input in token amount correctly 1`] = `
                               <div
                                 class="is_TouchableArea  t_group_true"
                                 role="button"
-                                style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-color: transparent; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: [object Object];"
+                                style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: scale(1);"
                                 tabindex="0"
                               >
                                 <span
-                                  class="font_button _color-_grouptrue-hover_accent1Hove112785 _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-accent1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-me3083741"
+                                  class="font_button _color-_grouptrue-hover_accent1Hove112785 _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-accent1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh507465454"
                                   data-disable-theme="true"
                                 >
                                   Buy crypto
@@ -1139,14 +1139,14 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
         class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _width-10037 _pt-t-space-spa1360334076 _pr-t-space-spa1360334076 _pl-t-space-spa1360334076"
       >
         <span
-          class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-bo3548"
+          class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh507465454"
           data-disable-theme="true"
         >
           You’re sending
         </span>
       </div>
       <div
-        class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _pr-t-space-spa1360334076 _pl-t-space-spa1360334076 _pt-t-space-spa1360333927 _pb-t-space-spa1360333927 _gap-t-space-spa1360334076 _maxWidth-10037"
+        class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _pr-t-space-spa1360334076 _pl-t-space-spa1360334076 _pt-t-space-spa1360333927 _pb-t-space-spa1360333927 _gap-t-space-spa1360334076 _width-10037 _alignItems-center"
       >
         <div
           class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _maxWidth-10037 _position-relative _width-max-content"
@@ -1185,7 +1185,7 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
           style="transition: 100ms;"
         >
           <span
-            class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-bo3548"
+            class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh507465454"
             data-disable-theme="true"
           >
             0 DAI
@@ -1269,7 +1269,7 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
             class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row"
           >
             <div
-              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: 999999px; border-top-right-radius: 999999px; border-bottom-right-radius: 999999px; border-bottom-left-radius: 999999px; transform: [object Object];"
+              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: var(--t-radius-roundedFull); border-top-right-radius: var(--t-radius-roundedFull); border-bottom-right-radius: var(--t-radius-roundedFull); border-bottom-left-radius: var(--t-radius-roundedFull); transform: rotate(270deg); transition: all 100ms cubic-bezier(0.17, 0.67, 0.45, 1);"
             >
               <svg
                 fill="none"
@@ -1311,7 +1311,7 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                   class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _justifyContent-space-betwe3241 _pt-t-space-spa1360334076 _pr-t-space-spa1360334076 _pl-t-space-spa1360334076"
                 >
                   <span
-                    class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-larg101 _lineHeight-f-lineHeigh1262266530 _fontWeight-f-weight-bo3548"
+                    class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-larg101 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1262266530"
                     data-disable-theme="true"
                   >
                     Select a token
@@ -1319,7 +1319,7 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                   <div
                     class="is_TouchableArea  t_group_true"
                     role="button"
-                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-color: transparent; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: [object Object];"
+                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: scale(1);"
                     tabindex="0"
                   >
                     <div
@@ -1343,7 +1343,7 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                   class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-1 _flexDirection-row _alignItems-center _mr-16px _ml-16px"
                 >
                   <div
-                    style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; flex-grow: 1; align-items: center; background-color: rgb(249, 249, 249); border-top-left-radius: 999999px; border-top-right-radius: 999999px; border-bottom-right-radius: 999999px; border-bottom-left-radius: 999999px; gap: 8px; min-height: 48px; margin: 4px 0px 4px 0px; padding: 0px 16px 0px 16px;"
+                    style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; flex-grow: 1; align-items: center; border-top-left-radius: var(--t-radius-rounded16); border-top-right-radius: var(--t-radius-rounded16); border-bottom-right-radius: var(--t-radius-rounded16); border-bottom-left-radius: var(--t-radius-rounded16); gap: var(--t-space-spacing8); min-height: 48px; margin-left: 0px; margin-right: 0px; border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transition: marginRight 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);"
                   >
                     <div
                       class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _pt-t-space-spa94665589 _pb-t-space-spa94665589"
@@ -1391,7 +1391,8 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                       </span>
                     </div>
                     <div
-                      style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column;"
+                      class="t_unmounted  t_unmounted"
+                      style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; transition: all 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);"
                     >
                       <div
                         class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _alignItems-center"
@@ -1399,7 +1400,7 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                         <div
                           class="is_TouchableArea  t_group_true"
                           role="button"
-                          style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-color: transparent; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: [object Object];"
+                          style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: scale(1);"
                           tabindex="0"
                         >
                           <div
@@ -1412,10 +1413,10 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                             >
                               <div
                                 class="css-view-175oi2r r-flexBasis-1mlwlqe r-overflow-1udh08x r-zIndex-417010"
-                                style="width: 20px; height: 20px;"
+                                style="object-fit: contain; width: 20px; height: 20px;"
                               >
                                 <div
-                                  class="css-view-175oi2r r-backgroundColor-1niwhzg r-backgroundPosition-vvn4in r-backgroundRepeat-u6sd8q r-bottom-1p0dtai r-height-1pi2tsx r-left-1d2f490 r-position-u8s1d r-right-zchlnj r-top-ipm5af r-width-13qz1uu r-zIndex-1wyyakw r-backgroundSize-ehq7j7"
+                                  class="css-view-175oi2r r-backgroundColor-1niwhzg r-backgroundPosition-vvn4in r-backgroundRepeat-u6sd8q r-bottom-1p0dtai r-height-1pi2tsx r-left-1d2f490 r-position-u8s1d r-right-zchlnj r-top-ipm5af r-width-13qz1uu r-zIndex-1wyyakw r-backgroundSize-4gszlv"
                                   style="background-image: url(all-networks-logo.png);"
                                 />
                                 <img
@@ -1427,7 +1428,7 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                               </div>
                             </div>
                             <div
-                              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: 999999px; border-top-right-radius: 999999px; border-bottom-right-radius: 999999px; border-bottom-left-radius: 999999px; transform: [object Object];"
+                              style="display: flex; align-items: center; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; justify-content: center; border-top-left-radius: var(--t-radius-roundedFull); border-top-right-radius: var(--t-radius-roundedFull); border-bottom-right-radius: var(--t-radius-roundedFull); border-bottom-left-radius: var(--t-radius-roundedFull); transform: rotate(270deg); transition: all 100ms ease-in-out;"
                             >
                               <svg
                                 fill="none"
@@ -1464,7 +1465,7 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                     />
                   </svg>
                   <span
-                    class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _lineHeight-f-lineHeigh1269072494 _fontWeight-f-weight-bo3548"
+                    class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494"
                     data-disable-theme="true"
                   >
                     Only Mainnet tokens are available for limits.
@@ -1474,7 +1475,7 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                   class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _flexGrow-1"
                 >
                   <div
-                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; opacity: 1; width: 100%; flex-grow: 1; transform: [object Object];"
+                    class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _flexGrow-1"
                   >
                     <div
                       class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _flexGrow-1 _maxHeight-100dvh"
@@ -1504,7 +1505,7 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                               class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-1 _flexDirection-row _alignItems-center _flexGrow-1"
                             >
                               <span
-                                class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _lineHeight-f-lineHeigh1269072494 _fontWeight-f-weight-bo3548"
+                                class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494"
                                 data-disable-theme="true"
                               >
                                 Your tokens
@@ -1525,13 +1526,13 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                                 class="_display-flex _alignItems-center _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _justifyContent-center _gap-t-space-spa94665593 _mt-t-space-spa94665593"
                               >
                                 <span
-                                  class="font_button _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-me3083741"
+                                  class="font_button _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh507465454"
                                   data-disable-theme="true"
                                 >
                                   No tokens yet
                                 </span>
                                 <span
-                                  class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-bo3548"
+                                  class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh507465454"
                                   data-disable-theme="true"
                                 >
                                   Buy crypto with a card or bank to send tokens.
@@ -1544,11 +1545,11 @@ exports[`SendCurrencyInputform > should render placeholder values 1`] = `
                               <div
                                 class="is_TouchableArea  t_group_true"
                                 role="button"
-                                style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-color: transparent; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: [object Object];"
+                                style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: scale(1);"
                                 tabindex="0"
                               >
                                 <span
-                                  class="font_button _color-_grouptrue-hover_accent1Hove112785 _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-accent1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _lineHeight-f-lineHeigh507465454 _fontWeight-f-weight-me3083741"
+                                  class="font_button _color-_grouptrue-hover_accent1Hove112785 _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-accent1 _fontFamily-f-family _wordWrap-break-word _textAlign-center _fontSize-f-size-medi3736 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh507465454"
                                   data-disable-theme="true"
                                 >
                                   Buy crypto

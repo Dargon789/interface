@@ -32,26 +32,33 @@ export function TransactionHistoryUpdater(): JSX.Element | null {
 
   const activeAccountAddress = useActiveAccountAddress()
   const nonActiveAccountAddresses = useMemo(() => {
-    return Object.keys(allAccounts).filter((address) => address !== activeAccountAddress)
+    // Filter out any empty/falsy addresses to prevent validation errors
+    return Object.keys(allAccounts).filter((address) => address && address !== activeAccountAddress)
   }, [activeAccountAddress, allAccounts])
 
   const { gqlChains } = useEnabledChains()
 
   // Poll at different intervals to reduce requests made for non active accounts.
+  // IMPORTANT: Disable polling when no addresses to prevent race condition where
+  // empty arrays are sent to GraphQL before skip condition is evaluated.
 
   const activeAddresses = activeAccountAddress ? [activeAccountAddress] : []
+  const shouldSkipActiveQuery = activeAddresses.length === 0
+
   const { data: activeAccountData } = GraphQLApi.useTransactionHistoryUpdaterQuery({
     variables: { addresses: activeAddresses, chains: gqlChains },
-    pollInterval: PollingInterval.KindaFast,
+    pollInterval: shouldSkipActiveQuery ? 0 : PollingInterval.KindaFast,
     fetchPolicy: 'network-only', // Ensure latest data.
-    skip: activeAddresses.length === 0,
+    skip: shouldSkipActiveQuery,
   })
+
+  const shouldSkipNonActiveQuery = nonActiveAccountAddresses.length === 0
 
   const { data: nonActiveAccountData } = GraphQLApi.useTransactionHistoryUpdaterQuery({
     variables: { addresses: nonActiveAccountAddresses, chains: gqlChains },
-    pollInterval: PollingInterval.Normal,
+    pollInterval: shouldSkipNonActiveQuery ? 0 : PollingInterval.Normal,
     fetchPolicy: 'network-only', // Ensure latest data.
-    skip: nonActiveAccountAddresses.length === 0,
+    skip: shouldSkipNonActiveQuery,
   })
 
   const combinedPortfoliosData = [...(activeAccountData?.portfolios ?? []), ...(nonActiveAccountData?.portfolios ?? [])]
@@ -126,7 +133,7 @@ function AddressTransactionHistoryUpdater({
 
           // Dont flag notification status for txns submitted from app, this is handled in transactionWatcherSaga.
           const confirmedLocally = localTransactions?.some(
-            // eslint-disable-next-line max-nested-callbacks
+            // oxlint-disable-next-line max-nested-callbacks
             (localTx) => activity.details.__typename === 'TransactionDetails' && localTx.hash === activity.details.hash,
           )
           if (!confirmedLocally) {
@@ -138,7 +145,7 @@ function AddressTransactionHistoryUpdater({
         }
       })
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (newTransactionsFound && address === activeAccountAddress) {
         // Fetch full recent txn history and dispatch receive notification if needed.
         await fetchAndDispatchReceiveNotification(address, lastTxNotificationUpdateTimestamp, hideSpamTokens)
@@ -168,6 +175,7 @@ function AddressTransactionHistoryUpdater({
  * want to submit every polling interval - only fetch this data if new txn is detected. This ideally gets
  * replaced with a subscription to new transactions with more full txn data.
  */
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 export function useFetchAndDispatchReceiveNotification(): (
   address: string,
   lastTxNotificationUpdateTimestamp: number | undefined,
@@ -177,11 +185,11 @@ export function useFetchAndDispatchReceiveNotification(): (
   const dispatch = useDispatch()
   const { gqlChains } = useEnabledChains()
 
+  // oxlint-disable-next-line max-params
   return async (
     address: string,
     lastTxNotificationUpdateTimestamp: number | undefined,
     hideSpamTokens = false,
-    // eslint-disable-next-line max-params
   ): Promise<void> => {
     // Fetch full transaction history for user address.
     const { data: fullTransactionData } = await fetchFullTransactionData({

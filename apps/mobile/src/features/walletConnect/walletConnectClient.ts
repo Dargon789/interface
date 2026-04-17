@@ -1,6 +1,6 @@
+import '@walletconnect/react-native-compat'
 import { IWalletKit, WalletKit } from '@reown/walletkit'
 import { Core } from '@walletconnect/core'
-import '@walletconnect/react-native-compat'
 import { registerWCClientForPushNotifications } from 'src/features/walletConnect/api'
 import { config } from 'uniswap/src/config'
 import { isBetaEnv, isDevEnv } from 'utilities/src/environment/env'

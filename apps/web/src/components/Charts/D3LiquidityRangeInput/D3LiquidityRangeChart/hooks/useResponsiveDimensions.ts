@@ -1,6 +1,6 @@
-import { CHART_DIMENSIONS } from 'components/Charts/D3LiquidityRangeInput/D3LiquidityRangeChart/constants'
 import { useEffect, useState } from 'react'
 import { useDeviceDimensions } from 'ui/src/hooks/useDeviceDimensions/useDeviceDimensions'
+import { CHART_DIMENSIONS } from '~/components/Charts/D3LiquidityChartShared/constants'
 
 export function useResponsiveDimensions() {
   const [dimensions, setDimensions] = useState({
@@ -11,7 +11,7 @@ export function useResponsiveDimensions() {
 
   const deviceDimensions = useDeviceDimensions()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +deviceDimensions
+  // oxlint-disable-next-line react/exhaustive-deps -- +deviceDimensions
   useEffect(() => {
     const calculateDimensions = () => {
       const chartContainer = document.getElementById('d3-liquidity-range-input')

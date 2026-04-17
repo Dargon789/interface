@@ -264,7 +264,7 @@ const v24SchemaIntermediate = {
   },
   userSettings: {
     ...v23Schema.userSettings,
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     hapticsEnabled: v23Schema.appearanceSettings.hapticsEnabled ?? false,
   },
 }
@@ -280,6 +280,8 @@ export const v27Schema = { ...v26Schema }
 
 export const v29Schema = { ...v27Schema, visibility: { ...v27Schema.visibility, activity: {} } }
 
-const v30Schema = { ...v29Schema }
+export const v30Schema = { ...v29Schema }
 
-export const getSchema = (): typeof v30Schema => v30Schema
+const v31Schema = { ...v30Schema }
+
+export const getSchema = (): typeof v31Schema => v31Schema

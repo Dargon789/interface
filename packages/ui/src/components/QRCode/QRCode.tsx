@@ -130,9 +130,9 @@ function transformMatrixIntoCirclePath(
 function genMatrix(value: string | QRCodeSegment[], errorCorrectionLevel: QRCodeErrorCorrectionLevel): number[][] {
   const arr = Array.prototype.slice.call(create(value, { errorCorrectionLevel }).modules.data, 0)
   const sqrt = Math.sqrt(arr.length)
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  // oxlint-disable-next-line typescript/no-unsafe-return
   return arr.reduce(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, max-params
+    // oxlint-disable-next-line typescript/no-unsafe-return, max-params
     (rows, key, index) => (index % sqrt === 0 ? rows.push([key]) : rows[rows.length - 1].push(key)) && rows,
     [],
   )

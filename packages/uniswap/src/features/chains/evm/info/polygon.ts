@@ -2,6 +2,7 @@ import { GraphQLApi } from '@universe/api'
 import { SwapConfigKey } from '@universe/gating'
 import { POLYGON_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import { getQuicknodeEndpointUrl } from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
 import {
@@ -46,6 +47,7 @@ export const POLYGON_CHAIN_INFO = {
   },
   openseaName: 'matic',
   interfaceName: 'polygon',
+  searchAliases: ['poly'],
   label: 'Polygon',
   logo: POLYGON_LOGO,
   name: 'Polygon Mainnet',
@@ -57,18 +59,20 @@ export const POLYGON_CHAIN_INFO = {
     logo: POLYGON_LOGO,
   },
   networkLayer: NetworkLayer.L1,
+  blockTimeMs: 2000,
   pendingTransactionsRetryOptions: undefined,
   rpcUrls: {
     [RPCType.Public]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Polygon)] },
     [RPCType.PublicAlt]: { http: ['https://polygon-rpc.com/'] },
-    [RPCType.Default]: { http: ['https://polygon-rpc.com/'] },
+    [RPCType.Default]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Polygon)] },
+    [RPCType.Fallback]: { http: ['https://polygon-rpc.com/'] },
     [RPCType.Interface]: { http: [`https://polygon-mainnet.infura.io/v3/${config.infuraKey}`] },
   },
   tokens,
   statusPage: undefined,
   supportsV4: true,
   supportsNFTs: true,
-  urlParam: 'polygon',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Polygon],
   wrappedNativeCurrency: {
     name: 'Wrapped POL',
     symbol: 'WPOL',

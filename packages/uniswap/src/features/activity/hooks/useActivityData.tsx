@@ -1,5 +1,6 @@
 import { PartialMessage } from '@bufbuild/protobuf'
 import { FiatOnRampParams } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import { TransactionTypeFilter } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { StyleProp, ViewStyle } from 'react-native'
@@ -33,6 +34,8 @@ export type UseActivityDataProps = {
   onPressEmptyState?: () => void
   chainIds?: UniverseChainId[]
   showLoadingOnRefetch?: boolean
+  filterTransactionTypes?: TransactionTypeFilter[]
+  searchText?: string
 }
 
 export type ActivityRenderData = PaginationControls & {
@@ -58,6 +61,8 @@ export function useActivityData({
   chainIds,
   isExternalProfile = false,
   showLoadingOnRefetch = false,
+  filterTransactionTypes,
+  searchText,
 }: UseActivityDataProps): ActivityRenderData {
   const { t } = useTranslation()
 
@@ -93,6 +98,8 @@ export function useActivityData({
     skip,
     chainIds,
     showLoadingOnRefetch,
+    filterTransactionTypes,
+    searchText,
   })
 
   const sectionDataWithExtra: ActivityItem[] | undefined = useMemo(() => {

@@ -1,5 +1,6 @@
-import { expect, getTest } from 'playwright/fixtures'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { expect, getTest } from '~/playwright/fixtures'
+import { setPersistedUserState } from '~/playwright/utils/reduxState'
 
 const test = getTest()
 const MOBILE_VIEWPORT = { width: 375, height: 667 }
@@ -9,9 +10,9 @@ const FORCE_INTRO_PARAM = '?intro=true' // Query param to force the intro screen
 test.describe(
   'Landing Page',
   {
-    tag: '@team:apps-growth',
+    tag: '@team:apps-portfolio',
     annotation: [
-      { type: 'DD_TAGS[team]', description: 'apps-growth' },
+      { type: 'DD_TAGS[team]', description: 'apps-portfolio' },
       { type: 'DD_TAGS[test.type]', description: 'web-e2e' },
     ],
   },
@@ -58,26 +59,8 @@ test.describe(
     })
 
     test.describe('UK compliance banner', () => {
-      test.afterEach(async ({ page }) => {
-        await page.unrouteAll({ behavior: 'ignoreErrors' })
-      })
       test('renders UK compliance banner in UK', async ({ page }) => {
-        await page.route(/(?:interface|beta)\.gateway\.uniswap\.org\/v1\/amplitude-proxy/, async (route) => {
-          const requestBody = JSON.stringify(await route.request().postDataJSON())
-          const originalResponse = await route.fetch()
-          const byteSize = new Blob([requestBody]).size
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            headers: { ...originalResponse.headers(), 'origin-country': 'GB' },
-            body: JSON.stringify({
-              code: 200,
-              server_upload_time: Date.now(),
-              payload_size_bytes: byteSize,
-              events_ingested: (await route.request().postDataJSON()).events.length,
-            }),
-          })
-        })
+        await setPersistedUserState(page, { originCountry: 'GB' })
 
         await page.goto(`/swap${UNCONNECTED_USER_PARAM}`)
         await page.getByText('Read more').click()

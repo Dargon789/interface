@@ -1,33 +1,46 @@
-jest.mock('@universe/gating', () => ({
-  ...jest.requireActual('@universe/gating'),
-  getFeatureFlag: jest.fn(),
-}))
+vi.mock('@universe/gating', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@universe/gating')>()
+  return {
+    ...actual,
+    getFeatureFlag: vi.fn(),
+    getExperimentValueFromLayer: vi.fn(),
+    waitForStatsigReady: vi.fn().mockResolvedValue(undefined),
+  }
+})
 
-jest.mock('@universe/config', () => {
-  const { getConfig } = jest.requireActual('@universe/config/src/getConfig.web')
+vi.mock('@universe/config', async () => {
+  const { getConfig } = await vi.importActual<typeof import('@universe/config/src/getConfig.web')>(
+    '@universe/config/src/getConfig.web',
+  )
   return {
     getConfig,
   }
 })
 
-const mockFetch = jest.fn()
+const mockFetch = vi.fn()
 global.fetch = mockFetch
 
 import { TradingApi } from '@universe/api'
 import { TRADING_API_PATHS } from '@universe/api/src/clients/trading/createTradingApiClient'
-import { FeatureFlags, getFeatureFlag } from '@universe/gating'
+import {
+  EthAsErc20UniswapXProperties,
+  FeatureFlags,
+  getExperimentValueFromLayer,
+  getFeatureFlag,
+  Layers,
+} from '@universe/gating'
 import {
   checkWalletDelegation,
   getFeatureFlaggedHeaders,
-  getQuoteHeaders,
   TradingApiHeaders,
 } from 'uniswap/src/data/apiClients/tradingApi/TradingApiClient'
+import type { MockedFunction } from 'vitest'
 
 // Helper function to create a mock Response
 const createMockResponse = (data: TradingApi.WalletCheckDelegationResponseBody): Partial<Response> => ({
   ok: true,
   status: 200,
-  json: jest.fn().mockResolvedValue(data),
+  json: vi.fn().mockResolvedValue(data),
 })
 
 const mockCheckWalletDelegationWithoutBatching = mockFetch
@@ -54,7 +67,7 @@ describe('checkWalletDelegation', () => {
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('when no wallet addresses are provided', () => {
@@ -477,30 +490,37 @@ describe('checkWalletDelegation', () => {
 })
 
 describe('getFeatureFlaggedHeaders', () => {
-  const mockGetFeatureFlag = getFeatureFlag as jest.MockedFunction<typeof getFeatureFlag>
+  const mockGetFeatureFlag = getFeatureFlag as MockedFunction<typeof getFeatureFlag>
+  const mockGetExperimentValueFromLayer = getExperimentValueFromLayer as MockedFunction<
+    typeof getExperimentValueFromLayer
+  >
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockGetFeatureFlag.mockReturnValue(false)
+    mockGetExperimentValueFromLayer.mockReturnValue(false)
   })
 
   getAllTradingApiPaths().forEach((path) => {
-    it('should always include these headers for all endpoints', () => {
+    it('should always include these headers for all endpoints', async () => {
       mockGetFeatureFlag.mockImplementation(
         (flag) => flag === FeatureFlags.ViemProviderEnabled || flag === FeatureFlags.UniquoteEnabled,
       )
-      const expectedHeaders = {
+      const expectedHeaders: Record<string, string> = {
         [TradingApiHeaders.UniversalRouterVersion]: TradingApi.UniversalRouterVersion._2_0,
         [TradingApiHeaders.ViemProviderEnabled]: 'true',
         [TradingApiHeaders.UniquoteEnabled]: 'true',
       }
-      const headers = getFeatureFlaggedHeaders(path)
+      if (path === TRADING_API_PATHS.quote || path === TRADING_API_PATHS.swap7702) {
+        expectedHeaders[TradingApiHeaders.UniroutePulumiEnabled] = 'true'
+      }
+      const headers = await getFeatureFlaggedHeaders(path)
       expect(headers).toEqual(expectedHeaders)
     })
 
-    it(`Endpoint: ${path} should/should not UnirouteEnabled header when feature flag is enabled`, () => {
+    it(`Endpoint: ${path} should/should not UnirouteEnabled header when feature flag is enabled`, async () => {
       mockGetFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.UnirouteEnabled)
-      const headers = getFeatureFlaggedHeaders(path)
+      const headers = await getFeatureFlaggedHeaders(path)
       switch (path) {
         case TRADING_API_PATHS.swap7702:
         case TRADING_API_PATHS.quote:
@@ -512,12 +532,21 @@ describe('getFeatureFlaggedHeaders', () => {
       }
     })
 
-    it(`Endpoint: ${path} should/should not include Erc20EthEnabled header when feature flag is enabled`, () => {
-      mockGetFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.EthAsErc20UniswapX)
-      const headers = getFeatureFlaggedHeaders(path)
+    it(`Endpoint: ${path} should/should not include Erc20EthEnabled header when experiment is enabled`, async () => {
+      mockGetExperimentValueFromLayer.mockImplementation(
+        ({ layerName, param }: { layerName: string; param: string }) => {
+          if (layerName === Layers.SwapPage && param === EthAsErc20UniswapXProperties.EthAsErc20UniswapXEnabled) {
+            return true
+          }
+          return false
+        },
+      )
+      const headers = await getFeatureFlaggedHeaders(path)
       switch (path) {
         case TRADING_API_PATHS.quote:
         case TRADING_API_PATHS.order:
+        case TRADING_API_PATHS.plan:
+        case TRADING_API_PATHS.swap7702:
           expect(headers).toHaveProperty(TradingApiHeaders.Erc20EthEnabled, 'true')
           break
         default:
@@ -526,9 +555,9 @@ describe('getFeatureFlaggedHeaders', () => {
       }
     })
 
-    it(`Endpoint: ${path} should/should not include ChainedActionsEnabled header when feature flag is enabled`, () => {
+    it(`Endpoint: ${path} should/should not include ChainedActionsEnabled header when feature flag is enabled`, async () => {
       mockGetFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.ChainedActions)
-      const headers = getFeatureFlaggedHeaders(path)
+      const headers = await getFeatureFlaggedHeaders(path)
       switch (path) {
         case TRADING_API_PATHS.quote:
         case TRADING_API_PATHS.plan:
@@ -542,6 +571,7 @@ describe('getFeatureFlaggedHeaders', () => {
   })
 })
 
+// oxlint-disable-next-line jest/no-export -- suppressed
 export function getAllTradingApiPaths(): Array<(typeof TRADING_API_PATHS)[keyof typeof TRADING_API_PATHS]> {
   const paths: Array<(typeof TRADING_API_PATHS)[keyof typeof TRADING_API_PATHS]> = []
 

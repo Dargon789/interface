@@ -1,8 +1,5 @@
 import { ChartPeriod, GetPortfolioChartResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { GraphQLApi } from '@universe/api'
-import { ChartSkeleton } from 'components/Charts/LoadingState'
-import { PriceChart, PriceChartData } from 'components/Charts/PriceChart'
-import { ChartType, PriceChartType } from 'components/Charts/utils'
 import { UTCTimestamp } from 'lightweight-charts'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -19,7 +16,21 @@ import {
 import { useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useCurrentLocale } from 'uniswap/src/features/language/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import {
+  CHART_PERIOD_OPTIONS,
+  chartPeriodToElementName,
+  chartPeriodToLabel,
+  chartPeriodToTestIdSuffix,
+  chartPeriodToTimeLabel,
+} from 'uniswap/src/features/portfolio/chartPeriod'
+import { getPortfolioChartPercentChange } from 'uniswap/src/features/portfolio/portfolioChartPercentChange'
+import { Trace } from 'uniswap/src/features/telemetry/Trace'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { NumberType } from 'utilities/src/format/types'
+import { ChartSkeleton } from '~/components/Charts/LoadingState'
+import { PriceChart, PriceChartData } from '~/components/Charts/PriceChart'
+import { ChartType, PriceChartType } from '~/components/Charts/utils'
+import { useShowDemoView } from '~/pages/Portfolio/hooks/useShowDemoView'
 
 const ChartContainer = styled(Flex, {
   width: '100%',
@@ -41,6 +52,8 @@ function chartPeriodToHistoryDuration(period: ChartPeriod): GraphQLApi.HistoryDu
       return GraphQLApi.HistoryDuration.Month
     case ChartPeriod.YEAR:
       return GraphQLApi.HistoryDuration.Year
+    case ChartPeriod.MAX:
+      return GraphQLApi.HistoryDuration.Max
     default:
       return GraphQLApi.HistoryDuration.Day
   }
@@ -73,6 +86,7 @@ interface PortfolioChartProps {
   error?: Error | null
   selectedPeriod: ChartPeriod
   setSelectedPeriod: (period: ChartPeriod) => void
+  onHoverPeriod?: (period: ChartPeriod) => void
   portfolioTotalBalanceUSD?: number
   isTotalValueMatch: boolean
 }
@@ -85,11 +99,13 @@ export function PortfolioChart({
   portfolioTotalBalanceUSD,
   selectedPeriod,
   setSelectedPeriod,
+  onHoverPeriod,
   isTotalValueMatch,
 }: PortfolioChartProps): JSX.Element {
   const { t } = useTranslation()
   const media = useMedia()
   const colors = useSporeColors()
+  const isDemoView = useShowDemoView()
   const { convertFiatAmountFormatted } = useLocalizationContext()
   const locale = useCurrentLocale()
   const appFiatCurrencyInfo = useAppFiatCurrencyInfo()
@@ -107,19 +123,15 @@ export function PortfolioChart({
   }, [portfolioChartData?.points])
 
   const periodOptions = useMemo<Array<SegmentedControlOption<string>>>(() => {
-    const options: Array<[ChartPeriod, string]> = [
-      [ChartPeriod.DAY, t('token.priceExplorer.timeRangeLabel.day')],
-      [ChartPeriod.WEEK, t('token.priceExplorer.timeRangeLabel.week')],
-      [ChartPeriod.MONTH, t('token.priceExplorer.timeRangeLabel.month')],
-      [ChartPeriod.YEAR, t('token.priceExplorer.timeRangeLabel.year')],
-    ]
-
-    return options.map(([period, label]) => ({
+    return CHART_PERIOD_OPTIONS.map((period) => ({
       value: String(period),
+      wrapper: <Trace key={`${period}-trace`} logPress element={chartPeriodToElementName(period)} />,
       display: (
-        <Text variant="buttonLabel4" color={period === selectedPeriod ? undefined : '$neutral2'}>
-          {label}
-        </Text>
+        <Flex data-testid={`${TestID.PortfolioChartPeriodPrefix}${chartPeriodToTestIdSuffix(period)}`}>
+          <Text variant="buttonLabel4" color={period === selectedPeriod ? undefined : '$neutral2'}>
+            {chartPeriodToLabel(t, period)}
+          </Text>
+        </Flex>
       ),
     }))
   }, [selectedPeriod, t])
@@ -147,6 +159,13 @@ export function PortfolioChart({
     return colors.statusSuccess.val
   }, [chartData, colors])
 
+  const chartPercentChange = useMemo(() => {
+    if (selectedPeriod === ChartPeriod.MAX) {
+      return undefined
+    }
+    return getPortfolioChartPercentChange(chartData.map((d) => d.close))
+  }, [chartData, selectedPeriod])
+
   const isLoading = isPending || !chartData.length
   const isDisabled = isPortfolioZero || !!error
 
@@ -165,7 +184,7 @@ export function PortfolioChart({
   }, [locale, appFiatCurrencyInfo.code])
 
   return (
-    <Flex gap="$spacing16" grow shrink>
+    <Flex gap="$spacing16" grow shrink testID={TestID.PortfolioTotalBalance}>
       {error ? (
         <ChartContainer centered grow shrink>
           <ChartSkeleton
@@ -179,7 +198,11 @@ export function PortfolioChart({
           <ChartSkeleton type={ChartType.PRICE} height={CHART_HEIGHT} />
         </ChartContainer>
       ) : isPortfolioZero || isChartEmpty ? (
-        <Flex height={UNFUNDED_CHART_SKELETON_HEIGHT} position="relative">
+        <Flex
+          height={UNFUNDED_CHART_SKELETON_HEIGHT}
+          position="relative"
+          data-testid={TestID.PortfolioOverviewEmptyBalance}
+        >
           <Text variant="heading1" color="$neutral3">
             {convertFiatAmountFormatted(0, NumberType.PortfolioBalance)}
           </Text>
@@ -197,13 +220,22 @@ export function PortfolioChart({
             headerTotalValueOverride={portfolioTotalBalanceUSD}
             hideYAxis={!isTotalValueMatch}
             yAxisFormatter={yAxisFormatter}
+            pricePercentChange={chartPercentChange?.percentChange}
+            hidePercentDelta={selectedPeriod === ChartPeriod.MAX}
+            additionalHeaderContent={({ isHovering }) =>
+              isHovering ? null : (
+                <Text variant="body2" color="$neutral2" ml={-4}>
+                  {chartPeriodToTimeLabel(t, selectedPeriod).toLocaleLowerCase()}
+                </Text>
+              )
+            }
           />
         </Flex>
       )}
       <Flex
         $md={{ width: '100%' }}
         opacity={isPortfolioZero ? 0.5 : 1}
-        pointerEvents={isPortfolioZero ? 'none' : 'auto'}
+        pointerEvents={isPortfolioZero || isDemoView ? 'none' : 'auto'}
       >
         <SegmentedControl
           disabled={isDisabled}
@@ -211,6 +243,9 @@ export function PortfolioChart({
           options={periodOptions}
           selectedOption={String(selectedPeriod)}
           onSelectOption={(periodStr: string) => setSelectedPeriod(Number(periodStr) as ChartPeriod)}
+          onHoverOption={
+            onHoverPeriod ? (periodStr: string) => onHoverPeriod(Number(periodStr) as ChartPeriod) : undefined
+          }
         />
       </Flex>
     </Flex>

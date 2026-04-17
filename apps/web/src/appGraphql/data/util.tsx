@@ -2,15 +2,10 @@ import { DeepPartial } from '@apollo/client/utilities'
 import { DataTag, DefaultError, QueryKey, queryOptions, UndefinedInitialDataOptions } from '@tanstack/react-query'
 import { Currency } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
-import { NATIVE_CHAIN_ID } from 'constants/tokens'
-import ms from 'ms'
-import { ExploreTab } from 'pages/Explore/constants'
-import { TokenStat } from 'state/explore/types'
 import { ColorTokens } from 'ui/src'
 import { nativeOnChain, WRAPPED_NATIVE_CURRENCY } from 'uniswap/src/constants/tokens'
 import { GqlChainId, UniverseChainId } from 'uniswap/src/features/chains/types'
 import {
-  fromGraphQLChain,
   isBackendSupportedChain,
   isUniverseChainId,
   toGraphQLChain,
@@ -18,17 +13,14 @@ import {
 } from 'uniswap/src/features/chains/utils'
 import { buildCurrency } from 'uniswap/src/features/dataApi/utils/buildCurrency'
 import { FORSupportedToken } from 'uniswap/src/features/fiatOnRamp/types'
-import { AVERAGE_L1_BLOCK_TIME_MS } from 'uniswap/src/features/transactions/hooks/usePollingIntervalByChain'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
-import { getChainIdFromBackendChain, getChainIdFromChainUrlParam } from 'utils/chainParams'
-import { getNativeTokenDBAddress } from 'utils/nativeTokens'
-
-export enum PollingInterval {
-  Slow = ms(`5m`),
-  Normal = ms(`1m`),
-  Fast = AVERAGE_L1_BLOCK_TIME_MS,
-  LightningMcQueen = ms(`3s`), // approx block interval for polygon
-}
+import { isNativeCurrencyAddress } from 'uniswap/src/utils/currencyId'
+import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { getChainIdFromBackendChain, getChainIdFromChainUrlParam } from '~/features/params/chainParams'
+import { CHAIN_SEARCH_PARAM } from '~/features/params/chainQueryParam'
+import { ExploreTab } from '~/pages/Explore/constants'
+import { TokenStat } from '~/state/explore/types'
+import { getNativeTokenDBAddress } from '~/utils/nativeTokens'
 
 export enum TimePeriod {
   HOUR = 'H',
@@ -36,9 +28,10 @@ export enum TimePeriod {
   WEEK = 'W',
   MONTH = 'M',
   YEAR = 'Y',
+  MAX = 'MAX',
 }
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 export function toHistoryDuration(timePeriod: TimePeriod): GraphQLApi.HistoryDuration {
   switch (timePeriod) {
     case TimePeriod.HOUR:
@@ -51,6 +44,8 @@ export function toHistoryDuration(timePeriod: TimePeriod): GraphQLApi.HistoryDur
       return GraphQLApi.HistoryDuration.Month
     case TimePeriod.YEAR:
       return GraphQLApi.HistoryDuration.Year
+    case TimePeriod.MAX:
+      return GraphQLApi.HistoryDuration.Max
   }
 }
 
@@ -72,19 +67,30 @@ export function gqlToCurrency(token: DeepPartial<GraphQLApi.Token | TokenStat>):
     return undefined
   }
   if (token.standard === GraphQLApi.TokenStandard.Native || token.address === NATIVE_CHAIN_ID || !token.address) {
-    return nativeOnChain(chainId)
-  } else {
-    return buildCurrency({
-      ...token,
-      decimals: token.decimals ?? 18,
-      symbol: token.symbol ?? undefined,
-      name: token.name ?? token.project?.name ?? undefined,
-      chainId,
-      bypassChecksum: false,
-      buyFeeBps: token.feeData?.buyFeeBps,
-      sellFeeBps: token.feeData?.sellFeeBps,
-    })
+    // Tempo has no displayable native currency — the virtual "USD" is a placeholder.
+    // When the backend returns Native standard for Tempo with a real address (e.g. pathUSD),
+    // fall through to buildCurrency so the token is constructed normally.
+    // Only return undefined when there's truly no address to build from.
+    if (chainId === UniverseChainId.Tempo) {
+      if (!token.address || token.address === NATIVE_CHAIN_ID) {
+        return undefined
+      }
+      // Fall through to buildCurrency below
+    } else {
+      return nativeOnChain(chainId)
+    }
   }
+
+  return buildCurrency({
+    ...token,
+    decimals: token.decimals ?? 18,
+    symbol: token.symbol ?? undefined,
+    name: token.name ?? token.project?.name ?? undefined,
+    chainId,
+    bypassChecksum: false,
+    buyFeeBps: token.feeData?.buyFeeBps,
+    sellFeeBps: token.feeData?.sellFeeBps,
+  })
 }
 
 export function fiatOnRampToCurrency(forCurrency: FORSupportedToken): Currency | undefined {
@@ -107,12 +113,6 @@ export function fiatOnRampToCurrency(forCurrency: FORSupportedToken): Currency |
   }
 }
 
-export function supportedChainIdFromGQLChain(chain: GqlChainId): UniverseChainId
-export function supportedChainIdFromGQLChain(chain: GraphQLApi.Chain): UniverseChainId | undefined
-export function supportedChainIdFromGQLChain(chain: GraphQLApi.Chain): UniverseChainId | undefined {
-  return isBackendSupportedChain(chain) ? (fromGraphQLChain(chain) ?? undefined) : undefined
-}
-
 export function getTokenExploreURL({ tab, chainUrlParam }: { tab: ExploreTab; chainUrlParam?: string }) {
   return `/explore/${tab}${chainUrlParam ? `/${chainUrlParam}` : ''}`
 }
@@ -123,18 +123,42 @@ export function getTokenDetailsURL({
   chainUrlParam,
   inputAddress,
   outputAddress,
+  chainQueryParam,
 }: {
   address?: string | null
   chain?: GraphQLApi.Chain
-  chainUrlParam?: string
+  chainUrlParam?: string | undefined
   inputAddress?: string | null
   outputAddress?: string | null
+  chainQueryParam?: string
 }) {
   const chainName = chainUrlParam || chain?.toLowerCase() || GraphQLApi.Chain.Ethereum.toLowerCase()
-  const tokenAddress = address ?? NATIVE_CHAIN_ID
-  const inputAddressSuffix = inputAddress ? `?inputCurrency=${inputAddress}` : ''
-  const outputAddressSuffix = outputAddress ? `&outputCurrency=${outputAddress}` : ''
-  return `/explore/tokens/${chainName}/${tokenAddress}${inputAddressSuffix}${outputAddressSuffix}`
+  const tokenChainId = chain && isBackendSupportedChain(chain) ? getChainIdFromBackendChain(chain) : undefined
+  const selectedChainId = tokenChainId ?? getChainIdFromChainUrlParam(chainName)
+
+  const toTokenPathSegment = (addr: string | null | undefined): string => {
+    if (addr === null || addr === undefined) {
+      return NATIVE_CHAIN_ID
+    }
+    if (selectedChainId !== undefined && isNativeCurrencyAddress(selectedChainId, addr)) {
+      return NATIVE_CHAIN_ID
+    }
+    return addr
+  }
+
+  const tokenAddress = toTokenPathSegment(address)
+  const params = new URLSearchParams()
+  if (inputAddress) {
+    params.set('inputCurrency', inputAddress)
+  }
+  if (outputAddress) {
+    params.set('outputCurrency', outputAddress)
+  }
+  if (chainQueryParam) {
+    params.set(CHAIN_SEARCH_PARAM, chainQueryParam)
+  }
+  const query = params.toString()
+  return `/explore/tokens/${chainName}/${tokenAddress}${query ? `?${query}` : ''}`
 }
 
 export function unwrapToken<
@@ -162,6 +186,7 @@ export function unwrapToken<
 
   return {
     ...token,
+    // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
     ...nativeToken,
     project: {
       ...token.project,

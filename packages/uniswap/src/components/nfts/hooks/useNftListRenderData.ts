@@ -1,7 +1,12 @@
 import { NetworkStatus } from '@apollo/client'
 import { GraphQLApi, isError } from '@universe/api'
-import { useCallback, useState } from 'react'
-import { NUM_FIRST_NFTS } from 'uniswap/src/components/nfts/constants'
+import { useCallback, useMemo, useState } from 'react'
+import {
+  MOBILE_WEB_NUM_FIRST_NFTS,
+  MOBILE_WEB_NUM_NEXT_NFTS,
+  NUM_FIRST_NFTS,
+  NUM_NEXT_NFTS,
+} from 'uniswap/src/components/nfts/constants'
 import type { NftsNextFetchPolicy } from 'uniswap/src/components/nfts/types'
 import { PollingInterval } from 'uniswap/src/constants/misc'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
@@ -10,6 +15,7 @@ import { toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { useGroupNftsByVisibility } from 'uniswap/src/features/nfts/hooks/useGroupNftsByVisibility'
 import { type NFTItem } from 'uniswap/src/features/nfts/types'
 import { formatNftItems } from 'uniswap/src/features/nfts/utils'
+import { isMobileWeb } from 'utilities/src/platform'
 
 export function useNftListRenderData({
   owner,
@@ -47,7 +53,7 @@ export function useNftListRenderData({
   const { data, fetchMore, refetch, networkStatus } = GraphQLApi.useNftsTabQuery({
     variables: {
       ownerAddress: owner,
-      first: NUM_FIRST_NFTS,
+      first: isMobileWeb ? MOBILE_WEB_NUM_FIRST_NFTS : NUM_FIRST_NFTS,
       filter: { filterSpam: false },
       chains,
     },
@@ -58,7 +64,7 @@ export function useNftListRenderData({
     pollInterval,
   })
 
-  const nftDataItems = formatNftItems(data)
+  const nftDataItems = useMemo(() => formatNftItems(data), [data])
 
   const hasNextPage = data?.nftBalances?.pageInfo.hasNextPage
 
@@ -69,7 +75,7 @@ export function useNftListRenderData({
 
     await fetchMore({
       variables: {
-        first: NUM_FIRST_NFTS,
+        first: isMobileWeb ? MOBILE_WEB_NUM_NEXT_NFTS : NUM_NEXT_NFTS,
         after: data.nftBalances?.pageInfo.endCursor,
       },
     })

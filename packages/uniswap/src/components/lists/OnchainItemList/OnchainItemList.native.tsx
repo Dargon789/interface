@@ -13,7 +13,7 @@ import { useAppInsets } from 'uniswap/src/hooks/useAppInsets'
 const TOKEN_ITEM_SIZE = 64
 const AMOUNT_TO_DRAW = 18
 
-export const OnchainItemList = memo(function _OnchainItemList({
+export const OnchainItemList = memo(function OnchainItemListInner({
   sectionListRef,
   ListEmptyComponent,
   keyExtractor,

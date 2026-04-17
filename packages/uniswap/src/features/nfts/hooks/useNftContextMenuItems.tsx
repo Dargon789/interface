@@ -8,10 +8,9 @@ import { Eye } from 'ui/src/components/icons/Eye'
 import { EyeOff } from 'ui/src/components/icons/EyeOff'
 import { Flag } from 'ui/src/components/icons/Flag'
 import { Opensea } from 'ui/src/components/icons/Opensea'
-import { type MenuOptionItem } from 'uniswap/src/components/menus/ContextMenuV2'
+import { type MenuOptionItem } from 'uniswap/src/components/menus/ContextMenu'
 import { DataServiceApiClient } from 'uniswap/src/data/apiClients/dataApi/DataApiClient'
 import { AccountType } from 'uniswap/src/features/accounts/types'
-import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { useBlockExplorerLogo } from 'uniswap/src/features/chains/logos'
 import { type UniverseChainId } from 'uniswap/src/features/chains/types'
 import { getChainExplorerName } from 'uniswap/src/features/chains/utils'
@@ -25,8 +24,8 @@ import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { selectNftsVisibility } from 'uniswap/src/features/visibility/selectors'
 import { setNftVisibility } from 'uniswap/src/features/visibility/slice'
 import { useWallet } from 'uniswap/src/features/wallet/hooks/useWallet'
-import { setClipboard } from 'uniswap/src/utils/clipboard'
 import { getOpenseaLink, openUri } from 'uniswap/src/utils/linking'
+import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { logger } from 'utilities/src/logger/logger'
 import { ONE_SECOND_MS } from 'utilities/src/time/time'
 
@@ -38,6 +37,7 @@ interface NFTMenuParams {
   showNotification?: boolean
   isSpam?: boolean
   chainId?: UniverseChainId
+  onCopySuccess?: () => void
 }
 
 export function useNFTContextMenuItems({
@@ -48,10 +48,10 @@ export function useNFTContextMenuItems({
   showNotification = false,
   isSpam,
   chainId,
+  onCopySuccess,
 }: NFTMenuParams): MenuOptionItem[] {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const { defaultChainId } = useEnabledChains()
   const navigateToNftExplorerLink = useNavigateToNftExplorerLink()
   const isSelfReportSpamNFTEnabled = useFeatureFlag(FeatureFlags.SelfReportSpamNFTs)
   const { evmAccount } = useWallet()
@@ -164,7 +164,8 @@ export function useNFTContextMenuItems({
         }),
       )
     }
-  }, [contractAddress, dispatch, showNotification])
+    onCopySuccess?.()
+  }, [contractAddress, dispatch, showNotification, onCopySuccess])
 
   const openseaUri = useMemo(() => {
     if (chainId && contractAddress && tokenId) {
@@ -181,9 +182,9 @@ export function useNFTContextMenuItems({
 
   const openExplorerLink = useCallback(async () => {
     if (chainId && contractAddress && tokenId) {
-      navigateToNftExplorerLink({ chainId, contractAddress, tokenId, fallbackChainId: defaultChainId })
+      navigateToNftExplorerLink({ chainId, contractAddress, tokenId })
     }
-  }, [chainId, contractAddress, tokenId, navigateToNftExplorerLink, defaultChainId])
+  }, [chainId, contractAddress, tokenId, navigateToNftExplorerLink])
 
   const ExplorerLogo = useBlockExplorerLogo(chainId)
 

@@ -39,6 +39,7 @@ export function SwapWarningModal({
       modalName={ModalName.SwapWarning}
       severity={warning.severity}
       title={warning.title ?? ''}
+      analyticsProperties={{ warning_type: warning.type }}
       onClose={onClose}
       onAcknowledge={onClose}
     />

@@ -7,13 +7,17 @@
   },
   "devDependencies": {
     "@types/node": "22.13.1",
-    "@uniswap/eslint-config": "workspace:^",
+    "@typescript/native-preview": "7.0.0-dev.20260311.1",
     "depcheck": "1.4.7",
-    "eslint": "8.57.1",
     "typescript": "5.8.3"
   },
   "scripts": {
     "typecheck": "nx typecheck config",
+    "check": "nx check config",
+    "check:fast": "nx check:fast config",
+    "check:deps:usage": "nx check:deps:usage config",
+    "format": "nx format config",
+    "format:check": "nx format:check config",
     "lint": "nx lint config",
     "lint:fix": "nx lint:fix config"
   },

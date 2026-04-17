@@ -3,6 +3,7 @@ import { GraphQLApi } from '@universe/api'
 import { SwapConfigKey } from '@universe/gating'
 import { ETH_LOGO, ETHEREUM_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import {
   DEFAULT_MS_BEFORE_WARNING,
   DEFAULT_NATIVE_ADDRESS_LEGACY,
@@ -68,6 +69,7 @@ export const MAINNET_CHAIN_INFO = {
     logo: ETH_LOGO,
   },
   networkLayer: NetworkLayer.L1,
+  blockTimeMs: 12000,
   pendingTransactionsRetryOptions: undefined,
   rpcUrls: isPlaywrightEnv()
     ? getPlaywrightRpcUrls(LOCAL_MAINNET_PLAYWRIGHT_RPC_URL)
@@ -88,7 +90,7 @@ export const MAINNET_CHAIN_INFO = {
           http: [`https://mainnet.infura.io/v3/${config.infuraKey}`, getQuicknodeEndpointUrl(UniverseChainId.Mainnet)],
         },
       },
-  urlParam: 'ethereum',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Mainnet],
   statusPage: undefined,
   spotPriceStablecoinAmountOverride: CurrencyAmount.fromRawAmount(tokens.USDC, 100_000e6),
   tokens,
@@ -152,32 +154,36 @@ export const SEPOLIA_CHAIN_INFO = {
     logo: ETH_LOGO,
   },
   networkLayer: NetworkLayer.L1,
+  blockTimeMs: 12000,
   pendingTransactionsRetryOptions: undefined,
   rpcUrls: {
     [RPCType.Public]: {
       http: [getQuicknodeEndpointUrl(UniverseChainId.Sepolia)],
     },
     [RPCType.Default]: {
-      http: ['https://rpc.sepolia.org/'],
+      http: ['https://sepolia.gateway.tenderly.co'],
     },
     [RPCType.Fallback]: {
       http: [
+        'https://sepolia.drpc.org',
+        'https://ethereum-sepolia-rpc.publicnode.com',
         'https://rpc.sepolia.org/',
-        'https://rpc2.sepolia.org/',
         'https://rpc.sepolia.online/',
         'https://www.sepoliarpc.space/',
         'https://rpc-sepolia.rockx.com/',
         'https://rpc.bordel.wtf/sepolia',
       ],
     },
-    [RPCType.Interface]: { http: [`https://sepolia.infura.io/v3/${config.infuraKey}`] },
+    [RPCType.Interface]: {
+      http: [`https://sepolia.infura.io/v3/${config.infuraKey}`],
+    },
   },
   spotPriceStablecoinAmountOverride: CurrencyAmount.fromRawAmount(testnetTokens.USDC, 100e6),
   tokens: testnetTokens,
   statusPage: undefined,
   supportsV4: true,
   supportsNFTs: false,
-  urlParam: 'ethereum_sepolia',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Sepolia],
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
     symbol: 'WETH',

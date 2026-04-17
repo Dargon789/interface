@@ -80,7 +80,8 @@ export type FiatOnRampAmountSectionRef = {
 }
 
 export const FiatOnRampAmountSection = forwardRef<FiatOnRampAmountSectionRef, FiatOnRampAmountSectionProps>(
-  function _FiatOnRampAmountSection(
+  // oxlint-disable-next-line complexity -- biome-parity: oxlint is stricter here
+  function FiatOnRampAmountSectionInner(
     {
       disabled,
       value,
@@ -181,6 +182,7 @@ export const FiatOnRampAmountSection = forwardRef<FiatOnRampAmountSectionRef, Fi
     // Workaround to avoid incorrect input width calculations by react-native
     // Decimal numbers were manually calculated for Basel Grotesk fonts and will
     // require an adjustment when the font is changed
+    // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
     const calculatedInputWidth = [...value].reduce(
       (acc, numStr) => {
         switch (numStr) {

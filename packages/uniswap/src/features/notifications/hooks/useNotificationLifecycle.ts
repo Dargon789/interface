@@ -1,9 +1,10 @@
 import { useCallback, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
+import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
 import { DEFAULT_TOAST_HIDE_DELAY, SPRING_ANIMATION_DELAY } from 'uniswap/src/features/notifications/constants'
 import { useSelectAddressNotifications } from 'uniswap/src/features/notifications/slice/hooks'
 import { popNotification, setNotificationViewed } from 'uniswap/src/features/notifications/slice/slice'
-import { useWallet } from 'uniswap/src/features/wallet/hooks/useWallet'
+import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { useTimeout } from 'utilities/src/time/timing'
 
 interface NotificationLifecycleProps {
@@ -29,16 +30,17 @@ export function useNotificationLifecycle({
   dismissLatest: () => void
 } {
   const dispatch = useDispatch()
-  const { evmAccount } = useWallet()
-  const notifications = useSelectAddressNotifications(evmAccount?.address ?? null)
+  const evmAddress = useActiveAddress(Platform.EVM)
+  const notifications = useSelectAddressNotifications(evmAddress ?? null)
   const currentNotification = notifications?.[0]
   const hasQueuedNotification = !!notifications?.[1]
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Run this only once to ensure that if a new notification is created it doesn't show on the next screen
+  // oxlint-disable-next-line react/exhaustive-deps -- Run this only once to ensure that if a new notification is created it doesn't show on the next screen
   useEffect(() => {
     if (currentNotification?.shown) {
       dispatch(popNotification({ address }))
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [address, dispatch])
 
   useEffect(() => {

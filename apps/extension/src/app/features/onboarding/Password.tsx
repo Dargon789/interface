@@ -102,6 +102,7 @@ function PasswordScreen({
     }
 
     if (checkSubmit()) {
+      // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
       onNext(password)
     }
   })

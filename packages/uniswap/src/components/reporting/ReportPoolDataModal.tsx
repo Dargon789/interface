@@ -34,7 +34,13 @@ export function ReportPoolDataModal({
   const dispatch = useDispatch()
 
   const submitReport = useEvent(
-    ({ checkedItems, reportText }: { checkedItems: Set<PoolDataReportOption>; reportText: string }) => {
+    ({
+      checkedItems,
+      reportTexts,
+    }: {
+      checkedItems: Set<PoolDataReportOption>
+      reportTexts: Map<PoolDataReportOption, string>
+    }) => {
       // Submit report to amplitude
       submitPoolDataReport({
         poolId: poolInfo.poolId,
@@ -43,7 +49,7 @@ export function ReportPoolDataModal({
         token0: poolInfo.token0,
         token1: poolInfo.token1,
         reportOptions: Array.from(checkedItems),
-        reportText,
+        reportTexts,
       })
 
       // Close the modal and register success
@@ -83,6 +89,7 @@ export function ReportPoolDataModal({
       {
         title: t('reporting.token.options.other.title'),
         value: PoolDataReportOption.Other,
+        additionalTextInput: true,
       },
     ],
     [t],
@@ -96,7 +103,6 @@ export function ReportPoolDataModal({
       })}
       icon={ChartBarCrossed}
       reportOptions={reportOptions}
-      textOptionValue={PoolDataReportOption.Other}
       isOpen={isOpen}
       submitReport={submitReport}
       onClose={onClose}

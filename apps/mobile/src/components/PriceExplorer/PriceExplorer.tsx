@@ -91,7 +91,7 @@ function TimeRangeTraceWrapper({
   )
 }
 
-export const PriceExplorer = memo(function _PriceExplorer(): JSX.Element {
+export const PriceExplorer = memo(function PriceExplorerInner(): JSX.Element {
   const { isTestnetModeEnabled } = useEnabledChains()
   const { chartHeight, chartWidth } = useChartDimensions()
 
@@ -99,10 +99,10 @@ export const PriceExplorer = memo(function _PriceExplorer(): JSX.Element {
     return <GraphCurve height={chartHeight} width={chartWidth} opacity={0.25} />
   }
 
-  return <PriceExplorerInner />
+  return <PriceExplorerContent />
 })
 
-const PriceExplorerInner = memo(function _PriceExplorerInner(): JSX.Element {
+const PriceExplorerContent = memo(function PriceExplorerContentInner(): JSX.Element {
   const { currencyId, tokenColor, navigation } = useTokenDetailsContext()
   const isScreenNavigationReady = useIsScreenNavigationReady({ navigation })
 
@@ -157,6 +157,7 @@ const PriceExplorerInner = memo(function _PriceExplorerInner(): JSX.Element {
         value: convertedSpotValue,
       }
     )
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [data])
 
   // Zoom out y-axis for low variance assets

@@ -5,6 +5,7 @@ import { SharedQueryClient } from '@universe/api/src/clients/base/SharedQueryCli
 import { DynamicConfigs, SwapConfigKey, useDynamicConfigValue } from '@universe/gating'
 import { useMemo } from 'react'
 import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
+import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useActiveGasStrategy } from 'uniswap/src/features/gas/hooks'
 import type { SwapDelegationInfo } from 'uniswap/src/features/smartWallet/delegation/types'
@@ -35,7 +36,6 @@ import {
 import type { DerivedSwapInfo } from 'uniswap/src/features/transactions/swap/types/derivedSwapInfo'
 import type { SwapTxAndGasInfo } from 'uniswap/src/features/transactions/swap/types/swapTxAndGasInfo'
 import type { Trade } from 'uniswap/src/features/transactions/swap/types/trade'
-import { useWallet } from 'uniswap/src/features/wallet/hooks/useWallet'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { useEvent, usePrevious } from 'utilities/src/react/hooks'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
@@ -117,9 +117,10 @@ export function useSwapTxAndGasInfoService(): SwapTxAndGasInfoService {
   }, [])
 
   const chainedSwapTxInfoService = useMemo(() => {
-    const chainedService = createChainedActionSwapTxAndGasInfoService()
-    return chainedService
-  }, [])
+    return createChainedActionSwapTxAndGasInfoService({
+      getSwapDelegationInfo: swapConfig.getSwapDelegationInfo,
+    })
+  }, [swapConfig.getSwapDelegationInfo])
 
   const wrapTxInfoService = useMemo(() => {
     const wrapService = createWrapTxAndGasInfoService({ ...swapConfig, transactionSettings, instructionService })
@@ -251,8 +252,6 @@ export function useSwapParams(): {
 } {
   const derivedSwapInfo = useSwapFormStore((s) => s.derivedSwapInfo)
 
-  const account = useWallet().evmAccount
-
   const {
     chainId,
     wrapType,
@@ -260,8 +259,10 @@ export function useSwapParams(): {
     trade: { trade },
   } = derivedSwapInfo
 
+  const address = useActiveAddress(derivedSwapInfo.chainId)
+
   const approvalTxInfo = useTokenApprovalInfo({
-    account,
+    address,
     chainId,
     wrapType,
     currencyInAmount: currencyAmounts[CurrencyField.INPUT],

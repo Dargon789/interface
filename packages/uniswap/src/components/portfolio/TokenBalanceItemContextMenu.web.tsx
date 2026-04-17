@@ -1,6 +1,6 @@
 import { memo, PropsWithChildren, useCallback, useMemo } from 'react'
 import { TouchableArea } from 'ui/src'
-import { ContextMenu } from 'uniswap/src/components/menus/ContextMenuV2'
+import { ContextMenu } from 'uniswap/src/components/menus/ContextMenu'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
 import { TokenBalanceItemContextMenuProps } from 'uniswap/src/components/portfolio/TokenBalanceItemContextMenu'
 import { TokenList } from 'uniswap/src/features/dataApi/types'
@@ -17,8 +17,9 @@ export const TokenBalanceItemContextMenu = memo(function TokenBalanceItemContext
   openReportTokenModal,
   copyAddressToClipboard,
   triggerMode,
-  onPressToken: onPressToken,
+  onPressToken,
   disableNotifications,
+  recipient,
 }: PropsWithChildren<TokenBalanceItemContextMenuProps>): JSX.Element {
   const { value: isOpen, setTrue: openMenu, setFalse: closeMenu } = useBooleanState(false)
   const isPrimaryTriggerMode = isExtensionApp || triggerMode === ContextMenuTriggerMode.Primary
@@ -34,6 +35,7 @@ export const TokenBalanceItemContextMenu = memo(function TokenBalanceItemContext
     copyAddressToClipboard,
     closeMenu,
     disableNotifications,
+    recipient,
   })
 
   const ignoreDefault = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -43,19 +45,25 @@ export const TokenBalanceItemContextMenu = memo(function TokenBalanceItemContext
 
   const actionableItem = useMemo(() => {
     return (
-      // biome-ignore  lint/correctness/noRestrictedElements: needed here
+      // oxlint-disable-next-line react/forbid-elements -- needed here
       <div style={{ cursor: 'pointer' }} onContextMenu={isExtensionApp ? ignoreDefault : openMenu}>
-        <TouchableArea onPress={isPrimaryTriggerMode ? openMenu : onPressToken}>{children}</TouchableArea>
+        <TouchableArea
+          onPressIn={(e) => e.stopPropagation()}
+          onPressOut={(e) => e.stopPropagation()}
+          onPress={isPrimaryTriggerMode ? openMenu : onPressToken}
+        >
+          {children}
+        </TouchableArea>
       </div>
     )
   }, [children, ignoreDefault, onPressToken, openMenu, isPrimaryTriggerMode])
-
   return (
     <ContextMenu
       trackItemClicks
       menuItems={menuActions}
       triggerMode={isPrimaryTriggerMode ? ContextMenuTriggerMode.Primary : ContextMenuTriggerMode.Secondary}
       isOpen={isOpen}
+      openMenu={openMenu}
       closeMenu={closeMenu}
       elementName={ElementName.PortfolioTokenContextMenu}
       sectionName={SectionName.PortfolioTokensTab}

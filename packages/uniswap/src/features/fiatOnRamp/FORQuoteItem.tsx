@@ -32,10 +32,13 @@ export function FORQuoteItem({
     return null
   }
 
+  // oxlint-disable-next-line no-unnecessary-condition -- serviceProvider.paymentMethods is not initially defined
+  const paymentMethodsArr = serviceProvider.paymentMethods ?? []
+
   const paymentMethods =
-    serviceProvider.paymentMethods.length > 4
-      ? t('fiatOnRamp.quote.type.list', { optionsList: serviceProvider.paymentMethods.slice(0, 3).join(', ') })
-      : serviceProvider.paymentMethods.join(', ')
+    paymentMethodsArr.length > 4
+      ? t('fiatOnRamp.quote.type.list', { optionsList: paymentMethodsArr.slice(0, 3).join(', ') })
+      : paymentMethodsArr.join(', ')
 
   return (
     <TouchableArea

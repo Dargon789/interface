@@ -1,9 +1,9 @@
-import { expect, getTest } from 'playwright/fixtures'
-import { stubTradingApiEndpoint } from 'playwright/fixtures/tradingApi'
 import { USDC_MAINNET } from 'uniswap/src/constants/tokens'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
-import { assume0xAddress } from 'utils/wagmi'
+import { expect, getTest } from '~/playwright/fixtures'
+import { stubTradingApiEndpoint } from '~/playwright/fixtures/tradingApi'
+import { assume0xAddress } from '~/utils/wagmi'
 
 const test = getTest({ withAnvil: true })
 
@@ -42,6 +42,9 @@ test.describe(
       // Verify fee percentage and amount is displayed
       await page.getByText(`Fee (${portionBips / 100}%)`)
       await page.getByTestId(TestID.Swap).click()
+
+      // UI wait for tx to complete
+      await expect(page.getByTestId(TestID.ActivityPopup).getByText('Swapped')).toBeVisible()
 
       // Verify fee recipient received fee
       const finalRecipientBalance = await anvil.getErc20Balance(assume0xAddress(USDC_MAINNET.address), portionRecipient)

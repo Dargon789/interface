@@ -1,4 +1,5 @@
 import { Currency } from '@uniswap/sdk-core'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
@@ -27,9 +28,16 @@ export function ReportTokenDataModal({
 }: ReportTokenDataModalProps & BaseModalProps): JSX.Element {
   const { t } = useTranslation()
   const dispatch = useDispatch()
+  const isPnLEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
 
   const submitReport = useEvent(
-    ({ checkedItems, reportText }: { checkedItems: Set<TokenDataReportOption>; reportText: string }) => {
+    ({
+      checkedItems,
+      reportTexts,
+    }: {
+      checkedItems: Set<TokenDataReportOption>
+      reportTexts: Map<TokenDataReportOption, string>
+    }) => {
       if (!currency) {
         return
       }
@@ -41,7 +49,7 @@ export function ReportTokenDataModal({
         tokenName: currency.name,
         isMarkedSpam,
         reportOptions: Array.from(checkedItems),
-        reportText,
+        reportTexts,
       })
 
       // Close the modal and register success
@@ -78,12 +86,23 @@ export function ReportTokenDataModal({
         subtitle: t('reporting.token.data.options.tokenDetails.subtitle'),
         value: TokenDataReportOption.TokenDetails,
       },
+      ...(isPnLEnabled
+        ? [
+            {
+              title: t('reporting.token.data.options.performance.title'),
+              subtitle: t('reporting.token.data.options.performance.subtitle'),
+              value: TokenDataReportOption.Performance,
+              additionalTextInput: true,
+            },
+          ]
+        : []),
       {
         title: t('reporting.token.options.other.title'),
         value: TokenDataReportOption.Other,
+        additionalTextInput: true,
       },
     ],
-    [t],
+    [t, isPnLEnabled],
   )
 
   return (
@@ -92,7 +111,6 @@ export function ReportTokenDataModal({
       modalTitle={t('reporting.token.data.title.withSymbol', { symbol: currency?.symbol ?? '' })}
       icon={ChartBarCrossed}
       reportOptions={reportOptions}
-      textOptionValue={TokenDataReportOption.Other}
       isOpen={isOpen}
       submitReport={submitReport}
       onClose={onClose}

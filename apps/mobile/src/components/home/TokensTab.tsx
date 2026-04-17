@@ -24,7 +24,7 @@ import { usePortfolioEmptyStateBackground } from 'wallet/src/components/portfoli
 // ignore ref type
 
 export const TokensTab = memo(
-  forwardRef<FlatList<TokenBalanceListRow>, TabProps & { isExternalProfile?: boolean }>(function _TokensTab(
+  forwardRef<FlatList<TokenBalanceListRow>, TabProps & { isExternalProfile?: boolean }>(function TokensTabInner(
     {
       owner,
       containerProps,

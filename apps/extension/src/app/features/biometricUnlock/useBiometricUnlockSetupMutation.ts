@@ -1,10 +1,10 @@
 import { UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query'
+import { encryptPasswordWithBiometricData } from 'src/app/features/biometricUnlock/biometricAuthUtils'
+import { biometricUnlockCredentialQuery } from 'src/app/features/biometricUnlock/biometricUnlockCredentialQuery'
 import {
   BiometricUnlockStorage,
   BiometricUnlockStorageData,
 } from 'src/app/features/biometricUnlock/BiometricUnlockStorage'
-import { encryptPasswordWithBiometricData } from 'src/app/features/biometricUnlock/biometricAuthUtils'
-import { biometricUnlockCredentialQuery } from 'src/app/features/biometricUnlock/biometricUnlockCredentialQuery'
 import { startNavigatorCredentialRequest } from 'src/app/features/biometricUnlock/useNavigatorCredentialAbortSignal'
 import { assertPublicKeyCredential } from 'src/app/features/biometricUnlock/utils/assertPublicKeyCredential'
 import { isUserVerifyingPlatformAuthenticatorAvailable } from 'src/app/utils/device/builtInBiometricCapabilitiesQuery'
@@ -15,6 +15,11 @@ import {
   generateNew256BitRandomBuffer,
   getEncryptionKeyFromBuffer,
 } from 'wallet/src/features/wallet/Keyring/crypto'
+
+// Extend PublicKeyCredentialCreationOptions to include Chrome 128+ hints property
+interface PublicKeyCredentialCreationOptionsWithHints extends PublicKeyCredentialCreationOptions {
+  hints?: string[]
+}
 
 export function useBiometricUnlockSetupMutation(options?: {
   onSuccess?: () => void
@@ -35,6 +40,7 @@ export function useBiometricUnlockSetupMutation(options?: {
     },
     retry: false,
     onSettled: () => {
+      // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
       queryClient.invalidateQueries(biometricUnlockCredentialQuery())
     },
     onSuccess: options?.onSuccess,
@@ -136,12 +142,12 @@ async function createCredential({
         residentKey: 'required',
         userVerification: 'required',
       },
-      // @ts-expect-error - `hints` is a new property, only available in Chrome 128+.
-      // This forces the credential to use the built-in passkey instead of prompting the user where to save it.
-      hints: ['client-device'],
       pubKeyCredParams: CREDENTIAL_ALGORITHMS,
       timeout: 15 * ONE_SECOND_MS,
-    },
+      // `hints` is a new property, only available in Chrome 128+.
+      // This forces the credential to use the built-in passkey instead of prompting the user where to save it.
+      hints: ['client-device'],
+    } as PublicKeyCredentialCreationOptionsWithHints,
     signal: abortSignal,
   })
 

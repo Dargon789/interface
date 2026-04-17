@@ -66,12 +66,12 @@ function beforeSend(event: RumEvent, context: RumEventDomainContext): boolean {
     }
   }
 
-  if (event.type === 'resource') {
+  if (event.type === 'resource' && event.resource.url.includes('gateway.uniswap.org')) {
     let isGatewayUniswapRequest = false
     try {
       isGatewayUniswapRequest = new URL(event.resource.url).hostname === 'gateway.uniswap.org'
     } catch {
-      isGatewayUniswapRequest = false
+      // ignore invalid URLs
     }
 
     if (isGatewayUniswapRequest) {

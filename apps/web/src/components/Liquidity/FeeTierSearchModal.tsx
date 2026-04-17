@@ -1,32 +1,43 @@
-// eslint-disable-next-line no-restricted-imports
-import { FeePoolSelectAction, LiquidityEventName } from '@uniswap/analytics-events'
-import { MAX_FEE_TIER_DECIMALS, useAllFeeTierPoolData } from 'components/Liquidity/hooks'
-import { calculateTickSpacingFromFeeAmount, isDynamicFeeTier } from 'components/Liquidity/utils'
-import { StyledPercentInput } from 'components/PercentInput'
-import { ZERO_ADDRESS } from 'constants/misc'
+import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
+import type { Currency } from '@uniswap/sdk-core'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import ms from 'ms'
-import { useCreatePositionContext } from 'pages/Pool/Positions/create/CreatePositionContext'
-import { NumericalInputMimic, NumericalInputSymbolContainer } from 'pages/Swap/common/shared'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useMultichainContext } from 'state/multichain/useMultichainContext'
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports -- styled-components needed for custom component styling
 import styled from 'styled-components'
-import { ClickableTamaguiStyle } from 'theme/components'
-import { DeprecatedButton, Flex, ModalCloseIcon, Text } from 'ui/src'
+import { Button, Flex, ModalCloseIcon, Text, Tooltip } from 'ui/src'
 import { BackArrow } from 'ui/src/components/icons/BackArrow'
 import { CheckCircleFilled } from 'ui/src/components/icons/CheckCircleFilled'
 import { Plus } from 'ui/src/components/icons/Plus'
 import { Search } from 'ui/src/components/icons/Search'
 import { useDynamicFontSizing } from 'ui/src/hooks/useDynamicFontSizing'
-import { AmountInput, numericInputRegex } from 'uniswap/src/components/CurrencyInputPanel/AmountInput'
+import { zIndexes } from 'ui/src/theme'
+import { AmountInput } from 'uniswap/src/components/AmountInput/AmountInput'
+import { numericInputRegex } from 'uniswap/src/components/AmountInput/utils/numericInputEnforcer'
 import { Modal } from 'uniswap/src/components/modals/Modal'
+import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { ModalName } from 'uniswap/src/features/telemetry/constants'
+import { LiquidityEventName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
+import { FeePoolSelectAction } from 'uniswap/src/features/telemetry/types'
 import useResizeObserver from 'use-resize-observer'
 import { NumberType } from 'utilities/src/format/types'
+import { isMobileWeb } from 'utilities/src/platform'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import type { FeeData } from '~/components/Liquidity/Create/types'
+import { useAllFeeTierPoolData } from '~/components/Liquidity/hooks/useAllFeeTierPoolData'
+import {
+  calculateTickSpacingFromFeeAmount,
+  getFeeTierKey,
+  isDynamicFeeTier,
+  MAX_FEE_TIER_DECIMALS,
+  validateFeeTier,
+} from '~/components/Liquidity/utils/feeTiers'
+import { LpIncentivesAprDisplay } from '~/components/LpIncentives/LpIncentivesAprDisplay'
+import { StyledPercentInput } from '~/components/PercentInput'
+import { NumericalInputMimic, NumericalInputSymbolContainer } from '~/pages/Swap/common/shared'
+import { ClickableTamaguiStyle } from '~/theme/components/styles'
 
 const FeeTierPercentInput = styled(StyledPercentInput)`
   flex-grow: 0;
@@ -40,20 +51,35 @@ const MIN_FONT_SIZE = 12
 
 const SMALLEST_BIP_AMOUNT = 0.0001
 
-export function FeeTierSearchModal() {
-  const { chainId } = useMultichainContext()
-  const {
-    positionState: { fee: selectedFee, protocolVersion, hook },
-    derivedPositionInfo,
-    setPositionState,
-    feeTierSearchModalOpen,
-    setFeeTierSearchModalOpen,
-    setDynamicFeeTierSpeedbumpData,
-  } = useCreatePositionContext()
+interface FeeTierSearchModalProps {
+  isOpen: boolean
+  onClose: () => void
+  chainId?: number
+  protocolVersion: ProtocolVersion
+  hook?: string
+  sdkCurrencies: { TOKEN0: Maybe<Currency>; TOKEN1: Maybe<Currency> }
+  selectedFee?: FeeData
+  onSelectFee: (fee: FeeData) => void
+  onSelectDynamicFee?: (fee: FeeData) => void
+  createDescription?: string
+}
+
+export function FeeTierSearchModal({
+  isOpen,
+  onClose: onCloseProp,
+  chainId,
+  protocolVersion,
+  hook,
+  sdkCurrencies,
+  selectedFee,
+  onSelectFee,
+  onSelectDynamicFee,
+  createDescription,
+}: FeeTierSearchModalProps) {
   const onClose = () => {
     setCreateFeeValue('')
     setCreateModeEnabled(false)
-    setFeeTierSearchModalOpen(false)
+    onCloseProp()
   }
   const { t } = useTranslation()
   const trace = useTrace()
@@ -67,15 +93,14 @@ export function FeeTierSearchModal() {
   const hiddenObserver = useResizeObserver<HTMLElement>()
 
   const withDynamicFeeTier = Boolean(hook)
-  const { feeTierData, hasExistingFeeTiers } = useAllFeeTierPoolData({
+  const isLpIncentivesEnabled = useFeatureFlag(FeatureFlags.LpIncentives)
+  const { feeTierData } = useAllFeeTierPoolData({
     chainId,
     protocolVersion,
-    currencies: derivedPositionInfo.currencies,
+    sdkCurrencies,
     withDynamicFeeTier,
     hook: hook ?? ZERO_ADDRESS,
   })
-
-  const showCreateModal = !withDynamicFeeTier && (createModeEnabled || !hasExistingFeeTiers)
 
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -114,9 +139,7 @@ export function FeeTierSearchModal() {
               return SMALLEST_BIP_AMOUNT.toString()
             }
             newValue += SMALLEST_BIP_AMOUNT
-            if (newValue > 100) {
-              return '100'
-            }
+            return validateFeeTier(newValue.toFixed(MAX_FEE_TIER_DECIMALS))
           }
           return newValue.toFixed(MAX_FEE_TIER_DECIMALS)
         })
@@ -137,7 +160,11 @@ export function FeeTierSearchModal() {
 
   const feeHundredthsOfBips = Math.round(parseFloat(createFeeValue) * 10000)
 
-  const { onLayout, fontSize, onSetFontSize } = useDynamicFontSizing(MAX_CHAR_PIXEL_WIDTH, MAX_FONT_SIZE, MIN_FONT_SIZE)
+  const { onLayout, fontSize, onSetFontSize } = useDynamicFontSizing({
+    maxCharWidthAtMaxFontSize: MAX_CHAR_PIXEL_WIDTH,
+    maxFontSize: MAX_FONT_SIZE,
+    minFontSize: MIN_FONT_SIZE,
+  })
   useEffect(() => {
     if (createFeeValue) {
       onSetFontSize(createFeeValue)
@@ -147,24 +174,37 @@ export function FeeTierSearchModal() {
   }, [onSetFontSize, createFeeValue])
 
   return (
-    <Modal name={ModalName.FeeTierSearch} onClose={onClose} isDismissible isModalOpen={feeTierSearchModalOpen}>
+    <Modal
+      name={ModalName.FeeTierSearch}
+      onClose={onClose}
+      isDismissible
+      isModalOpen={isOpen}
+      paddingX="$spacing8"
+      paddingY="$spacing16"
+      maxWidth={404}
+    >
       <Flex width="100%" gap="$gap20">
         <Flex row justifyContent="space-between" alignItems="center" gap="$spacing4" width="100%">
           {createModeEnabled && (
             <Flex {...ClickableTamaguiStyle} onPress={() => setCreateModeEnabled(false)}>
-              <BackArrow size="$icon.24" />
+              <BackArrow size="$icon.24" color="$neutral2" />
             </Flex>
           )}
-          <Text variant="body2" flexGrow={1} textAlign="center" pl={showCreateModal ? 0 : 24}>
-            {showCreateModal ? t('fee.tier.create') : t('fee.tier.select')}
+          <Text
+            variant="body2"
+            flexGrow={1}
+            textAlign={createModeEnabled || isMobileWeb ? 'center' : 'left'}
+            pl={createModeEnabled ? 0 : 8}
+          >
+            {createModeEnabled ? t('fee.tier.create') : t('fee.tier.select')}
           </Text>
           <ModalCloseIcon testId="LiquidityModalHeader-close" onClose={onClose} />
         </Flex>
 
-        {showCreateModal ? (
+        {createModeEnabled ? (
           <Flex gap="$gap20">
             <Text variant="body2" color="$neutral2" textAlign="center">
-              {t('fee.tier.create.description')}
+              {createDescription ?? t('fee.tier.create.description')}
             </Text>
             <Flex row alignItems="center" gap="$spacing28" px="$spacing20">
               <Flex
@@ -204,11 +244,7 @@ export function FeeTierSearchModal() {
                   <FeeTierPercentInput
                     value={createFeeValue}
                     onUserInput={(input) => {
-                      if (parseFloat(input) > 100) {
-                        setCreateFeeValue('100')
-                      } else {
-                        setCreateFeeValue(input)
-                      }
+                      setCreateFeeValue(validateFeeTier(input))
                     }}
                     placeholder="0"
                     maxDecimals={MAX_FEE_TIER_DECIMALS}
@@ -243,10 +279,7 @@ export function FeeTierSearchModal() {
                       return SMALLEST_BIP_AMOUNT.toString()
                     }
                     const newValue = parseFloat(prev) + SMALLEST_BIP_AMOUNT
-                    if (newValue > 100) {
-                      return '100'
-                    }
-                    return newValue.toFixed(MAX_FEE_TIER_DECIMALS)
+                    return validateFeeTier(newValue.toFixed(MAX_FEE_TIER_DECIMALS))
                   })
                 }}
                 {...ClickableTamaguiStyle}
@@ -259,41 +292,29 @@ export function FeeTierSearchModal() {
               {t('fee.tier.alreadyExists', { formattedTVL: '$289.6K' })}
             </Text> */}
             {/* TODO(WEB-4920): search existing fee tiers for close matches and optionally similar list */}
-
-            <DeprecatedButton
-              flex={1}
-              py="$spacing16"
-              px="$spacing20"
-              backgroundColor="$accent3"
-              hoverStyle={{
-                backgroundColor: undefined,
-                opacity: 0.8,
-              }}
-              pressStyle={{
-                backgroundColor: undefined,
-              }}
-              isDisabled={!createFeeValue || createFeeValue === ''}
-              onPress={() => {
-                setPositionState((prevState) => ({
-                  ...prevState,
-                  fee: {
+            <Flex row>
+              <Button
+                variant="default"
+                isDisabled={!createFeeValue || createFeeValue === ''}
+                onPress={() => {
+                  onSelectFee({
+                    isDynamic: false,
                     feeAmount: feeHundredthsOfBips,
                     tickSpacing: calculateTickSpacingFromFeeAmount(feeHundredthsOfBips),
-                  },
-                }))
-                sendAnalyticsEvent(LiquidityEventName.SELECT_LIQUIDITY_POOL_FEE_TIER, {
-                  action: FeePoolSelectAction.SEARCH,
-                  fee_tier: feeHundredthsOfBips,
-                  is_new_fee_tier: Boolean(feeTierData[feeHundredthsOfBips]),
-                  ...trace,
-                })
-                onClose()
-              }}
-            >
-              <Text variant="buttonLabel2" color="$surface1">
+                  })
+                  sendAnalyticsEvent(LiquidityEventName.SelectLiquidityPoolFeeTier, {
+                    action: FeePoolSelectAction.Search,
+                    fee_tier: feeHundredthsOfBips,
+                    is_new_fee_tier: Boolean(feeTierData[feeHundredthsOfBips]),
+                    ...trace,
+                  })
+                  onClose()
+                }}
+              >
+                {/* oxlint-disable-next-line typescript/no-unnecessary-condition */}
                 {feeTierData[feeHundredthsOfBips] ? t('fee.tier.select.existing.button') : t('fee.tier.create.button')}
-              </Text>
-            </DeprecatedButton>
+              </Button>
+            </Flex>
           </Flex>
         ) : (
           <>
@@ -305,8 +326,9 @@ export function FeeTierSearchModal() {
               backgroundColor="$surface2"
               borderRadius="$rounded24"
               gap="$gap8"
+              mx="$spacing8"
             >
-              <Search size={20} color="$neutral2" />
+              <Search size="$icon.20" color="$neutral2" />
               <AmountInput
                 width="100%"
                 autoFocus
@@ -337,17 +359,24 @@ export function FeeTierSearchModal() {
                     return
                   }
 
-                  const newValue = parseFloat(value)
-                  if (newValue > 100) {
-                    setSearchValue('100')
+                  const validFeeTier = validateFeeTier(value)
+                  if (validFeeTier !== value) {
+                    setSearchValue(validFeeTier)
                     return
                   }
 
-                  setSearchValue(newValue >= 0 ? value : '')
+                  setSearchValue(Number(validFeeTier) >= 0 ? validFeeTier : '')
                 }}
               />
             </Flex>
-            <Flex width="100%" gap="$gap4" maxHeight={350} overflow="scroll" className="scrollbar-hidden">
+            <Flex
+              width="100%"
+              gap="$gap4"
+              maxHeight={350}
+              overflow="scroll"
+              px="$spacing16"
+              className="scrollbar-hidden"
+            >
               {Object.values(feeTierData)
                 .filter((data) => data.formattedFee.includes(searchValue) || (data.id && searchValue.includes(data.id)))
                 .map((pool) => (
@@ -357,30 +386,43 @@ export function FeeTierSearchModal() {
                     gap="$spacing24"
                     key={pool.id + pool.formattedFee}
                     py="$padding12"
-                    px="$padding16"
                     justifyContent="space-between"
                     {...ClickableTamaguiStyle}
                     onPress={() => {
                       if (isDynamicFeeTier(pool.fee)) {
-                        setDynamicFeeTierSpeedbumpData({
-                          open: true,
-                          wishFeeData: pool.fee,
-                        })
+                        if (onSelectDynamicFee) {
+                          onSelectDynamicFee(pool.fee)
+                        } else {
+                          onSelectFee(pool.fee)
+                        }
                       } else {
-                        setPositionState((prevState) => ({
-                          ...prevState,
-                          fee: {
-                            feeAmount: pool.fee.feeAmount,
-                            tickSpacing: pool.fee.tickSpacing,
-                          },
-                        }))
+                        onSelectFee({
+                          isDynamic: pool.fee.isDynamic,
+                          feeAmount: pool.fee.feeAmount,
+                          tickSpacing: pool.fee.tickSpacing,
+                        })
                       }
 
                       onClose()
                     }}
                   >
                     <Flex>
-                      <Text variant="subheading2">{pool.formattedFee}</Text>
+                      <Flex row alignItems="center">
+                        <Text variant="subheading2">{pool.formattedFee}</Text>
+                        {isLpIncentivesEnabled && pool.boostedApr !== undefined && pool.boostedApr > 0 && (
+                          <Tooltip placement="right">
+                            <Tooltip.Trigger>
+                              <LpIncentivesAprDisplay lpIncentiveRewardApr={pool.boostedApr} isSmall ml="$spacing8" />
+                            </Tooltip.Trigger>
+                            <Tooltip.Content zIndex={zIndexes.tooltip}>
+                              <Tooltip.Arrow />
+                              <Text variant="body4" color="$neutral2" textAlign="center">
+                                {t('pool.incentives.eligibleTooltip')}
+                              </Text>
+                            </Tooltip.Content>
+                          </Tooltip>
+                        )}
+                      </Flex>
                       <Flex row gap="$gap12" alignItems="center">
                         <Text variant="body3" color="$neutral2">
                           {pool.totalLiquidityUsd === 0
@@ -393,32 +435,39 @@ export function FeeTierSearchModal() {
                         </Text>
                         <Text variant="body3" color="$neutral2">
                           {pool.created
-                            ? t('fee.tier.percent.select', { percentage: formatPercent(pool.percentage.toFixed()) })
+                            ? t('fee.tier.percent.select', {
+                                percentage: formatPercent(pool.percentage.toSignificant(), 3),
+                              })
                             : t('common.notCreated.label')}
                         </Text>
                       </Flex>
                     </Flex>
-                    {pool.fee.feeAmount === selectedFee.feeAmount && (
-                      <CheckCircleFilled size="$icon.24" color="$accent3" />
-                    )}
+                    {getFeeTierKey({
+                      feeTier: pool.fee.feeAmount,
+                      tickSpacing: pool.fee.tickSpacing,
+                      isDynamicFee: pool.fee.isDynamic,
+                    }) ===
+                      getFeeTierKey({
+                        feeTier: selectedFee?.feeAmount,
+                        tickSpacing: selectedFee?.tickSpacing,
+                        isDynamicFee: selectedFee?.isDynamic,
+                      }) && <CheckCircleFilled size="$icon.24" color="$accent3" />}
                   </Flex>
                 ))}
             </Flex>
-            <Flex py="$padding12" gap="$gap12" alignItems="center">
+            <Flex gap="$gap12" alignItems="center" $sm={{ pb: '$spacing12' }}>
               <Text variant="body3" color="$neutral2">
                 {t('fee.tier.missing.description')}
               </Text>
-              <DeprecatedButton
-                py="$spacing8"
-                px="$spacing12"
-                gap="$gap4"
-                theme="secondary"
+              <Button
+                emphasis="secondary"
                 size="small"
+                fill={false}
                 icon={<Plus size={16} color="$neutral1" />}
                 onPress={() => setCreateModeEnabled(true)}
               >
                 {t('fee.tier.create.button')}
-              </DeprecatedButton>
+              </Button>
             </Flex>
           </>
         )}

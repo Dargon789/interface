@@ -1,6 +1,6 @@
-import { Z_INDEX } from 'theme/zIndex'
+import { zIndexes } from 'ui/src/theme'
 import { isWebAndroid, isWebIOS } from 'utilities/src/platform'
-import { createConnector } from 'wagmi'
+import { type CreateConnectorFn, createConnector } from 'wagmi'
 import { walletConnect } from 'wagmi/connectors'
 
 if (process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID === undefined) {
@@ -8,7 +8,7 @@ if (process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID === undefined) {
 }
 const WALLET_CONNECT_PROJECT_ID = <string>process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID
 
-export const walletTypeToAmplitudeWalletType = (connectionType?: string) => {
+export function walletTypeToAmplitudeWalletType(connectionType?: string): string {
   switch (connectionType) {
     case 'injected': {
       return 'Browser Extension'
@@ -21,6 +21,9 @@ export const walletTypeToAmplitudeWalletType = (connectionType?: string) => {
     }
     case 'uniswapWalletConnect': {
       return 'Wallet Connect'
+    }
+    case 'embeddedUniswapWallet': {
+      return 'Passkey'
     }
     default: {
       return connectionType ?? 'Network'
@@ -39,12 +42,12 @@ export const WC_PARAMS = {
   qrModalOptions: {
     themeVariables: {
       '--wcm-font-family': '"Inter custom", sans-serif',
-      '--wcm-z-index': Z_INDEX.modal.toString(),
+      '--wcm-z-index': zIndexes.overlay.toString(),
     },
   },
 }
 
-export function uniswapWalletConnect() {
+export function uniswapWalletConnect(): CreateConnectorFn {
   return createConnector((config) => {
     const wc = walletConnect({
       ...WC_PARAMS,

@@ -1,4 +1,5 @@
 import { MMKV } from 'react-native-mmkv'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths -- biome-parity: oxlint is stricter here
 import { view } from './storybook.requires'
 
 const mmkv = new MMKV({

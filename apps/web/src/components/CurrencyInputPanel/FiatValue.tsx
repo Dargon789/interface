@@ -1,19 +1,12 @@
 import { Percent } from '@uniswap/sdk-core'
-import { LoadingBubble } from 'components/Tokens/loading'
-import { MouseoverTooltip } from 'components/Tooltip'
-import Row from 'components/deprecated/Row'
-import styled from 'lib/styled-components'
 import { useMemo } from 'react'
 import { Trans } from 'react-i18next'
-import { ThemedText } from 'theme/components'
-import { NumberType, useFormatter } from 'utils/formatNumbers'
-import { warningSeverity } from 'utils/prices'
-
-const FiatLoadingBubble = styled(LoadingBubble)`
-  border-radius: 4px;
-  width: 4rem;
-  height: 1rem;
-`
+import { Flex, Text } from 'ui/src'
+import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { NumberType } from 'utilities/src/format/types'
+import { LoadingBubble } from '~/components/Tokens/loading'
+import { MouseoverTooltip } from '~/components/Tooltip'
+import { warningSeverity } from '~/utils/prices'
 
 export function FiatValue({
   fiatValue,
@@ -24,48 +17,45 @@ export function FiatValue({
   priceImpact?: Percent
   testId?: string
 }) {
-  const { formatNumber, formatPercent } = useFormatter()
+  const { formatPercent, convertFiatAmountFormatted } = useLocalizationContext()
 
   const priceImpactColor = useMemo(() => {
     if (!priceImpact) {
       return undefined
     }
     if (priceImpact.lessThan('0')) {
-      return 'success'
+      return '$statusSuccess'
     }
     const severity = warningSeverity(priceImpact)
     if (severity < 1) {
-      return 'neutral3'
+      return '$neutral3'
     }
     if (severity < 3) {
-      return 'deprecated_yellow1'
+      return '$statusWarning'
     }
-    return 'critical'
+    return '$statusCritical'
   }, [priceImpact])
 
   if (fiatValue.isLoading) {
-    return <FiatLoadingBubble />
+    return <LoadingBubble height={14} width={64} skeletonProps={{ borderRadius: '$rounded4' }} />
   }
 
   return (
-    <Row gap="sm">
-      <ThemedText.BodySmall color="neutral2" data-testid={testId}>
+    <Flex row gap="$gap8">
+      <Text variant="body3" color="$neutral2" data-testid={testId}>
         {fiatValue.data ? (
-          formatNumber({
-            input: fiatValue.data,
-            type: NumberType.FiatTokenPrice,
-          })
+          convertFiatAmountFormatted(fiatValue.data, NumberType.FiatTokenPrice)
         ) : (
           <MouseoverTooltip text={<Trans i18nKey="liquidity.notEnough.label" />}>-</MouseoverTooltip>
         )}
-      </ThemedText.BodySmall>
+      </Text>
       {priceImpact && (
-        <ThemedText.BodySmall color={priceImpactColor}>
+        <Text variant="body3" color={priceImpactColor}>
           <MouseoverTooltip placement="right" text={<Trans i18nKey="swap.estimatedDifference.label" />}>
-            ({formatPercent(priceImpact.multiply(-1))})
+            ({formatPercent(priceImpact.multiply(-1).toSignificant())})
           </MouseoverTooltip>
-        </ThemedText.BodySmall>
+        </Text>
       )}
-    </Row>
+    </Flex>
   )
 }

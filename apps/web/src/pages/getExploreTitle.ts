@@ -1,8 +1,8 @@
-import { ExploreTab } from 'pages/Explore'
 import { capitalize } from 'tsafe/capitalize'
 import i18n from 'uniswap/src/i18n'
 import { logger } from 'utilities/src/logger/logger'
-import { isChainUrlParam } from 'utils/chainParams'
+import { isChainUrlParam } from '~/features/params/chainParams'
+import { ExploreTab } from '~/pages/Explore/constants'
 
 export const getExploreTitle = (path?: string) => {
   const parts = path?.split('/').filter((part) => part !== '')

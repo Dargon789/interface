@@ -1,20 +1,21 @@
-import Row from 'components/deprecated/Row'
 import { TFunction } from 'i18next'
-import styled from 'lib/styled-components'
 import { Trans, useTranslation } from 'react-i18next'
-import { useLimitContext } from 'state/limit/LimitContext'
-import { ClickableStyle, ThemedText } from 'theme/components'
-import { InterfaceEventNameLocal } from 'uniswap/src/features/telemetry/constants'
+import { InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { LimitsExpiry } from 'uniswap/src/types/limits'
+import Row from '~/components/deprecated/Row'
+import { deprecatedStyled } from '~/lib/deprecated-styled'
+import { useLimitContext } from '~/state/limit/LimitContext'
+import { ThemedText } from '~/theme/components'
+import { ClickableStyle } from '~/theme/components/styles'
 
-const ExpirySection = styled(Row)`
+const ExpirySection = deprecatedStyled(Row)`
   width: 100%;
   padding: 12px 16px;
   justify-content: space-between;
 `
 
-const LimitExpiryButton = styled.button<{ $selected: boolean }>`
+const LimitExpiryButton = deprecatedStyled.button<{ $selected: boolean }>`
   display: flex;
   padding: 4px 8px;
   justify-content: flex-end;
@@ -30,7 +31,7 @@ const LimitExpiryButton = styled.button<{ $selected: boolean }>`
 
 const EXPIRY_OPTIONS = [LimitsExpiry.Day, LimitsExpiry.Week, LimitsExpiry.Month, LimitsExpiry.Year]
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line consistent-return
 function getExpiryLabelText(t: TFunction, expiry: LimitsExpiry): string {
   switch (expiry) {
     case LimitsExpiry.Day:
@@ -62,7 +63,7 @@ export function LimitExpirySection() {
               if (expiry === limitState.expiry) {
                 return
               }
-              sendAnalyticsEvent(InterfaceEventNameLocal.LimitExpirySelected, {
+              sendAnalyticsEvent(InterfaceEventName.LimitExpirySelected, {
                 value: expiry,
               })
               setLimitState((prev) => ({

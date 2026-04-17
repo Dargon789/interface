@@ -1,23 +1,20 @@
-// eslint-disable-next-line no-restricted-imports
-import { ProtocolVersion } from '@uniswap/client-pools/dist/pools/v1/types_pb'
-import { LoaderButton } from 'components/Button/LoaderButton'
-import { LiquidityModalDetailRows } from 'components/Liquidity/LiquidityModalDetailRows'
-import { LiquidityPositionInfo } from 'components/Liquidity/LiquidityPositionInfo'
-import { StyledPercentInput } from 'components/PercentInput'
+import { useMemo } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
+import { Button, Flex, Switch, Text } from 'ui/src'
+import { nativeOnChain } from 'uniswap/src/constants/tokens'
+import useResizeObserver from 'use-resize-observer'
+import { ErrorCallout } from '~/components/ErrorCallout'
+import { LiquidityModalDetailRows } from '~/components/Liquidity/LiquidityModalDetailRows'
+import { LiquidityPositionInfo } from '~/components/Liquidity/LiquidityPositionInfo'
+import { canUnwrapCurrency } from '~/components/Liquidity/utils/currency'
+import { StyledPercentInput } from '~/components/PercentInput'
 import {
   DecreaseLiquidityStep,
   useRemoveLiquidityModalContext,
-} from 'components/RemoveLiquidity/RemoveLiquidityModalContext'
-import { useRemoveLiquidityTxContext } from 'components/RemoveLiquidity/RemoveLiquidityTxContext'
-import { TradingAPIError } from 'pages/Pool/Positions/create/TradingAPIError'
-import { useCanUnwrapCurrency } from 'pages/Pool/Positions/create/utils'
-import { ClickablePill } from 'pages/Swap/Buy/PredefinedAmount'
-import { NumericalInputMimic, NumericalInputSymbolContainer, NumericalInputWrapper } from 'pages/Swap/common/shared'
-import { useMemo } from 'react'
-import { Trans, useTranslation } from 'react-i18next'
-import { Flex, Switch, Text, useSporeColors } from 'ui/src'
-import { useNativeCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
-import useResizeObserver from 'use-resize-observer'
+} from '~/pages/RemoveLiquidity/RemoveLiquidityModalContext'
+import { useRemoveLiquidityTxContext } from '~/pages/RemoveLiquidity/RemoveLiquidityTxContext'
+import { PredefinedAmount } from '~/pages/Swap/Buy/PredefinedAmount'
+import { NumericalInputMimic, NumericalInputSymbolContainer, NumericalInputWrapper } from '~/pages/Swap/common/shared'
 
 const isValidPercentageInput = (value: string): boolean => {
   const numValue = Number(value)
@@ -27,7 +24,6 @@ const isValidPercentageInput = (value: string): boolean => {
 export function RemoveLiquidityForm() {
   const hiddenObserver = useResizeObserver<HTMLElement>()
   const { t } = useTranslation()
-  const colors = useSporeColors()
 
   const { percent, positionInfo, setPercent, setStep, percentInvalid, unwrapNativeCurrency, setUnwrapNativeCurrency } =
     useRemoveLiquidityModalContext()
@@ -38,13 +34,14 @@ export function RemoveLiquidityForm() {
   }
 
   const { currency0Amount, currency1Amount } = positionInfo
-  const canUnwrap0 = useCanUnwrapCurrency(currency0Amount.currency)
-  const canUnwrap1 = useCanUnwrapCurrency(currency1Amount.currency)
-  const nativeCurrencyInfo = useNativeCurrencyInfo(positionInfo.chainId)
-  const canUnwrap = (canUnwrap0 || canUnwrap1) && positionInfo.version !== ProtocolVersion.V4
+  const canUnwrap0 = canUnwrapCurrency(currency0Amount.currency, positionInfo.version)
+  const canUnwrap1 = canUnwrapCurrency(currency1Amount.currency, positionInfo.version)
+  const nativeCurrency = nativeOnChain(positionInfo.chainId)
+
+  const canUnwrap = canUnwrap0 || canUnwrap1
 
   const unwrapUnderCard = useMemo(() => {
-    if (!canUnwrap || !nativeCurrencyInfo) {
+    if (!canUnwrap) {
       return null
     }
 
@@ -60,7 +57,7 @@ export function RemoveLiquidityForm() {
         px="$padding16"
       >
         <Text variant="body3" color="$neutral2">
-          <Trans i18nKey="pool.withdrawAs" values={{ nativeWrappedSymbol: nativeCurrencyInfo.currency.symbol }} />
+          <Trans i18nKey="pool.withdrawAs" values={{ nativeWrappedSymbol: nativeCurrency.symbol }} />
         </Text>
         <Switch
           id="add-as-weth"
@@ -70,7 +67,7 @@ export function RemoveLiquidityForm() {
         />
       </Flex>
     )
-  }, [canUnwrap, nativeCurrencyInfo, unwrapNativeCurrency, setUnwrapNativeCurrency])
+  }, [canUnwrap, nativeCurrency, unwrapNativeCurrency, setUnwrapNativeCurrency])
 
   return (
     <Flex gap="$gap24">
@@ -111,25 +108,15 @@ export function RemoveLiquidityForm() {
             </NumericalInputWrapper>
           </Flex>
           <Flex row gap="$gap8" width="100%" justifyContent="center">
-            {[25, 50, 75, 100].map((option) => {
-              const active = percent === option.toString()
-              const disabled = false
-              return (
-                <ClickablePill
-                  key={option}
-                  onPress={() => {
-                    setPercent(option.toString())
-                  }}
-                  $disabled={disabled}
-                  $active={active}
-                  customBorderColor={colors.surface3.val}
-                  foregroundColor={colors[disabled ? 'neutral3' : active ? 'neutral1' : 'neutral2'].val}
-                  label={option < 100 ? option + '%' : t('swap.button.max')}
-                  px="$spacing16"
-                  textVariant="buttonLabel2"
-                />
-              )
-            })}
+            {[25, 50, 75, 100].map((option) => (
+              <PredefinedAmount
+                key={option}
+                onPress={() => {
+                  setPercent(option.toString())
+                }}
+                label={option < 100 ? option + '%' : t('swap.button.max')}
+              />
+            ))}
           </Flex>
         </Flex>
         {unwrapUnderCard}
@@ -140,19 +127,19 @@ export function RemoveLiquidityForm() {
         currency1Amount={currency1Amount}
         networkCost={gasFeeEstimateUSD}
       />
-      <TradingAPIError errorMessage={error} refetch={refetch} />
-      <LoaderButton
-        isDisabled={percentInvalid || !txContext?.txRequest}
-        onPress={() => setStep(DecreaseLiquidityStep.Review)}
-        loading={!error && !percentInvalid && !txContext?.txRequest}
-        buttonKey="RemoveLiquidity-continue"
-      >
-        <Flex row alignItems="center" gap="$spacing8">
-          <Text variant="buttonLabel1" color="$white" animation="fastHeavy">
-            {t('common.button.remove')}
-          </Text>
-        </Flex>
-      </LoaderButton>
+      <ErrorCallout errorMessage={error} onPress={refetch} />
+      <Flex row>
+        <Button
+          isDisabled={percentInvalid || !txContext?.txRequest}
+          onPress={() => setStep(DecreaseLiquidityStep.Review)}
+          loading={!error && !percentInvalid && !txContext?.txRequest}
+          variant="branded"
+          key="LoaderButton-animation-RemoveLiquidity-continue"
+          size="large"
+        >
+          {t('common.button.review')}
+        </Button>
+      </Flex>
     </Flex>
   )
 }

@@ -2,26 +2,28 @@
  * Preset styles of the Rebass Text component
  */
 
-import styled from 'lib/styled-components'
 import { Text, TextProps as TextPropsOriginal } from 'rebass'
+import { deprecatedStyled } from '~/lib/deprecated-styled'
 
-const TextWrapper = styled(Text).withConfig({
+/* oxlint-disable typescript/no-unsafe-return -- biome-parity: oxlint is stricter here */
+const TextWrapper = deprecatedStyled(Text).withConfig({
   shouldForwardProp: (prop) => prop !== 'color',
 })<{ color: keyof string }>`
   color: ${({ color, theme }) => (theme as any)[color]};
   letter-spacing: -0.01em;
 `
 
-const HeadingWrapper = styled.h1.withConfig({
+const HeadingWrapper = deprecatedStyled.h1.withConfig({
   shouldForwardProp: (prop) => prop !== 'color',
 })<{ color: keyof string; fontSize: string; margin: string }>`
   color: ${({ color, theme }) => (theme as any)[color]};
   font-family: inherit;
   font-weight: 485;
   font-size: ${({ fontSize }) => fontSize};
-  margin: ${({ margin }) => margin ?? 0};
+  margin: ${({ margin }) => margin};
   letter-spacing: -0.02em;
 `
+/* oxlint-enable typescript/no-unsafe-return */
 
 type TextProps = Omit<TextPropsOriginal, 'css'>
 

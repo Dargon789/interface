@@ -1,8 +1,6 @@
-import 'test-utils/tokens/mocks'
-
-import { Percent } from '@uniswap/sdk-core'
-import SwapLineItem, { SwapLineItemType } from 'components/swap/SwapLineItem'
-import { InterfaceTrade } from 'state/routing/types'
+import '~/test-utils/tokens/mocks'
+import SwapLineItem, { SwapLineItemType } from '~/components/swap/SwapLineItem'
+import { InterfaceTrade } from '~/state/routing/types'
 import {
   LIMIT_ORDER_TRADE,
   PREVIEW_EXACT_IN_TRADE,
@@ -14,12 +12,12 @@ import {
   TEST_TRADE_EXACT_OUTPUT,
   TEST_TRADE_FEE_ON_BUY,
   TEST_TRADE_FEE_ON_SELL,
-} from 'test-utils/constants'
-import { render, screen } from 'test-utils/render'
+} from '~/test-utils/constants'
+import { render, screen } from '~/test-utils/render'
 
 // Forces tooltips to render in snapshots
-jest.mock('react-dom', () => {
-  const original = jest.requireActual('react-dom')
+vi.mock('react-dom', () => {
+  const original = vi.importActual('react-dom')
   return {
     ...original,
     createPortal: (node: any) => node,
@@ -27,7 +25,7 @@ jest.mock('react-dom', () => {
 })
 
 // Prevents uuid from generating unpredictable values in snapshots
-jest.mock('uuid', () => ({
+vi.mock('uuid', () => ({
   v4: () => 'fixed-uuid-value',
 }))
 
@@ -48,8 +46,16 @@ function testTradeLineItems(trade: InterfaceTrade, props: Partial<typeof lineIte
   expect(asFragment()).toMatchSnapshot()
 }
 
-/* eslint-disable jest/expect-expect */ // allow expect inside testTradeLineItems
+/* oxlint-disable jest/expect-expect */ // allow expect inside testTradeLineItems
 describe('SwapLineItem.tsx', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'info').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('exact input', () => {
     testTradeLineItems(TEST_TRADE_EXACT_INPUT)
   })
@@ -84,7 +90,6 @@ describe('SwapLineItem.tsx', () => {
         trade={LIMIT_ORDER_TRADE}
         type={SwapLineItemType.EXPIRY}
         syncing={false}
-        allowedSlippage={new Percent(0)}
       />,
     )
     // TODO: mock Date Time so we can use a snapshot test here

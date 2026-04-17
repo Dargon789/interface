@@ -1,7 +1,6 @@
-import { Input, InputProps } from 'components/NumericalInput'
-import Row from 'components/deprecated/Row'
-import styled, { css } from 'lib/styled-components'
-import { useLayoutEffect, useState } from 'react'
+import Row from '~/components/deprecated/Row'
+import { Input, InputProps } from '~/components/NumericalInput'
+import { css, deprecatedStyled } from '~/lib/deprecated-styled'
 
 export const NumericalInputFontStyle = css<{ $fontSize?: number }>`
   text-align: left;
@@ -10,16 +9,19 @@ export const NumericalInputFontStyle = css<{ $fontSize?: number }>`
   line-height: 60px;
 `
 
-export const NumericalInputWrapper = styled(Row)`
+export const NumericalInputWrapper = deprecatedStyled(Row)`
   position: relative;
   max-width: 100%;
   width: max-content;
 `
 
-export const StyledNumericalInput = styled(Input)<{ $width?: number; $hasPrefix?: boolean } & InputProps>`
+export const StyledNumericalInput = deprecatedStyled(Input)<
+  { $width?: number; $hasPrefix?: boolean; $fontSize?: number; $prefixWidth?: number } & InputProps
+>`
   max-height: 84px;
-  max-width: ${({ $hasPrefix }) => ($hasPrefix ? 'calc(100% - 43px)' : '100%')};
+  max-width: ${({ $hasPrefix, $prefixWidth }) => ($hasPrefix ? `calc(100% - ${$prefixWidth ?? 43}px)` : '100%')};
   width: ${({ $width }) => `${$width ?? 43}px`}; // this value is from the size of a 0 which is the default value
+  font-size: ${({ $fontSize }) => `${$fontSize ?? 70}px`};
   ${NumericalInputFontStyle}
 
   ::placeholder {
@@ -27,7 +29,7 @@ export const StyledNumericalInput = styled(Input)<{ $width?: number; $hasPrefix?
   }
 `
 
-export const NumericalInputMimic = styled.span`
+export const NumericalInputMimic = deprecatedStyled.span<{ $fontSize?: number }>`
   position: absolute;
   visibility: hidden;
   bottom: 0px;
@@ -35,8 +37,9 @@ export const NumericalInputMimic = styled.span`
   ${NumericalInputFontStyle}
 `
 
-export const NumericalInputSymbolContainer = styled.span<{ showPlaceholder: boolean; $fontSize?: number }>`
+export const NumericalInputSymbolContainer = deprecatedStyled.span<{ showPlaceholder: boolean; $fontSize?: number }>`
   user-select: none;
+  color: ${({ theme }) => theme.neutral1};
   ${NumericalInputFontStyle}
   ${({ showPlaceholder }) =>
     showPlaceholder &&
@@ -44,15 +47,3 @@ export const NumericalInputSymbolContainer = styled.span<{ showPlaceholder: bool
       color: ${({ theme }) => theme.neutral3};
     `}
 `
-
-export function useWidthAdjustedDisplayValue(displayValue: string) {
-  const [postWidthAdjustedDisplayValue, setPostWidthAdjustedDisplayValue] = useState('')
-
-  // Doing this to set the value the user is seeing once the width of the
-  // hidden element is known (after 1 render) so users don't see a weird jump
-  useLayoutEffect(() => {
-    requestAnimationFrame(() => setPostWidthAdjustedDisplayValue(displayValue))
-  }, [displayValue])
-
-  return postWidthAdjustedDisplayValue
-}

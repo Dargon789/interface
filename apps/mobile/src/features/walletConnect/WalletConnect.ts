@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* oxlint-disable typescript/no-unsafe-return */
 import { NativeModules } from 'react-native'
 import { isAndroid } from 'utilities/src/platform'
 

@@ -19,14 +19,14 @@ export function PasswordImport({
     useOnboardingContext()
   const mnemonicString = getOnboardingAccountMnemonicString()
 
+  // oxlint-disable-next-line react/exhaustive-deps -- Only run once on component mount to generate addresses
   useEffect(() => {
     generateInitialAddresses().catch((error) => {
       logger.error(error, {
         tags: { file: 'PasswordImport.tsx', function: 'generateInitialAddresses' },
       })
     })
-    // We only want this to run once on component mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   const onSubmit = useCallback(

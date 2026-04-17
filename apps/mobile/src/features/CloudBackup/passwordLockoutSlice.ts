@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
+// oxlint-disable-next-line import/no-unused-modules
 export interface PasswordLockoutState {
   passwordAttempts: number
   endTime?: number

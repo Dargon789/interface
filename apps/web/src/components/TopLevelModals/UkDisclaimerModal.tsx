@@ -1,51 +1,33 @@
-import { ButtonEmphasis, ButtonSize, ThemeButton } from 'components/Button/buttons'
-import Column from 'components/deprecated/Column'
-import styled from 'lib/styled-components'
 import { useTranslation } from 'react-i18next'
-import { useCloseModal, useModalIsOpen } from 'state/application/hooks'
-import { ApplicationModal } from 'state/application/reducer'
-import { ThemedText } from 'theme/components'
-import { Flex, ModalCloseIcon } from 'ui/src'
+import { Button, Flex, ModalCloseIcon, Spacer, Text } from 'ui/src'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
-
-const Wrapper = styled(Column)`
-  padding: 8px;
-`
-
-const ButtonContainer = styled(Column)`
-  padding: 8px 12px 4px;
-`
-
-const StyledThemeButton = styled(ThemeButton)`
-  width: 100%;
-`
+import { useModalState } from '~/hooks/useModalState'
 
 export function UkDisclaimerModal() {
   const { t } = useTranslation()
-  const isOpen = useModalIsOpen(ApplicationModal.UK_DISCLAIMER)
-  const closeModal = useCloseModal()
+  const { isOpen, closeModal } = useModalState(ModalName.UkDisclaimer)
 
   return (
     <Modal name={ModalName.UkDisclaimer} isModalOpen={isOpen} onClose={closeModal} padding={0}>
-      <Wrapper gap="md">
+      <Flex p="$padding8" gap="$gap12">
         <Flex alignItems="flex-end" pt="$spacing8" pb="$spacing4">
           <ModalCloseIcon onClose={closeModal} />
         </Flex>
-        <Column gap="sm">
-          <ThemedText.HeadlineLarge padding="0px 8px" fontSize="24px" lineHeight="32px">
-            {t('search.ukDisclaimer')}
-          </ThemedText.HeadlineLarge>
-          <ThemedText.BodyPrimary padding="8px 8px 12px" lineHeight="24px">
-            {t('notice.uk')}
-          </ThemedText.BodyPrimary>
-        </Column>
-        <ButtonContainer gap="md">
-          <StyledThemeButton size={ButtonSize.large} emphasis={ButtonEmphasis.medium} onClick={() => closeModal()}>
-            {t('common.dismiss')}
-          </StyledThemeButton>
-        </ButtonContainer>
-      </Wrapper>
+        <Flex px="$padding8">
+          <Flex gap="$gap16">
+            <Text variant="heading2">{t('search.ukDisclaimer')}</Text>
+            <Text variant="body2">{t('notice.uk')}</Text>
+          </Flex>
+          <Spacer size="$spacing24" />
+          <Flex row>
+            <Button size="small" onPress={closeModal}>
+              {t('common.dismiss')}
+            </Button>
+          </Flex>
+          <Spacer size="$spacing12" />
+        </Flex>
+      </Flex>
     </Modal>
   )
 }

@@ -67,25 +67,34 @@ function beforeSend(event: RumEvent, context: RumEventDomainContext): boolean {
   }
 
   if (event.type === 'resource' && event.resource.url.includes('gateway.uniswap.org')) {
-    const requestHeaders = (context as RumFetchResourceEventDomainContext).requestInit?.headers
-    if (requestHeaders) {
-      const headersRecord =
-        requestHeaders instanceof Headers
-          ? Object.fromEntries(requestHeaders.entries())
-          : Array.isArray(requestHeaders)
-            ? Object.fromEntries(requestHeaders)
-            : requestHeaders
-      const tradingApiHeaderValues = new Set<string>(Object.values(TradingApiHeaders))
-      const featureFlagHeaders: Record<string, string> = {}
-      for (const [key, value] of Object.entries(headersRecord)) {
-        if (tradingApiHeaderValues.has(key)) {
-          featureFlagHeaders[key] = String(value)
+    let isGatewayUniswapRequest = false
+    try {
+      isGatewayUniswapRequest = new URL(event.resource.url).hostname === 'gateway.uniswap.org'
+    } catch {
+      // ignore invalid URLs
+    }
+
+    if (isGatewayUniswapRequest) {
+      const requestHeaders = (context as RumFetchResourceEventDomainContext).requestInit?.headers
+      if (requestHeaders) {
+        const headersRecord =
+          requestHeaders instanceof Headers
+            ? Object.fromEntries(requestHeaders.entries())
+            : Array.isArray(requestHeaders)
+              ? Object.fromEntries(requestHeaders)
+              : requestHeaders
+        const tradingApiHeaderValues = new Set<string>(Object.values(TradingApiHeaders))
+        const featureFlagHeaders: Record<string, string> = {}
+        for (const [key, value] of Object.entries(headersRecord)) {
+          if (tradingApiHeaderValues.has(key)) {
+            featureFlagHeaders[key] = String(value)
+          }
         }
-      }
-      if (Object.keys(featureFlagHeaders).length > 0) {
-        event.context = {
-          ...event.context,
-          tradingApiHeaders: featureFlagHeaders,
+        if (Object.keys(featureFlagHeaders).length > 0) {
+          event.context = {
+            ...event.context,
+            tradingApiHeaders: featureFlagHeaders,
+          }
         }
       }
     }

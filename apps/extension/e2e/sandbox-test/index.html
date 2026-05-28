@@ -111,11 +111,10 @@
 
       const el = document.getElementById('result-' + frameId);
       el.className = 'result ' + (allPass ? 'pass' : 'fail');
-      el.innerHTML = `
-        ${allPass ? 'PASS' : 'FAIL'} &mdash;
-        origin: ${origin} (${originPass ? 'ok' : 'WRONG'}),
-        Uniswap provider: ${hasUniswapProvider ? 'present' : 'absent'} (${providerPass ? 'ok' : 'WRONG'})
-      `;
+      el.textContent =
+        `${allPass ? 'PASS' : 'FAIL'} — ` +
+        `origin: ${origin} (${originPass ? 'ok' : 'WRONG'}), ` +
+        `Uniswap provider: ${hasUniswapProvider ? 'present' : 'absent'} (${providerPass ? 'ok' : 'WRONG'})`;
     });
 
     // Timeout fallback

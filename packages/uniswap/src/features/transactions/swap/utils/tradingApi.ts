@@ -562,7 +562,8 @@ export function createGetQuoteSlippageParams(ctx: {
     }
 
     // Otherwise, use an auto slippage tolerance calculated on the backend
-    return { autoSlippage: TradingApi.AutoSlippage.DEFAULT }
+    // TODO: TradingApi.AutoSlippage.DEFAULT was removed. Verify if there is a replacement.
+    return { autoSlippage: 'DEFAULT' }
   }
 }
 

@@ -37,7 +37,15 @@ export const SearchModalNoQueryList = memo(function SearchModalNoQueryListInner(
 }: SearchModalNoQueryListProps): JSX.Element {
   const { t } = useTranslation()
 
-  const { data: sections, loading, error, refetch } = useSectionsForNoQuerySearch({ chainFilter, activeTab })
+  const {
+    data: sections,
+    loading,
+    error,
+    refetch,
+  } = useSectionsForNoQuerySearch({
+    chainFilter,
+    activeTab,
+  })
 
   useMultichainSearchModalMetricsAnalytics({
     sections,

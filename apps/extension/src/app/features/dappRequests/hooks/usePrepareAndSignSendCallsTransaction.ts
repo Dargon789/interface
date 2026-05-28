@@ -100,6 +100,7 @@ export function usePrepareAndSignSendCallsTransaction({
     params: {
       calls: transformedCalls,
       smartContractDelegationAddress: UNISWAP_DELEGATION_ADDRESS,
+      // @ts-expect-error - TODO: no longer available in API types, verify if still needed
       walletAddress: account.address,
     },
   })

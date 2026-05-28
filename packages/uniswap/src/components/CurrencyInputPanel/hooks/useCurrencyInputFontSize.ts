@@ -19,14 +19,16 @@ export function useCurrencyInputFontSize({
   options?: Partial<FontSizeOptions>
 }): {
   onLayout: (event: LayoutChangeEvent) => void
+  onExtraElementLayout: (event: LayoutChangeEvent) => void
   fontSize: number
   lineHeight: number
 } {
   const maxFontSize = options?.maxFontSize ?? MAX_INPUT_FONT_SIZE
   const minFontSize = options?.minFontSize ?? MIN_INPUT_FONT_SIZE
-  const charPixelWidth = options?.maxCharWidthAtMaxFontSize ?? MAX_CHAR_PIXEL_WIDTH
+  const defaultCharPixelWidth = (maxFontSize / MAX_INPUT_FONT_SIZE) * MAX_CHAR_PIXEL_WIDTH
+  const charPixelWidth = options?.maxCharWidthAtMaxFontSize ?? defaultCharPixelWidth
 
-  const { onLayout, fontSize, onSetFontSize } = useDynamicFontSizing({
+  const { onLayout, fontSize, onSetFontSize, onExtraElementLayout } = useDynamicFontSizing({
     maxCharWidthAtMaxFontSize: charPixelWidth,
     maxFontSize,
     minFontSize,
@@ -48,5 +50,7 @@ export function useCurrencyInputFontSize({
     onLayout,
     fontSize,
     lineHeight,
+    /** Measure prefix width (e.g. fiat symbol) so available width for the amount matches Buy / CurrencyInputPanel. */
+    onExtraElementLayout,
   }
 }

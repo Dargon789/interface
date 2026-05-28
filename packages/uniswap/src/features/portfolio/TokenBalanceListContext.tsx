@@ -1,39 +1,40 @@
 import { NetworkStatus } from '@apollo/client'
 import { isWarmLoadingStatus } from '@universe/api'
-import isEqual from 'lodash/isEqual'
-import {
-  createContext,
-  Dispatch,
-  PropsWithChildren,
-  SetStateAction,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { createContext, Dispatch, PropsWithChildren, SetStateAction, useContext, useMemo, useState } from 'react'
 import { PollingInterval } from 'uniswap/src/constants/misc'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
-import {
-  sortPortfolioBalances,
-  usePortfolioBalances,
-  useTokenBalancesGroupedByVisibility,
-} from 'uniswap/src/features/dataApi/balances/balances'
-import { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
-import { HIDDEN_TOKEN_BALANCES_ROW, TokenBalanceListRow } from 'uniswap/src/features/portfolio/types'
+import { PortfolioMultichainBalance } from 'uniswap/src/features/dataApi/types'
+import { useSortedPortfolioBalancesMultichain } from 'uniswap/src/features/portfolio/balances/hooks'
+import { TokenBalanceListRow } from 'uniswap/src/features/portfolio/types'
+import { useMultichainBalancesListData } from 'uniswap/src/features/portfolio/useMultichainBalancesListData'
+import { useMultichainPortfolioMetricsAnalytics } from 'uniswap/src/features/portfolio/useMultichainPortfolioMetricsAnalytics'
+import { useTokenBalanceListMultichainExpansion } from 'uniswap/src/features/portfolio/useTokenBalanceListMultichainExpansion'
+import { useCurrencyIdToVisibility } from 'uniswap/src/features/transactions/selectors'
 import { CurrencyId } from 'uniswap/src/types/currency'
 
+export type TokenBalancePressOptions = {
+  isMultichainAsset?: boolean
+}
+
 type TokenBalanceListContextState = {
-  balancesById: Record<string, PortfolioBalance> | undefined
+  balancesById: Record<string, PortfolioMultichainBalance> | undefined
+  expandedCurrencyIds: Set<string>
+  multichainRowExpansionEnabled: boolean
   networkStatus: NetworkStatus
   refetch: (() => void) | undefined
   hiddenTokensCount: number
   hiddenTokensExpanded: boolean
+  isPortfolioBalancesLoading: boolean
   isWarmLoading: boolean
   rows: Array<TokenBalanceListRow>
   setHiddenTokensExpanded: Dispatch<SetStateAction<boolean>>
-  onPressToken?: (currencyId: CurrencyId) => void
+  toggleExpanded: (currencyId: string) => void
+  onPressToken?: (currencyId: CurrencyId, options?: TokenBalancePressOptions) => void
   evmOwner?: Address
   svmOwner?: Address
+  error?: Error
+  dataUpdatedAt?: number
 }
 
 export const TokenBalanceListContext = createContext<TokenBalanceListContextState | undefined>(undefined)
@@ -48,106 +49,95 @@ export function TokenBalanceListContextProvider({
   evmOwner?: Address
   svmOwner?: Address
   isExternalProfile: boolean
-  onPressToken?: (currencyId: CurrencyId) => void
+  onPressToken?: (currencyId: CurrencyId, options?: TokenBalancePressOptions) => void
 }>): JSX.Element {
+  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+
   const {
-    data: balancesById,
+    data: sortedData,
+    balancesById,
     networkStatus,
     refetch,
-  } = usePortfolioBalances({
+    loading,
+    error,
+    dataUpdatedAt,
+  } = useSortedPortfolioBalancesMultichain({
     evmAddress: evmOwner,
     svmAddress: svmOwner,
     pollInterval: PollingInterval.KindaFast,
-    fetchPolicy: 'cache-and-network',
+    requestMultichainFromBackend: multichainTokenUxEnabled,
   })
 
   const { isTestnetModeEnabled } = useEnabledChains()
-  // re-order token balances to visible and hidden
-  const { shownTokens, hiddenTokens } = useTokenBalancesGroupedByVisibility({
-    balancesById,
-  })
-  // Hides balances for spam tokens so sorts them last
-  const sortedHiddenTokens = useMemo(
-    () =>
-      hiddenTokens?.sort((a, b) => {
-        if (a.currencyInfo.isSpam && !b.currencyInfo.isSpam) {
-          return 1
-        } else if (b.currencyInfo.isSpam && !a.currencyInfo.isSpam) {
-          return -1
-        }
-        return 0
-      }),
-    [hiddenTokens],
-  )
+  const ownerAddresses = useMemo(() => [evmOwner, svmOwner].filter((a): a is Address => !!a), [evmOwner, svmOwner])
+  const currencyIdToTokenVisibility = useCurrencyIdToVisibility(ownerAddresses)
 
-  const shouldShowHiddenTokens = !shownTokens?.length && !!hiddenTokens?.length
+  const { sortedDataForList, balancesByIdForList, hiddenTokensCount } = useMultichainBalancesListData({
+    sortedData,
+    balancesById,
+    isTestnetModeEnabled,
+    currencyIdToTokenVisibility,
+  })
+
+  // oxlint-disable-next-line no-unnecessary-condition -- length can be undefined
+  const shouldShowHiddenTokens = !sortedDataForList?.balances?.length && !!sortedDataForList?.hiddenBalances?.length
 
   const [hiddenTokensExpanded, setHiddenTokensExpanded] = useState(shouldShowHiddenTokens)
 
-  const rowsRef = useRef<TokenBalanceListRow[]>(undefined)
-
-  const rows = useMemo<TokenBalanceListRow[]>(() => {
-    const shownTokensArray = shownTokens ?? []
-
-    const testnetModeRowIds = [
-      // When we're on testnet mode, we want to show all tokens, without splitting to hidden ones
-      ...sortPortfolioBalances({
-        balances: [...shownTokensArray, ...(sortedHiddenTokens ?? [])],
-        isTestnetModeEnabled,
-      }),
-    ].map((token) => token.currencyInfo.currencyId)
-
-    const newRowIds = [
-      // Always sort tokens to ensure proper ordering after instant balance updates
-      // In prod, sort by USD value; in testnet mode, sort by native balances
-      ...sortPortfolioBalances({ balances: shownTokensArray, isTestnetModeEnabled }),
-      ...(sortedHiddenTokens?.length ? [HIDDEN_TOKEN_BALANCES_ROW] : []),
-      ...(hiddenTokensExpanded && sortedHiddenTokens ? sortedHiddenTokens : []),
-    ].map((token) => {
-      if (token === HIDDEN_TOKEN_BALANCES_ROW) {
-        return token
-      }
-
-      return token.currencyInfo.currencyId
+  const { rows, expandedCurrencyIds, toggleExpanded, multichainRowExpansionEnabled } =
+    useTokenBalanceListMultichainExpansion({
+      sortedData: sortedDataForList,
+      hiddenTokensExpanded,
     })
 
-    const modeDependentRowIds = isTestnetModeEnabled ? testnetModeRowIds : newRowIds
+  const hasData = !!balancesById
+  const isWarmLoading = hasData && isWarmLoadingStatus(networkStatus) && !isExternalProfile
+  // Show loading skeletons when loading OR when there's an outage with no cached data
+  const isPortfolioBalancesLoading = loading || (!!error && !sortedData)
 
-    // We do this extra step to make sure we return the same array reference if the currency IDs for each row haven't changed.
-    if (!rowsRef.current || !isEqual(rowsRef.current, modeDependentRowIds)) {
-      rowsRef.current = modeDependentRowIds
-    }
-
-    return rowsRef.current
-  }, [sortedHiddenTokens, hiddenTokensExpanded, shownTokens, isTestnetModeEnabled])
-
-  const isWarmLoading = !!balancesById && isWarmLoadingStatus(networkStatus) && !isExternalProfile
+  useMultichainPortfolioMetricsAnalytics({
+    sortedDataForList,
+    isExternalProfile,
+    isPortfolioBalancesLoading,
+  })
 
   const state = useMemo<TokenBalanceListContextState>(
     (): TokenBalanceListContextState => ({
-      balancesById,
-      hiddenTokensCount: hiddenTokens?.length ?? 0,
+      balancesById: balancesByIdForList,
+      expandedCurrencyIds,
+      multichainRowExpansionEnabled,
+      hiddenTokensCount,
       hiddenTokensExpanded,
+      isPortfolioBalancesLoading,
       isWarmLoading,
       networkStatus,
       onPressToken,
       refetch,
       rows,
       setHiddenTokensExpanded,
+      toggleExpanded,
       evmOwner,
       svmOwner,
+      error,
+      dataUpdatedAt,
     }),
     [
-      balancesById,
-      hiddenTokens?.length,
+      balancesByIdForList,
+      expandedCurrencyIds,
+      multichainRowExpansionEnabled,
+      hiddenTokensCount,
       hiddenTokensExpanded,
+      isPortfolioBalancesLoading,
       isWarmLoading,
       networkStatus,
       onPressToken,
       refetch,
       rows,
+      toggleExpanded,
       evmOwner,
       svmOwner,
+      error,
+      dataUpdatedAt,
     ],
   )
 

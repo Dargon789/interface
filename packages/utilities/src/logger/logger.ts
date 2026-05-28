@@ -1,9 +1,15 @@
-/* eslint-disable max-params */
-import { datadogEnabledBuild, localDevDatadogEnabled } from 'utilities/src/environment/constants'
-import { isDevEnv, isTestEnv } from 'utilities/src/environment/env'
+/* oxlint-disable max-params */
+import {
+  isMobileApp,
+  isWebApp,
+  isWebPlatform,
+  isDevEnv,
+  isTestEnv,
+  isDatadogEnabled,
+  localDevDatadogEnabled,
+} from '@universe/environment'
 import { logErrorToDatadog, logToDatadog, logWarningToDatadog } from 'utilities/src/logger/datadog/Datadog'
-import { LoggerErrorContext, LogLevel } from 'utilities/src/logger/types'
-import { isMobileApp, isWebApp, isWebPlatform } from 'utilities/src/platform'
+import { type LoggerErrorContext, type LogLevel } from 'utilities/src/logger/types'
 
 // weird temp fix: the web app is complaining about __DEV__ being global
 // i tried declaring it in a variety of places:
@@ -13,7 +19,6 @@ import { isMobileApp, isWebApp, isWebPlatform } from 'utilities/src/platform'
 // perhaps because the declarations are not applying to external packages
 // but somehow its also not picking up the declarations here
 declare global {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore its ok
   const __DEV__: boolean
 }
@@ -84,16 +89,14 @@ function logMessage(
       // because `console.debug` and `console.warn` only support one single argument in Reactotron.
       // Alternatively, we could improve this in the future by removing the Reactotron log plugin and instead
       // manually call `Reactotron.display(...)` here with some custom formatting.
-      // biome-ignore lint/suspicious/noConsole: Console logging needed for debugging
       console.log(...formatMessage({ level, fileName, functionName, message }), ...args)
     } else {
-      // biome-ignore lint/suspicious/noConsole: Console logging needed for debugging
       console[level](...formatMessage({ level, fileName, functionName, message }), ...args)
     }
   }
 
   // don't log if datadog isn't enabled on the build or by the switch
-  if (!datadogEnabledBuild || !datadogEnabled) {
+  if (!isDatadogEnabled() || !datadogEnabled) {
     return
   }
 
@@ -119,12 +122,11 @@ function logException(error: unknown, captureContext: LoggerErrorContext): void 
 
   // Log to console directly for dev builds or interface for debugging
   if (__DEV__ || isWebApp) {
-    // biome-ignore lint/suspicious/noConsole: Console logging needed for debugging
     console.error(error, captureContext)
   }
 
   // don't log if datadog isn't enabled on the build or by the switch
-  if (!datadogEnabledBuild || !datadogEnabled) {
+  if (!isDatadogEnabled() || !datadogEnabled) {
     return
   }
 
@@ -154,11 +156,11 @@ export function addErrorExtras(error: unknown, captureContext: LoggerErrorContex
     const { nativeStackAndroid, userInfo } = error as RNError
 
     if (Array.isArray(nativeStackAndroid) && nativeStackAndroid.length > 0) {
-      extras.nativeStackAndroid = nativeStackAndroid
+      extras['nativeStackAndroid'] = nativeStackAndroid
     }
 
     if (userInfo) {
-      extras.userInfo = userInfo
+      extras['userInfo'] = userInfo
     }
 
     updatedContext.extra = { ...updatedContext.extra, ...extras }
@@ -218,17 +220,22 @@ export function createLogger(
   logPrefix?: string,
 ): {
   debug: (message: string, extra?: unknown) => void
+  info: (message: string, extra?: unknown) => void
   warn: (message: string, extra?: unknown) => void
   error: (error: unknown, extra?: Record<string, unknown>) => void
 } {
+  const getPrefixedMessage = (message: string): string =>
+    logPrefix && !message.startsWith(logPrefix) ? `${logPrefix} ${message}` : message
+
   return {
     debug: (message: string, extra?: unknown): void => {
-      const prefixedMessage = logPrefix && !message.startsWith(logPrefix) ? `${logPrefix} ${message}` : message
-      logger.debug(fileName, functionName, prefixedMessage, extra)
+      logger.debug(fileName, functionName, getPrefixedMessage(message), extra)
+    },
+    info: (message: string, extra?: unknown): void => {
+      logger.info(fileName, functionName, getPrefixedMessage(message), extra)
     },
     warn: (message: string, extra?: unknown): void => {
-      const prefixedMessage = logPrefix && !message.startsWith(logPrefix) ? `${logPrefix} ${message}` : message
-      logger.warn(fileName, functionName, prefixedMessage, extra)
+      logger.warn(fileName, functionName, getPrefixedMessage(message), extra)
     },
     error: (error: unknown, extra?: Record<string, unknown>): void => {
       logger.error(error as Error, {

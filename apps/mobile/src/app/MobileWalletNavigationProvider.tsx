@@ -1,5 +1,4 @@
 import { StackActions } from '@react-navigation/native'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { PropsWithChildren, useCallback } from 'react'
 import { Share } from 'react-native'
 import { useDispatch } from 'react-redux'
@@ -7,15 +6,16 @@ import { exploreNavigationRef, navigationRef } from 'src/app/navigation/navigati
 import { useAppStackNavigation } from 'src/app/navigation/types'
 import { useReactNavigationModal } from 'src/components/modals/useReactNavigationModal'
 import { closeAllModals, closeModal, openModal } from 'src/features/modals/modalSlice'
+import { useAdvancedSettingsMenuState } from 'src/features/settings/hooks/useAdvancedSettingsMenuState'
 import { HomeScreenTabIndex } from 'src/screens/HomeScreen/HomeScreenTabIndex'
 import { ScannerModalState } from 'uniswap/src/components/ReceiveQRCode/constants'
-import { NavigateToNftItemArgs } from 'uniswap/src/contexts/UniswapContext'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import {
   useFiatOnRampAggregatorCountryListQuery,
   useFiatOnRampAggregatorGetCountryQuery,
-} from 'uniswap/src/features/fiatOnRamp/api'
+} from 'uniswap/src/features/fiatOnRamp/hooks/useFiatOnRampQueries'
 import { RampDirection } from 'uniswap/src/features/fiatOnRamp/types'
+import { useNavigateToNftExplorerLink } from 'uniswap/src/features/nfts/hooks/useNavigateToNftExplorerLink'
 import { ModalName, WalletEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TransactionState } from 'uniswap/src/features/transactions/types/transactionState'
@@ -30,9 +30,9 @@ import {
   getNavigateToSendFlowArgsInitialState,
   getNavigateToSwapFlowArgsInitialState,
   isNavigateToSwapFlowArgsPartialState,
+  NavigateToEarnVaultArgs,
   NavigateToExternalProfileArgs,
   NavigateToFiatOnRampArgs,
-  NavigateToNftCollectionArgs,
   NavigateToSendFlowArgs,
   NavigateToSwapFlowArgs,
   ShareTokenArgs,
@@ -44,14 +44,15 @@ export function MobileWalletNavigationProvider({ children }: PropsWithChildren):
   const navigateToAccountActivityList = useNavigateToActivity()
   const navigateToAccountTokenList = useNavigateToHomepageTab(HomeScreenTabIndex.Tokens)
   const navigateToBuyOrReceiveWithEmptyWallet = useNavigateToBuyOrReceiveWithEmptyWallet()
-  const navigateToNftCollection = useNavigateToNftCollection()
-  const navigateToNftDetails = useNavigateToNftDetails()
+  const navigateToNftDetails = useNavigateToNftExplorerLink()
   const navigateToReceive = useNavigateToReceive()
   const navigateToSend = useNavigateToSend()
   const navigateToSwapFlow = useNavigateToSwapFlow()
   const navigateToTokenDetails = useNavigateToTokenDetails()
   const navigateToFiatOnRamp = useNavigateToFiatOnRamp()
   const navigateToExternalProfile = useNavigateToExternalProfile()
+  const navigateToAdvancedSettings = useNavigateToAdvancedSettings()
+  const navigateToEarnVault = useNavigateToEarnVault()
 
   return (
     <WalletNavigationProvider
@@ -59,15 +60,16 @@ export function MobileWalletNavigationProvider({ children }: PropsWithChildren):
       navigateToAccountActivityList={navigateToAccountActivityList}
       navigateToAccountTokenList={navigateToAccountTokenList}
       navigateToBuyOrReceiveWithEmptyWallet={navigateToBuyOrReceiveWithEmptyWallet}
+      navigateToEarnVault={navigateToEarnVault}
       navigateToExternalProfile={navigateToExternalProfile}
       navigateToFiatOnRamp={navigateToFiatOnRamp}
-      navigateToNftCollection={navigateToNftCollection}
       navigateToNftDetails={navigateToNftDetails}
       navigateToReceive={navigateToReceive}
       navigateToSend={navigateToSend}
       navigateToSwapFlow={navigateToSwapFlow}
       navigateToTokenDetails={navigateToTokenDetails}
       navigateToPoolDetails={noop} // no pool details screen on mobile
+      navigateToAdvancedSettings={navigateToAdvancedSettings}
     >
       {children}
     </WalletNavigationProvider>
@@ -103,21 +105,10 @@ function useHandleShareToken(): (args: ShareTokenArgs) => Promise<void> {
 
 function useNavigateToActivity(): () => void {
   const { navigate } = useAppStackNavigation()
-  const isBottomTabsEnabled = useFeatureFlag(FeatureFlags.BottomTabs)
-
-  const navigateToActivityTab = useNavigateToHomepageTab(HomeScreenTabIndex.Activity)
-
-  const navigateToActivityScreen = useCallback((): void => {
-    navigate(MobileScreens.Activity)
-  }, [navigate])
 
   return useCallback((): void => {
-    if (isBottomTabsEnabled) {
-      navigateToActivityScreen()
-    } else {
-      navigateToActivityTab()
-    }
-  }, [navigateToActivityTab, isBottomTabsEnabled, navigateToActivityScreen])
+    navigate(MobileScreens.Activity)
+  }, [navigate])
 }
 
 function useNavigateToHomepageTab(tab: HomeScreenTabIndex): () => void {
@@ -244,15 +235,9 @@ function useNavigateToTokenDetails(): (currencyId: string) => void {
   const appNavigation = useAppStackNavigation()
   const { onClose } = useReactNavigationModal()
   const dispatch = useDispatch()
-  const isBottomTabsEnabled = useFeatureFlag(FeatureFlags.BottomTabs)
 
   return useCallback(
     (currencyId: string): void => {
-      const currentNavRouteName = navigationRef.getCurrentRoute()?.name
-      const isExploreNavigationActuallyFocused = Boolean(
-        currentNavRouteName === ModalName.Explore && exploreNavigationRef.current && exploreNavigationRef.isFocused(),
-      )
-
       closeKeyboardBeforeCallback(() => {
         const route = navigationRef.getCurrentRoute()
         const isSwap = route?.name === ModalName.Swap
@@ -260,22 +245,8 @@ function useNavigateToTokenDetails(): (currencyId: string) => void {
 
         dispatch(closeAllModals())
 
-        if (!isBottomTabsEnabled) {
-          if (isExploreNavigationActuallyFocused) {
-            exploreNavigationRef.navigate(MobileScreens.TokenDetails, { currencyId })
-            return
-          }
-
-          onClose()
-          appNavigation.reset({
-            index: 1,
-            routes: [{ name: MobileScreens.Home }, { name: MobileScreens.TokenDetails, params: { currencyId } }],
-          })
-          return
-        }
-
         if (isExploreScreen) {
-          // There's nothing to close on Explore with bottom tabs enabled
+          // There's nothing to close on Explore
           appNavigation.navigate(MobileScreens.TokenDetails, { currencyId })
           return
         }
@@ -293,47 +264,7 @@ function useNavigateToTokenDetails(): (currencyId: string) => void {
         appNavigation.navigate(MobileScreens.TokenDetails, { currencyId })
       })
     },
-    [appNavigation, dispatch, onClose, isBottomTabsEnabled],
-  )
-}
-
-function useNavigateToNftDetails(): (args: NavigateToNftItemArgs) => void {
-  const navigation = useAppStackNavigation()
-
-  return useCallback(
-    ({ owner, contractAddress: address, tokenId, isSpam, fallbackData }: NavigateToNftItemArgs): void => {
-      closeKeyboardBeforeCallback(() => {
-        navigation.navigate(MobileScreens.NFTItem, {
-          owner,
-          address,
-          tokenId,
-          isSpam,
-          fallbackData,
-        })
-      })
-    },
-    [navigation],
-  )
-}
-
-function useNavigateToNftCollection(): (args: NavigateToNftCollectionArgs) => void {
-  const appNavigation = useAppStackNavigation()
-
-  return useCallback(
-    ({ collectionAddress }: NavigateToNftCollectionArgs): void => {
-      closeKeyboardBeforeCallback(() => {
-        if (exploreNavigationRef.current && exploreNavigationRef.isFocused()) {
-          exploreNavigationRef.navigate(MobileScreens.NFTCollection, {
-            collectionAddress,
-          })
-        } else {
-          appNavigation.navigate(MobileScreens.NFTCollection, {
-            collectionAddress,
-          })
-        }
-      })
-    },
-    [appNavigation],
+    [appNavigation, dispatch, onClose],
   )
 }
 
@@ -342,7 +273,7 @@ function useNavigateToBuyOrReceiveWithEmptyWallet(): () => void {
 
   const { data: countryResult } = useFiatOnRampAggregatorGetCountryQuery()
   const { data: countryOptionsResult } = useFiatOnRampAggregatorCountryListQuery({
-    rampDirection: RampDirection.ONRAMP,
+    rampDirection: RampDirection.ON_RAMP,
   })
   const forAggregatorEnabled = countryOptionsResult?.supportedCountries.some(
     (c) => c.countryCode === countryResult?.countryCode,
@@ -393,5 +324,29 @@ function useNavigateToExternalProfile(): (args: NavigateToExternalProfileArgs) =
       })
     },
     [appNavigation],
+  )
+}
+
+function useNavigateToAdvancedSettings(): () => void {
+  const navigation = useAppStackNavigation()
+  const advancedSettingsState = useAdvancedSettingsMenuState()
+
+  return useCallback((): void => {
+    closeKeyboardBeforeCallback(() => {
+      navigation.navigate(ModalName.SmartWalletAdvancedSettingsModal, advancedSettingsState)
+    })
+  }, [navigation, advancedSettingsState])
+}
+
+function useNavigateToEarnVault(): (args: NavigateToEarnVaultArgs) => void {
+  const navigation = useAppStackNavigation()
+
+  return useCallback(
+    ({ vault, position }: NavigateToEarnVaultArgs): void => {
+      closeKeyboardBeforeCallback(() => {
+        navigation.navigate(ModalName.EarnVault, { vault, position })
+      })
+    },
+    [navigation],
   )
 }

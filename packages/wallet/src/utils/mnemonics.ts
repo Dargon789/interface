@@ -1,7 +1,14 @@
 import { utils, wordlists } from 'ethers'
-import { AppTFunction } from 'ui/src/i18n/types'
+import { type AppTFunction } from 'ui/src/i18n/types'
 import { normalizeTextInput } from 'utilities/src/primitives/string'
-import { MNEMONIC_LENGTH_MAX, MNEMONIC_LENGTH_MIN } from 'wallet/src/constants/accounts'
+import {
+  MNEMONIC_LENGTH_EW,
+  MNEMONIC_LENGTH_HD,
+  MNEMONIC_LENGTH_MAX,
+  MNEMONIC_LENGTH_MIN,
+} from 'wallet/src/constants/accounts'
+import { BackupType } from 'wallet/src/features/wallet/accounts/types'
+import type { Account } from 'wallet/src/features/wallet/accounts/types'
 
 export enum MnemonicValidationError {
   InvalidWord = 'InvalidWord',
@@ -23,7 +30,7 @@ export function translateMnemonicErrorMessage({
     case MnemonicValidationError.InvalidPhrase:
       return t('account.recoveryPhrase.error.invalid')
     case MnemonicValidationError.InvalidWord:
-      return t('account.recoveryPhrase.error.invalidWord', { word: invalidWord })
+      return t('account.recoveryPhrase.error.invalidWord', { word: invalidWord ?? '' })
     case MnemonicValidationError.TooManyWords:
     case MnemonicValidationError.NotEnoughWords:
       return t('account.recoveryPhrase.error.phraseLength')
@@ -47,7 +54,7 @@ export function validateSetOfWords(mnemonic?: string): {
   const split = formatted.split(' ')
   const isValidLength = split.length >= MNEMONIC_LENGTH_MIN && split.length <= MNEMONIC_LENGTH_MAX
 
-  const invalidWords = split.filter((item) => isValidMnemonicWord(item))
+  const invalidWords = split.filter((item) => !isValidMnemonicWord(item))
   if (invalidWords.length) {
     return {
       error: MnemonicValidationError.InvalidWord,
@@ -90,7 +97,7 @@ export function validateMnemonic(mnemonic?: string): {
 
 // Validate individual mnemonic word
 export function isValidMnemonicWord(word: string): boolean {
-  return word.length > 0 && wordlists.en?.getWordIndex(word) === -1
+  return word.length > 0 && wordlists['en']?.getWordIndex(word) !== -1
 }
 
 // Check if phrase has trailing whitespace, indicating the user is done typing the previous word.
@@ -100,4 +107,14 @@ export function userFinishedTypingWord(mnemonic: string | undefined): boolean {
   }
   const lastChar = mnemonic[mnemonic.length - 1]
   return lastChar === ' '
+}
+
+// True for embedded-wallet (passkey-backed) accounts, which use a 24-word mnemonic.
+export function isEmbeddedWalletAccount(account: Pick<Account, 'backups'> | undefined): boolean {
+  return account?.backups?.includes(BackupType.Passkey) ?? false
+}
+
+// Returns 24 for embedded wallets and 12 for standard HD wallets.
+export function getExpectedMnemonicLength(account: Pick<Account, 'backups'> | undefined): number {
+  return isEmbeddedWalletAccount(account) ? MNEMONIC_LENGTH_EW : MNEMONIC_LENGTH_HD
 }

@@ -1,4 +1,4 @@
-import { isDevEnv } from 'utilities/src/environment/env'
+import { isDevEnv } from '@universe/environment'
 import type { StoreApi } from 'zustand'
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
@@ -71,13 +71,10 @@ export const createTransactionSettingsModalStore = <T extends TransactionSetting
           ...modalIds,
         ]
 
-        const modals = allModalIds.reduce(
-          (acc, next) => {
-            acc[next] = createModalState(next, set)
-            return acc
-          },
-          {} as Modals<T>,
-        )
+        const modals = allModalIds.reduce((acc, next) => {
+          acc[next] = createModalState(next, set)
+          return acc
+        }, {} as Modals<T>)
 
         return {
           modals,

@@ -1,3 +1,4 @@
+import { isWebPlatform } from '@universe/environment'
 import { PropsWithChildren } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Text } from 'ui/src'
@@ -5,7 +6,6 @@ import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/type
 import { WarningModal } from 'uniswap/src/components/modals/WarningModal/WarningModal'
 import { InfoTooltip } from 'uniswap/src/components/tooltip/InfoTooltip'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
-import { isWebPlatform } from 'utilities/src/platform'
 
 interface MaxBalanceInfoModalProps {
   isMax: boolean
@@ -21,6 +21,7 @@ export function MaxBalanceInfoModal({
   children,
   isModalOpen,
   isTooltipEnabled,
+  // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
   currencySymbol,
   onClose,
 }: PropsWithChildren<MaxBalanceInfoModalProps>): JSX.Element {

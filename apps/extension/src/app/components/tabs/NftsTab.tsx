@@ -9,7 +9,7 @@ import { ElementName, SectionName } from 'uniswap/src/features/telemetry/constan
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { useAccounts } from 'wallet/src/features/wallet/hooks'
 
-export const NftsTab = memo(function _NftsTab({ owner, skip }: { owner: Address; skip?: boolean }): JSX.Element {
+export const NftsTab = memo(function NftsTabInner({ owner, skip }: { owner: Address; skip?: boolean }): JSX.Element {
   const accounts = useAccounts()
 
   const renderNFTItem = useCallback(

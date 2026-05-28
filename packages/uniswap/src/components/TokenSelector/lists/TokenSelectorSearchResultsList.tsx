@@ -6,12 +6,12 @@ import { useTokenSectionsForSearchResults } from 'uniswap/src/components/TokenSe
 import { TokenSelectorList } from 'uniswap/src/components/TokenSelector/TokenSelectorList'
 import { OnSelectCurrency } from 'uniswap/src/components/TokenSelector/types'
 import { TradeableAsset } from 'uniswap/src/entities/assets'
+import type { AddressGroup } from 'uniswap/src/features/accounts/store/types/AccountsState'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 
-function _TokenSelectorSearchResultsList({
+function TokenSelectorSearchResultsListInner({
   onSelectCurrency: parentOnSelectCurrency,
-  evmAddress,
-  svmAddress,
+  addresses,
   chainFilter,
   parsedChainFilter,
   searchFilter,
@@ -22,8 +22,7 @@ function _TokenSelectorSearchResultsList({
   renderedInModal,
 }: {
   onSelectCurrency: OnSelectCurrency
-  evmAddress?: string
-  svmAddress?: string
+  addresses: AddressGroup
   chainFilter: UniverseChainId | null
   parsedChainFilter: UniverseChainId | null
   searchFilter: string
@@ -41,15 +40,14 @@ function _TokenSelectorSearchResultsList({
     error,
     refetch,
   } = useTokenSectionsForSearchResults({
-    evmAddress,
-    svmAddress,
+    addresses,
     chainFilter: chainFilter ?? parsedChainFilter,
     searchFilter: debouncedParsedSearchFilter ?? debouncedSearchFilter,
     isBalancesOnlySearch,
     input,
   })
 
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   const onSelectCurrency: OnSelectCurrency = (currencyInfo, section, index) => {
     parentOnSelectCurrency(currencyInfo, section, index)
     registerSearchTokenCurrencyInfo(currencyInfo)
@@ -78,4 +76,4 @@ function _TokenSelectorSearchResultsList({
   )
 }
 
-export const TokenSelectorSearchResultsList = memo(_TokenSelectorSearchResultsList)
+export const TokenSelectorSearchResultsList = memo(TokenSelectorSearchResultsListInner)

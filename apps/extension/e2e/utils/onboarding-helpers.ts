@@ -71,6 +71,7 @@ export async function completeOnboarding(context: BrowserContext, existingOnboar
       // Find button with "Continue" text
       const buttons = document.querySelectorAll('button')
       for (const button of buttons) {
+        // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
         if (button.textContent?.includes('Continue') && !button.hasAttribute('disabled')) {
           return true
         }

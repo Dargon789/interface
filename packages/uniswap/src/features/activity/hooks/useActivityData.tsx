@@ -1,5 +1,7 @@
 import { PartialMessage } from '@bufbuild/protobuf'
 import { FiatOnRampParams } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import { TransactionTypeFilter } from '@uniswap/client-data-api/dist/data/v1/types_pb'
+import { isWebPlatform } from '@universe/environment'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { StyleProp, ViewStyle } from 'react-native'
@@ -17,7 +19,6 @@ import { AuthTrigger } from 'uniswap/src/features/auth/types'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { PaginationControls } from 'uniswap/src/features/dataApi/types'
 import { useHideSpamTokensSetting } from 'uniswap/src/features/settings/hooks'
-import { isWebPlatform } from 'utilities/src/platform'
 
 export type UseActivityDataProps = {
   evmOwner?: Address
@@ -33,6 +34,9 @@ export type UseActivityDataProps = {
   onPressEmptyState?: () => void
   chainIds?: UniverseChainId[]
   showLoadingOnRefetch?: boolean
+  filterTransactionTypes?: TransactionTypeFilter[]
+  searchText?: string
+  maxItems?: number
 }
 
 export type ActivityRenderData = PaginationControls & {
@@ -43,6 +47,10 @@ export type ActivityRenderData = PaginationControls & {
   isLoading: boolean
   isFetching: boolean
   refetch: () => Promise<void>
+  /** Epoch ms when activity data was last successfully fetched. */
+  dataUpdatedAt?: number
+  /** Error from the underlying transaction data fetch, if any. */
+  error?: Error
 }
 
 export function useActivityData({
@@ -58,6 +66,9 @@ export function useActivityData({
   chainIds,
   isExternalProfile = false,
   showLoadingOnRefetch = false,
+  filterTransactionTypes,
+  searchText,
+  maxItems,
 }: UseActivityDataProps): ActivityRenderData {
   const { t } = useTranslation()
 
@@ -78,12 +89,13 @@ export function useActivityData({
     isLoading,
     isFetching,
     onRetry,
-    isError,
+    error,
     sectionData,
     keyExtractor,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    dataUpdatedAt,
   } = useFormattedTransactionDataForActivity({
     evmAddress: evmOwner,
     svmAddress: svmOwner,
@@ -93,6 +105,9 @@ export function useActivityData({
     skip,
     chainIds,
     showLoadingOnRefetch,
+    filterTransactionTypes,
+    searchText,
+    maxItems,
   })
 
   const sectionDataWithExtra: ActivityItem[] | undefined = useMemo(() => {
@@ -136,7 +151,7 @@ export function useActivityData({
   )
 
   // We check `sectionData` instead of `hasData` because `sectionData` has either transactions or a loading skeleton.
-  const maybeEmptyComponent = sectionDataWithExtra?.length ? null : isError ? errorCard : emptyListView
+  const maybeEmptyComponent = sectionDataWithExtra?.length ? null : error ? errorCard : emptyListView
 
   return {
     maybeEmptyComponent,
@@ -149,6 +164,8 @@ export function useActivityData({
     isLoading,
     isFetching,
     refetch: onRetry,
+    dataUpdatedAt,
+    error,
   }
 }
 

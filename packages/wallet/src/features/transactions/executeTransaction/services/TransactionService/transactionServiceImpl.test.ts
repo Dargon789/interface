@@ -1,4 +1,5 @@
 import { BaseProvider, JsonRpcProvider, Provider, TransactionReceipt } from '@ethersproject/providers'
+import { ensure0xHex } from '@universe/encoding'
 import { BigNumber, utils } from 'ethers'
 import { AssetType } from 'uniswap/src/entities/assets'
 import { AccountMeta, AccountType, SignerMnemonicAccountMeta } from 'uniswap/src/features/accounts/types'
@@ -10,11 +11,11 @@ import {
   TransactionType,
   TransactionTypeInfo,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
-import { ensure0xHex } from 'utilities/src/addresses/hex'
 import { logger } from 'utilities/src/logger/logger'
 import { isPrivateRpcSupportedOnChain } from 'wallet/src/features/providers/utils'
 import { ExecuteTransactionParams } from 'wallet/src/features/transactions/executeTransaction/executeTransactionSaga'
 import { AnalyticsService } from 'wallet/src/features/transactions/executeTransaction/services/analyticsService'
+import { TransactionConfigService } from 'wallet/src/features/transactions/executeTransaction/services/transactionConfigService'
 import { TransactionRepository } from 'wallet/src/features/transactions/executeTransaction/services/TransactionRepository/transactionRepository'
 import {
   PrepareTransactionParams,
@@ -24,7 +25,6 @@ import {
 } from 'wallet/src/features/transactions/executeTransaction/services/TransactionService/transactionService'
 import { createTransactionService } from 'wallet/src/features/transactions/executeTransaction/services/TransactionService/transactionServiceImpl'
 import { TransactionSigner } from 'wallet/src/features/transactions/executeTransaction/services/TransactionSignerService/transactionSignerService'
-import { TransactionConfigService } from 'wallet/src/features/transactions/executeTransaction/services/transactionConfigService'
 
 // Mock external utilities
 jest.mock('wallet/src/features/providers/utils', () => ({

@@ -1,3 +1,4 @@
+import { isExtensionApp } from '@universe/environment'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
@@ -5,7 +6,7 @@ import { Button, Flex, Text } from 'ui/src'
 import { AlertTriangleFilled } from 'ui/src/components/icons'
 import { fonts } from 'ui/src/theme'
 import { Modal } from 'uniswap/src/components/modals/Modal'
-import { UnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
+import { unitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
 import { useResetUnitagsQueries } from 'uniswap/src/data/apiClients/unitagsApi/useResetUnitagsQueries'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
@@ -14,7 +15,6 @@ import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { UnitagName } from 'uniswap/src/features/unitags/UnitagName'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { logger } from 'utilities/src/logger/logger'
-import { isExtensionApp } from 'utilities/src/platform'
 import { ModalBackButton } from 'wallet/src/components/modals/ModalBackButton'
 import { useWalletSigners } from 'wallet/src/features/wallet/context'
 import { useAccount } from 'wallet/src/features/wallet/hooks'
@@ -52,7 +52,7 @@ export function DeleteUnitagModal({
   const onDelete = async (): Promise<void> => {
     try {
       setIsDeleting(true)
-      const deleteResponse = await UnitagsApiClient.deleteUnitag({
+      const deleteResponse = await unitagsApiClient.deleteUnitag({
         data: { username: unitag },
         address: account.address,
         signMessage: generateSignerFunc(account, signerManager),

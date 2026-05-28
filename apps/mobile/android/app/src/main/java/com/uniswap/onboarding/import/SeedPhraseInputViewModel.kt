@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.uniswap.EthersRs
 import com.uniswap.RnEthersRs
+import com.uniswap.onboarding.shared.MNEMONIC_LENGTH_EW
+import com.uniswap.onboarding.shared.MNEMONIC_LENGTH_HD
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -98,27 +100,31 @@ class SeedPhraseInputViewModel(
     val mnemonic = normalizedInput.trim()
     val words = mnemonic.split(" ")
 
-    if (words.isEmpty()) {
-      status = Status.None
+    val prevStatus = status
+    val isValidLength = words.size in MIN_LENGTH..MAX_LENGTH
+    val firstInvalidWord = EthersRs.findInvalidWord(mnemonic)
+    val isFirstWordInvalid = firstInvalidWord == words.last() && skipInvalidWord
+    val isInvalidLengthError =
+      prevStatus is Status.Error && (prevStatus.error == MnemonicError.NotEnoughWords || prevStatus.error == MnemonicError.TooManyWords) && !isValidLength
+
+    if (isFirstWordInvalid) {
       return
     }
 
-    val isValidLength = words.size in MIN_LENGTH..MAX_LENGTH
-    val firstInvalidWord = EthersRs.findInvalidWord(mnemonic)
+    status =
+      if (isAddress(mnemonic)) {
+        Status.Error(MnemonicError.WordIsAddress)
+      } else if (firstInvalidWord.isNotEmpty()) {
+        Status.Error(MnemonicError.InvalidWord(firstInvalidWord))
+      } else if (isInvalidLengthError) {
+        prevStatus
+      } else if (firstInvalidWord.isEmpty() && isValidLength) {
+        Status.Valid
+      } else {
+        Status.None
+      }
 
-    status = if (firstInvalidWord == words.last() && skipInvalidWord) {
-      Status.None
-    } else if (firstInvalidWord.isEmpty() && isValidLength) {
-      Status.Valid
-    } else if (isAddress(mnemonic)) {
-      Status.Error(MnemonicError.WordIsAddress)
-    } else if (firstInvalidWord.isNotEmpty()) {
-      Status.Error(MnemonicError.InvalidWord(firstInvalidWord))
-    } else {
-      Status.None
-    }
-
-    val canSubmit = status !is Status.Error && mnemonic != "" && firstInvalidWord.isEmpty()
+    val canSubmit = status !is Status.Error && mnemonic != ""
     onInputValidated(canSubmit)
   }
 
@@ -129,7 +135,7 @@ class SeedPhraseInputViewModel(
 
   fun handleSubmit() {
     validateLastWordJob?.cancel()
-
+    
     try {
       val normalized = normalizeInput(input)
       val mnemonic = normalized.trim()
@@ -176,8 +182,8 @@ class SeedPhraseInputViewModel(
   }
 
   companion object {
-    private const val MIN_LENGTH = 12
-    private const val MAX_LENGTH = 24
+    private const val MIN_LENGTH = MNEMONIC_LENGTH_HD
+    private const val MAX_LENGTH = MNEMONIC_LENGTH_EW
   }
 
 }

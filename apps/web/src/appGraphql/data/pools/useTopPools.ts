@@ -1,8 +1,8 @@
-import { OrderDirection } from 'appGraphql/data/util'
 import { Percent } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
-import { FeeData } from 'components/Liquidity/Create/types'
 import { BIPS_BASE } from 'uniswap/src/constants/misc'
+import type { FeeData } from 'uniswap/src/features/positions/types'
+import { OrderDirection } from '~/appGraphql/data/util'
 
 export function sortPools(pools: TablePool[], sortState: PoolTableSortState) {
   return pools.sort((a, b) => {

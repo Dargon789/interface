@@ -1,10 +1,10 @@
 import { TransactionRequest } from '@ethersproject/providers'
 import { renderHook } from '@testing-library/react'
+import { GasFeeResult } from '@universe/api'
 import { useTransactionGasEstimation } from 'src/app/features/dappRequests/hooks/useTransactionGasEstimation'
 import { PollingInterval } from 'uniswap/src/constants/misc'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useTransactionGasFee } from 'uniswap/src/features/gas/hooks'
-import { GasFeeResult } from 'uniswap/src/features/gas/types'
 import { logger } from 'utilities/src/logger/logger'
 
 // Mock dependencies
@@ -63,6 +63,8 @@ describe('useTransactionGasEstimation', () => {
         tx: { ...mockBaseTx, chainId: mockChainId },
         skip: false,
         refetchInterval: PollingInterval.LightningMcQueen,
+        urgency: undefined,
+        gasLimitOverride: undefined,
       })
       expect(mockLogger.error).not.toHaveBeenCalled()
     })
@@ -93,6 +95,8 @@ describe('useTransactionGasEstimation', () => {
         tx: { ...mockBaseTx, chainId: mockChainId },
         skip: false,
         refetchInterval: PollingInterval.LightningMcQueen,
+        urgency: undefined,
+        gasLimitOverride: undefined,
         smartContractDelegationAddress: mockSmartContractDelegationAddress,
       })
     })
@@ -219,6 +223,8 @@ describe('useTransactionGasEstimation', () => {
         tx: { ...mockBaseTx, chainId: mockChainId },
         skip: true,
         refetchInterval: PollingInterval.LightningMcQueen,
+        urgency: undefined,
+        gasLimitOverride: undefined,
       })
     })
   })

@@ -6,13 +6,15 @@ import { getDelegationInfoForTransaction } from 'wallet/src/features/smartWallet
 import { createAnalyticsService } from 'wallet/src/features/transactions/executeTransaction/services/analyticsServiceImpl'
 import { createFeatureFlagService } from 'wallet/src/features/transactions/executeTransaction/services/featureFlagServiceImpl'
 import { createProviderService } from 'wallet/src/features/transactions/executeTransaction/services/providerServiceImpl'
+import { createTransactionConfigService } from 'wallet/src/features/transactions/executeTransaction/services/transactionConfigServiceImpl'
 import { createTransactionRepositoryRedux } from 'wallet/src/features/transactions/executeTransaction/services/TransactionRepository/transactionRepositoryImplRedux'
 import { createTransactionService } from 'wallet/src/features/transactions/executeTransaction/services/TransactionService/transactionServiceImpl'
 import {
   createBundledDelegationTransactionSignerService,
   createTransactionSignerService,
 } from 'wallet/src/features/transactions/executeTransaction/services/TransactionSignerService/transactionSignerServiceImpl'
-import { createTransactionConfigService } from 'wallet/src/features/transactions/executeTransaction/services/transactionConfigServiceImpl'
+import { createUserOpService } from 'wallet/src/features/transactions/executeTransaction/services/UserOpService/userOpServiceImpl'
+import { createBundledDelegationUserOpSignerService } from 'wallet/src/features/transactions/executeTransaction/services/UserOpSignerService/userOpSignerServiceImpl'
 import { createTransactionExecutor } from 'wallet/src/features/transactions/swap/services/transactionExecutor'
 import { createTransactionParamsFactory } from 'wallet/src/features/transactions/swap/services/transactionParamsFactory'
 import type { TransactionSagaDependencies } from 'wallet/src/features/transactions/types/transactionSagaDependencies'
@@ -30,7 +32,9 @@ export function createTransactionSagaDependencies(): TransactionSagaDependencies
     createTransactionConfigService,
     createTransactionSignerService,
     createBundledDelegationTransactionSignerService,
+    createBundledDelegationUserOpSignerService,
     createTransactionService,
+    createUserOpService,
     createAnalyticsService,
     createTransactionRepository: createTransactionRepositoryRedux,
     createFeatureFlagService,
@@ -48,6 +52,7 @@ export function createTransactionSagaDependencies(): TransactionSagaDependencies
     get runSagaEffect(): RunSagaEffect {
       // Import runSagaEffect only when actually accessed, not during module initialization
       // This prevents the "Cannot access 'runSagaEffect' before initialization" error
+      // oxlint-disable-next-line typescript/no-var-requires
       const { runSagaEffect } = require('wallet/src/state') as {
         runSagaEffect: RunSagaEffect
       }

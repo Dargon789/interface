@@ -1,15 +1,15 @@
-import { useActiveAddresses } from 'features/accounts/store/hooks'
 import { useMemo } from 'react'
-import { usePortfolioBalances } from 'uniswap/src/features/dataApi/balances/balances'
 import { PortfolioBalance } from 'uniswap/src/features/dataApi/types'
-import { currencyKey } from 'utils/currencyKey'
+import { usePortfolioBalances } from 'uniswap/src/features/portfolio/balances/hooks'
+import { useActiveAddresses } from '~/features/accounts/store/hooks'
+import { currencyKey } from '~/utils/currencyKey'
 
 type TokenBalances = { [tokenAddress: string]: { usdValue: number; balance: number } }
 
 /**
  * Returns the user's token balances via the factory hook that switches between GraphQL and REST.
  */
-export function useTokenBalances({ cacheOnly }: { cacheOnly?: boolean } = {}): {
+export function useTokenBalances({ cacheFirst }: { cacheFirst?: boolean } = {}): {
   balanceMap: TokenBalances
   balanceList: readonly PortfolioBalance[]
   loading: boolean
@@ -22,7 +22,7 @@ export function useTokenBalances({ cacheOnly }: { cacheOnly?: boolean } = {}): {
   const { data: balancesById, loading } = usePortfolioBalances({
     evmAddress,
     svmAddress,
-    fetchPolicy: cacheOnly ? 'cache-first' : 'cache-and-network',
+    fetchPolicy: cacheFirst ? 'cache-first' : 'cache-and-network',
   })
 
   return useMemo(() => {
@@ -31,6 +31,7 @@ export function useTokenBalances({ cacheOnly }: { cacheOnly?: boolean } = {}): {
     }
 
     const balanceList = Object.values(balancesById)
+    // oxlint-disable-next-line no-shadow
     const balanceMap = balanceList.reduce((balanceMap, tokenBalance) => {
       const currency = tokenBalance.currencyInfo.currency
       const key = currencyKey(currency)

@@ -3,7 +3,7 @@ export function setupVitePreloadErrorHandler(): void {
     // Prevent Vite from throwing the error and crashing the app
     event.preventDefault()
 
-    // biome-ignore lint/suspicious/noConsole: Error handler needs console for debugging preload issues
+    // oxlint-disable-next-line no-console -- Error handler needs console for debugging preload issues
     console.error('Vite preload error: Dynamic import failed to load')
   })
 }

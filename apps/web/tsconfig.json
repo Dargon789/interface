@@ -3,17 +3,15 @@
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "alwaysStrict": true,
-    "baseUrl": "src",
     "composite": true,
     "declarationMap": false,
-    "downlevelIteration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
@@ -30,6 +28,7 @@
     "types": ["chrome", "vitest/globals"],
     "useUnknownInCatchVariables": false,
     "paths": {
+      "~/*": ["./src/*"],
       "ui/src/*": ["../../packages/ui/src/*"],
       "utilities/src/*": ["../../packages/utilities/src/*"],
       "uniswap/src/*": ["../../packages/uniswap/src/*"]
@@ -44,30 +43,49 @@
     "scripts/*",
     "vite/*"
   ],
+  "exclude": ["scripts/build-vercel.ts"],
   "references": [
+    {
+      "path": "../../packages/environment"
+    },
+    {
+      "path": "../../packages/wallet"
+    },
     {
       "path": "../../packages/utilities"
     },
     {
-      "path": "../../packages/uniswap"
-    },
-    {
-      "path": "../../packages/ui"
+      "path": "../../packages/websocket"
     },
     {
       "path": "../../packages/sessions"
     },
     {
-      "path": "../../packages/gating"
+      "path": "../../packages/prices"
     },
     {
       "path": "../../packages/notifications"
     },
     {
+      "path": "../../packages/gating"
+    },
+    {
+      "path": "../../packages/encoding"
+    },
+    {
+      "path": "../../packages/chains"
+    },
+    {
+      "path": "../../packages/ui"
+    },
+    {
+      "path": "../../packages/config"
+    },
+    {
       "path": "../../packages/api"
     },
     {
-      "path": "../../packages/gating"
+      "path": "../../packages/uniswap"
     }
   ]
 }

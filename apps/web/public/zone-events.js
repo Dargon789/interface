@@ -21,12 +21,12 @@ const IS_BLINK_BASED = /\b(?:Chrome|CriOS|SamsungBrowser|Opera|Edg)\/\d+/i.test(
     return !!opts.capture
   }
 
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   EventTarget.prototype.addEventListener = function (type, cb, opts) {
     return nativeAdd.call(this, type, cb, normalizeOpts(opts))
   }
 
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   EventTarget.prototype.removeEventListener = function (type, cb, opts) {
     return nativeRm.call(this, type, cb, normalizeOpts(opts))
   }

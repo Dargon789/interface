@@ -20,14 +20,14 @@ describe('SolanaToken', () => {
 
     it('should throw error when address is invalid', () => {
       expect(() => {
-        // eslint-disable-next-line no-new
+        // oxlint-disable-next-line no-new
         new SolanaToken(chainId, invalidAddress, 6, 'USDC', 'USD Coin')
       }).toThrow('Invalid SPL token address')
     })
 
     it('should throw error when address is empty string', () => {
       expect(() => {
-        // eslint-disable-next-line no-new
+        // oxlint-disable-next-line no-new
         new SolanaToken(chainId, '', 6, 'USDC', 'USD Coin')
       }).toThrow('Invalid SPL token address')
     })

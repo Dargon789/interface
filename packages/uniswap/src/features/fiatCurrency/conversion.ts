@@ -23,6 +23,7 @@ type SupportedServerCurrency = Extract<
   | GraphQLApi.Currency.Krw
   | GraphQLApi.Currency.Mxn
   | GraphQLApi.Currency.Ngn
+  | GraphQLApi.Currency.Nzd
   | GraphQLApi.Currency.Pkr
   | GraphQLApi.Currency.Rub
   | GraphQLApi.Currency.Sgd
@@ -56,7 +57,7 @@ const mapServerCurrencyToFiatCurrency: Record<GraphQLApi.Currency, FiatCurrency 
   [GraphQLApi.Currency.Vnd]: FiatCurrency.VietnameseDong,
   [GraphQLApi.Currency.Eth]: undefined,
   [GraphQLApi.Currency.Matic]: undefined,
-  [GraphQLApi.Currency.Nzd]: undefined,
+  [GraphQLApi.Currency.Nzd]: FiatCurrency.NewZealandDollar,
   [GraphQLApi.Currency.Thb]: undefined,
 }
 export const mapFiatCurrencyToServerCurrency: Record<FiatCurrency, SupportedServerCurrency> = {
@@ -73,6 +74,7 @@ export const mapFiatCurrencyToServerCurrency: Record<FiatCurrency, SupportedServ
   [FiatCurrency.IndianRupee]: GraphQLApi.Currency.Inr,
   [FiatCurrency.JapaneseYen]: GraphQLApi.Currency.Jpy,
   [FiatCurrency.MexicanPeso]: GraphQLApi.Currency.Mxn,
+  [FiatCurrency.NewZealandDollar]: GraphQLApi.Currency.Nzd,
   [FiatCurrency.SouthKoreanWon]: GraphQLApi.Currency.Krw,
   [FiatCurrency.NigerianNaira]: GraphQLApi.Currency.Ngn,
   [FiatCurrency.PakistaniRupee]: GraphQLApi.Currency.Pkr,
@@ -86,6 +88,7 @@ export const mapFiatCurrencyToServerCurrency: Record<FiatCurrency, SupportedServ
 
 export interface FiatConverter {
   convertFiatAmount: (amount: number) => { amount: number; currency: FiatCurrency }
+  // oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
   convertFiatAmountFormatted: (
     fromAmount: Maybe<number | string>,
     numberType: FiatNumberType,
@@ -139,7 +142,7 @@ export function useFiatConverter({
     [conversionRate, outputCurrency, toCurrency],
   )
   const convertFiatAmountFormattedInner = useCallback(
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     (fromAmount: Maybe<number | string>, numberType: FiatNumberType, placeholder = '-'): string => {
       if (fromAmount === undefined || fromAmount === null) {
         return placeholder

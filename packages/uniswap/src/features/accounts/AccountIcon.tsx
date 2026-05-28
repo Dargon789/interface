@@ -1,3 +1,5 @@
+import { isWebPlatform } from '@universe/environment'
+import { useState } from 'react'
 import { ColorTokens, Flex, FlexProps, Unicon, UniversalImage, UniversalImageResizeMode } from 'ui/src'
 import { Eye } from 'ui/src/components/icons/Eye'
 import { useAvatar } from 'uniswap/src/features/address/avatar'
@@ -14,8 +16,17 @@ interface AccountIconProps {
   showBorder?: boolean // Display border stroke around image
   borderWidth?: FlexProps['borderWidth']
   borderColor?: ColorTokens
-  transition?: string
+  transition?: FlexProps['transition']
 }
+
+// We want to animate the icon only on web, as on Android the opacity is not being increased.
+const ACCOUNT_ICON_WEB_STYLING: FlexProps = isWebPlatform
+  ? {
+      animation: 'fast',
+      animateOnly: ['opacity'],
+      enterStyle: { opacity: 0 },
+    }
+  : {}
 
 export function AccountIcon({
   size,
@@ -30,16 +41,17 @@ export function AccountIcon({
   ...flexProps
 }: FlexProps & AccountIconProps): JSX.Element | null {
   const { avatar } = useAvatar(address)
+  const [originSize] = useState(() => size)
 
   if (!address) {
     return null
   }
-  // scale eye icon to be a portion of container size
-  const eyeIconSize = size * EYE_ICON_SCALING_FACTOR
 
-  const uniconImage = <Unicon address={address} size={size} />
+  // Use initial size to prevent layout shifts before the outer container transitions
+  const uniconImage = <Unicon address={address} size={originSize} />
 
   const avatarUri = avatarUriOverride || avatar
+  const eyeIconSize = size * EYE_ICON_SCALING_FACTOR
 
   const sizeTransitionStyle = transition ? { transition } : {}
 
@@ -53,14 +65,14 @@ export function AccountIcon({
       testID="account-icon"
       width={size}
       height={size}
-      style={sizeTransitionStyle}
+      transition={transition}
       {...flexProps}
     >
-      <Flex animation="fast" enterStyle={{ opacity: 0 }}>
+      <Flex fill {...ACCOUNT_ICON_WEB_STYLING}>
         <UniversalImage
           style={{ image: { borderRadius: size, ...sizeTransitionStyle } }}
           fallback={uniconImage}
-          size={{ width: size, height: size, resizeMode: UniversalImageResizeMode.Cover }}
+          size={{ height: size, width: size, resizeMode: UniversalImageResizeMode.Cover }}
           uri={avatarUri}
         />
       </Flex>
@@ -77,7 +89,7 @@ export function AccountIcon({
           right={-4}
           testID="account-icon/view-only-badge"
         >
-          <Eye color="$neutral2" size={eyeIconSize} />
+          <Eye color="$neutral2" size={eyeIconSize} transition={transition} />
         </Flex>
       )}
     </Flex>

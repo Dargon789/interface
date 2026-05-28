@@ -171,6 +171,7 @@ const useAllAcountChainMismatchMutation = (ctx: {
         return
       }
       let hasMismatch = false
+      // oxlint-disable-next-line guard-for-in -- biome-parity: oxlint is stricter here
       for (const chainId in data) {
         const result = data[String(chainId)]
         if (result) {

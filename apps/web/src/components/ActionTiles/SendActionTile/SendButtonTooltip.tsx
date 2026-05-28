@@ -79,7 +79,7 @@ export function SendButtonTooltip({
             width={tooltipPosition.width}
             transform="translateX(-50%)"
             backgroundColor="$surface1"
-            borderWidth={1}
+            borderWidth="$spacing1"
             borderColor="$surface3"
             borderRadius="$rounded12"
             paddingHorizontal="$spacing16"

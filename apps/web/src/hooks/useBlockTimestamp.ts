@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { EVMUniverseChainId } from 'uniswap/src/features/chains/types'
-import { isMainnetChainId } from 'uniswap/src/features/chains/utils'
-import {
-  AVERAGE_L1_BLOCK_TIME_MS,
-  AVERAGE_L2_BLOCK_TIME_MS,
-} from 'uniswap/src/features/transactions/hooks/usePollingIntervalByChain'
-// biome-ignore lint/style/noRestrictedImports: Use wagmi version because it supports a chain being passed in
+// oxlint-disable-next-line no-restricted-imports -- Use wagmi version because it supports a chain being passed in
 import { useBlock, useBlockNumber } from 'wagmi'
+import { estimateFutureBlockTimestamp } from '~/utils/estimateFutureBlockTimestamp'
 
 /**
  * Gets the timestamp for a specific block number
@@ -29,6 +25,8 @@ export function useBlockTimestamp({
 }): bigint | undefined {
   // Keep track of the previous valid timestamp to prevent undefined during updates
   const previousTimestampRef = useRef<bigint | undefined>(undefined)
+  // Track which blockNumber the cached timestamp is for, to reset when target changes
+  const cachedForBlockRef = useRef<number | undefined>(undefined)
 
   const currentBlockNumber = useBlockNumber({
     chainId,
@@ -56,21 +54,22 @@ export function useBlockTimestamp({
       return undefined
     }
 
-    const blockDifference = blockNumber - Number(currentBlockNumber)
-    if (blockDifference <= 0) {
-      return undefined
-    }
-
-    // Use average block time based on chain type (L1 vs L2)
-    // TODO(LP-320): be more specific with the average block time? We can calculate it ourselves or use the etherscan API
-    const averageBlockTimeMs = isMainnetChainId(chainId) ? AVERAGE_L1_BLOCK_TIME_MS : AVERAGE_L2_BLOCK_TIME_MS
-    const averageBlockTimeSeconds = averageBlockTimeMs / 1000
-
-    const estimatedTimeUntilTarget = BigInt(Math.floor(blockDifference * averageBlockTimeSeconds))
-    return currentBlockTimestamp + estimatedTimeUntilTarget
+    return estimateFutureBlockTimestamp({
+      targetBlockNumber: blockNumber,
+      currentBlockNumber,
+      currentBlockTimestamp,
+      chainId,
+    })
   }, [blockNumber, currentBlockNumber, currentBlockTimestamp, chainId])
 
   const result = isPastBlock ? pastBlock?.timestamp : estimatedFutureTimestamp
+
+  // Reset cached timestamp when target blockNumber changes (e.g., navigating between auctions)
+  // This prevents stale cached values from a previous auction being used
+  if (cachedForBlockRef.current !== blockNumber) {
+    previousTimestampRef.current = undefined
+    cachedForBlockRef.current = blockNumber
+  }
 
   // Update the previous timestamp ref whenever we have a valid result
   useEffect(() => {

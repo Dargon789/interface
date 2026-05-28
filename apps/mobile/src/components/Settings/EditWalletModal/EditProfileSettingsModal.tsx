@@ -2,10 +2,8 @@ import { default as React, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 import ContextMenu from 'react-native-context-menu-view'
-import { ScrollView } from 'react-native-gesture-handler'
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { navigate } from 'src/app/navigation/rootNavigation'
-import { AppStackScreenProp } from 'src/app/navigation/types'
+import type { AppStackScreenProp } from 'src/app/navigation/types'
 import { BackHeader } from 'src/components/layout/BackHeader'
 import { useReactNavigationModal } from 'src/components/modals/useReactNavigationModal'
 import { navigateBackFromEditingWallet } from 'src/components/Settings/EditWalletModal/EditWalletNavigation'
@@ -40,7 +38,7 @@ export function EditProfileSettingsModal({
   const [showChangeUnitagModal, setShowChangeUnitagModal] = useState(false)
   const [isUpdatingWalletProfile, setIsUpdatingWalletProfile] = useState(false)
 
-  const onButtonClick = (): void => {
+  const onSave = (): void => {
     setIsUpdatingWalletProfile(true)
   }
 
@@ -63,7 +61,11 @@ export function EditProfileSettingsModal({
   const menuActions = useMemo(() => {
     return [
       { title: t('unitags.profile.action.edit'), systemIcon: 'pencil' },
-      { title: t('unitags.profile.action.delete'), systemIcon: 'trash', destructive: true },
+      {
+        title: t('unitags.profile.action.delete'),
+        systemIcon: 'trash',
+        destructive: true,
+      },
     ]
   }, [t])
   const onPressBack = (): void => {
@@ -105,17 +107,17 @@ export function EditProfileSettingsModal({
       >
         <Text variant="body1">{t('settings.setting.wallet.action.editProfile')}</Text>
       </BackHeader>
-      <KeyboardAwareScrollView ScrollViewComponent={ScrollView} contentContainerStyle={styles.base}>
+      <Flex style={styles.base}>
         {unitag && (
           <EditUnitagProfileContent
             address={address}
             unitag={unitag}
             entryPoint={entryPoint}
             onNavigate={onNavigate}
-            onButtonClick={onButtonClick}
+            onSave={onSave}
           />
         )}
-      </KeyboardAwareScrollView>
+      </Flex>
       {showDeleteUnitagModal && unitag && (
         <DeleteUnitagModal address={address} unitag={unitag} onSuccess={onBack} onClose={onCloseDeleteModal} />
       )}

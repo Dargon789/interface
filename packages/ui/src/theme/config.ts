@@ -1,5 +1,5 @@
 // until the web app needs all of tamagui, avoid heavy imports there
-// biome-ignore lint/style/noRestrictedImports: until the web app needs all of tamagui, avoid heavy imports there
+// oxlint-disable-next-line no-restricted-imports -- until the web app needs all of tamagui, avoid heavy imports there
 import type { CreateTamaguiProps } from '@tamagui/core'
 import { allFonts } from 'ui/src/theme/fonts'
 import { media } from 'ui/src/theme/media'

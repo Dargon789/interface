@@ -1,4 +1,4 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { type GasFeeResult } from '@universe/api'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDappLastChainId } from 'src/app/features/dapp/hooks'
@@ -6,26 +6,31 @@ import { DappRequestContent } from 'src/app/features/dappRequests/DappRequestCon
 import { useDappRequestQueueContext } from 'src/app/features/dappRequests/DappRequestQueueContext'
 import { usePrepareAndSignSendCallsTransaction } from 'src/app/features/dappRequests/hooks/usePrepareAndSignSendCallsTransaction'
 import { SwapRequestContent } from 'src/app/features/dappRequests/requestContent/EthSend/Swap/SwapRequestContent'
-import { DappRequestStoreItemForSendCallsTxn } from 'src/app/features/dappRequests/slice'
+import { type DappRequestStoreItemForSendCallsTxn } from 'src/app/features/dappRequests/slice'
 import {
   EthSendTransactionRPCActions,
   isBatchedSwapRequest,
-  ParsedCall,
-  SendCallsRequest,
+  type ParsedCall,
+  type SendCallsRequest,
 } from 'src/app/features/dappRequests/types/DappRequestTypes'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { GasFeeResult } from 'uniswap/src/features/gas/types'
-import { TransactionType, TransactionTypeInfo } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { type UniverseChainId } from 'uniswap/src/features/chains/types'
+import { useEnableCustomGasFeeEntry } from 'uniswap/src/features/gas/hooks/useEnableCustomGasFeeEntry'
+import type { GasFeeOverrides } from 'uniswap/src/features/gas/types'
+import { TransactionType, type TransactionTypeInfo } from 'uniswap/src/features/transactions/types/transactionDetails'
+import { type EthTransaction } from 'uniswap/src/types/walletConnect'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { BatchedRequestDetailsContent } from 'wallet/src/components/BatchedTransactions/BatchedTransactionDetails'
 import { DappSendCallsScanningContent } from 'wallet/src/components/dappRequests/DappSendCallsScanningContent'
-import { TransactionRiskLevel } from 'wallet/src/features/dappRequests/types'
+import { type TransactionRiskLevel } from 'wallet/src/features/dappRequests/types'
 import { shouldDisableConfirm } from 'wallet/src/features/dappRequests/utils/riskUtils'
 
 interface SendCallsRequestContentProps {
   dappRequest: SendCallsRequest
   transactionGasFeeResult: GasFeeResult
+  encodedTransactionRequest?: EthTransaction
   showSmartWalletActivation?: boolean
+  gasOverrides?: GasFeeOverrides
+  onChangeGasOverrides?: (overrides: GasFeeOverrides | undefined) => void
   onConfirm: (transactionTypeInfo?: TransactionTypeInfo) => Promise<void>
   onCancel: () => Promise<void>
 }
@@ -37,7 +42,10 @@ function SendCallsRequestContentWithScanning({
   dappRequest,
   chainId,
   transactionGasFeeResult,
+  encodedTransactionRequest,
   showSmartWalletActivation,
+  gasOverrides,
+  onChangeGasOverrides,
   onConfirm,
   onCancel,
 }: SendCallsRequestContentProps & { chainId: UniverseChainId }): JSX.Element {
@@ -72,6 +80,9 @@ function SendCallsRequestContentWithScanning({
         gasFee={transactionGasFeeResult}
         requestMethod={dappRequest.type}
         showSmartWalletActivation={showSmartWalletActivation}
+        tx={encodedTransactionRequest}
+        gasOverrides={gasOverrides}
+        onChangeGasOverrides={onChangeGasOverrides}
         confirmedRisk={confirmedRisk}
         onConfirmRisk={setConfirmedRisk}
         onRiskLevelChange={setRiskLevel}
@@ -81,9 +92,9 @@ function SendCallsRequestContentWithScanning({
 }
 
 /**
- * Legacy implementation (existing behavior when feature flag is off)
+ * Fallback for when chainId is not available (required for Blockaid scanning)
  */
-function SendCallsRequestContentLegacy({
+function SendCallsRequestContentFallback({
   dappRequest,
   transactionGasFeeResult,
   showSmartWalletActivation,
@@ -115,7 +126,6 @@ function SendCallsRequestContentLegacy({
 export function SendCallsRequestHandler({ request }: { request: DappRequestStoreItemForSendCallsTxn }): JSX.Element {
   const { dappUrl, currentAccount, onConfirm, onCancel } = useDappRequestQueueContext()
   const chainId = useDappLastChainId(dappUrl) ?? request.dappInfo?.lastChainId
-  const blockaidTransactionScanning = useFeatureFlag(FeatureFlags.BlockaidTransactionScanning)
 
   const { dappRequest } = request
 
@@ -127,50 +137,78 @@ export function SendCallsRequestHandler({ request }: { request: DappRequestStore
       : undefined
   }, [dappRequest])
 
-  const { gasFeeResult, encodedTransactionRequest, encodedRequestId, showSmartWalletActivation, preSignedTransaction } =
-    usePrepareAndSignSendCallsTransaction({
-      request,
-      account: currentAccount,
-      chainId,
-    })
+  const [gasOverrides, setGasOverrides] = useState<GasFeeOverrides | undefined>(undefined)
+  const enableCustomGasFeeEntry = useEnableCustomGasFeeEntry()
+  const effectiveGasOverrides = enableCustomGasFeeEntry ? gasOverrides : undefined
+
+  const {
+    gasFeeResult,
+    encodedTransactionRequest,
+    encodedRequestId,
+    showSmartWalletActivation,
+    preSignedTransaction,
+    unsignedUserOperation,
+    isSponsoredUserOp,
+  } = usePrepareAndSignSendCallsTransaction({
+    request,
+    account: currentAccount,
+    chainId,
+    gasOverrides: effectiveGasOverrides,
+  })
 
   const onConfirmRequest = useCallback(async () => {
     const transactionTypeInfo: TransactionTypeInfo = {
       type: TransactionType.SendCalls,
-      encodedTransaction: encodedTransactionRequest,
-      encodedRequestId,
+      ...(unsignedUserOperation
+        ? { unsignedUserOperation }
+        : { encodedTransaction: encodedTransactionRequest, encodedRequestId }),
     }
 
     await onConfirm({
       request,
       transactionTypeInfo,
-      preSignedTransaction,
+      preSignedTransaction: unsignedUserOperation ? undefined : preSignedTransaction,
     })
-  }, [encodedTransactionRequest, encodedRequestId, onConfirm, preSignedTransaction, request])
+  }, [encodedTransactionRequest, encodedRequestId, unsignedUserOperation, onConfirm, preSignedTransaction, request])
 
   const onCancelRequest = useCallback(async () => {
     await onCancel(request)
   }, [onCancel, request])
 
-  return blockaidTransactionScanning && chainId ? (
-    <SendCallsRequestContentWithScanning
-      dappRequest={dappRequest}
-      chainId={chainId}
-      transactionGasFeeResult={gasFeeResult}
-      showSmartWalletActivation={showSmartWalletActivation}
-      onCancel={onCancelRequest}
-      onConfirm={onConfirmRequest}
-    />
-  ) : parsedSwapCalldata ? (
-    <SwapRequestContent
-      parsedCalldata={parsedSwapCalldata}
-      transactionGasFeeResult={gasFeeResult}
-      showSmartWalletActivation={showSmartWalletActivation}
-      onCancel={onCancelRequest}
-      onConfirm={onConfirmRequest}
-    />
-  ) : (
-    <SendCallsRequestContentLegacy
+  const isOverridesEligible = enableCustomGasFeeEntry && !isSponsoredUserOp
+
+  if (chainId) {
+    return (
+      <SendCallsRequestContentWithScanning
+        dappRequest={dappRequest}
+        chainId={chainId}
+        transactionGasFeeResult={gasFeeResult}
+        encodedTransactionRequest={encodedTransactionRequest}
+        showSmartWalletActivation={showSmartWalletActivation}
+        // 4337 sponsored userOps: paymaster pays — no override row. Auto mode:
+        // withhold setter so the footer falls back to <NetworkFeeFooter />.
+        gasOverrides={isOverridesEligible ? effectiveGasOverrides : undefined}
+        onChangeGasOverrides={isOverridesEligible ? setGasOverrides : undefined}
+        onCancel={onCancelRequest}
+        onConfirm={onConfirmRequest}
+      />
+    )
+  }
+
+  if (parsedSwapCalldata) {
+    return (
+      <SwapRequestContent
+        parsedCalldata={parsedSwapCalldata}
+        transactionGasFeeResult={gasFeeResult}
+        showSmartWalletActivation={showSmartWalletActivation}
+        onCancel={onCancelRequest}
+        onConfirm={onConfirmRequest}
+      />
+    )
+  }
+
+  return (
+    <SendCallsRequestContentFallback
       dappRequest={dappRequest}
       transactionGasFeeResult={gasFeeResult}
       showSmartWalletActivation={showSmartWalletActivation}

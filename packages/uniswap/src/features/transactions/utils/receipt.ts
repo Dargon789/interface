@@ -17,7 +17,7 @@ const toNumber = (value: unknown): number => {
   if (typeof value === 'number') {
     return value
   }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (typeof value === 'object' && value !== null && 'toNumber' in (value as Record<string, unknown>)) {
     try {
       return (value as { toNumber: () => number }).toNumber()

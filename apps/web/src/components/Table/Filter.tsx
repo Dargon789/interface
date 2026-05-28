@@ -1,8 +1,8 @@
-import { Portal } from 'components/Popups/Portal'
-import { useOnClickOutside } from 'hooks/useOnClickOutside'
 import { RefObject, useCallback, useRef } from 'react'
 import { Checkbox, Flex, styled, Text, useMedia } from 'ui/src'
-import { SortVertical } from 'ui/src/components/icons/SortVertical'
+import { ChevronsOut } from 'ui/src/components/icons/ChevronsOut'
+import { Portal } from '~/components/Popups/Portal'
+import { useOnClickOutside } from '~/hooks/useOnClickOutside'
 
 const FilterDropdown = styled(Flex, {
   position: 'absolute',
@@ -46,6 +46,7 @@ interface FilterProps<T extends string> {
   setFilters: (filter: T[]) => void
   isOpen: boolean
   toggleFilterModal: () => void
+  minSelected?: number
   anchorRef: RefObject<HTMLElement | null>
 }
 
@@ -55,6 +56,7 @@ export function Filter<T extends string>({
   setFilters,
   isOpen,
   toggleFilterModal,
+  minSelected,
   anchorRef,
 }: FilterProps<T>) {
   const media = useMedia()
@@ -64,18 +66,26 @@ export function Filter<T extends string>({
 
   const handleFilterOptionClick = useCallback(
     (filter: T) => {
-      if (activeFilter.includes(filter)) {
+      const isSelected = activeFilter.includes(filter)
+      const isBelowMinSelected = minSelected && activeFilter.length <= minSelected
+
+      // If the filter is already selected and unselecting it would result in fewer than the minimum selected filters, do nothing
+      if (isBelowMinSelected && isSelected) {
+        return
+      }
+
+      if (isSelected) {
         setFilters(activeFilter.filter((f) => f !== filter))
       } else {
         setFilters([...activeFilter, filter])
       }
     },
-    [activeFilter, setFilters],
+    [activeFilter, minSelected, setFilters],
   )
 
   return (
     <>
-      <SortVertical color="$neutral3" size="$icon.16" />
+      <ChevronsOut color="$neutral3" size="$icon.16" />
       {isOpen && anchorRef.current && (
         <Portal>
           <FilterDropdown

@@ -1,3 +1,4 @@
+import { isWebPlatform } from '@universe/environment'
 import { PropsWithChildren } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Text, TouchableArea, useSporeColors } from 'ui/src'
@@ -7,9 +8,7 @@ import { WarningSeverity } from 'uniswap/src/components/modals/WarningModal/type
 import { WarningInfo } from 'uniswap/src/components/modals/WarningModal/WarningInfo'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
-import { usePriceUXEnabled } from 'uniswap/src/features/transactions/swap/hooks/usePriceUXEnabled'
 import { openUri } from 'uniswap/src/utils/linking'
-import { isWebPlatform } from 'utilities/src/platform'
 
 export function SwapFeeWarning({
   noUniswapInterfaceFees,
@@ -17,7 +16,6 @@ export function SwapFeeWarning({
   children,
   isJupiter,
 }: PropsWithChildren<{ noUniswapInterfaceFees: boolean; noFeeOnThisSwap: boolean; isJupiter: boolean }>): JSX.Element {
-  const priceUXEnabled = usePriceUXEnabled()
   const colors = useSporeColors()
   const { t } = useTranslation()
 
@@ -28,19 +26,17 @@ export function SwapFeeWarning({
   const caption =
     noUniswapInterfaceFees && !isJupiter
       ? t('swap.warning.noInterfaceFees.message')
-      : priceUXEnabled
-        ? t('fee.uniswap.description')
-        : noFeeOnThisSwap
-          ? t('swap.warning.uniswapFee.message.default')
-          : isJupiter
-            ? t('swap.fees.jupiter.message')
-            : t('swap.warning.uniswapFee.message.included')
+      : noFeeOnThisSwap
+        ? t('swap.warning.uniswapFee.message.default')
+        : isJupiter
+          ? t('swap.fees.jupiter.message')
+          : t('swap.warning.uniswapFee.message.included')
 
   return (
     <WarningInfo
       infoButton={
         <TouchableArea onPress={onPressLearnMore}>
-          <Text color="$accent1" variant={isWebPlatform ? (priceUXEnabled ? 'buttonLabel4' : 'body4') : 'buttonLabel2'}>
+          <Text color="$neutral1" variant={isWebPlatform ? 'body4' : 'buttonLabel2'}>
             {t('common.button.learn')}
           </Text>
         </TouchableArea>

@@ -1,11 +1,11 @@
+import { isWebApp, isWebPlatform } from '@universe/environment'
 import { memo } from 'react'
 import type { ColorTokens, GeneratedIcon } from 'ui/src'
 import { Flex, Tooltip as TooltipComponent } from 'ui/src'
 import { Settings } from 'ui/src/components/icons/Settings'
-import type { IconSizeTokens } from 'ui/src/theme'
+import { type IconSizeTokens } from 'ui/src/theme'
 import { TransactionSettingsModalId } from 'uniswap/src/features/transactions/components/settings/stores/TransactionSettingsModalStore/createTransactionSettingsModalStore'
 import { useModalVisibility } from 'uniswap/src/features/transactions/components/settings/stores/TransactionSettingsModalStore/useTransactionSettingsModalStore'
-import { isWebApp, isWebPlatform } from 'utilities/src/platform'
 
 type TransactionSettingsButtonProps = {
   Tooltip?: React.ReactNode
@@ -58,6 +58,7 @@ export const TransactionSettingsButton = memo(
   },
 )
 
+// oxlint-disable-next-line react/display-name -- biome-parity: oxlint is stricter here
 export const TransactionSettingsButtonWithTooltip = memo(
   ({
     Tooltip,

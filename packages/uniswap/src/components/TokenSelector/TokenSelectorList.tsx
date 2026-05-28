@@ -33,7 +33,7 @@ function isHorizontalListTokenItem(data: TokenSelectorOption): data is TokenOpti
   return Array.isArray(data)
 }
 
-const TokenOptionItem = memo(function _TokenOptionItem({
+const TokenOptionItem = memo(function TokenOptionItemInner({
   tokenOption,
   onSelectCurrency,
   section,
@@ -189,7 +189,7 @@ interface TokenSelectorListProps {
   renderedInModal: boolean
 }
 
-function _TokenSelectorList({
+function TokenSelectorListInner({
   onSelectCurrency,
   sections,
   chainFilter,
@@ -264,4 +264,4 @@ function key(item: TokenSelectorOption): CurrencyId {
   return item.currencyInfo.currencyId
 }
 
-export const TokenSelectorList = memo(_TokenSelectorList)
+export const TokenSelectorList = memo(TokenSelectorListInner)

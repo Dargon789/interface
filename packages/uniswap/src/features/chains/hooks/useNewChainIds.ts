@@ -13,6 +13,6 @@ export function useNewChainIds(): UniverseChainId[] {
   })
 
   // For some reason, in the test suite, `newChainIds` is undefined
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   return useMemo(() => (newChainIds || []).filter(isUniverseChainId), [newChainIds])
 }

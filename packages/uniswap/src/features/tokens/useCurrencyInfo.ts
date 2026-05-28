@@ -1,4 +1,4 @@
-import { GraphQLApi } from '@universe/api'
+import { GqlResult, GraphQLApi } from '@universe/api'
 import { useMemo } from 'react'
 import { getCommonBase } from 'uniswap/src/constants/routing'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -45,6 +45,10 @@ function useCurrencyInfoQuery(
           copyCommonBase.logoUrl = queryResult.data.token.project.logoUrl
         }
         copyCommonBase.currencyId = _currencyId
+
+        // Local common base object will not have remote project id, so we add it here.
+        copyCommonBase.projectId = queryResult.data?.token?.project?.id
+
         return copyCommonBase
       }
     }
@@ -93,6 +97,31 @@ export function useCurrencyInfos(
   return useMemo(() => {
     return data?.tokens?.map((token) => token && gqlTokenToCurrencyInfo(token)) ?? []
   }, [data])
+}
+
+export function useCurrencyInfosWithLoading(
+  _currencyIds: string[],
+  options?: { refetch?: boolean; skip?: boolean },
+): GqlResult<CurrencyInfo[]> {
+  const queryResult = GraphQLApi.useTokensQuery({
+    variables: {
+      contracts: _currencyIds.map(currencyIdToContractInput),
+    },
+    skip: !_currencyIds.length || options?.skip,
+    fetchPolicy: options?.refetch ? 'cache-and-network' : 'cache-first',
+  })
+
+  return useMemo(() => {
+    return {
+      data:
+        queryResult.data?.tokens
+          ?.map((token) => token && gqlTokenToCurrencyInfo(token))
+          .filter((currencyInfo) => !!currencyInfo) ?? [],
+      loading: queryResult.loading,
+      error: queryResult.error,
+      refetch: queryResult.refetch,
+    }
+  }, [queryResult.data?.tokens, queryResult.loading, queryResult.error, queryResult.refetch])
 }
 
 export function useNativeCurrencyInfo(chainId: UniverseChainId): Maybe<CurrencyInfo> {

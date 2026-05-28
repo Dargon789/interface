@@ -1,13 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import 'polyfill-object.fromentries'
-
-import { ResizeObserver } from '@juggle/resize-observer'
-import flat from 'array.prototype.flat'
-import flatMap from 'array.prototype.flatmap'
+/* oxlint-disable typescript/no-unnecessary-condition */
 import { Buffer } from 'buffer'
-
-flat.shim()
-flatMap.shim()
 
 declare global {
   interface Window {
@@ -16,13 +8,10 @@ declare global {
 }
 
 if (!window.__DEV__) {
+  // oxlint-disable-next-line eslint-js/no-restricted-syntax
   window.__DEV__ = process.env.NODE_ENV === 'development'
 }
 
 if (!window.Buffer) {
   window.Buffer = Buffer
-}
-
-if (!window.ResizeObserver) {
-  window.ResizeObserver = ResizeObserver
 }

@@ -1,9 +1,9 @@
 import { UseMutationResult, useMutation } from '@tanstack/react-query'
-import { BiometricUnlockStorage } from 'src/app/features/biometricUnlock/BiometricUnlockStorage'
 import {
   authenticateWithBiometricCredential,
   encryptPasswordWithBiometricData,
 } from 'src/app/features/biometricUnlock/biometricAuthUtils'
+import { BiometricUnlockStorage } from 'src/app/features/biometricUnlock/BiometricUnlockStorage'
 import { startNavigatorCredentialRequest } from 'src/app/features/biometricUnlock/useNavigatorCredentialAbortSignal'
 import { logger } from 'utilities/src/logger/logger'
 import { useEvent } from 'utilities/src/react/hooks'

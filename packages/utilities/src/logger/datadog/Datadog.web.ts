@@ -1,13 +1,12 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: Third-party types not available */
+/* oxlint-disable typescript/no-explicit-any -- Third-party types not available */
 import { datadogLogs } from '@datadog/browser-logs'
 import { datadogRum } from '@datadog/browser-rum'
+import { isExtensionApp, isWebApp, isTestEnv } from '@universe/environment'
 import { Action, AnyAction, PreloadedState, Reducer, StoreEnhancerStoreCreator } from 'redux'
-import { isTestEnv } from 'utilities/src/environment/env'
 import { NotImplementedError } from 'utilities/src/errors'
 import { ReduxEnhancerConfig } from 'utilities/src/logger/datadog/Datadog'
 import { handleReduxAction } from 'utilities/src/logger/datadog/reduxUtils'
 import { LoggerErrorContext, LogLevel } from 'utilities/src/logger/types'
-import { isExtensionApp, isWebApp } from 'utilities/src/platform'
 
 export function logToDatadog(
   message: string,
@@ -87,6 +86,7 @@ export function createDatadogReduxEnhancer({
   shouldLogReduxState,
 }: ReduxEnhancerConfig): (next: StoreEnhancerStoreCreator) => StoreEnhancerStoreCreator {
   return (next: StoreEnhancerStoreCreator): StoreEnhancerStoreCreator =>
+    // oxlint-disable-next-line typescript/no-explicit-any -- biome-parity: oxlint is stricter here
     <S = any, A extends Action = AnyAction>(reducer: Reducer<S, A>, initialState?: PreloadedState<S>) => {
       const enhancedReducer: Reducer<S, A> = (state, action): S => {
         const newState = reducer(state, action)

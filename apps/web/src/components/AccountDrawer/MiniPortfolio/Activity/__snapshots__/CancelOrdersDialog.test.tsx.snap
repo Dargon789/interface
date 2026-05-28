@@ -1,47 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`CancelOrdersDialog > should render limit order text 1`] = `
-.c0 {
-  color: #131313;
-  letter-spacing: -0.01em;
-}
-
-.c1 {
-  cursor: auto;
-  color: rgba(19, 19, 19, 0.63);
-}
-
-.c2 {
-  text-align: right;
-  overflow-wrap: break-word;
-}
-
 <body>
-  <dialog
-    aria-closed="true"
-    aria-label="Porto Wallet"
-    data-porto=""
-    hidden="until-found"
-    role="dialog"
-    style="background: transparent; border: 0px; outline: 0; padding: 0px; position: fixed;"
-  >
-    <style>
-      
-        dialog[data-porto]::backdrop {
-          background: transparent!important;
-        }
-      
-    </style>
-    <iframe
-      allow="publickey-credentials-get https://id.porto.sh; publickey-credentials-create https://id.porto.sh; clipboard-write"
-      data-testid="porto"
-      sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-      src="https://id.porto.sh/dialog"
-      style="background-color: transparent; border: 0px; color-scheme: light dark; height: 100%; left: 0px; position: fixed; top: 0px; width: 100%;"
-      tabindex="0"
-      title="Porto"
-    />
-  </dialog>
   <div>
     <span
       class=""
@@ -71,7 +31,7 @@ exports[`CancelOrdersDialog > should render limit order text 1`] = `
                     target="_blank"
                   >
                     <div
-                      style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: row; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; padding: 6px 8px 6px 8px; gap: 4px; align-items: center; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(19, 19, 19, 0.08); border-right-color: rgba(19, 19, 19, 0.08); border-bottom-color: rgba(19, 19, 19, 0.08); border-left-color: rgba(19, 19, 19, 0.08); background-color: rgba(0, 0, 0, 0); border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid;"
+                      style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: row; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); gap: var(--t-space-spacing4); align-items: center; background-color: rgba(0, 0, 0, 0); border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transition: all 100ms cubic-bezier(0.17, 0.67, 0.45, 1);"
                     >
                       <svg
                         stroke-width="8"
@@ -84,7 +44,7 @@ exports[`CancelOrdersDialog > should render limit order text 1`] = `
                         />
                       </svg>
                       <span
-                        class="font_button _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-micr111 _lineHeight-f-lineHeigh1263414315 _fontWeight-f-weight-me3083741"
+                        class="font_button _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-micr111 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh1263414315"
                         data-disable-theme="true"
                       >
                         Get help
@@ -94,7 +54,7 @@ exports[`CancelOrdersDialog > should render limit order text 1`] = `
                   <div
                     class="is_TouchableArea  t_group_true"
                     role="none"
-                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-color: transparent; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: [object Object];"
+                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: scale(1);"
                   >
                     <div
                       class="_display-flex _alignItems-stretch _flexDirection-column _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0"
@@ -123,39 +83,34 @@ exports[`CancelOrdersDialog > should render limit order text 1`] = `
                 >
                   <svg
                     fill="none"
-                    height="24"
-                    stroke="#131313"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    xmlns="http://www.w3.org/2000/svg"
+                    stroke-width="8"
+                    style="width: 24px; height: 24px; color: rgb(19, 19, 19);"
+                    viewBox="0 0 20 20"
                   >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                    />
-                    <line
-                      x1="4.93"
-                      x2="19.07"
-                      y1="4.93"
-                      y2="19.07"
-                    />
+                    <g
+                      id="Icon"
+                    >
+                      <path
+                        clip-rule="evenodd"
+                        d="M9.99992 1.45801C5.29016 1.45801 1.45825 5.28992 1.45825 9.99967C1.45825 14.7094 5.29016 18.5413 9.99992 18.5413C14.7097 18.5413 18.5416 14.7094 18.5416 9.99967C18.5416 5.28992 14.7097 1.45801 9.99992 1.45801ZM3.39007 9.99967C3.39007 6.35563 6.35514 3.38983 9.99992 3.38983C11.4745 3.38983 12.8353 3.87768 13.936 4.69787L4.69811 13.9358C3.87793 12.835 3.39007 11.4742 3.39007 9.99967ZM9.99992 16.6095C8.52537 16.6095 7.16455 16.1217 6.06382 15.3015L15.3017 6.06362C16.1219 7.16504 16.6098 8.52586 16.6098 9.99967C16.6098 13.6437 13.6447 16.6095 9.99992 16.6095Z"
+                        fill="currentColor"
+                        fill-rule="evenodd"
+                        id="Vector"
+                      />
+                    </g>
                   </svg>
                 </div>
                 <div
                   class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _gap-t-space-spa94665593 _alignItems-center"
                 >
                   <span
-                    class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-larg101 _lineHeight-f-lineHeigh1262266530 _fontWeight-f-weight-bo3548"
+                    class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-larg101 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1262266530"
                     data-disable-theme="true"
                   >
                     Cancel limit
                   </span>
                   <span
-                    class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _lineHeight-f-lineHeigh1269072494 _fontWeight-f-weight-bo3548"
+                    class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494"
                     data-disable-theme="true"
                   >
                     Your swap could execute before cancellation is processed. Your network costs cannot be refunded. Do you wish to proceed?
@@ -170,19 +125,21 @@ exports[`CancelOrdersDialog > should render limit order text 1`] = `
                     <div
                       class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _alignItems-center _justifyContent-space-betwe3241 _width-10037"
                     >
-                      <div
-                        class="c0 c1 css-142zc9n"
+                      <span
+                        class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494 _userSelect-text _cursor-auto"
+                        data-disable-theme="true"
                         data-testid="swap-li-label"
                       >
                         Network cost
-                      </div>
-                      <div
-                        class="c0 c2 css-142zc9n"
+                      </span>
+                      <span
+                        class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494 _textAlign-right"
+                        data-disable-theme="true"
                       >
                         <span>
                           -
                         </span>
-                      </div>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -193,7 +150,7 @@ exports[`CancelOrdersDialog > should render limit order text 1`] = `
                 <button
                   class="is_Button  t_group_item"
                   dd-action-name="Proceed"
-                  style="display: flex; flex-basis: 0px; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; align-items: center; justify-content: center; background-color: rgba(255, 0, 0, 0.05); border-top-color: transparent; border-right-color: transparent; border-bottom-color: transparent; border-left-color: transparent; cursor: pointer; height: auto; align-self: stretch; flex-grow: 1; outline-color: rgba(0, 0, 0, 0); padding: 8px 12px 8px 12px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; gap: 8px; min-height: 36px; border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transform: [object Object];"
+                  style="display: flex; flex-basis: 0px; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; align-items: center; justify-content: center; cursor: pointer; height: auto; align-self: stretch; flex-grow: 1; outline-color: rgba(0, 0, 0, 0); border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); gap: var(--t-space-spacing8); min-height: var(--t-size-spacing36); border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transform: scale(1); transition: transform 100ms cubic-bezier(0.17, 0.67, 0.45, 1);"
                 >
                   <span
                     class="font_button _color-_groupitem-hover_statusCriti506252077 _display-inline _boxSizing-border-box _wordWrap-break-word _whiteSpace-nowrap _mt-0px _mr-0px _mb-0px _ml-0px _color-statusCriti98254 _fontFamily-f-family _maxWidth-10037 _overflowX-hidden _overflowY-hidden _textOverflow-ellipsis _textAlign-center _fontSize-f-size-smal108 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh1269072494"
@@ -205,7 +162,7 @@ exports[`CancelOrdersDialog > should render limit order text 1`] = `
                 <button
                   class="is_Button  t_group_item"
                   dd-action-name="Never mind"
-                  style="display: flex; flex-basis: 0px; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; align-items: center; justify-content: center; background-color: rgba(19, 19, 19, 0.08); border-top-color: transparent; border-right-color: transparent; border-bottom-color: transparent; border-left-color: transparent; cursor: pointer; height: auto; align-self: stretch; flex-grow: 1; outline-color: rgba(0, 0, 0, 0); padding: 8px 12px 8px 12px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; gap: 8px; min-height: 36px; border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transform: [object Object];"
+                  style="display: flex; flex-basis: 0px; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; align-items: center; justify-content: center; cursor: pointer; height: auto; align-self: stretch; flex-grow: 1; outline-color: rgba(0, 0, 0, 0); border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); gap: var(--t-space-spacing8); min-height: var(--t-size-spacing36); border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transform: scale(1); transition: transform 100ms cubic-bezier(0.17, 0.67, 0.45, 1);"
                 >
                   <span
                     class="font_button _color-_groupitem-hover_neutral1Hov3121676 _display-inline _boxSizing-border-box _wordWrap-break-word _whiteSpace-nowrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _maxWidth-10037 _overflowX-hidden _overflowY-hidden _textOverflow-ellipsis _textAlign-center _fontSize-f-size-smal108 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh1269072494"
@@ -228,47 +185,7 @@ exports[`CancelOrdersDialog > should render limit order text 1`] = `
 `;
 
 exports[`CancelOrdersDialog > should render order cancel correctly 1`] = `
-.c0 {
-  color: #131313;
-  letter-spacing: -0.01em;
-}
-
-.c1 {
-  cursor: auto;
-  color: rgba(19, 19, 19, 0.63);
-}
-
-.c2 {
-  text-align: right;
-  overflow-wrap: break-word;
-}
-
 <body>
-  <dialog
-    aria-closed="true"
-    aria-label="Porto Wallet"
-    data-porto=""
-    hidden="until-found"
-    role="dialog"
-    style="background: transparent; border: 0px; outline: 0; padding: 0px; position: fixed;"
-  >
-    <style>
-      
-        dialog[data-porto]::backdrop {
-          background: transparent!important;
-        }
-      
-    </style>
-    <iframe
-      allow="publickey-credentials-get https://id.porto.sh; publickey-credentials-create https://id.porto.sh; clipboard-write"
-      data-testid="porto"
-      sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-      src="https://id.porto.sh/dialog"
-      style="background-color: transparent; border: 0px; color-scheme: light dark; height: 100%; left: 0px; position: fixed; top: 0px; width: 100%;"
-      tabindex="0"
-      title="Porto"
-    />
-  </dialog>
   <div>
     <span
       class=""
@@ -298,7 +215,7 @@ exports[`CancelOrdersDialog > should render order cancel correctly 1`] = `
                     target="_blank"
                   >
                     <div
-                      style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: row; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; padding: 6px 8px 6px 8px; gap: 4px; align-items: center; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgba(19, 19, 19, 0.08); border-right-color: rgba(19, 19, 19, 0.08); border-bottom-color: rgba(19, 19, 19, 0.08); border-left-color: rgba(19, 19, 19, 0.08); background-color: rgba(0, 0, 0, 0); border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid;"
+                      style="display: flex; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: row; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); gap: var(--t-space-spacing4); align-items: center; background-color: rgba(0, 0, 0, 0); border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transition: all 100ms cubic-bezier(0.17, 0.67, 0.45, 1);"
                     >
                       <svg
                         stroke-width="8"
@@ -311,7 +228,7 @@ exports[`CancelOrdersDialog > should render order cancel correctly 1`] = `
                         />
                       </svg>
                       <span
-                        class="font_button _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-micr111 _lineHeight-f-lineHeigh1263414315 _fontWeight-f-weight-me3083741"
+                        class="font_button _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-micr111 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh1263414315"
                         data-disable-theme="true"
                       >
                         Get help
@@ -321,7 +238,7 @@ exports[`CancelOrdersDialog > should render order cancel correctly 1`] = `
                   <div
                     class="is_TouchableArea  t_group_true"
                     role="none"
-                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-color: transparent; cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: [object Object];"
+                    style="display: flex; align-items: stretch; flex-basis: auto; box-sizing: border-box; position: relative; min-height: 0px; min-width: 0px; flex-shrink: 0; flex-direction: column; border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); cursor: pointer; outline-color: rgba(0, 0, 0, 0); opacity: 1; transform: scale(1);"
                   >
                     <div
                       class="_display-flex _alignItems-stretch _flexDirection-column _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0"
@@ -350,39 +267,34 @@ exports[`CancelOrdersDialog > should render order cancel correctly 1`] = `
                 >
                   <svg
                     fill="none"
-                    height="24"
-                    stroke="#131313"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    xmlns="http://www.w3.org/2000/svg"
+                    stroke-width="8"
+                    style="width: 24px; height: 24px; color: rgb(19, 19, 19);"
+                    viewBox="0 0 20 20"
                   >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                    />
-                    <line
-                      x1="4.93"
-                      x2="19.07"
-                      y1="4.93"
-                      y2="19.07"
-                    />
+                    <g
+                      id="Icon"
+                    >
+                      <path
+                        clip-rule="evenodd"
+                        d="M9.99992 1.45801C5.29016 1.45801 1.45825 5.28992 1.45825 9.99967C1.45825 14.7094 5.29016 18.5413 9.99992 18.5413C14.7097 18.5413 18.5416 14.7094 18.5416 9.99967C18.5416 5.28992 14.7097 1.45801 9.99992 1.45801ZM3.39007 9.99967C3.39007 6.35563 6.35514 3.38983 9.99992 3.38983C11.4745 3.38983 12.8353 3.87768 13.936 4.69787L4.69811 13.9358C3.87793 12.835 3.39007 11.4742 3.39007 9.99967ZM9.99992 16.6095C8.52537 16.6095 7.16455 16.1217 6.06382 15.3015L15.3017 6.06362C16.1219 7.16504 16.6098 8.52586 16.6098 9.99967C16.6098 13.6437 13.6447 16.6095 9.99992 16.6095Z"
+                        fill="currentColor"
+                        fill-rule="evenodd"
+                        id="Vector"
+                      />
+                    </g>
                   </svg>
                 </div>
                 <div
                   class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _gap-t-space-spa94665593 _alignItems-center"
                 >
                   <span
-                    class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-larg101 _lineHeight-f-lineHeigh1262266530 _fontWeight-f-weight-bo3548"
+                    class="font_subHeading _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-larg101 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1262266530"
                     data-disable-theme="true"
                   >
                     Cancel order
                   </span>
                   <span
-                    class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _lineHeight-f-lineHeigh1269072494 _fontWeight-f-weight-bo3548"
+                    class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494"
                     data-disable-theme="true"
                   >
                     Your swap could execute before cancellation is processed. Your network costs cannot be refunded. Do you wish to proceed?
@@ -397,19 +309,21 @@ exports[`CancelOrdersDialog > should render order cancel correctly 1`] = `
                     <div
                       class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _alignItems-center _justifyContent-space-betwe3241 _width-10037"
                     >
-                      <div
-                        class="c0 c1 css-142zc9n"
+                      <span
+                        class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral2 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494 _userSelect-text _cursor-auto"
+                        data-disable-theme="true"
                         data-testid="swap-li-label"
                       >
                         Network cost
-                      </div>
-                      <div
-                        class="c0 c2 css-142zc9n"
+                      </span>
+                      <span
+                        class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-smal108 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh1269072494 _textAlign-right"
+                        data-disable-theme="true"
                       >
                         <span>
                           -
                         </span>
-                      </div>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -420,7 +334,7 @@ exports[`CancelOrdersDialog > should render order cancel correctly 1`] = `
                 <button
                   class="is_Button  t_group_item"
                   dd-action-name="Proceed"
-                  style="display: flex; flex-basis: 0px; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; align-items: center; justify-content: center; background-color: rgba(255, 0, 0, 0.05); border-top-color: transparent; border-right-color: transparent; border-bottom-color: transparent; border-left-color: transparent; cursor: pointer; height: auto; align-self: stretch; flex-grow: 1; outline-color: rgba(0, 0, 0, 0); padding: 8px 12px 8px 12px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; gap: 8px; min-height: 36px; border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transform: [object Object];"
+                  style="display: flex; flex-basis: 0px; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; align-items: center; justify-content: center; cursor: pointer; height: auto; align-self: stretch; flex-grow: 1; outline-color: rgba(0, 0, 0, 0); border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); gap: var(--t-space-spacing8); min-height: var(--t-size-spacing36); border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transform: scale(1); transition: transform 100ms cubic-bezier(0.17, 0.67, 0.45, 1);"
                 >
                   <span
                     class="font_button _color-_groupitem-hover_statusCriti506252077 _display-inline _boxSizing-border-box _wordWrap-break-word _whiteSpace-nowrap _mt-0px _mr-0px _mb-0px _ml-0px _color-statusCriti98254 _fontFamily-f-family _maxWidth-10037 _overflowX-hidden _overflowY-hidden _textOverflow-ellipsis _textAlign-center _fontSize-f-size-smal108 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh1269072494"
@@ -432,7 +346,7 @@ exports[`CancelOrdersDialog > should render order cancel correctly 1`] = `
                 <button
                   class="is_Button  t_group_item"
                   dd-action-name="Never mind"
-                  style="display: flex; flex-basis: 0px; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; align-items: center; justify-content: center; background-color: rgba(19, 19, 19, 0.08); border-top-color: transparent; border-right-color: transparent; border-bottom-color: transparent; border-left-color: transparent; cursor: pointer; height: auto; align-self: stretch; flex-grow: 1; outline-color: rgba(0, 0, 0, 0); padding: 8px 12px 8px 12px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; gap: 8px; min-height: 36px; border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transform: [object Object];"
+                  style="display: flex; flex-basis: 0px; box-sizing: border-box; position: relative; min-width: 0px; flex-shrink: 1; flex-direction: row; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; align-items: center; justify-content: center; cursor: pointer; height: auto; align-self: stretch; flex-grow: 1; outline-color: rgba(0, 0, 0, 0); border-top-left-radius: var(--t-radius-rounded12); border-top-right-radius: var(--t-radius-rounded12); border-bottom-right-radius: var(--t-radius-rounded12); border-bottom-left-radius: var(--t-radius-rounded12); gap: var(--t-space-spacing8); min-height: var(--t-size-spacing36); border-bottom-style: solid; border-top-style: solid; border-left-style: solid; border-right-style: solid; transform: scale(1); transition: transform 100ms cubic-bezier(0.17, 0.67, 0.45, 1);"
                 >
                   <span
                     class="font_button _color-_groupitem-hover_neutral1Hov3121676 _display-inline _boxSizing-border-box _wordWrap-break-word _whiteSpace-nowrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _maxWidth-10037 _overflowX-hidden _overflowY-hidden _textOverflow-ellipsis _textAlign-center _fontSize-f-size-smal108 _fontWeight-f-weight-me3083741 _lineHeight-f-lineHeigh1269072494"

@@ -1,3 +1,4 @@
+import { isTestEnv } from '@universe/environment'
 import React, { lazy, Suspense } from 'react'
 import { Flex } from 'ui/src/components/layout/Flex'
 import { UniconProps } from 'ui/src/components/Unicon/types'
@@ -6,9 +7,7 @@ import { useIsDarkMode } from 'ui/src/hooks/useIsDarkMode'
 import { isEVMAddressWithChecksum } from 'utilities/src/addresses/evm/evm'
 import { isSVMAddress } from 'utilities/src/addresses/svm/svm'
 
-// In test environments, import Icons synchronously
-const isTestEnv = process.env.NODE_ENV === 'test'
-const { Icons } = isTestEnv ? require('ui/src/components/Unicon/UniconSVGs') : { Icons: {} }
+const Icons: Record<string, string[]> = {}
 
 function UniconSVGInner({
   address,
@@ -49,7 +48,9 @@ function UniconSVGInner({
 
 const UniconSVGBase = (props: UniconProps): React.ReactElement | null => UniconSVGInner({ ...props, icons: Icons })
 
-const UniconSVGComponent = isTestEnv
+// In test environments, we use an empty Icons object since tests don't render
+// the actual Unicon SVGs. In production, Icons is loaded lazily via dynamic import.
+const UniconSVGComponent = isTestEnv()
   ? UniconSVGBase
   : lazy(async () => {
       const { Icons: LazyIcons } = await import('ui/src/components/Unicon/UniconSVGs')

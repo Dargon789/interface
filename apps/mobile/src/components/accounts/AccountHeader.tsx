@@ -1,5 +1,5 @@
 import { SharedEventName } from '@uniswap/analytics-events'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { isDevEnv } from '@universe/environment'
 import React, { useCallback, useEffect } from 'react'
 import { Gesture, GestureDetector, State } from 'react-native-gesture-handler'
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated'
@@ -20,9 +20,8 @@ import { MobileUserPropertyName, setUserProperty } from 'uniswap/src/features/te
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { MobileScreens } from 'uniswap/src/types/screens/mobile'
 import { sanitizeAddressText } from 'uniswap/src/utils/addresses'
-import { setClipboard } from 'uniswap/src/utils/clipboard'
 import { shortenAddress } from 'utilities/src/addresses'
-import { isDevEnv } from 'utilities/src/environment/env'
+import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { AnimatedUnitagDisplayName } from 'wallet/src/components/accounts/AnimatedUnitagDisplayName'
 import useIsFocused from 'wallet/src/features/focus/useIsFocused'
 import { useActiveAccount, useActiveAccountAddress, useDisplayName } from 'wallet/src/features/wallet/hooks'
@@ -38,6 +37,7 @@ const RotatingSettingsIcon = ({ onPressSettings }: { onPressSettings(): void }):
     if (isScreenFocused) {
       pressProgress.value = withDelay(50, withTiming(0))
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [isScreenFocused])
 
   const tap = Gesture.Tap()
@@ -125,17 +125,8 @@ export function AccountHeader(): JSX.Element {
   const walletHasName = displayName && displayName.type !== DisplayNameType.Address
   const iconSize = 52
 
-  const isBottomTabsEnabled = useFeatureFlag(FeatureFlags.BottomTabs)
-
   return (
-    <Flex
-      gap="$spacing12"
-      overflow="scroll"
-      pt="$spacing8"
-      px={isBottomTabsEnabled ? '$spacing24' : '$spacing12'}
-      testID="account-header"
-      width="100%"
-    >
+    <Flex gap="$spacing12" overflow="scroll" pt="$spacing8" px="$spacing24" testID="account-header" width="100%">
       {activeAddress && (
         <Flex alignItems="flex-start" gap="$spacing12" width="100%">
           <Flex row justifyContent="space-between" width="100%">

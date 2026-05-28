@@ -17,6 +17,7 @@ export const SPECIAL_CASE_TOKEN_COLORS: { [key: string]: string } = {
   'https://s2.coinmarketcap.com/static/img/coins/64x64/26984.png': '#29A1F1',
   // ETH
   'https://token-icons.s3.amazonaws.com/eth.png': '#4970D5',
+  'https://didcmo2jyrnku.cloudfront.net/assets/eth.png': '#4970D5',
   // HARRYPOTTERSHIBAINUBITCOIN
   'https://assets.coingecko.com/coins/images/30323/large/hpos10i_logo_casino_night-dexview.png?1684117567': '#DE3110',
   // PEPE
@@ -73,5 +74,5 @@ export const SPECIAL_CASE_TOKEN_COLORS: { [key: string]: string } = {
   // TODO | Toucan: remove once token auction goes live
   // ToucanToken - Demo token for bid distribution chart testing. This ensures
   // the token has a consistent brand color in the chart UI during development.
-  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_jpV17fi4GSCP0jt7m4EtLAdgVprRj1s-Yg&s': '#7482FF',
+  'https://assets.coingecko.com/coins/images/69445/standard/FSuv7Zpo_400x400.png?1758616860': '#01429f',
 }

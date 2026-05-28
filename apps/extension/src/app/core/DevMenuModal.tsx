@@ -22,7 +22,7 @@ export function DevMenuModal(): JSX.Element {
         p="$spacing4"
         left="$spacing24"
         zIndex={Number.MAX_SAFE_INTEGER}
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor="$neutral2"
         borderRadius="$rounded4"
         cursor="pointer"

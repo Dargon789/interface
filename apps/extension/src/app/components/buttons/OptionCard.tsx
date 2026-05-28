@@ -18,7 +18,7 @@ export function OptionCard({
       shadowColor="$shadowColor"
       shadowOpacity={0.05}
       shadowRadius={8}
-      borderWidth={1}
+      borderWidth="$spacing1"
       borderColor="$surface3"
       borderRadius="$rounded20"
       onPress={onPress}
@@ -33,7 +33,7 @@ export function OptionCard({
           <Icon color="$accent1" size="$icon.16" />
         </Circle>
 
-        <Flex gap="$spacing4">
+        <Flex fill gap="$spacing4">
           <Text variant="body2">{title}</Text>
 
           <Text color="$neutral2" variant="body3">

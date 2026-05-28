@@ -12,7 +12,7 @@ import type { Plugin } from 'vite'
  * @param projectRoot - The root directory of the project
  */
 // This plugin is used in vite.config.mts
-// eslint-disable-next-line import/no-unused-modules
+// oxlint-disable-next-line import/no-unused-modules
 export function generateAssetsIgnorePlugin(enabled: boolean, projectRoot: string): Plugin {
   return {
     name: 'generate-assets-ignore',
@@ -39,7 +39,7 @@ export function generateAssetsIgnorePlugin(enabled: boolean, projectRoot: string
 
       fs.writeFileSync(assetsIgnorePath, ignoreContent, 'utf-8')
 
-      // biome-ignore lint/suspicious/noConsole: Required for build debugging
+      // oxlint-disable-next-line no-console -- Required for build debugging
       console.log('✓ Generated .assetsignore file to exclude sourcemaps from Cloudflare deployment')
     },
   }

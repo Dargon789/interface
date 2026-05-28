@@ -177,36 +177,11 @@ exports[`FavoriteWalletCard renders without error 1`] = `
           testID="account-icon"
         >
           <View
-            collapsable={false}
-            forwardedRef={[Function]}
-            jestAnimatedProps={
-              {
-                "value": {},
-              }
-            }
-            jestAnimatedStyle={
-              {
-                "value": {
-                  "opacity": 0,
-                },
-              }
-            }
-            jestInlineStyle={
-              [
-                {
-                  "flexDirection": "column",
-                },
-              ]
-            }
             style={
-              [
-                {
-                  "flexDirection": "column",
-                },
-                {
-                  "opacity": 0,
-                },
-              ]
+              {
+                "flex": 1,
+                "flexDirection": "column",
+              }
             }
           >
             <View
@@ -280,8 +255,8 @@ exports[`FavoriteWalletCard renders without error 1`] = `
         <View
           style={
             {
-              "alignItems": "center",
               "flexDirection": "row",
+              "flexGrow": 1,
             }
           }
         >

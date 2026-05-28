@@ -10,6 +10,7 @@ const DEBOUNCE_DELAY_MS = 300
 export function SearchInput({
   value,
   onChangeText,
+  dataTestId,
   placeholder = 'Search',
   width = DEFAULT_SEARCH_INPUT_WIDTH,
 }: SearchInputProps) {
@@ -34,8 +35,9 @@ export function SearchInput({
         placeholder={placeholder}
         value={internalValue}
         onChangeText={handleChangeText}
+        testID={dataTestId}
         backgroundColor="$surface2"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderRadius="$rounded12"
         width={width}
         height={40}

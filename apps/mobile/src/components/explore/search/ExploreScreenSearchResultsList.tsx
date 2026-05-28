@@ -1,4 +1,3 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
@@ -40,7 +39,7 @@ const MobileSearchTab = ({
   )
 }
 
-export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearchResultsList({
+export const ExploreScreenSearchResultsList = memo(function ExploreScreenSearchResultsListInner({
   searchQuery,
   parsedSearchQuery,
   chainFilter,
@@ -56,11 +55,10 @@ export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearch
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<SearchTab>(SearchTab.All)
   const insets = useAppInsets()
-  const isBottomTabsEnabled = useFeatureFlag(FeatureFlags.BottomTabs)
 
   const getTabLabel = useCallback(
     // So that the linter errors if someone adds a new tab without updating the switch statement
-    // eslint-disable-next-line consistent-return
+    // oxlint-disable-next-line typescript/consistent-return
     (tab: SearchTab): string => {
       switch (tab) {
         case SearchTab.All:
@@ -71,8 +69,6 @@ export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearch
           return t('common.pools')
         case SearchTab.Wallets:
           return t('explore.search.section.wallets')
-        case SearchTab.NFTCollections:
-          return t('common.nfts')
       }
     },
     [t],
@@ -80,9 +76,9 @@ export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearch
 
   const contentContainerStyle = useMemo(
     () => ({
-      paddingBottom: (isBottomTabsEnabled ? ESTIMATED_BOTTOM_TABS_HEIGHT + spacing.spacing32 : 0) + insets.bottom,
+      paddingBottom: ESTIMATED_BOTTOM_TABS_HEIGHT + spacing.spacing32 + insets.bottom,
     }),
-    [insets.bottom, isBottomTabsEnabled],
+    [insets.bottom],
   )
 
   return (
@@ -107,14 +103,14 @@ export const ExploreScreenSearchResultsList = memo(function _ExploreScreenSearch
             debouncedSearchFilter={debouncedSearchQuery}
             searchFilter={searchQuery}
             activeTab={activeTab}
-            renderedInModal={!isBottomTabsEnabled}
+            renderedInModal={false}
             contentContainerStyle={contentContainerStyle}
           />
         ) : (
           <SearchModalNoQueryList
             chainFilter={chainFilter}
             activeTab={activeTab}
-            renderedInModal={!isBottomTabsEnabled}
+            renderedInModal={false}
             contentContainerStyle={contentContainerStyle}
           />
         )}

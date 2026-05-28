@@ -3,6 +3,9 @@
   "include": ["src"],
   "references": [
     {
+      "path": "../environment"
+    },
+    {
       "path": "../utilities"
     },
     {
@@ -10,6 +13,6 @@
     }
   ],
   "compilerOptions": {
-    "types": ["chrome", "vitest/globals"]
+    "types": ["chrome", "vitest/globals", "node"]
   }
 }

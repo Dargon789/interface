@@ -4,13 +4,14 @@ import { Connector, useConnectors } from 'wagmi'
 
 type ConnectorID = (typeof CONNECTION_PROVIDER_IDS)[keyof typeof CONNECTION_PROVIDER_IDS]
 
+// oxlint-disable-next-line max-params -- biome-parity: oxlint is stricter here
 function getWagmiConnectorWithId(
   connectors: readonly Connector[],
   id: ConnectorID,
   options: { shouldThrow: true },
 ): Connector
 function getWagmiConnectorWithId(connectors: readonly Connector[], id: ConnectorID): Connector | undefined
-// eslint-disable-next-line max-params
+// oxlint-disable-next-line max-params
 function getWagmiConnectorWithId(
   connectors: readonly Connector[],
   id: ConnectorID,

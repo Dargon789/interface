@@ -1,4 +1,5 @@
 import { TradingApi } from '@universe/api'
+import { isWebPlatform } from '@universe/environment'
 import { TFunction } from 'i18next'
 import { PropsWithChildren } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,7 +12,6 @@ import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { isUniswapX } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { openUri } from 'uniswap/src/utils/linking'
-import { isWebPlatform } from 'utilities/src/platform'
 
 function getPriceImpactInfo({ t, routing, missing }: { t: TFunction; routing: TradingApi.Routing; missing: boolean }): {
   caption: string
@@ -51,7 +51,7 @@ export function MarketPriceImpactWarningModal({
     <WarningInfo
       infoButton={
         <TouchableArea onPress={async () => await openUri({ uri: link })}>
-          <Text color="$accent1" variant={isWebPlatform ? 'body4' : 'buttonLabel2'}>
+          <Text color="$neutral1" variant={isWebPlatform ? 'body4' : 'buttonLabel2'}>
             {t('common.button.learn')}
           </Text>
         </TouchableArea>

@@ -1,9 +1,9 @@
+import { isWebApp } from '@universe/environment'
 import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { DerivedSwapInfo } from 'uniswap/src/features/transactions/swap/types/derivedSwapInfo'
 import { requireAcceptNewTrade } from 'uniswap/src/features/transactions/swap/utils/trade'
 import { interruptTransactionFlow } from 'uniswap/src/utils/saga'
-import { isWebApp } from 'utilities/src/platform'
 
 export function useAcceptedTrade({
   derivedSwapInfo,
@@ -34,16 +34,21 @@ export function useAcceptedTrade({
       return
     }
 
-    // auto-accept: 1) first valid trade for the user or 2) new trade if price movement is below threshold
-    if (!acceptedTrade || !newTradeRequiresAcceptance) {
-      setAcceptedDerivedSwapInfo(derivedSwapInfo)
-    }
-
     // If a new trade requires acceptance, interrupt interface's transaction flow
     if (isWebApp && newTradeRequiresAcceptance) {
       dispatch(interruptTransactionFlow())
     }
-  }, [trade, acceptedTrade, indicativeTrade, newTradeRequiresAcceptance, derivedSwapInfo, dispatch])
+
+    // Avoid updating the accepted trade if submission is in progress
+    if (isSubmitting) {
+      return
+    }
+
+    // auto-accept: 1) first valid trade for the user or 2) new trade if price movement is below threshold
+    if (!acceptedTrade || !newTradeRequiresAcceptance) {
+      setAcceptedDerivedSwapInfo(derivedSwapInfo)
+    }
+  }, [trade, acceptedTrade, indicativeTrade, newTradeRequiresAcceptance, derivedSwapInfo, dispatch, isSubmitting])
 
   const onAcceptTrade = (): undefined => {
     if (!trade) {

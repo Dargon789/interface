@@ -1,3 +1,5 @@
+import { GasFeeResult } from '@universe/api'
+import { isMobileApp } from '@universe/environment'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
@@ -8,8 +10,6 @@ import { ContentRow } from 'uniswap/src/components/transactions/requests/Content
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { DappRequestType, EthMethod, EthSignMethod } from 'uniswap/src/features/dappRequests/types'
 import { useGasFeeFormattedDisplayAmounts } from 'uniswap/src/features/gas/hooks'
-import { GasFeeResult } from 'uniswap/src/features/gas/types'
-import { isMobileApp } from 'utilities/src/platform'
 
 interface NetworkFeeFooterProps {
   chainId: UniverseChainId
@@ -35,6 +35,19 @@ const SignatureMethods: Array<string> = [
   DappRequestType.SignTransaction,
   DappRequestType.SignTypedData,
 ]
+
+/**
+ * Returns true when the supplied request method is one that submits a tx
+ * on-chain (and therefore costs gas). Exported so the gas-overrides Network
+ * cost row can mirror the same gating used to hide the legacy fee footer for
+ * signature-only methods.
+ */
+export function isGasBearingMethod(requestMethod: string | undefined): boolean {
+  if (typeof requestMethod !== 'string') {
+    return true
+  }
+  return !SignatureMethods.includes(requestMethod)
+}
 
 export function NetworkFeeFooter({
   chainId,

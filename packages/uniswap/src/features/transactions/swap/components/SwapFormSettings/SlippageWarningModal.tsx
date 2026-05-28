@@ -1,17 +1,18 @@
+import { isMobileApp, isMobileWeb } from '@universe/environment'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex, Text, TouchableArea } from 'ui/src'
 import { AlertTriangleFilled } from 'ui/src/components/icons/AlertTriangleFilled'
 import { X } from 'ui/src/components/icons/X'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
-import { isMobileApp, isMobileWeb } from 'utilities/src/platform'
 
 interface SlippageWarningModalProps {
   isOpen: boolean
   onClose: () => void
+  onContinue?: () => void
 }
 
-export default function SlippageWarningModal({ isOpen, onClose }: SlippageWarningModalProps): JSX.Element {
+export default function SlippageWarningModal({ isOpen, onClose, onContinue }: SlippageWarningModalProps): JSX.Element {
   const { t } = useTranslation()
   return (
     <Modal
@@ -39,10 +40,23 @@ export default function SlippageWarningModal({ isOpen, onClose }: SlippageWarnin
             {t('swap.settings.slippage.warning.description')}
           </Text>
         </Flex>
-        <Flex centered row width="100%" px={isMobileApp ? '$spacing24' : '$spacing6'}>
-          <Button emphasis="secondary" onPress={onClose}>
-            {t('common.close')}
-          </Button>
+        <Flex centered width="100%" gap="$gap8" px={isMobileApp ? '$spacing24' : '$spacing6'}>
+          {onContinue ? (
+            <>
+              <Button emphasis="secondary" flex={1} onPress={onContinue}>
+                {t('common.button.continue')}
+              </Button>
+              <TouchableArea py="$spacing8" onPress={onClose}>
+                <Text variant="buttonLabel3" color="$neutral2">
+                  {t('common.button.cancel')}
+                </Text>
+              </TouchableArea>
+            </>
+          ) : (
+            <Button flex={1} emphasis="secondary" onPress={onClose}>
+              {t('common.close')}
+            </Button>
+          )}
         </Flex>
       </Flex>
     </Modal>

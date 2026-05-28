@@ -16,7 +16,7 @@ import type {
 import { isConfirmedSwapTypeInfo } from 'uniswap/src/features/transactions/types/utils'
 import { getFormattedCurrencyAmount, getSymbolDisplayText } from 'uniswap/src/utils/currency'
 
-function _SwapSummaryItem({
+function SwapSummaryItemInner({
   transaction,
   swapCallbacks,
   index,
@@ -81,4 +81,4 @@ function _SwapSummaryItem({
   )
 }
 
-export const SwapSummaryItem = memo(_SwapSummaryItem)
+export const SwapSummaryItem = memo(SwapSummaryItemInner)

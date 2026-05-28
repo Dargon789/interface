@@ -1,4 +1,4 @@
-/* eslint-disable @jambit/typed-redux-saga/use-typed-effects -- typed-redux-saga doesn't export these correctly */
+/* oxlint-disable @jambit/typed-redux-saga/use-typed-effects -- typed-redux-saga doesn't export these correctly */
 import type { PutEffect, SelectEffect } from 'redux-saga/effects'
 import { put, type SagaGenerator, select } from 'typed-redux-saga'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -123,10 +123,10 @@ function createSagaTransactionRepository(ctx: TransactionRepositoryReduxContext)
       const filteredTransactions: TransactionDetails[] = pendingTransactions.filter((tx) =>
         Boolean(
           tx.chainId === input.chainId &&
-            tx.status === TransactionStatus.Pending &&
-            isClassic(tx) &&
-            Boolean(tx.options.submitViaPrivateRpc) &&
-            tx.hash,
+          tx.status === TransactionStatus.Pending &&
+          isClassic(tx) &&
+          Boolean(tx.options.submitViaPrivateRpc) &&
+          tx.hash,
         ),
       )
 

@@ -1,9 +1,9 @@
 import type { TokenList } from '@uniswap/token-lists'
-import contenthashToUri from 'lib/utils/contenthashToUri'
-import parseENSAddress from 'lib/utils/parseENSAddress'
 import { uriToHttpUrls } from 'utilities/src/format/urls'
 import { logger } from 'utilities/src/logger/logger'
-import { validateTokenList } from 'utils/validateTokenList'
+import { contenthashToUri } from '~/lib/utils/contenthashToUri'
+import { parseENSAddress } from '~/lib/utils/parseENSAddress'
+import { validateTokenList } from '~/utils/validateTokenList'
 
 const listCache = new Map<string, TokenList>()
 
@@ -12,7 +12,7 @@ const listCache = new Map<string, TokenList>()
  * For a given token list URL, we try to fetch the list from all the possible HTTP URLs.
  * For example, IPFS URLs can be fetched through multiple gateways.
  */
-export default async function fetchTokenList({
+export async function fetchTokenList({
   listUrl,
   resolveENSContentHash,
   skipValidation,
@@ -76,6 +76,7 @@ export default async function fetchTokenList({
       const json = await response.json()
       const list = skipValidation ? json : await validateTokenList(json)
       listCache.set(listUrl, list)
+      // oxlint-disable-next-line typescript/no-unsafe-return -- biome-parity: oxlint is stricter here
       return list
     } catch (error) {
       logger.debug(

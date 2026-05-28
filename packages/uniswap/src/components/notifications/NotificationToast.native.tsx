@@ -39,10 +39,12 @@ export function NotificationToast({
 
   const onDismissLatest = useCallback(() => {
     bannerOffset.value = withSpring(HIDE_OFFSET_Y, SPRING_ANIMATION)
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   const onShowCurrentNotification = useCallback(() => {
     bannerOffset.value = withDelay(SPRING_ANIMATION_DELAY, withSpring(showOffset, SPRING_ANIMATION))
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [showOffset])
 
   const { onActionButtonPress, onNotificationPress, cancelDismiss, dismissLatest } = useNotificationLifecycle({

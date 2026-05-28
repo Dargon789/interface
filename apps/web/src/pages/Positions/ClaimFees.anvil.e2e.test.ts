@@ -1,11 +1,12 @@
 import { getPosition } from '@uniswap/client-data-api/dist/data/v1/api-DataApiService_connectquery'
-import { createExpectSingleTransaction } from 'playwright/anvil/transactions'
-import { expect, getTest } from 'playwright/fixtures'
-import { DEFAULT_TEST_GAS_LIMIT, stubTradingApiEndpoint } from 'playwright/fixtures/tradingApi'
-import { TEST_WALLET_ADDRESS } from 'playwright/fixtures/wallets'
-import { Mocks } from 'playwright/mocks/mocks'
+import { LiquidityService } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_connect'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { createExpectSingleTransaction } from '~/playwright/anvil/transactions'
+import { expect, getTest } from '~/playwright/fixtures'
+import { stubLiquidityServiceEndpoint } from '~/playwright/fixtures/liquidityService'
+import { TEST_WALLET_ADDRESS } from '~/playwright/fixtures/wallets'
+import { Mocks } from '~/playwright/mocks/mocks'
 
 const test = getTest({ withAnvil: true })
 
@@ -26,13 +27,10 @@ test.describe(
         options: { blocks: 2 },
       })
 
-      await stubTradingApiEndpoint({
+      await stubLiquidityServiceEndpoint({
         page,
-        endpoint: uniswapUrls.tradingApiPaths.claimLpFees,
-        modifyResponseData: (data) => {
-          data.claim.gasLimit = DEFAULT_TEST_GAS_LIMIT
-          return data
-        },
+        endpoint: LiquidityService.methods.claimFees,
+        service: LiquidityService,
       })
       await page.route(
         `${uniswapUrls.apiBaseUrlV2}/${getPosition.service.typeName}/${getPosition.name}`,
@@ -46,7 +44,7 @@ test.describe(
       await expectSingleTransaction(async () => {
         await page.getByRole('button', { name: 'Collect fees' }).click()
         await page.getByTestId(TestID.ClaimFees).click()
-        await expect(page.getByText('Collecting fees')).toBeVisible()
+        await expect(page.getByTestId(TestID.ActivityPopup).getByText('Collecting fees')).toBeVisible()
       })
     })
 
@@ -57,17 +55,10 @@ test.describe(
         options: { blocks: 2 },
       })
 
-      await stubTradingApiEndpoint({
+      await stubLiquidityServiceEndpoint({
         page,
-        endpoint: uniswapUrls.tradingApiPaths.claimLpFees,
-        modifyResponseData: (data) => {
-          try {
-            data.claim.gasLimit = DEFAULT_TEST_GAS_LIMIT
-            return data
-          } catch {
-            return data
-          }
-        },
+        endpoint: LiquidityService.methods.claimFees,
+        service: LiquidityService,
       })
       await page.route(
         `${uniswapUrls.apiBaseUrlV2}/${getPosition.service.typeName}/${getPosition.name}`,
@@ -75,13 +66,13 @@ test.describe(
           await route.fulfill({ path: Mocks.Positions.get_v4_position })
         },
       )
-      await page.goto('/positions/v4/ethereum/13298')
+      await page.goto('/positions/v4/ethereum/13281')
 
       // Perform fee claiming and verify transaction was submitted
       await expectSingleTransaction(async () => {
         await page.getByRole('button', { name: 'Collect fees' }).click()
         await page.getByTestId(TestID.ClaimFees).click()
-        await expect(page.getByText('Collecting fees')).toBeVisible()
+        await expect(page.getByTestId(TestID.ActivityPopup).getByText('Collecting fees')).toBeVisible()
       })
     })
   },

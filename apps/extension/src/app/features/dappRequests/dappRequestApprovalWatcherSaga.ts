@@ -1,4 +1,4 @@
-/* eslint-disable complexity */
+/* oxlint-disable complexity */
 import { providerErrors, serializeError } from '@metamask/rpc-errors'
 import { PayloadAction } from '@reduxjs/toolkit'
 import { getAccount, getAccountRequest } from 'src/app/features/dappRequests/accounts'

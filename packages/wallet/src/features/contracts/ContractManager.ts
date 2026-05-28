@@ -27,7 +27,7 @@ export class ContractManager {
     } else {
       logger.debug('ContractManager', 'createContract', `Creating a new contract for: ${chainId} ${address}`)
       const contract = new Contract(address, ABI, provider)
-      // biome-ignore lint/style/noNonNullAssertion: Safe assertion - we just created this chainId key above
+      // oxlint-disable-next-line typescript/no-non-null-assertion -- Safe assertion - we just created this chainId key above
       this._contracts[chainId]![address] = contract
       return contract
     }
@@ -42,7 +42,7 @@ export class ContractManager {
       )
       return
     }
-    // biome-ignore lint/style/noNonNullAssertion: Safe assertion - we checked above that it does exist
+    // oxlint-disable-next-line typescript/no-non-null-assertion -- Safe assertion - we checked above that it does exist
     delete this._contracts[chainId]![address]
   }
 

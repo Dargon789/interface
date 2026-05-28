@@ -104,6 +104,16 @@ export function useExtractedTokenColor({
   const isDarkMode = useIsDarkMode()
   const { foreground } = useColorSchemeFromSeed(tokenName ?? '')
 
+  // Without this, internal state keeps the previous image's color when the URL changes and the new
+  // extraction yields no palette (the sync effect below never calls setTokenColor).
+  useEffect(() => {
+    if (!imageUrl) {
+      return
+    }
+    setTokenColor(defaultColor)
+    setTokenColorLoading(true)
+  }, [imageUrl, defaultColor])
+
   useEffect(() => {
     if (!colorsLoading) {
       setTokenColorLoading(false)

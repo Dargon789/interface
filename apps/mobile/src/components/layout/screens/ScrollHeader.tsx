@@ -14,7 +14,7 @@ type ScrollHeaderProps = {
   showHeaderScrollYDistance: number
   fullScreen?: boolean
   // hard to type
-  // biome-ignore lint/suspicious/noExplicitAny: Ref type varies based on list component used
+  // oxlint-disable-next-line typescript/no-explicit-any -- Ref type varies based on list component used
   listRef: React.MutableRefObject<any>
   centerElement?: JSX.Element
   rightElement?: JSX.Element
@@ -26,8 +26,7 @@ type ScrollHeaderProps = {
  * Fixed header that will fade in on scroll. Define values in parent, to be used by some
  * relevant list component.
  *
- * Used to achieve functionality of HeaderScrollScreen, but can be used in any context. One
- * example is using a scrolled above a full screen view like NFTCollectionScreen.
+ * Used to achieve functionality of HeaderScrollScreen, but can be used in any context.
  */
 export function ScrollHeader({
   listRef,

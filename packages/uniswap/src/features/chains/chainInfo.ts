@@ -4,13 +4,16 @@ import { BASE_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/base'
 import { BLAST_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/blast'
 import { BNB_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/bnb'
 import { CELO_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/celo'
+import { LINEA_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/linea'
 import { MAINNET_CHAIN_INFO, SEPOLIA_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/mainnet'
 import { MONAD_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/monad'
 import { OPTIMISM_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/optimism'
 import { POLYGON_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/polygon'
 import { SONEIUM_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/soneium'
+import { TEMPO_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/tempo'
 import { UNICHAIN_CHAIN_INFO, UNICHAIN_SEPOLIA_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/unichain'
 import { WORLD_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/worldchain'
+import { XLAYER_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/xlayer'
 import { ZKSYNC_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/zksync'
 import { ZORA_CHAIN_INFO } from 'uniswap/src/features/chains/evm/info/zora'
 import { SOLANA_CHAIN_INFO } from 'uniswap/src/features/chains/svm/info/solana'
@@ -36,7 +39,10 @@ export const ORDERED_CHAINS = [
   AVALANCHE_CHAIN_INFO,
   CELO_CHAIN_INFO,
   WORLD_CHAIN_INFO,
+  LINEA_CHAIN_INFO,
   SONEIUM_CHAIN_INFO,
+  TEMPO_CHAIN_INFO,
+  XLAYER_CHAIN_INFO,
   ZORA_CHAIN_INFO,
   ZKSYNC_CHAIN_INFO,
   SEPOLIA_CHAIN_INFO,
@@ -80,7 +86,10 @@ export const UNIVERSE_CHAIN_INFO = {
   [UniverseChainId.Avalanche]: AVALANCHE_CHAIN_INFO,
   [UniverseChainId.Celo]: CELO_CHAIN_INFO,
   [UniverseChainId.WorldChain]: WORLD_CHAIN_INFO,
+  [UniverseChainId.Linea]: LINEA_CHAIN_INFO,
   [UniverseChainId.Soneium]: SONEIUM_CHAIN_INFO,
+  [UniverseChainId.Tempo]: TEMPO_CHAIN_INFO,
+  [UniverseChainId.XLayer]: XLAYER_CHAIN_INFO,
   [UniverseChainId.Zora]: ZORA_CHAIN_INFO,
   [UniverseChainId.Zksync]: ZKSYNC_CHAIN_INFO,
   [UniverseChainId.Monad]: MONAD_CHAIN_INFO,
@@ -104,3 +113,12 @@ export const GQL_TESTNET_CHAINS = ORDERED_EVM_CHAINS.filter((chain) => chain.tes
 // If limit support expands beyond Mainnet, refactor to use a `supportsLimits`
 // property on chain info objects and filter chains, similar to the pattern used above
 export const LIMIT_SUPPORTED_CHAINS = [UniverseChainId.Mainnet]
+
+export const TOUCAN_AUCTION_SUPPORTED_CHAINS = [
+  UniverseChainId.Unichain,
+  UniverseChainId.Mainnet,
+  UniverseChainId.Base,
+  UniverseChainId.ArbitrumOne,
+  UniverseChainId.Sepolia,
+  UniverseChainId.UnichainSepolia,
+]

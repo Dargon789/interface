@@ -1,10 +1,11 @@
 {
+  "tags": ["scope:ui", "type:lib"],
   "targets": {
-    "build": {
-      "dependsOn": ["^build", "build:icons"]
+    "prepare": {
+      "dependsOn": ["build:icons"]
     },
     "build:icons": {
-      "command": "bunx tsx ./src/scripts/componentize-icons.ts && nx lint:biome:fix ui",
+      "command": "bun run ./src/scripts/componentize-icons.ts && nx run ui:format:generated",
       "options": {
         "cwd": "{projectRoot}"
       },
@@ -17,7 +18,7 @@
       "outputs": ["{projectRoot}/src/components/icons/**", "{projectRoot}/src/components/logos/**"]
     },
     "build:icons:missing": {
-      "command": "bunx tsx ./src/scripts/componentize-icons.ts --skip-existing && nx lint:biome:fix ui",
+      "command": "bun run ./src/scripts/componentize-icons.ts --skip-existing && nx run ui:format:generated",
       "options": {
         "cwd": "{projectRoot}"
       },
@@ -29,19 +30,28 @@
       ],
       "outputs": ["{projectRoot}/src/components/icons/**", "{projectRoot}/src/components/logos/**"]
     },
-    "check:deps:usage": {
-      "command": "depcheck",
+    "typecheck": {},
+    "typecheck:tsc": {},
+    "typecheck:tsgo": {},
+    "format": {
+      "command": "oxfmt --threads=4 -c $NX_WORKSPACE_ROOT/.oxfmtrc.json . '!src/components/icons' '!src/components/logos'"
+    },
+    "format:check": {},
+    "format:generated": {
+      "command": "for i in 1 2 3; do oxlint --silent --fix --fix-suggestions --fix-dangerously --disable-nested-config -D sort-imports -D no-unused-vars --threads=1 src/components/icons src/components/logos; done; oxfmt --threads=4 -c $NX_WORKSPACE_ROOT/.oxfmtrc.json src/components/icons src/components/logos",
       "options": {
         "cwd": "{projectRoot}"
-      }
+      },
+      "cache": false
     },
-    "typecheck": {},
-    "lint:biome": {},
-    "lint:biome:fix": {},
-    "lint:eslint": {},
-    "lint:eslint:fix": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
     "lint": {},
     "lint:fix": {},
+    "check": {},
+    "check:fast": {},
+    "check:deps:usage": {},
     "test": {
       "command": "vitest run",
       "options": {

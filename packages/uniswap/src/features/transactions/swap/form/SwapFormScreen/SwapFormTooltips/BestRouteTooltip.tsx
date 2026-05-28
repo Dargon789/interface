@@ -23,14 +23,17 @@ export function BestRouteTooltip(): JSX.Element | null {
 
   const { inputAmount, outputAmount } = trade
 
+  const icon = routingProvider.icon ?? OrderRouting
+  const iconColor = routingProvider.iconColor || '$neutral1'
+
   return (
     <Tooltip.Outer>
       <Tooltip.Header
         title={{
           title: t('common.bestRoute.with', { provider: routingProvider.name }),
         }}
-        Icon={routingProvider.icon ?? OrderRouting}
-        iconColor={routingProvider.iconColor || '$neutral1'}
+        Icon={icon}
+        iconColor={iconColor}
       />
       <Tooltip.Content>
         <Tooltip.Row>

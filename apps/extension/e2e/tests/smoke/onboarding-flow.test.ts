@@ -39,23 +39,8 @@ test.describe('Extension Onboarding Flow', () => {
       timeout: 5000,
     })
 
-    // Check for service workers or background pages
-    const backgroundPages = context.backgroundPages()
+    // MV3 extensions use service workers
     const serviceWorkers = context.serviceWorkers()
-
-    // Either background pages or service workers should exist
-    const hasBackground = backgroundPages.length > 0 || serviceWorkers.length > 0
-    expect(hasBackground).toBe(true)
-
-    if (serviceWorkers.length > 0) {
-      // For service workers, we can't evaluate directly
-    } else if (backgroundPages.length > 0) {
-      // Verify background script is running
-      const background = backgroundPages[0]
-      const hasBackgroundStore = await background?.evaluate(() => {
-        return 'backgroundStore' in window
-      })
-      expect(hasBackgroundStore).toBe(true)
-    }
+    expect(serviceWorkers.length).toBeGreaterThan(0)
   })
 })

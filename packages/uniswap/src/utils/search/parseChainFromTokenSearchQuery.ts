@@ -1,5 +1,8 @@
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { getPossibleChainMatchFromSearchWord } from 'uniswap/src/utils/search/getPossibleChainMatchFromSearchWord'
+import {
+  getPossibleChainMatchFromSearch,
+  sanitizeSearchQuery,
+} from 'uniswap/src/utils/search/getPossibleChainMatchFromSearch'
 
 /**
  * Parses a search query to extract chain filter and search term.
@@ -16,66 +19,28 @@ export function parseChainFromTokenSearchQuery(
   chainFilter: UniverseChainId | null
   searchTerm: string | null
 } {
-  if (!searchQuery) {
+  if (!searchQuery || searchQuery.trim() === '') {
     return {
       chainFilter: null,
       searchTerm: null,
     }
   }
 
-  const sanitizedSearch = searchQuery.trim().replace(/\s+/g, ' ')
+  const sanitizedSearch = sanitizeSearchQuery(searchQuery)
+
+  // Skip if the search is not more than one word
   const splitSearch = sanitizedSearch.split(' ')
-  if (splitSearch.length === 0) {
+  if (splitSearch.length < 2) {
     return {
       chainFilter: null,
-      searchTerm: null,
+      searchTerm: sanitizedSearch,
     }
   }
 
-  if (splitSearch.length === 1) {
-    const singleWordSearch = splitSearch[0]
-    const searchChainMatch = singleWordSearch
-      ? getPossibleChainMatchFromSearchWord(singleWordSearch, enabledChains)
-      : undefined
-    if (searchChainMatch) {
-      return {
-        chainFilter: searchChainMatch,
-        searchTerm: null,
-      }
-    } else {
-      return {
-        chainFilter: null,
-        searchTerm: splitSearch[0] || null,
-      }
-    }
-  }
-
-  const firstWord = splitSearch[0]?.toLowerCase()
-  const lastWord = splitSearch[splitSearch.length - 1]?.toLowerCase()
-
-  const firstWordChainMatch = firstWord ? getPossibleChainMatchFromSearchWord(firstWord, enabledChains) : undefined
-  const lastWordChainMatch = lastWord ? getPossibleChainMatchFromSearchWord(lastWord, enabledChains) : undefined
-
-  if (firstWordChainMatch) {
-    // First word is chain, rest is search term
-    const search = splitSearch.slice(1).join(' ').trim()
-    return {
-      chainFilter: firstWordChainMatch,
-      searchTerm: search || null,
-    }
-  }
-
-  if (lastWordChainMatch) {
-    // Last word is chain, preceding words are search term
-    const search = splitSearch.slice(0, -1).join(' ').trim()
-    return {
-      chainFilter: lastWordChainMatch,
-      searchTerm: search || null,
-    }
-  }
-
+  // Use a matching chain filter if available and update the search query to remove the chain reference
+  const { chainId, searchQuery: searchTerm } = getPossibleChainMatchFromSearch(sanitizedSearch, enabledChains)
   return {
-    chainFilter: null,
-    searchTerm: searchQuery,
+    chainFilter: chainId,
+    searchTerm,
   }
 }

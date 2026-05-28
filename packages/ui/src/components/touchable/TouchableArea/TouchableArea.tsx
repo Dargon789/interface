@@ -1,3 +1,4 @@
+import { isIOS, isMobileApp, isWebPlatform, isTestEnv } from '@universe/environment'
 import { BlurView, type BlurViewProps } from 'expo-blur'
 import React, { Children, cloneElement, forwardRef, isValidElement, memo, type ReactNode, useMemo } from 'react'
 import { type GestureResponderEvent, StyleSheet } from 'react-native'
@@ -11,8 +12,6 @@ import type { TouchableAreaProps } from 'ui/src/components/touchable/TouchableAr
 import { useAutoDimensions } from 'ui/src/components/touchable/TouchableArea/useAutoDimensions'
 import { useAutoHitSlop } from 'ui/src/components/touchable/TouchableArea/useAutoHitSlop'
 import { getMaybeHoverColor, zIndexes } from 'ui/src/theme'
-import { isTestEnv } from 'utilities/src/environment/env'
-import { isIOS, isMobileApp, isWebPlatform } from 'utilities/src/platform'
 import { useEvent } from 'utilities/src/react/hooks'
 
 export type TouchableAreaEvent = GestureResponderEvent
@@ -194,14 +193,14 @@ const TouchableAreaComponentWithoutMemo = forwardRef<TamaguiElement, TouchableAr
         hitSlop={hitSlop}
         variant={variant}
         pressStyle={pressStyle}
-        onLayout={onLayout}
-        onPress={onPress ? handlePress : undefined}
-        onPressIn={onPressIn ? handlePressIn : undefined}
-        onPressOut={onPressOut ? handlePressOut : undefined}
         {...restProps}
         {...animationAndAnimateOnly}
         width={width}
         height={height}
+        onLayout={onLayout}
+        onPress={onPress ? handlePress : undefined}
+        onPressIn={onPressIn ? handlePressIn : undefined}
+        onPressOut={onPressOut ? handlePressOut : undefined}
       >
         <WithInjectedColors enabled={shouldAutomaticallyInjectColors} variant={variant} disabled={restProps.disabled}>
           {children}
@@ -224,14 +223,14 @@ const TouchableAreaComponentWithoutMemo = forwardRef<TamaguiElement, TouchableAr
       variant={variant}
       hitSlop={hitSlop}
       pressStyle={pressStyle}
-      onLayout={onLayout}
-      onPress={onPress ? handlePress : undefined}
-      onPressIn={onPressIn ? handlePressIn : undefined}
-      onPressOut={onPressOut ? handlePressOut : undefined}
       {...restProps}
       {...animationAndAnimateOnly}
       width={width}
       height={height}
+      onLayout={onLayout}
+      onPress={onPress ? handlePress : undefined}
+      onPressIn={onPressIn ? handlePressIn : undefined}
+      onPressOut={onPressOut ? handlePressOut : undefined}
     >
       <WithInjectedColors enabled={shouldAutomaticallyInjectColors} variant={variant} disabled={restProps.disabled}>
         {children}

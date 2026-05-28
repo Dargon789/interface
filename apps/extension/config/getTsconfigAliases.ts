@@ -1,4 +1,3 @@
-/* eslint-disable import/no-unused-modules */
 import fs from 'fs'
 import path from 'path'
 

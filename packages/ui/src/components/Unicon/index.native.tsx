@@ -12,9 +12,9 @@ import { isSVMAddress } from 'utilities/src/addresses/svm/svm'
 // Add 1 to effectively increase margin between svg and surrounding box, otherwise get a cropping issue
 // Magic numbers to make SVG with border look right - makes the margin larger, and shifts the SVG down and right
 
-export const Unicon = memo(_Unicon)
+export const Unicon = memo(UniconIcon)
 
-export function _Unicon({ address, size = 32 }: UniconProps): JSX.Element | null {
+export function UniconIcon({ address, size = 32 }: UniconProps): JSX.Element | null {
   const isDarkMode = useIsDarkMode()
 
   if (!address || (!isEVMAddressWithChecksum(address) && !isSVMAddress(address))) {

@@ -6,11 +6,11 @@ import { useBridgingModalActions } from 'uniswap/src/features/transactions/swap/
 import { useCurrenciesWithBridgingWarnings } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useCurrenciesWithBridgingWarnings'
 import { useCurrenciesWithProtectionWarnings } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useCurrenciesWithProtectionWarnings'
 import { useOnReviewPress } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useOnReviewPress'
-import { BridgingModal } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/SwapFormWarningModals/BridgingModal'
 import {
   useSwapFormWarningStore,
   useSwapFormWarningStoreActions,
 } from 'uniswap/src/features/transactions/swap/form/stores/swapFormWarningStore/useSwapFormWarningStore'
+import { BridgingModal } from 'uniswap/src/features/transactions/swap/form/SwapFormScreen/SwapFormWarningModals/BridgingModal'
 import { useSwapFormStore } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
 
 const LocalLowNativeBalanceModal = (): JSX.Element => {

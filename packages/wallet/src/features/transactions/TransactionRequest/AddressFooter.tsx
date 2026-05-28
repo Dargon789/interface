@@ -1,3 +1,4 @@
+import { isExtensionApp, isMobileApp } from '@universe/environment'
 import { useTranslation } from 'react-i18next'
 import { Flex, SpaceTokens, Text, Tooltip } from 'ui/src'
 import { AlertTriangleFilled } from 'ui/src/components/icons'
@@ -5,7 +6,6 @@ import { AddressDisplay } from 'uniswap/src/components/accounts/AddressDisplay'
 import { ContentRow } from 'uniswap/src/components/transactions/requests/ContentRow'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
-import { isExtensionApp, isMobileApp } from 'utilities/src/platform'
 
 export function AddressFooter({
   connectedAccountAddress,
@@ -43,7 +43,6 @@ export function AddressFooter({
         }
       >
         <AddressDisplay
-          disableForcedWidth
           hideAddressInSubtitle
           address={currentAccountAddress}
           horizontalGap="$spacing4"

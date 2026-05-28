@@ -1,15 +1,15 @@
 import { Web3Provider } from '@ethersproject/providers'
-import { useAccount } from 'hooks/useAccount'
-import { useEthersWeb3Provider } from 'hooks/useEthersProvider'
+import { HexString } from '@universe/encoding'
 import { useEffect, useMemo } from 'react'
-import { ActivityUpdateTransactionType, OnActivityUpdate } from 'state/activity/types'
-import { usePendingTransactions } from 'state/transactions/hooks'
-import { PendingTransactionDetails } from 'state/transactions/types'
 import { TransactionStatus } from 'uniswap/src/features/transactions/types/transactionDetails'
-import { HexString } from 'utilities/src/addresses/hex'
 import { logger } from 'utilities/src/logger/logger'
 import { useEvent } from 'utilities/src/react/hooks'
 import { ONE_HOUR_MS } from 'utilities/src/time/time'
+import { useAccount } from '~/hooks/useAccount'
+import { useEthersWeb3Provider } from '~/hooks/useEthersProvider'
+import { ActivityUpdateTransactionType, OnActivityUpdate } from '~/state/activity/types'
+import { usePendingTransactions } from '~/state/transactions/hooks'
+import { PendingTransactionDetails } from '~/state/transactions/types'
 
 type PendingBatchDetails = Required<Pick<PendingTransactionDetails, 'batchInfo'>> & PendingTransactionDetails
 
@@ -86,17 +86,15 @@ export function usePollPendingBatchTransactions(onActivityUpdate: OnActivityUpda
           finalizeBatch({ transaction, onActivityUpdate, hash, status: updatedStatus })
         }
         if (result.status >= 400) {
-          if (receipt) {
-            const hash = receipt.transactionHash
-            finalizeBatch({ transaction, onActivityUpdate, hash, status: TransactionStatus.Failed })
-            return
-          }
-          throw new Error(
-            `Failure status of ${result.status} received from ${transaction.batchInfo.connectorId ?? 'wallet'} with no receipt`,
-          )
+          // Per EIP-5792, status 400 (OffchainFailure) means the batch was never included onchain
+          // Status 500 (ChainRulesFailure, batch reverted) should include a receipt, but if
+          // the wallet doesn't surface one we still treat the batch as definitively
+          // failed rather than retrying.
+          const hash = receipt?.transactionHash
+          finalizeBatch({ transaction, onActivityUpdate, hash, status: TransactionStatus.Failed })
+          return
         }
       } catch (error) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         FAILURE_COUNT_MAP[transaction.batchInfo.batchId] = (FAILURE_COUNT_MAP[transaction.batchInfo.batchId] ?? 0) + 1
         if (FAILURE_COUNT_MAP[transaction.batchInfo.batchId] >= FAILURE_COUNT_THRESHOLD) {
           const connectorId = transaction.batchInfo.connectorId

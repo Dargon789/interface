@@ -1,273 +1,36 @@
-import { ChartTooltip } from 'components/Charts/ChartTooltip'
-import { CustomHoverMarker } from 'components/Charts/CustomHoverMarker'
-import { useApplyChartTextureEffects } from 'components/Charts/hooks/useApplyChartTextureEffects'
-import { ChartModelWithLiveDot, LiveDotRenderer } from 'components/Charts/LiveDotRenderer'
-import { StaleBanner } from 'components/Charts/StaleBanner'
-import { PROTOCOL_LEGEND_ELEMENT_ID, SeriesDataItemType } from 'components/Charts/types'
-import { formatTickMarks } from 'components/Charts/utils'
-import { useOnClickOutside } from 'hooks/useOnClickOutside'
 import { atom } from 'jotai'
 import { useUpdateAtom } from 'jotai/utils'
-import {
-  BarPrice,
-  CrosshairMode,
-  createChart,
-  DeepPartial,
-  IChartApi,
-  ISeriesApi,
-  LineStyle,
-  Logical,
-  TimeChartOptions,
-} from 'lightweight-charts'
 import { ReactElement, TouchEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { assertWebElement, ColorTokens, Flex, TamaguiElement, useMedia, useSporeColors } from 'ui/src'
 import { useCurrentLocale } from 'uniswap/src/features/language/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { NumberType } from 'utilities/src/format/types'
-import { v4 as uuidv4 } from 'uuid'
+import { ChartModel } from '~/components/Charts/ChartModelCore'
+import type { ChartDataParams, ChartUtilParams } from '~/components/Charts/ChartModelCore'
+import { ChartTooltip } from '~/components/Charts/ChartTooltip'
+import { CustomHoverMarker } from '~/components/Charts/CustomHoverMarker'
+import { useApplyChartTextureEffects } from '~/components/Charts/hooks/useApplyChartTextureEffects'
+import { ChartModelWithLiveDot, LiveDotRenderer } from '~/components/Charts/LiveDotRenderer'
+import { StaleBanner } from '~/components/Charts/StaleBanner'
+import { SeriesDataItemType } from '~/components/Charts/types'
+import { useOnClickOutside } from '~/hooks/useOnClickOutside'
+
+export {
+  ChartModel,
+  DEFAULT_BOTTOM_PRICE_SCALE_MARGIN,
+  DEFAULT_TOP_PRICE_SCALE_MARGIN,
+} from '~/components/Charts/ChartModelCore'
+export type { ChartHoverData, ChartModelParams } from '~/components/Charts/ChartModelCore'
 
 export const refitChartContentAtom = atom<(() => void) | undefined>(undefined)
-
-export const DEFAULT_TOP_PRICE_SCALE_MARGIN = 0.32
-export const DEFAULT_BOTTOM_PRICE_SCALE_MARGIN = 0.15
-
-interface ChartUtilParams<TDataType extends SeriesDataItemType> {
-  locale: string
-  colors: ReturnType<typeof useSporeColors>
-  format: ReturnType<typeof useLocalizationContext>
-  isLargeScreen: boolean
-  onCrosshairMove?: (data: TDataType | undefined) => void
-}
-
-interface ChartDataParams<TDataType extends SeriesDataItemType> {
-  color?: ColorTokens
-  data: TDataType[]
-  /** Repesents whether `data` is stale. If true, stale UI will appear */
-  stale?: boolean
-  hideTooltipBorder?: boolean
-  tokenFormatType?: NumberType
-}
-
-export type ChartModelParams<TDataType extends SeriesDataItemType> = ChartUtilParams<TDataType> &
-  ChartDataParams<TDataType>
 
 type ChartTooltipBodyComponent<TDataType extends SeriesDataItemType> = React.FunctionComponent<{
   data: TDataType
 }>
 
-export type ChartHoverData<TDataType extends SeriesDataItemType> = {
-  item: TDataType
-  x: number
-  y: number
-  logicalIndex: Logical
-}
-
-/** Util for managing lightweight-charts' state outside of the React Lifecycle. */
-export abstract class ChartModel<TDataType extends SeriesDataItemType> {
-  protected api: IChartApi
-  protected abstract series: ISeriesApi<any>
-  protected data: TDataType[]
-  protected chartDiv: HTMLDivElement
-  protected onCrosshairMove?: (data: TDataType | undefined, index: number | undefined) => void
-  private _hoverData?: ChartHoverData<TDataType> | undefined
-  private _lastTooltipWidth: number | null = null
-
-  public tooltipId = `chart-tooltip-${uuidv4()}`
-
-  /** Get current hover coordinates for custom marker rendering */
-  public getHoverCoordinates(): { x: number; y: number } | null {
-    if (!this._hoverData) {
-      return null
-    }
-    // Adjust x coordinate to account for price scale width
-    return {
-      x: this._hoverData.x + this.api.priceScale('left').width(),
-      y: this._hoverData.y,
-    }
+function handleSetAtomResult(result: void | Promise<void>): void {
+  if (result) {
+    result.catch(() => undefined)
   }
-
-  constructor(chartDiv: HTMLDivElement, params: ChartModelParams<TDataType>) {
-    this.chartDiv = chartDiv
-    this.onCrosshairMove = params.onCrosshairMove
-    this.data = params.data
-
-    this.api = createChart(chartDiv)
-
-    this.api.subscribeCrosshairMove((param) => {
-      let newHoverData: ChartHoverData<TDataType> | undefined
-      const logical = param.logical
-      const x = param.point?.x
-      const y = param.point?.y
-
-      if (
-        x !== undefined &&
-        isBetween(x, 0, this.chartDiv.clientWidth) &&
-        y !== undefined &&
-        isBetween(y, 0, this.chartDiv.clientHeight) &&
-        logical !== undefined
-      ) {
-        const item = param.seriesData.get(this.series) as TDataType | undefined
-        if (item) {
-          newHoverData = { item, x, y, logicalIndex: logical }
-        }
-      }
-
-      const prevHoverData = this._hoverData
-      if (
-        newHoverData?.item.time !== prevHoverData?.item.time ||
-        newHoverData?.logicalIndex !== prevHoverData?.logicalIndex ||
-        newHoverData?.x !== prevHoverData?.x ||
-        newHoverData?.y !== prevHoverData?.y
-      ) {
-        this._hoverData = newHoverData
-        // Dynamically accesses this.onCrosshairMove rather than params.onCrosshairMove so we only ever have to make one subscribeCrosshairMove call
-        this.onSeriesHover(newHoverData)
-      }
-    })
-  }
-
-  /**
-   * Updates React state with the current crosshair data.
-   * This method should be overridden in subclasses to provide specific hover functionality.
-   * When overriding, call `super.onSeriesHover(data)` to maintain base functionality.
-   */
-  protected onSeriesHover(hoverData?: ChartHoverData<TDataType>) {
-    this.onCrosshairMove?.(hoverData?.item, hoverData?.logicalIndex)
-
-    if (!hoverData) {
-      return
-    }
-
-    // Tooltip positioning modified from https://github.com/tradingview/lightweight-charts/blob/master/plugin-examples/src/plugins/tooltip/tooltip.ts
-    const x = hoverData.x + this.api.priceScale('left').width() + 10
-    const deadzoneWidth = this._lastTooltipWidth ? Math.ceil(this._lastTooltipWidth) : 45
-    const xAdjusted = Math.min(x, this.api.paneSize().width - deadzoneWidth)
-
-    const transformX = `calc(${xAdjusted}px)`
-
-    const y = hoverData.y
-    const flip = y <= 20 + 100
-    // Add extra offset when in upper left to prevent cursor overlap
-    const extraOffset = y < 50 && hoverData.x < 100 ? 10 : 0
-    const yPx = y + (flip ? 1 : -1) * (20 + extraOffset)
-    const yPct = flip ? '' : ' - 100%'
-    const transformY = `calc(${yPx}px${yPct})`
-
-    const tooltip = document.getElementById(this.tooltipId)
-    const legend = document.getElementById(PROTOCOL_LEGEND_ELEMENT_ID)
-
-    if (tooltip) {
-      tooltip.style.transform = `translate(${transformX}, ${transformY})`
-
-      const tooltipMeasurement = tooltip.getBoundingClientRect()
-      this._lastTooltipWidth = tooltipMeasurement.width || null
-    }
-    if (legend) {
-      // keep legend centered on mouse cursor if hovered
-      legend.style.left = `${x}px`
-      const heroWidth = 230
-      // adjust height of tooltip if hovering below the hero text
-      if (x < heroWidth) {
-        legend.style.top = '80px'
-      } else {
-        legend.style.top = 'unset'
-      }
-      const transformOffset = 60
-      const maxXOffset = this.api.paneSize().width - 40
-      // keeps the legend centered on mouse x axis without getting cut off by chart edges
-      if (x < transformOffset) {
-        // Additional 4px of padding is added to prevent box-shadow from being cutoff
-        legend.style.transform = `translateX(-${x - 4}%)`
-      } else if (x > maxXOffset) {
-        legend.style.transform = `translateX(-${transformOffset + (x - maxXOffset)}%)`
-      } else {
-        legend.style.transform = `translateX(-${transformOffset}%)`
-      }
-    }
-  }
-
-  /** Updates the chart without re-creating it or resetting pan/zoom. */
-  public updateOptions(
-    { locale, colors, format, isLargeScreen, onCrosshairMove }: ChartModelParams<TDataType>,
-    nonDefaultChartOptions?: DeepPartial<TimeChartOptions>,
-  ) {
-    this.onCrosshairMove = onCrosshairMove
-
-    // Below are default options that will apply to all Chart models that extend this class and call super.updateOptions().
-    // Subclasses can override / extend these options by passing in nonDefaultChartOptions.
-    const defaultOptions: DeepPartial<TimeChartOptions> = {
-      localization: {
-        locale,
-        priceFormatter: (price: BarPrice) => format.convertFiatAmountFormatted(price, NumberType.FiatTokenPrice),
-      },
-      autoSize: true,
-      layout: { textColor: colors.neutral2.val, background: { color: 'transparent' } },
-      timeScale: {
-        tickMarkFormatter: formatTickMarks,
-        borderVisible: false,
-        ticksVisible: false,
-        timeVisible: true,
-        fixLeftEdge: true,
-        fixRightEdge: true,
-      },
-      rightPriceScale: {
-        visible: isLargeScreen,
-        borderVisible: false,
-        scaleMargins: {
-          top: DEFAULT_TOP_PRICE_SCALE_MARGIN,
-          bottom: DEFAULT_BOTTOM_PRICE_SCALE_MARGIN,
-        },
-        autoScale: true,
-      },
-      grid: {
-        vertLines: {
-          visible: false,
-        },
-        horzLines: {
-          visible: false,
-        },
-      },
-      crosshair: {
-        horzLine: {
-          visible: true,
-          style: LineStyle.Solid,
-          width: 1,
-          color: colors.surface3.val,
-          labelVisible: false,
-        },
-        mode: CrosshairMode.Magnet,
-        vertLine: {
-          visible: true,
-          style: LineStyle.Solid,
-          width: 1,
-          color: colors.surface3.val,
-          labelVisible: false,
-        },
-      },
-      // Enable scrolling vertically when onTouchMove is enabled on mobile devices (when chart is not focused)
-      handleScroll: {
-        horzTouchDrag: true,
-        vertTouchDrag: false,
-      },
-    }
-
-    this.api.applyOptions({ ...defaultOptions, ...nonDefaultChartOptions })
-  }
-
-  /** Updates visible range to fit all data from all series. */
-  public fitContent() {
-    this.api.timeScale().fitContent()
-  }
-
-  /** Removes the injected canvas from the chartDiv. */
-  public remove() {
-    this.api.remove()
-  }
-}
-
-// eslint-disable-next-line max-params
-function isBetween(num: number, lower: number, upper: number): boolean {
-  return num > lower && num < upper
 }
 
 /** Returns a div injected with a lightweight-chart, corresponding to the given Model and params */
@@ -277,6 +40,7 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
   params,
   height,
   children,
+  onCrosshairChange,
   className,
   disableChartTouchPanning,
   showDottedBackground = false,
@@ -288,7 +52,8 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
   TooltipBody?: ChartTooltipBodyComponent<TDataType>
   params: TParamType
   height?: number
-  children?: (crosshair?: TDataType) => ReactElement
+  children?: (crosshair?: TDataType) => ReactElement | null
+  onCrosshairChange?: (crosshair?: TDataType) => void
   className?: string
   disableChartTouchPanning?: boolean // On touch devices, optionally disables chart touch panning on mobile devices to avoid interfering with vertical scrolling
   showDottedBackground?: boolean
@@ -302,15 +67,22 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
   const [chartDivElement, setChartDivElement] = useState<TamaguiElement | null>(null)
   const [crosshairData, setCrosshairData] = useState<TDataType | undefined>(undefined)
   const [hoverCoordinates, setHoverCoordinates] = useState<{ x: number; y: number } | null>(null)
+  const [isZoomed, setIsZoomed] = useState(false)
   const format = useLocalizationContext()
   const sporeColors = useSporeColors()
   const locale = useCurrentLocale()
   const media = useMedia()
   const isLargeScreen = !media.lg
+  const onCrosshairChangeRef = useRef(onCrosshairChange)
+
+  useEffect(() => {
+    onCrosshairChangeRef.current = onCrosshairChange
+  }, [onCrosshairChange])
 
   const handleCrosshairMove = useMemo(
     () => (data: TDataType | undefined) => {
       setCrosshairData(data)
+      onCrosshairChangeRef.current?.(data)
       if (chartModelRef.current) {
         const coords = chartModelRef.current.getHoverCoordinates()
         setHoverCoordinates(coords)
@@ -361,12 +133,24 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
     if (chartDivElement && chartModelRef.current === undefined) {
       assertWebElement(chartDivElement)
       chartModelRef.current = new Model(chartDivElement, modelParams)
-      // Providers the time period selector with a handle to refit the chart
-      setRefitChartContent(() => () => chartModelRef.current?.fitContent())
+      // Provides the time period selector with a handle to refit the chart
+      handleSetAtomResult(setRefitChartContent(() => () => chartModelRef.current?.fitContent()))
       // Trigger re-render so LiveDotRenderer can access the chart model
       setIsChartModelReady(true)
     }
   }, [Model, chartDivElement, modelParams, setRefitChartContent])
+
+  // Track zoom state changes to hide live dot when zoomed
+  useEffect(() => {
+    if (!chartModelRef.current || !isChartModelReady) {
+      return undefined
+    }
+    const updateZoomState = (): void => {
+      setIsZoomed(chartModelRef.current?.isZoomed() ?? false)
+    }
+    updateZoomState()
+    return chartModelRef.current.subscribeToVisibleRangeChange(updateZoomState)
+  }, [isChartModelReady])
 
   // Keeps the chart up-to-date with latest data/params, without re-creating the entire chart
   useEffect(() => {
@@ -376,12 +160,13 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
   // Handles chart removal on unmount
   useEffect(() => {
     return () => {
+      onCrosshairChangeRef.current?.(undefined)
       chartModelRef.current?.remove()
       // This ref's value will persist when being initially remounted in React.StrictMode.
       // The persisted IChartApi would err if utilized after calling remove(), so we manually clear the ref here.
       chartModelRef.current = undefined
       setIsChartModelReady(false)
-      setRefitChartContent(undefined)
+      handleSetAtomResult(setRefitChartContent(undefined))
     }
   }, [setRefitChartContent])
 
@@ -389,6 +174,7 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
     node: { current: chartDivElement } as React.RefObject<HTMLDivElement | null>,
     handler: () => {
       setCrosshairData(undefined)
+      onCrosshairChangeRef.current?.(undefined)
       setHoverCoordinates(null)
     },
   })
@@ -431,11 +217,12 @@ export function Chart<TParamType extends ChartDataParams<TDataType>, TDataType e
       {showCustomHoverMarker && hoverCoordinates && chartDivElement && chartModelRef.current && (
         <CustomHoverMarker coordinates={hoverCoordinates} lineColor={colors.accent1.val} />
       )}
-      {/* Live dot indicator at the end of line charts */}
+      {/* Live dot indicator at the end of line charts - hidden when zoomed */}
       {chartDivElement && isChartModelReady && chartModelRef.current && (
         <LiveDotRenderer
           chartModel={chartModelRef.current as ChartModelWithLiveDot}
           isHovering={!!crosshairData}
+          isZoomed={isZoomed}
           chartContainer={chartDivElement as HTMLDivElement}
           overrideColor={overrideColor}
           dataKey={dataKey}

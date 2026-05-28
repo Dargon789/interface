@@ -25,7 +25,7 @@ export function navigate<RouteName extends keyof RootParamList>(...args: RootNav
 
   // Type assignment to `any` is a workaround until we figure out how to
   // type `createNavigationContainerRef` in a way that's compatible
-  // biome-ignore lint/suspicious/noExplicitAny: Navigation refs need flexible typing
+  // oxlint-disable-next-line typescript/no-explicit-any -- Navigation refs need flexible typing
   navigationRef.navigate(routeName as any, params as never)
 }
 

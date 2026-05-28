@@ -9,40 +9,24 @@
         ],
         "components": [
           {
-            "#": "/nfts/asset/*",
-            "comment": "NFT Item"
-          },
-          {
-            "#": "/nfts/collection/*",
-            "comment": "NFT Collection"
-          },
-          {
             "#": "/tokens/*",
             "comment": "Token address"
           },
           {
-            "#": "/address/*",
-            "comment": "Wallet address"
-          },
-          {
-            "/": "/nfts/asset/*",
-            "comment": "NFT Item"
-          },
-          {
-            "/": "/nfts/collection/*",
-            "comment": "NFT Collection"
+            "#": "/portfolio/*",
+            "comment": "Wallet portfolio"
           },
           {
             "/": "/tokens/*",
             "comment": "Token address"
           },
           {
-            "/": "/address/*",
-            "comment": "Wallet address"
+            "/": "/portfolio/*",
+            "comment": "Wallet portfolio"
           },
           {
-            "/": "/explore/*",
-            "comment": "Explore"
+            "/": "/explore/tokens/*",
+            "comment": "Explore Tokens"
           },
           {
             "/": "/swap/*",

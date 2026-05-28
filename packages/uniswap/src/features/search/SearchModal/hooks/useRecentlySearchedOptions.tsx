@@ -1,9 +1,9 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { isMobileApp, isWebApp } from '@universe/environment'
 import { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { usePoolSearchResultsToPoolOptions } from 'uniswap/src/components/lists/items/pools/usePoolSearchResultsToPoolOptions'
 import {
-  NFTCollectionOption,
+  MultichainTokenOption,
   OnchainItemListOptionType,
   PoolOption,
   SearchModalOption,
@@ -15,20 +15,64 @@ import { useCurrencyInfosToTokenOptions } from 'uniswap/src/components/TokenSele
 import { getNativeAddress } from 'uniswap/src/constants/addresses'
 import { normalizeCurrencyIdForMapLookup, normalizeTokenAddressForCache } from 'uniswap/src/data/cache'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
+import { CurrencyInfo, MultichainSearchResult } from 'uniswap/src/features/dataApi/types'
 import {
   isEtherscanSearchHistoryResult,
-  isNFTCollectionSearchHistoryResult,
+  isMultichainTokenSearchHistoryResult,
   isPoolSearchHistoryResult,
   isTokenSearchHistoryResult,
   isWalletSearchHistoryResult,
+  MultichainTokenSearchHistoryResult,
   SearchHistoryResult,
 } from 'uniswap/src/features/search/SearchHistoryResult'
 import { SearchTab } from 'uniswap/src/features/search/SearchModal/types'
 import { selectSearchHistory } from 'uniswap/src/features/search/selectSearchHistory'
 import { useCurrencyInfos } from 'uniswap/src/features/tokens/useCurrencyInfo'
-import { buildCurrencyId, buildNativeCurrencyId, currencyId } from 'uniswap/src/utils/currencyId'
-import { isMobileApp, isWebApp } from 'utilities/src/platform'
+import { buildCurrencyId, buildNativeCurrencyId, currencyId, currencyIdToChain } from 'uniswap/src/utils/currencyId'
+
+function dedupeCurrencyIds(ids: string[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const id of ids) {
+    const k = normalizeCurrencyIdForMapLookup(id)
+    if (!seen.has(k)) {
+      seen.add(k)
+      out.push(id)
+    }
+  }
+  return out
+}
+
+function multichainHistoryToTokenOption(
+  history: MultichainTokenSearchHistoryResult,
+  currencyInfoById: Map<string, CurrencyInfo>,
+): MultichainTokenOption | undefined {
+  const tokens: CurrencyInfo[] = []
+  for (const id of history.tokenCurrencyIds) {
+    const info = currencyInfoById.get(normalizeCurrencyIdForMapLookup(id))
+    if (info) {
+      tokens.push(info)
+    }
+  }
+  const primaryCurrencyInfo = tokens[0]
+  if (!primaryCurrencyInfo) {
+    return undefined
+  }
+  const multichainResult: MultichainSearchResult = {
+    id: history.multichainId,
+    name: history.name,
+    symbol: history.symbol,
+    logoUrl: history.logoUrl,
+    tokens,
+    safetyInfo: primaryCurrencyInfo.safetyInfo,
+  }
+  return {
+    type: OnchainItemListOptionType.MultichainToken,
+    multichainResult,
+    primaryCurrencyInfo,
+    ...(history.tdpChainFilter != null ? { tdpChainFilter: history.tdpChainFilter } : {}),
+  }
+}
 
 export function useRecentlySearchedOptions({
   chainFilter,
@@ -39,56 +83,82 @@ export function useRecentlySearchedOptions({
   activeTab: SearchTab
   numberOfRecentSearchResults: number
 }): SearchModalOption[] {
-  const viewExternalWalletsFeatureEnabled = useFeatureFlag(FeatureFlags.ViewExternalWalletsOnWeb)
-  const walletSearchEnabledOnWeb = isWebApp && viewExternalWalletsFeatureEnabled
   const recentHistory = useSelector(selectSearchHistory)
     .filter((searchResult) => {
       switch (activeTab) {
         case SearchTab.Tokens:
-          return isTokenSearchHistoryResult(searchResult)
+          return isTokenSearchHistoryResult(searchResult) || isMultichainTokenSearchHistoryResult(searchResult)
         case SearchTab.Pools:
           return isPoolSearchHistoryResult(searchResult)
         case SearchTab.Wallets:
           return isWalletSearchHistoryResult(searchResult)
-        case SearchTab.NFTCollections:
-          return isNFTCollectionSearchHistoryResult(searchResult)
         default:
         case SearchTab.All:
           if (isMobileApp) {
             return (
               isTokenSearchHistoryResult(searchResult) ||
-              isWalletSearchHistoryResult(searchResult) ||
-              isNFTCollectionSearchHistoryResult(searchResult)
+              isMultichainTokenSearchHistoryResult(searchResult) ||
+              isWalletSearchHistoryResult(searchResult)
             )
           }
           // Web platform
           return (
             isTokenSearchHistoryResult(searchResult) ||
+            isMultichainTokenSearchHistoryResult(searchResult) ||
             isPoolSearchHistoryResult(searchResult) ||
-            (walletSearchEnabledOnWeb && isWalletSearchHistoryResult(searchResult))
+            (isWebApp && isWalletSearchHistoryResult(searchResult))
           )
       }
     })
     .filter((searchResult) => {
-      return (
-        isWalletSearchHistoryResult(searchResult) ||
-        isEtherscanSearchHistoryResult(searchResult) ||
-        (chainFilter ? searchResult.chainId === chainFilter : true)
-      )
+      if (isWalletSearchHistoryResult(searchResult) || isEtherscanSearchHistoryResult(searchResult)) {
+        return true
+      }
+      if (!chainFilter) {
+        return true
+      }
+      if (isMultichainTokenSearchHistoryResult(searchResult)) {
+        return searchResult.tokenCurrencyIds.some((id) => currencyIdToChain(id) === chainFilter)
+      }
+      if (isTokenSearchHistoryResult(searchResult) || isPoolSearchHistoryResult(searchResult)) {
+        return searchResult.chainId === chainFilter
+      }
+      return true
     })
     .slice(0, numberOfRecentSearchResults)
 
-  // Fetch updated currencyInfos for each recent token search result
-  // Token info may change since last stored in redux (protectionInfo/feeData/logoUrl/etc), so we should refetch currencyInfos from saved chain+address. See PORT-419
-  const currencyIds = recentHistory.filter(isTokenSearchHistoryResult).map((searchResult) => {
+  // Fetch updated currencyInfos for each recent token + multichain token search result
+  // Token info may change since last stored in redux (protectionInfo/feeData/logoUrl/etc),
+  // so we should refetch currencyInfos from saved chain+address. See CONS-419
+  const tokenHistoryCurrencyIds = recentHistory.filter(isTokenSearchHistoryResult).map((searchResult) => {
     const id = searchResult.address
       ? buildCurrencyId(searchResult.chainId, searchResult.address)
       : buildNativeCurrencyId(searchResult.chainId)
     return id
   })
-  const tokenCurrencyInfos = useCurrencyInfos(currencyIds)
+  const multichainHistoryCurrencyIds = recentHistory
+    .filter(isMultichainTokenSearchHistoryResult)
+    .flatMap((r) => r.tokenCurrencyIds)
+
+  const allCurrencyIds = dedupeCurrencyIds([...tokenHistoryCurrencyIds, ...multichainHistoryCurrencyIds])
+  const tokenCurrencyInfos = useCurrencyInfos(allCurrencyIds)
+
+  const currencyInfoById = useMemo(() => {
+    const map = new Map<string, CurrencyInfo>()
+    for (const info of tokenCurrencyInfos) {
+      if (info) {
+        map.set(normalizeCurrencyIdForMapLookup(info.currencyId), info)
+      }
+    }
+    return map
+  }, [tokenCurrencyInfos])
+
+  const tokenCurrencyInfosForOptions = tokenHistoryCurrencyIds
+    .map((id) => currencyInfoById.get(normalizeCurrencyIdForMapLookup(id)))
+    .filter((info): info is CurrencyInfo => info !== undefined)
+
   const tokenOptions = useCurrencyInfosToTokenOptions({
-    currencyInfos: tokenCurrencyInfos.filter((info): info is CurrencyInfo => info !== undefined),
+    currencyInfos: tokenCurrencyInfosForOptions,
   })
 
   // Get pool options
@@ -101,13 +171,6 @@ export function useRecentlySearchedOptions({
       type: OnchainItemListOptionType.WalletByAddress,
     }))
 
-  const nftOptions: NFTCollectionOption[] = recentHistory
-    .filter(isNFTCollectionSearchHistoryResult)
-    .map((searchResult) => ({
-      ...searchResult,
-      type: OnchainItemListOptionType.NFTCollection,
-    }))
-
   return useMemo(() => {
     /** If we only have 1 asset type, we can return the Options directly */
     if (recentHistory.every(isTokenSearchHistoryResult)) {
@@ -116,8 +179,6 @@ export function useRecentlySearchedOptions({
       return poolOptions
     } else if (recentHistory.every(isWalletSearchHistoryResult)) {
       return walletOptions
-    } else if (recentHistory.every(isNFTCollectionSearchHistoryResult)) {
-      return nftOptions
     }
 
     /** Otherwise need to re-order our optionItems to match the original recentHistory order: */
@@ -136,11 +197,6 @@ export function useRecentlySearchedOptions({
       walletOptionsMap[normalizeTokenAddressForCache(option.address)] = option
     })
 
-    const nftOptionsMap: { [key: string]: NFTCollectionOption } = {}
-    nftOptions.forEach((option) => {
-      nftOptionsMap[normalizeTokenAddressForCache(option.address)] = option
-    })
-
     const data: SearchModalOption[] = []
     recentHistory.forEach((asset: SearchHistoryResult) => {
       if (isTokenSearchHistoryResult(asset)) {
@@ -154,15 +210,15 @@ export function useRecentlySearchedOptions({
       } else if (isPoolSearchHistoryResult(asset)) {
         const option = poolOptionsMap[`${asset.chainId}-${normalizeTokenAddressForCache(asset.poolId)}`]
         option && data.push(option)
+      } else if (isMultichainTokenSearchHistoryResult(asset)) {
+        const option = multichainHistoryToTokenOption(asset, currencyInfoById)
+        option && data.push(option)
       } else if (isWalletSearchHistoryResult(asset)) {
         const option = walletOptionsMap[normalizeTokenAddressForCache(asset.address)]
-        option && data.push(option)
-      } else if (isNFTCollectionSearchHistoryResult(asset)) {
-        const option = nftOptionsMap[normalizeTokenAddressForCache(asset.address)]
         option && data.push(option)
       }
     })
 
     return data
-  }, [recentHistory, tokenOptions, poolOptions, walletOptions, nftOptions])
+  }, [recentHistory, tokenOptions, poolOptions, walletOptions, currencyInfoById])
 }

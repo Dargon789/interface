@@ -1,3 +1,7 @@
+import { useQuery } from '@tanstack/react-query'
+import { provideUniswapIdentifierService } from '@universe/api'
+import { isAndroid } from '@universe/environment'
+import { uniswapIdentifierQuery } from '@universe/sessions'
 import { useEffect, useMemo } from 'react'
 import { NativeModules, useWindowDimensions } from 'react-native'
 import { OneSignal } from 'react-native-onesignal'
@@ -15,8 +19,7 @@ import { useCurrentLanguageInfo } from 'uniswap/src/features/language/hooks'
 import { useHideSmallBalancesSetting, useHideSpamTokensSetting } from 'uniswap/src/features/settings/hooks'
 import { MobileUserPropertyName, setUserProperty } from 'uniswap/src/features/telemetry/user'
 import { logger } from 'utilities/src/logger/logger'
-import { isAndroid } from 'utilities/src/platform'
-// biome-ignore lint/style/noRestrictedImports: Required for analytics user properties
+// oxlint-disable-next-line no-restricted-imports -- Required for analytics user properties
 import { analytics } from 'utilities/src/telemetry/analytics/analytics'
 import { useAccountBalances } from 'wallet/src/features/accounts/useAccountListData'
 import { useGatingUserPropertyUsernames } from 'wallet/src/features/gating/userPropertyHooks'
@@ -58,13 +61,14 @@ export function TraceUserProperties(): null {
   // Effects must check this and ensure they are setting properties for when analytics is reenabled
   const allowAnalytics = useSelector(selectAllowAnalytics)
 
+  const { data: uniswapIdentifier } = useQuery(uniswapIdentifierQuery(provideUniswapIdentifierService))
+
   useGatingUserPropertyUsernames()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run this when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.AppVersion, getFullAppVersion())
     if (isAndroid) {
-      NativeModules.AndroidDeviceModule.getPerformanceClass().then((perfClass: number) => {
+      NativeModules['AndroidDeviceModule'].getPerformanceClass().then((perfClass: number) => {
         setUserProperty(MobileUserPropertyName.AndroidPerfClass, perfClass)
       })
     }
@@ -73,7 +77,6 @@ export function TraceUserProperties(): null {
     }
   }, [allowAnalytics])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run this when finishedOnboarding changes
   useEffect(() => {
     const fetchKeyringData = async (): Promise<void> => {
       const mnemonicIds = await Keyring.getMnemonicIds()
@@ -91,17 +94,15 @@ export function TraceUserProperties(): null {
   // Set user properties for datadog
 
   useEffect(() => {
-    setDatadogUserWithUniqueId(activeAccount?.address)
-  }, [activeAccount?.address])
+    setDatadogUserWithUniqueId(activeAccount?.address, uniswapIdentifier)
+  }, [activeAccount?.address, uniswapIdentifier])
 
   // Set user properties for amplitude
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.WalletSwapProtectionSetting, swapProtectionSetting)
   }, [allowAnalytics, swapProtectionSetting])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.DarkMode, isDarkMode)
   }, [allowAnalytics, isDarkMode])
@@ -111,18 +112,15 @@ export function TraceUserProperties(): null {
     setUserProperty(MobileUserPropertyName.WindowWidth, windowWidth)
   }, [windowWidth, windowHeight])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.WalletSignerCount, signerAccountAddresses.length)
     setUserProperty(MobileUserPropertyName.WalletSignerAccounts, signerAccountAddresses)
   }, [allowAnalytics, signerAccountAddresses])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.WalletViewOnlyCount, viewOnlyAccounts.length)
   }, [allowAnalytics, viewOnlyAccounts])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run this also when allowAnalytics changes
   useEffect(() => {
     if (!activeAccount) {
       return
@@ -138,7 +136,6 @@ export function TraceUserProperties(): null {
     setUserProperty(MobileUserPropertyName.IsHideSpamTokensEnabled, hideSpamTokens)
   }, [allowAnalytics, activeAccount, hideSmallBalances, hideSpamTokens])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(
       MobileUserPropertyName.AppOpenAuthMethod,
@@ -158,17 +155,14 @@ export function TraceUserProperties(): null {
     )
   }, [allowAnalytics, biometricsAppSettingsState, touchId, faceId])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.Language, currentLanguage)
   }, [allowAnalytics, currentLanguage])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.Currency, currentFiatCurrency)
   }, [allowAnalytics, currentFiatCurrency])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to run this also when allowAnalytics changes
   useEffect(() => {
     setUserProperty(MobileUserPropertyName.TestnetModeEnabled, isTestnetModeEnabled)
   }, [allowAnalytics, isTestnetModeEnabled])

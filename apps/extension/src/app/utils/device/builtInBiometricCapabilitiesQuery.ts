@@ -1,8 +1,8 @@
 import { queryOptions } from '@tanstack/react-query'
+import { getChromeRuntimeWithThrow } from '@universe/environment'
 import { TFunction } from 'i18next'
 import { GeneratedIcon } from 'ui/src'
 import { Fingerprint } from 'ui/src/components/icons'
-import { getChromeRuntimeWithThrow } from 'utilities/src/chrome/chrome'
 import { logger } from 'utilities/src/logger/logger'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { QueryOptionsResult } from 'utilities/src/reactQuery/queryOptions'
@@ -61,7 +61,7 @@ async function getBuiltInBiometricCapabilities({ t }: { t: TFunction }): Promise
 
 export async function isUserVerifyingPlatformAuthenticatorAvailable(): Promise<boolean> {
   // Check if WebAuthn is supported in this browser.
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (!navigator.credentials || !navigator.credentials.create || !window.PublicKeyCredential) {
     return false
   }

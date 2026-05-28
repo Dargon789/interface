@@ -1,5 +1,6 @@
 import { ReactNavigationPerformanceView } from '@shopify/react-native-performance-navigation'
 import { GraphQLApi } from '@universe/api'
+import { isAndroid } from '@universe/environment'
 import { DynamicConfigs, HomeScreenExploreTokensConfigKey, useDynamicConfigValue } from '@universe/gating'
 import { ForwardedRef, forwardRef, memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -15,19 +16,19 @@ import { AnimatePresence, Flex, LinearGradient, Text, useIsDarkMode, useSporeCol
 import { SwirlyArrowDown } from 'ui/src/components/icons'
 import { spacing, zIndexes } from 'ui/src/theme'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
+import { useMultichainExploreMetricsAnalytics } from 'uniswap/src/features/explore/useMultichainExploreMetricsAnalytics'
 import { useAppFiatCurrency } from 'uniswap/src/features/fiatCurrency/hooks'
 import { isContractInputArrayType } from 'uniswap/src/features/gating/typeGuards'
 import { MobileEventName } from 'uniswap/src/features/telemetry/constants'
 import { useAppInsets } from 'uniswap/src/hooks/useAppInsets'
 import { MobileScreens } from 'uniswap/src/types/screens/mobile'
-import { isAndroid } from 'utilities/src/platform'
 import { selectHasUsedExplore } from 'wallet/src/features/behaviorHistory/selectors'
 import { TokenMetadataDisplayType } from 'wallet/src/features/wallet/types'
 
 const ESTIMATED_ITEM_SIZE = 68
 
 export const HomeExploreTab = memo(
-  forwardRef<FlatList<unknown>, TabProps>(function _HomeExploreTab(
+  forwardRef<FlatList<unknown>, TabProps>(function HomeExploreTabInner(
     { containerProps, scrollHandler, headerHeight, refreshing, onRefresh },
     ref,
   ) {
@@ -53,7 +54,7 @@ export const HomeExploreTab = memo(
 
     const { onContentSizeChange } = useAdaptiveFooter(containerProps?.contentContainerStyle)
 
-    const { data } = GraphQLApi.useHomeScreenTokensQuery({
+    const { data, loading: homeExploreTokensLoading } = GraphQLApi.useHomeScreenTokensQuery({
       variables: { contracts: recommendedTokens, chain: ethChainId },
     })
     const tokenDataList = useMemo(
@@ -64,7 +65,16 @@ export const HomeExploreTab = memo(
       [data],
     )
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: fiat currency causes price layout width to change but does not change token data
+    const homeExploreRowChainCounts = useMemo(
+      () => tokenDataList.map((tokenItemData) => tokenItemData.networkCount ?? 1),
+      [tokenDataList],
+    )
+
+    useMultichainExploreMetricsAnalytics({
+      rowChainCounts: homeExploreRowChainCounts,
+      isExploreTokensLoading: homeExploreTokensLoading,
+    })
+
     useEffect(() => {
       setMaxTokenPriceWrapperWidth(0)
     }, [appFiatCurrency])
@@ -131,7 +141,7 @@ export const HomeExploreTab = memo(
           mt={-spacing.spacing12}
         >
           <AnimatedFlatList
-            // biome-ignore lint/suspicious/noExplicitAny: FlatList ref type is complex with animated wrapper
+            // oxlint-disable-next-line typescript/no-explicit-any -- FlatList ref type is complex with animated wrapper
             ref={ref as ForwardedRef<Animated.FlatList<any>>}
             ListFooterComponent={FooterElement}
             data={tokenDataList}

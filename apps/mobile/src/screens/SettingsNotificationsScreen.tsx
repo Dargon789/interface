@@ -41,7 +41,7 @@ type SettingItem = {
 
 type NotificationItem = SettingItem | AccountItem
 
-function _SettingsNotificationsScreen(): JSX.Element {
+function SettingsNotificationsScreenInner(): JSX.Element {
   const { t } = useTranslation()
   const insets = useAppInsets()
   const { fullWidth, fullHeight } = useDeviceDimensions()
@@ -117,7 +117,7 @@ function _SettingsNotificationsScreen(): JSX.Element {
   )
 }
 
-export const SettingsNotificationsScreen = memo(_SettingsNotificationsScreen)
+export const SettingsNotificationsScreen = memo(SettingsNotificationsScreenInner)
 
 SettingsNotificationsScreen.displayName = 'SettingsNotificationsScreen'
 
@@ -190,6 +190,7 @@ const AccountNotificationRow = memo(function AccountNotificationRow({
           size={iconSizes.icon32}
           variant="subheading2"
           captionVariant="body3"
+          alignItems="center"
         />
       </Flex>
       <AddressNotificationsSwitch address={address} />
@@ -205,7 +206,7 @@ function onPermissionChanged(enabled: boolean, type: NotificationToggleLoggingTy
 
 const PENDING_DELAY = 100
 
-function _AddressNotificationsSwitch({ address }: { address: string }): JSX.Element {
+function AddressNotificationsSwitchInner({ address }: { address: string }): JSX.Element {
   const { isEnabled, isPending, toggle } = useAddressNotificationToggle({
     address,
     onToggle: (enabled) => onPermissionChanged(enabled, 'wallet_activity'),
@@ -235,6 +236,6 @@ function _AddressNotificationsSwitch({ address }: { address: string }): JSX.Elem
 
   return <Switch checked={isEnabled} disabled={showDisabled} variant="branded" onCheckedChange={toggle} />
 }
-const AddressNotificationsSwitch = memo(_AddressNotificationsSwitch)
+const AddressNotificationsSwitch = memo(AddressNotificationsSwitchInner)
 
 AddressNotificationsSwitch.displayName = 'AddressNotificationsSwitch'

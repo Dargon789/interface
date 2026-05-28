@@ -1,4 +1,3 @@
-/* eslint-disable no-relative-import-paths/no-relative-import-paths */
 import path from 'path'
 import { getTsconfigAliases } from './getTsconfigAliases'
 
@@ -17,9 +16,9 @@ describe('getTsconfigAliases', () => {
     expect(result).toHaveProperty('@universe/api')
 
     // Verify paths are absolute and point to the packages directory
-    expect(result.uniswap).toContain('packages/uniswap')
+    expect(result['uniswap']).toContain('packages/uniswap')
     expect(result['@universe/api']).toContain('packages/api')
-    expect(path.isAbsolute(result.uniswap!)).toBe(true)
+    expect(path.isAbsolute(result['uniswap']!)).toBe(true)
     expect(path.isAbsolute(result['@universe/api']!)).toBe(true)
   })
 })

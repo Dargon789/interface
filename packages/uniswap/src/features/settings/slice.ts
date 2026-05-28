@@ -1,11 +1,12 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { isMobileApp } from '@universe/environment'
 import { FiatCurrency } from 'uniswap/src/features/fiatCurrency/constants'
 import { Language } from 'uniswap/src/features/language/constants'
 import { getCurrentLanguageFromNavigator } from 'uniswap/src/features/language/utils'
-import { DEFAULT_DEVICE_ACCESS_TIMEOUT, DeviceAccessTimeout } from 'uniswap/src/features/settings/constants'
+import { DEFAULT_DEVICE_ACCESS_TIMEOUT, type DeviceAccessTimeout } from 'uniswap/src/features/settings/constants'
 import { WALLET_TESTNET_CONFIG } from 'uniswap/src/features/telemetry/constants'
-import { isWebApp } from 'utilities/src/platform'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+import { getWalletDeviceLanguage } from 'uniswap/src/i18n/utils'
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { analytics } from 'utilities/src/telemetry/analytics/analytics'
 
 export interface UserSettingsState {
@@ -17,10 +18,13 @@ export interface UserSettingsState {
   isTestnetModeEnabled?: boolean
   hapticsEnabled: boolean
   deviceAccessTimeout: DeviceAccessTimeout
+  /** Wallet-level opt-in for the Network cost editor. `false` defers to the
+   *  gas-service recommendation; `true` lets the user supply per-tx overrides. */
+  enableCustomGasFeeEntry: boolean
 }
 
 export const initialUserSettingsState: UserSettingsState = {
-  currentLanguage: isWebApp ? getCurrentLanguageFromNavigator() : Language.English,
+  currentLanguage: isMobileApp ? getWalletDeviceLanguage() : getCurrentLanguageFromNavigator(),
   currentCurrency: FiatCurrency.UnitedStatesDollar,
   hideSmallBalances: true,
   hideSpamTokens: true,
@@ -28,6 +32,7 @@ export const initialUserSettingsState: UserSettingsState = {
   isTestnetModeEnabled: false,
   hapticsEnabled: true,
   deviceAccessTimeout: DEFAULT_DEVICE_ACCESS_TIMEOUT,
+  enableCustomGasFeeEntry: false,
 }
 
 const slice = createSlice({
@@ -62,7 +67,10 @@ const slice = createSlice({
     setDeviceAccessTimeout: (state, { payload }: PayloadAction<DeviceAccessTimeout>) => {
       state.deviceAccessTimeout = payload
     },
-    resetSettings: () => initialUserSettingsState,
+    setEnableCustomGasFeeEntry: (state, { payload }: PayloadAction<boolean>) => {
+      state.enableCustomGasFeeEntry = payload
+    },
+    resetUserSettings: () => initialUserSettingsState,
   },
 })
 
@@ -75,6 +83,8 @@ export const {
   setIsTestnetModeEnabled,
   setHapticsEnabled,
   setDeviceAccessTimeout,
+  setEnableCustomGasFeeEntry,
+  resetUserSettings,
 } = slice.actions
 
 export const userSettingsReducer = slice.reducer

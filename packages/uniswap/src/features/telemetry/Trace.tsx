@@ -3,7 +3,7 @@ import { ElementName, InterfacePageName, ModalNameType, SectionName } from 'unis
 import { UniverseEventProperties } from 'uniswap/src/features/telemetry/types'
 import { ExtensionScreen } from 'uniswap/src/types/screens/extension'
 import { MobileAppScreen } from 'uniswap/src/types/screens/mobile'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { TraceProps, Trace as UntypedTrace } from 'utilities/src/telemetry/trace/Trace'
 
 // Universe typed version of ITraceContext
@@ -17,7 +17,7 @@ interface UniverseTraceContext {
 
 type BaseTraceProps = UniverseTraceContext & Omit<TraceProps, 'eventOnTrigger' | 'properties'>
 
-function _Trace<EventName extends keyof UniverseEventProperties | undefined>({
+function TraceInner<EventName extends keyof UniverseEventProperties | undefined>({
   children,
   eventOnTrigger,
   properties,
@@ -54,7 +54,7 @@ function _Trace<EventName extends keyof UniverseEventProperties | undefined>({
 }
 
 const typedMemo: <T>(c: T) => T = memo
-const Trace = typedMemo(_Trace)
+const Trace = typedMemo(TraceInner)
 
 export { Trace }
 export default Trace

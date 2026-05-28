@@ -20,31 +20,28 @@ export const delayAnimations200ms: Record<
     stiff: 150
     damping: 30
   }
-> = {
-  // needs to be one-to-one with DelayAnimationKey
-  ...DELAY_VALUES.reduce(
-    (acc, delay) => {
-      acc[getDelayValue(delay)] = {
-        type: 'spring',
-        stiff: 150,
-        damping: 30,
-        delay,
-        duration: 200,
-      }
-      return acc
-    },
-    {} as Record<
-      DelayAnimationKey,
-      {
-        type: 'spring'
-        stiff: 150
-        damping: 30
-        delay: number
-        duration: 200
-      }
-    >,
-  ),
-}
+> = DELAY_VALUES.reduce(
+  (acc, delay) => {
+    acc[getDelayValue(delay)] = {
+      type: 'spring',
+      stiff: 150,
+      damping: 30,
+      delay,
+      duration: 200,
+    }
+    return acc
+  },
+  {} as Record<
+    DelayAnimationKey,
+    {
+      type: 'spring'
+      stiff: 150
+      damping: 30
+      delay: number
+      duration: 200
+    }
+  >,
+)
 export const get200MsAnimationDelayFromIndex = (index: number): DelayAnimationKey => {
   return getDelayValue(DELAY_VALUES[index] || DEFAULT_ANIMATION_DELAY)
 }

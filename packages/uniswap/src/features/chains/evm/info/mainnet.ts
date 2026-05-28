@@ -1,8 +1,10 @@
 import { CurrencyAmount } from '@uniswap/sdk-core'
-import { GraphQLApi } from '@universe/api'
+import { GraphQLApi, TradingApi } from '@universe/api'
+import { isWebApp, isE2eTestEnv } from '@universe/environment'
 import { SwapConfigKey } from '@universe/gating'
 import { ETH_LOGO, ETHEREUM_LOGO } from 'ui/src/assets'
 import { config } from 'uniswap/src/config'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import {
   DEFAULT_MS_BEFORE_WARNING,
   DEFAULT_NATIVE_ADDRESS_LEGACY,
@@ -20,8 +22,6 @@ import {
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import { buildDAI, buildUSDC, buildUSDT } from 'uniswap/src/features/tokens/stablecoin'
-import { isPlaywrightEnv } from 'utilities/src/environment/env'
-import { isWebApp } from 'utilities/src/platform'
 import { ONE_MINUTE_MS } from 'utilities/src/time/time'
 import { mainnet, sepolia } from 'wagmi/chains'
 
@@ -53,7 +53,6 @@ export const MAINNET_CHAIN_INFO = {
   explorer: {
     name: 'Etherscan',
     url: 'https://etherscan.io/',
-    apiURL: 'https://api.etherscan.io',
   },
   openseaName: 'ethereum',
   interfaceName: 'mainnet',
@@ -68,8 +67,9 @@ export const MAINNET_CHAIN_INFO = {
     logo: ETH_LOGO,
   },
   networkLayer: NetworkLayer.L1,
+  blockTimeMs: 12000,
   pendingTransactionsRetryOptions: undefined,
-  rpcUrls: isPlaywrightEnv()
+  rpcUrls: isE2eTestEnv()
     ? getPlaywrightRpcUrls(LOCAL_MAINNET_PLAYWRIGHT_RPC_URL)
     : {
         [RPCType.Private]: {
@@ -88,10 +88,11 @@ export const MAINNET_CHAIN_INFO = {
           http: [`https://mainnet.infura.io/v3/${config.infuraKey}`, getQuicknodeEndpointUrl(UniverseChainId.Mainnet)],
         },
       },
-  urlParam: 'ethereum',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Mainnet],
   statusPage: undefined,
   spotPriceStablecoinAmountOverride: CurrencyAmount.fromRawAmount(tokens.USDC, 100_000e6),
   tokens,
+  supportedURVersions: [TradingApi.UniversalRouterVersion._2_0, TradingApi.UniversalRouterVersion._2_1_1],
   supportsV4: true,
   supportsNFTs: true,
   wrappedNativeCurrency: {
@@ -138,7 +139,6 @@ export const SEPOLIA_CHAIN_INFO = {
   explorer: {
     name: 'Etherscan',
     url: 'https://sepolia.etherscan.io/',
-    apiURL: 'https://api-sepolia.etherscan.io',
   },
   interfaceName: 'sepolia',
   label: 'Sepolia',
@@ -152,32 +152,37 @@ export const SEPOLIA_CHAIN_INFO = {
     logo: ETH_LOGO,
   },
   networkLayer: NetworkLayer.L1,
+  blockTimeMs: 12000,
   pendingTransactionsRetryOptions: undefined,
   rpcUrls: {
     [RPCType.Public]: {
       http: [getQuicknodeEndpointUrl(UniverseChainId.Sepolia)],
     },
     [RPCType.Default]: {
-      http: ['https://rpc.sepolia.org/'],
+      http: ['https://sepolia.gateway.tenderly.co'],
     },
     [RPCType.Fallback]: {
       http: [
+        'https://sepolia.drpc.org',
+        'https://ethereum-sepolia-rpc.publicnode.com',
         'https://rpc.sepolia.org/',
-        'https://rpc2.sepolia.org/',
         'https://rpc.sepolia.online/',
         'https://www.sepoliarpc.space/',
         'https://rpc-sepolia.rockx.com/',
         'https://rpc.bordel.wtf/sepolia',
       ],
     },
-    [RPCType.Interface]: { http: [`https://sepolia.infura.io/v3/${config.infuraKey}`] },
+    [RPCType.Interface]: {
+      http: [`https://sepolia.infura.io/v3/${config.infuraKey}`],
+    },
   },
   spotPriceStablecoinAmountOverride: CurrencyAmount.fromRawAmount(testnetTokens.USDC, 100e6),
   tokens: testnetTokens,
   statusPage: undefined,
+  supportedURVersions: [TradingApi.UniversalRouterVersion._2_0, TradingApi.UniversalRouterVersion._2_1_1],
   supportsV4: true,
   supportsNFTs: false,
-  urlParam: 'ethereum_sepolia',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Sepolia],
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
     symbol: 'WETH',

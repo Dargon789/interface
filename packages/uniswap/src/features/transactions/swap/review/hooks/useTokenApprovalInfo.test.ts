@@ -1,39 +1,42 @@
 import { renderHook } from '@testing-library/react'
 import { CurrencyAmount, Token } from '@uniswap/sdk-core'
 import { FeeType, GasEstimate, TradingApi } from '@universe/api'
+import { useFeatureFlag } from '@universe/gating'
 import { DAI, USDC } from 'uniswap/src/constants/tokens'
 import { useCheckApprovalQuery } from 'uniswap/src/data/apiClients/tradingApi/useCheckApprovalQuery'
-import { AccountType } from 'uniswap/src/features/accounts/types'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { DEFAULT_GAS_STRATEGY } from 'uniswap/src/features/gas/utils'
-import { Platform } from 'uniswap/src/features/platforms/types/Platform'
+import { DEFAULT_GAS_STRATEGY } from 'uniswap/src/features/gas/consts'
 import type { TokenApprovalInfoParams } from 'uniswap/src/features/transactions/swap/review/hooks/useTokenApprovalInfo'
 import { useTokenApprovalInfo } from 'uniswap/src/features/transactions/swap/review/hooks/useTokenApprovalInfo'
 import { ApprovalAction } from 'uniswap/src/features/transactions/swap/types/trade'
 import { WrapType } from 'uniswap/src/features/transactions/types/wrap'
-import { SignerMnemonicAccountDetails } from 'uniswap/src/features/wallet/types/AccountDetails'
-import { logger } from 'utilities/src/logger/logger'
+import type { Mock } from 'vitest'
 
-jest.mock('uniswap/src/data/apiClients/tradingApi/useCheckApprovalQuery')
-jest.mock('utilities/src/logger/logger', () => ({
-  logger: {
-    error: jest.fn(),
+const { mockLogger } = vi.hoisted(() => ({
+  mockLogger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    setDatadogEnabled: vi.fn(),
   },
 }))
-const mockUseCheckApprovalQuery = useCheckApprovalQuery as jest.Mock
+
+vi.mock('utilities/src/logger/logger', () => ({
+  logger: mockLogger,
+}))
+// Mock the gating layer so we can drive the GasFeeOverrides flag per test
+vi.mock('@universe/gating', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('@universe/gating')>()
+  return {
+    ...mod,
+    useFeatureFlag: vi.fn(),
+  }
+})
+vi.mock('uniswap/src/data/apiClients/tradingApi/useCheckApprovalQuery')
+const mockUseCheckApprovalQuery = useCheckApprovalQuery as Mock
 
 describe('useTokenApprovalInfo', () => {
-  const mockAccount: SignerMnemonicAccountDetails = {
-    platform: Platform.EVM,
-    address: '0x123',
-    accountType: AccountType.SignerMnemonic,
-    walletMeta: {
-      id: '1',
-      name: 'Test Wallet',
-      icon: 'test-icon',
-    },
-  }
-
   const mockTokenIn = new Token(UniverseChainId.Mainnet, DAI.address, DAI.decimals, DAI.symbol, DAI.name)
   const mockTokenOut = new Token(UniverseChainId.Mainnet, USDC.address, USDC.decimals, USDC.symbol, USDC.name)
 
@@ -46,11 +49,13 @@ describe('useTokenApprovalInfo', () => {
     currencyInAmount: mockCurrencyInAmount,
     currencyOutAmount: mockCurrencyOutAmount,
     routing: TradingApi.Routing.CLASSIC,
-    account: mockAccount,
+    address: '0x123',
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
+    // Default the flag to OFF; flag-on cases override below
+    vi.mocked(useFeatureFlag).mockReturnValue(false)
   })
 
   it('should return Permit2Approve action with correct txRequest and gas info', () => {
@@ -151,7 +156,7 @@ describe('useTokenApprovalInfo', () => {
 
     const { result } = renderHook(() => useTokenApprovalInfo(mockParams))
 
-    expect(logger.error).toHaveBeenCalledWith(mockError, {
+    expect(mockLogger.error).toHaveBeenCalledWith(mockError, {
       tags: { file: 'useTokenApprovalInfo', function: 'useTokenApprovalInfo' },
       extra: {
         approvalRequestArgs: expect.any(Object),
@@ -177,6 +182,30 @@ describe('useTokenApprovalInfo', () => {
         error: new Error('Approval action unknown'),
         gasEstimate: undefined,
       },
+    })
+  })
+
+  describe('GasFeeOverrides flag wire shape', () => {
+    it('sends gasStrategies (no urgency) when flag is OFF', () => {
+      vi.mocked(useFeatureFlag).mockReturnValue(false)
+      mockUseCheckApprovalQuery.mockReturnValue({ data: undefined, isLoading: false, error: null })
+
+      renderHook(() => useTokenApprovalInfo(mockParams))
+
+      const requestArgs = mockUseCheckApprovalQuery.mock.calls[0]?.[0]?.params as TradingApi.ApprovalRequest
+      expect(requestArgs.gasStrategies).toEqual([DEFAULT_GAS_STRATEGY])
+      expect(requestArgs.urgency).toBeUndefined()
+    })
+
+    it('sends urgency (no gasStrategies) when flag is ON', () => {
+      vi.mocked(useFeatureFlag).mockReturnValue(true)
+      mockUseCheckApprovalQuery.mockReturnValue({ data: undefined, isLoading: false, error: null })
+
+      renderHook(() => useTokenApprovalInfo(mockParams))
+
+      const requestArgs = mockUseCheckApprovalQuery.mock.calls[0]?.[0]?.params as TradingApi.ApprovalRequest
+      expect(requestArgs.gasStrategies).toBeUndefined()
+      expect(requestArgs.urgency).toBe('urgent')
     })
   })
 })

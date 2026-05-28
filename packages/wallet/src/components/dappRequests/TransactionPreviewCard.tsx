@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, TouchableArea } from 'ui/src'
 import { ContractInteraction, RotatableChevron } from 'ui/src/components/icons'
-import { iconSizes } from 'ui/src/theme'
+import { TransactionRequestDetails } from 'uniswap/src/components/transactions/requests/TransactionRequestDetails'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { TransactionApprovingSection } from 'wallet/src/components/dappRequests/TransactionApprovingSection'
@@ -11,7 +11,6 @@ import {
   TransactionErrorType,
 } from 'wallet/src/components/dappRequests/TransactionErrorSection'
 import { TransactionReceivingSection } from 'wallet/src/components/dappRequests/TransactionReceivingSection'
-import { TransactionRequestDetails } from 'wallet/src/components/dappRequests/TransactionRequestDetails'
 import { TransactionSendingSection } from 'wallet/src/components/dappRequests/TransactionSendingSection'
 import {
   TransactionRiskLevel,
@@ -119,24 +118,19 @@ export function TransactionPreviewCard({
                     {isDetailsExpanded ? t('dapp.transaction.details.hide') : t('common.button.viewDetails')}
                   </Text>
                 </Flex>
-                <RotatableChevron
-                  color="$neutral2"
-                  direction={isDetailsExpanded ? 'up' : 'down'}
-                  height={iconSizes.icon12}
-                  width={iconSizes.icon12}
-                />
+                <RotatableChevron color="$neutral2" direction={isDetailsExpanded ? 'up' : 'down'} size="$icon.12" />
               </Flex>
             </TouchableArea>
 
             {isDetailsExpanded && (
-              <Flex pt="$spacing12">
+              <Flex pt="$spacing12" px="$spacing16">
                 <TransactionRequestDetails
                   functionName={functionName}
                   contractName={contractName}
                   contractAddress={contractAddress}
                   rawData={rawData}
                   chainId={chainId}
-                  riskLevel={riskLevel}
+                  valueColor={riskLevel === TransactionRiskLevel.Warning ? '$statusWarning' : '$neutral1'}
                 />
               </Flex>
             )}

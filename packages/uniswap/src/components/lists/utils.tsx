@@ -9,12 +9,16 @@ export function useOnchainItemListSection<T extends OnchainItemListOption>({
   rightElement,
   endElement,
   name,
+  sectionHeader,
+  sectionHeaderHeight,
 }: {
   sectionKey: OnchainItemSectionName
   options?: T[]
   rightElement?: JSX.Element
   endElement?: JSX.Element
   name?: string
+  sectionHeader?: JSX.Element
+  sectionHeaderHeight?: number
 }): OnchainItemSection<T>[] | undefined {
   return useMemo(() => {
     if (!options) {
@@ -33,8 +37,10 @@ export function useOnchainItemListSection<T extends OnchainItemListOption>({
             name,
             rightElement,
             endElement,
+            sectionHeader,
+            sectionHeaderHeight,
           },
         ]
       : undefined
-  }, [name, rightElement, endElement, sectionKey, options])
+  }, [name, rightElement, endElement, sectionKey, options, sectionHeader, sectionHeaderHeight])
 }

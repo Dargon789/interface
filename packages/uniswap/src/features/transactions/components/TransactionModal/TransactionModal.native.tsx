@@ -1,4 +1,5 @@
 import { BottomSheetFooter, BottomSheetView, KEYBOARD_STATE, useBottomSheetInternal } from '@gorhom/bottom-sheet'
+import { isAndroid } from '@universe/environment'
 import { useMemo, useState } from 'react'
 import { type StyleProp, TouchableWithoutFeedback, type ViewStyle } from 'react-native'
 import { Extrapolation, interpolate, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated'
@@ -18,8 +19,8 @@ import type {
   TransactionModalProps,
 } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalProps'
 import { TransactionModalUpdateLogger } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalUpdateLogger'
+import { SwapFlowTimerContext } from 'uniswap/src/features/transactions/swap/utils/SwapFlowTimerContext'
 import { useAppInsets } from 'uniswap/src/hooks/useAppInsets'
-import { isAndroid } from 'utilities/src/platform'
 
 export function TransactionModal({
   children,
@@ -31,6 +32,7 @@ export function TransactionModal({
   renderBiometricsIcon,
   swapRedirectCallback,
   walletNeedsRestore,
+  swapFlowTimer,
 }: TransactionModalProps): JSX.Element {
   const [screen, setScreen] = useState<TransactionScreen>(TransactionScreen.Form)
   const fullscreen = screen === TransactionScreen.Form
@@ -58,7 +60,6 @@ export function TransactionModal({
         // line as a visual artifact on mobile. For example, if a white background is rendered
         // on a white background, a grey line sometimes appears as the bottom sheet resizes.
         backgroundColor: 'transparent',
-        overflow: 'hidden',
         height: fullscreen ? '100%' : undefined,
       },
       animatedBorderRadius,
@@ -91,7 +92,11 @@ export function TransactionModal({
         onClose={onClose}
         onCurrencyChange={onCurrencyChange}
       >
-        {children}
+        {swapFlowTimer ? (
+          <SwapFlowTimerContext.Provider value={swapFlowTimer}>{children}</SwapFlowTimerContext.Provider>
+        ) : (
+          children
+        )}
         <TransactionModalUpdateLogger modalName={modalName} />
       </TransactionModalContextProvider>
     </Modal>

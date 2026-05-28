@@ -11,11 +11,11 @@ function Graph(): JSX.Element {
   )
 }
 
-const Transaction = memo(function _Transaction({ repeat = 1 }: { repeat?: number }): JSX.Element {
+const Transaction = memo(function TransactionInner({ repeat = 1 }: { repeat?: number }): JSX.Element {
   return (
     <Skeleton>
       <Flex>
-        {/* eslint-disable-next-line max-params */}
+        {/* oxlint-disable-next-line max-params */}
         {new Array(repeat).fill(null).map((_, i, { length }) => (
           <React.Fragment key={i}>
             <TransactionLoader opacity={(length - i) / length} />

@@ -1,16 +1,15 @@
 import ReactNativeIdfaAaid from '@sparkfabrik/react-native-idfa-aaid'
 import { ANONYMOUS_DEVICE_ID, OriginApplication } from '@uniswap/analytics'
+import { isAndroid, isTestEnv } from '@universe/environment'
 import DeviceInfo from 'react-native-device-info'
 import { call, delay, fork, select } from 'typed-redux-saga'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { MobileUserPropertyName } from 'uniswap/src/features/telemetry/user'
 import { getUniqueId } from 'utilities/src/device/uniqueId'
-import { isTestEnv } from 'utilities/src/environment/env'
 import { logger } from 'utilities/src/logger/logger'
-import { isAndroid } from 'utilities/src/platform'
-import { ApplicationTransport } from 'utilities/src/telemetry/analytics/ApplicationTransport'
-// biome-ignore lint/style/noRestrictedImports: Required for analytics initialization
+// oxlint-disable-next-line no-restricted-imports -- Required for analytics initialization
 import { analytics } from 'utilities/src/telemetry/analytics/analytics'
+import { ApplicationTransport } from 'utilities/src/telemetry/analytics/ApplicationTransport'
 import { selectAllowAnalytics } from 'wallet/src/features/telemetry/selectors'
 import { watchTransactionEvents } from 'wallet/src/features/transactions/watcher/transactionFinalizationSaga'
 

@@ -1,13 +1,11 @@
 import { useApolloClient } from '@apollo/client'
 import { useQuery } from '@tanstack/react-query'
-import { GraphQLApi } from '@universe/api'
 import { useCallback, useMemo, useState } from 'react'
-import { UnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
-
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { useENSName } from 'uniswap/src/features/ens/api'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { queryWithoutCache } from 'utilities/src/reactQuery/queryOptions'
+import { fetchBalancesAndUnitags } from 'wallet/src/features/onboarding/fetchBalancesAndUnitags'
 import { NUMBER_OF_WALLETS_TO_GENERATE } from 'wallet/src/features/onboarding/OnboardingContext'
 
 export interface AddressWithBalanceAndName {
@@ -74,64 +72,32 @@ export function useAddressesBalanceAndNames(addresses?: Address[]): {
 
   const isLoadingAddresses = addressesArray.length === 0
 
-  const refetch = useCallback(async () => {
+  const refetch = useCallback(() => {
     setRefetchCount((count) => count + 1)
-    return refetch()
   }, [])
 
-  const { ensMap, loading: ensLoading } = useAddressesEnsNames(addressesArray)
+  const { ensMap } = useAddressesEnsNames(addressesArray)
 
   const { gqlChains } = useEnabledChains()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -refetchCount
-  const fetchBalanceAndUnitags = useCallback(async (): Promise<AddressTo<AddressWithBalanceAndName> | undefined> => {
-    if (addressesArray.length === 0) {
-      return undefined
-    }
-
-    const valueModifiers = addressesArray.map((addr) => ({
-      ownerAddress: addr,
-      includeSmallBalances: true,
-      includeSpamTokens: false,
-    }))
-
-    const fetchBalances = apolloClient.query<GraphQLApi.SelectWalletScreenQuery>({
-      query: GraphQLApi.SelectWalletScreenDocument,
-      variables: { ownerAddresses: addressesArray, chains: gqlChains, valueModifiers },
+  const fetchBalanceAndUnitags = useCallback(async (): Promise<AddressTo<AddressWithBalanceAndName>> => {
+    const { balanceByAddress, unitagByAddress } = await fetchBalancesAndUnitags({
+      addresses: addressesArray,
+      apolloClient,
+      gqlChains,
     })
 
-    const fetchUnitags = UnitagsApiClient.fetchUnitagsByAddresses({ addresses: addressesArray })
-
-    const [balancesResponse, unitagsResponse] = await Promise.all([fetchBalances, fetchUnitags])
-
-    const unitagsByAddress = unitagsResponse.usernames
-
-    const balancesByAddress = (balancesResponse.data.portfolios ?? []).reduce(
-      (balances: AddressTo<number | undefined>, portfolios): AddressTo<number | undefined> => {
-        if (portfolios?.ownerAddress) {
-          balances[portfolios.ownerAddress] = portfolios.tokensTotalDenominatedValue?.value
-        }
-        return balances
-      },
-      {},
-    )
-
-    const dataMap: AddressTo<AddressWithBalanceAndName> = addressesArray.reduce(
-      (map, address) => {
-        const entry = {
-          address,
-          balance: balancesByAddress[address],
-          unitag: unitagsByAddress[address]?.username,
-        }
-        map[entry.address] = entry
-        return map
-      },
-      {} as AddressTo<AddressWithBalanceAndName>,
-    )
-
-    return dataMap
+    return addressesArray.reduce((map, address) => {
+      map[address] = {
+        address,
+        balance: balanceByAddress[address],
+        unitag: unitagByAddress[address]?.username,
+      }
+      return map
+    }, {} as AddressTo<AddressWithBalanceAndName>)
 
     // We use `refetchCount` as a dependency to manually trigger a refetch when calling the `refetch` function.
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [addressesArray, apolloClient, refetchCount, gqlChains])
 
   const {
@@ -142,6 +108,7 @@ export function useAddressesBalanceAndNames(addresses?: Address[]): {
     queryWithoutCache({
       queryKey: [ReactQueryCacheKey.BalanceAndUnitags, addressesArray],
       queryFn: fetchBalanceAndUnitags,
+      enabled: !isLoadingAddresses,
     }),
   )
 
@@ -163,21 +130,11 @@ export function useAddressesBalanceAndNames(addresses?: Address[]): {
   return useMemo(
     () => ({
       addressInfoMap,
-      // This function is loading if we don't have addresses or are waiting on data. The first two are data, the
-      // last two cases occur when we are waiting for addresses
-      isLoading: balanceAndUnitagsLoading || ensLoading || isLoadingAddresses || addressInfoMap === undefined,
-      error: fetchingError && !balanceAndUnitags?.length,
+      isLoading: balanceAndUnitagsLoading || isLoadingAddresses,
+      showError: !!fetchingError && Object.keys(balanceAndUnitags ?? {}).length === 0,
       refetch,
     }),
-    [
-      addressInfoMap,
-      balanceAndUnitags,
-      balanceAndUnitagsLoading,
-      ensLoading,
-      fetchingError,
-      isLoadingAddresses,
-      refetch,
-    ],
+    [addressInfoMap, balanceAndUnitags, balanceAndUnitagsLoading, fetchingError, isLoadingAddresses, refetch],
   )
 }
 
@@ -211,7 +168,7 @@ export function useAddressesEnsNames(addresses: Address[]): {
       return {}
     }
 
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     return addresses.reduce((map: AddressTo<string>, address: string, index: number) => {
       const nameData = ensNameStates[index]?.data
       if (nameData) {

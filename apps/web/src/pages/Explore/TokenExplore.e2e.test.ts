@@ -1,6 +1,6 @@
-import { expect, getTest } from 'playwright/fixtures'
 import { USDT_ARBITRUM_ONE } from 'uniswap/src/constants/tokens'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { expect, getTest } from '~/playwright/fixtures'
 
 const test = getTest()
 
@@ -88,6 +88,7 @@ test.describe(
 
       await page.getByTestId(`${TestID.TokenTableRowPrefix}${USDT_ARBITRUM_ONE.address}`).click()
 
+      await expect(page).toHaveURL(/\/explore\/tokens\/arbitrum\//)
       await expect(page.getByTestId(TestID.ChooseOutputToken + '-label')).toHaveText('USDT')
     })
   },

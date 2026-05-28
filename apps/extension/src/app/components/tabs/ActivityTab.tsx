@@ -3,7 +3,7 @@ import { Flex, Loader, ScrollView } from 'ui/src'
 import { useInfiniteScroll } from 'utilities/src/react/useInfiniteScroll'
 import { useActivityDataWallet } from 'wallet/src/features/activity/useActivityDataWallet'
 
-export const ActivityTab = memo(function _ActivityTab({
+export const ActivityTab = memo(function ActivityTabInner({
   address,
   skip,
 }: {

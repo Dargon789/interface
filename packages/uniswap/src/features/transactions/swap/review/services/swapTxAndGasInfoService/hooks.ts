@@ -1,11 +1,14 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 import { queryOptions, useQuery } from '@tanstack/react-query'
 import { GasStrategy, TradingApi } from '@universe/api'
+import { SharedQueryClient } from '@universe/api/src/clients/base/SharedQueryClient'
 import { DynamicConfigs, SwapConfigKey, useDynamicConfigValue } from '@universe/gating'
 import { useMemo } from 'react'
 import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
+import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useActiveGasStrategy } from 'uniswap/src/features/gas/hooks'
+import { useTradingApiGasOverrides } from 'uniswap/src/features/gas/hooks/useTradingApiGasOverrides'
 import type { SwapDelegationInfo } from 'uniswap/src/features/smartWallet/delegation/types'
 import { useAllTransactionSettings } from 'uniswap/src/features/transactions/components/settings/stores/transactionSettingsStore/useTransactionSettingsStore'
 import { useV4SwapEnabled } from 'uniswap/src/features/transactions/swap/hooks/useV4SwapEnabled'
@@ -34,7 +37,6 @@ import {
 import type { DerivedSwapInfo } from 'uniswap/src/features/transactions/swap/types/derivedSwapInfo'
 import type { SwapTxAndGasInfo } from 'uniswap/src/features/transactions/swap/types/swapTxAndGasInfo'
 import type { Trade } from 'uniswap/src/features/transactions/swap/types/trade'
-import { useWallet } from 'uniswap/src/features/wallet/hooks/useWallet'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { useEvent, usePrevious } from 'utilities/src/react/hooks'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
@@ -84,12 +86,22 @@ export function useSwapTxAndGasInfoService(): SwapTxAndGasInfoService {
   const presignPermit = usePresignPermit()
   const trace = useTrace()
   const transactionSettings = useAllTransactionSettings()
+  // tx is unavailable here; this service-level hook runs before individual
+  // tx requests are resolved. Recommended falls back to undefined for full overrides.
+  const gasOverrides = useTradingApiGasOverrides({ tx: undefined })
+  // Only treat as "overrides" for the display path when the user explicitly
+  // set `gasLimit`. The backend skips its `limitInflationFactor` (1.15x) only
+  // for an explicit top-level `gasLimit`; partial overrides (maxBaseFee or
+  // priority only) still get the inflated auto-probed limit, so the display
+  // should keep its inflation backoff in that case.
+  const hasOverrides = gasOverrides?.gasLimit !== undefined
   const instructionService = useMemo(() => {
     return createEVMSwapInstructionsService({
       ...swapConfig,
+      gasOverrides,
       presignPermit,
     })
-  }, [swapConfig, presignPermit])
+  }, [swapConfig, gasOverrides, presignPermit])
 
   const decorateWithEVMLogging = useEvent(createDecorateSwapTxInfoServiceWithEVMLogging({ trace, transactionSettings }))
 
@@ -98,32 +110,40 @@ export function useSwapTxAndGasInfoService(): SwapTxAndGasInfoService {
       ...swapConfig,
       transactionSettings,
       instructionService,
+      hasOverrides,
     })
     return decorateWithEVMLogging(classicService)
-  }, [swapConfig, transactionSettings, instructionService, decorateWithEVMLogging])
+  }, [swapConfig, transactionSettings, instructionService, hasOverrides, decorateWithEVMLogging])
 
   const bridgeSwapTxInfoService = useMemo(() => {
     const bridgeService = createBridgeSwapTxAndGasInfoService({
       ...swapConfig,
       transactionSettings,
       instructionService,
+      hasOverrides,
     })
     return decorateWithEVMLogging(bridgeService)
-  }, [swapConfig, transactionSettings, instructionService, decorateWithEVMLogging])
+  }, [swapConfig, transactionSettings, instructionService, hasOverrides, decorateWithEVMLogging])
 
   const uniswapXSwapTxInfoService = useMemo(() => {
     return createUniswapXSwapTxAndGasInfoService()
   }, [])
 
   const chainedSwapTxInfoService = useMemo(() => {
-    const chainedService = createChainedActionSwapTxAndGasInfoService()
-    return chainedService
-  }, [])
+    return createChainedActionSwapTxAndGasInfoService({
+      getSwapDelegationInfo: swapConfig.getSwapDelegationInfo,
+    })
+  }, [swapConfig.getSwapDelegationInfo])
 
   const wrapTxInfoService = useMemo(() => {
-    const wrapService = createWrapTxAndGasInfoService({ ...swapConfig, transactionSettings, instructionService })
+    const wrapService = createWrapTxAndGasInfoService({
+      ...swapConfig,
+      transactionSettings,
+      instructionService,
+      hasOverrides,
+    })
     return decorateWithEVMLogging(wrapService)
-  }, [swapConfig, transactionSettings, instructionService, decorateWithEVMLogging])
+  }, [swapConfig, transactionSettings, instructionService, hasOverrides, decorateWithEVMLogging])
 
   const solanaSwapTxInfoService = useMemo(() => {
     return createSolanaSwapTxAndGasInfoService()
@@ -222,7 +242,7 @@ function getCanUsePlaceholderData(params: SwapQueryParams, prevParams?: SwapQuer
 
 function createGetQueryOptions(ctx: {
   swapTxAndGasInfoService: SwapTxAndGasInfoService<Trade>
-  refetchInterval: number
+  refetchInterval?: number
 }) {
   return function getQueryOptions(
     params: SwapQueryParams,
@@ -243,14 +263,12 @@ function createGetQueryOptions(ctx: {
   }
 }
 
-function useSwapParams(): {
+export function useSwapParams(): {
   approvalTxInfo: ApprovalTxInfo
   derivedSwapInfo: DerivedSwapInfo
   trade: Trade | undefined
 } {
   const derivedSwapInfo = useSwapFormStore((s) => s.derivedSwapInfo)
-
-  const account = useWallet().evmAccount
 
   const {
     chainId,
@@ -259,8 +277,10 @@ function useSwapParams(): {
     trade: { trade },
   } = derivedSwapInfo
 
+  const address = useActiveAddress(derivedSwapInfo.chainId)
+
   const approvalTxInfo = useTokenApprovalInfo({
-    account,
+    address,
     chainId,
     wrapType,
     currencyInAmount: currencyAmounts[CurrencyField.INPUT],
@@ -271,7 +291,8 @@ function useSwapParams(): {
   return {
     approvalTxInfo,
     derivedSwapInfo,
-    trade: trade ?? undefined,
+    // Swap tx data is useless without a connected wallet — suppress trade to prevent /swap polling
+    trade: address ? (trade ?? undefined) : undefined,
   }
 }
 
@@ -313,4 +334,21 @@ export function useSwapTxAndGasInfo(): SwapTxAndGasInfo {
   const placeholderData = canUsePlaceholderData ? prevData : undefined
 
   return data ?? placeholderData ?? EMPTY_SWAP_TX_AND_GAS_INFO
+}
+
+export async function ensureFreshSwapTxData(
+  params: { trade: Trade; approvalTxInfo: ApprovalTxInfo; derivedSwapInfo: DerivedSwapInfo },
+  swapTxAndGasInfoService: SwapTxAndGasInfoService,
+): Promise<SwapTxAndGasInfo> {
+  const getQueryOptions = createGetQueryOptions({ swapTxAndGasInfoService })
+
+  // If data is already cached and fresh, this returns immediately.
+  // If data is stale or being fetched, this waits for the fetch to complete.
+  const freshData = await SharedQueryClient.fetchQuery(getQueryOptions(params))
+
+  if (!freshData) {
+    throw new Error('Empty response returned when trying to ensure fresh SwapTxData')
+  }
+
+  return freshData
 }

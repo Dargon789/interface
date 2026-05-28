@@ -1,7 +1,7 @@
 import { Currency } from '@uniswap/sdk-core'
-import { useCurrencyInfo } from 'hooks/Tokens'
 import { useMemo } from 'react'
 import { useExtractedTokenColor, useSporeColors } from 'ui/src'
+import { useCurrencyInfo } from '~/hooks/Tokens'
 
 type ContrastSettings = { backgroundColor: string; darkMode: boolean }
 
@@ -23,10 +23,12 @@ export function useSrcColor({
   src,
   currencyName,
   backgroundColor,
+  defaultColor,
 }: {
   src?: string
   currencyName?: string
   backgroundColor?: string
+  defaultColor?: string
 }) {
   const colors = useSporeColors()
 
@@ -39,6 +41,6 @@ export function useSrcColor({
     imageUrl: extractSrc,
     tokenName: currencyName,
     backgroundColor: backgroundColor ?? colors.surface1.val,
-    defaultColor: colors.accent1.val,
+    defaultColor: defaultColor ?? colors.accent1.val,
   })
 }

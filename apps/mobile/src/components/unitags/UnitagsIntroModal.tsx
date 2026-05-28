@@ -1,7 +1,7 @@
+import 'react-native-reanimated'
 import { SharedEventName } from '@uniswap/analytics-events'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
 import { navigate } from 'src/app/navigation/rootNavigation'
 import { AppStackScreenProp } from 'src/app/navigation/types'

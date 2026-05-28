@@ -1,13 +1,15 @@
-import { ArrowChangeDown } from 'components/Icons/ArrowChangeDown'
-import { NavIcon } from 'components/Logo/NavIcon'
-import { MenuDropdown } from 'components/NavBar/CompanyMenu/MenuDropdown'
-import { MobileMenuDrawer } from 'components/NavBar/CompanyMenu/MobileMenuDrawer'
-import { useIsMobileDrawer } from 'components/NavBar/ScreenSizes'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router'
-import { Flex, Popover, styled, Text, useIsTouchDevice, useMedia } from 'ui/src'
+import { Flex, Popover, styled, Text, useMedia } from 'ui/src'
+import { ArrowChange } from 'ui/src/components/icons/ArrowChange'
 import { Hamburger } from 'ui/src/components/icons/Hamburger'
+import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import Trace from 'uniswap/src/features/telemetry/Trace'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { NavIcon } from '~/components/Logo/NavIcon'
+import { MenuDropdown } from '~/components/NavBar/CompanyMenu/MenuDropdown'
+import { MobileMenuDrawer } from '~/components/NavBar/CompanyMenu/MobileMenuDrawer'
+import { useIsMobileDrawer } from '~/components/NavBar/ScreenSizes'
 
 const ArrowDownWrapper = styled(Text, {
   color: '$neutral2',
@@ -27,18 +29,14 @@ export function CompanyMenu() {
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +popoverRef
   const closeMenu = useCallback(() => {
     popoverRef.current?.close()
   }, [popoverRef])
-  // biome-ignore lint/correctness/useExhaustiveDependencies: location dependency is sufficient for this effect
   useEffect(() => {
     // Immediately reset state to prevent flash during transitions
     setIsOpen(false)
     closeMenu()
   }, [location, closeMenu])
-
-  const isTouchDevice = useIsTouchDevice()
 
   return (
     <Popover ref={popoverRef} placement="bottom" hoverable={!media.xl} stayInFrame allowFlip onOpenChange={setIsOpen}>
@@ -52,20 +50,22 @@ export function CompanyMenu() {
           group
           $platform-web={{ containerType: 'normal' }}
         >
-          <Link to="/?intro=true" style={{ textDecoration: 'none' }}>
-            <Flex row alignItems="center" gap="$gap4" data-testid={TestID.NavUniswapLogo}>
-              <NavIcon />
-              {isLargeScreen && (
-                <Text variant="subheading1" color="$accent1" userSelect="none">
-                  Uniswap
-                </Text>
-              )}
-            </Flex>
-          </Link>
-          {(media.md || isTouchDevice) && <Hamburger size={22} color="$neutral2" cursor="pointer" ml="16px" />}
-          {!media.md && !isTouchDevice && (
+          <Trace logPress element={ElementName.NavbarCompanyMenuLogo}>
+            <Link to="/?intro=true" onClick={(e) => e.stopPropagation()} style={{ textDecoration: 'none' }}>
+              <Flex row alignItems="center" gap="$gap4" data-testid={TestID.NavUniswapLogo}>
+                <NavIcon />
+                {isLargeScreen && (
+                  <Text variant="subheading1" color="$accent1" userSelect="none">
+                    Uniswap
+                  </Text>
+                )}
+              </Flex>
+            </Link>
+          </Trace>
+          {media.md && <Hamburger size={22} color="$neutral2" cursor="pointer" ml="16px" />}
+          {!media.md && (
             <ArrowDownWrapper open={isOpen}>
-              <ArrowChangeDown width="12px" height="12px" />
+              <ArrowChange size="$icon.12" />
             </ArrowDownWrapper>
           )}
         </Flex>

@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { BigNumber } from '@ethersproject/bignumber'
 import { MixedRouteSDK } from '@uniswap/router-sdk'
 import type { Currency, TradeType } from '@uniswap/sdk-core'
@@ -32,10 +32,17 @@ import type { CurrencyField } from 'uniswap/src/types/currency'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
 import { currencyAddress, currencyId } from 'uniswap/src/utils/currencyId'
 import { logger } from 'utilities/src/logger/logger'
-import { isWebApp } from 'utilities/src/platform'
 
 export const NATIVE_ADDRESS_FOR_TRADING_API = '0x0000000000000000000000000000000000000000'
-export const SWAP_GAS_URGENCY_OVERRIDE = isWebApp ? TradingApi.Urgency.NORMAL : undefined // on Interface, use a normal urgency, else use TradingAPI default
+
+/** Default urgency for all swap-related TAPI requests (quote, swap, approval). */
+export const DEFAULT_URGENCY_LEVEL = TradingApi.UrgencyWithOverrides.level.URGENT
+
+/** Builds the TAPI `urgency` wire field: object form when caller overrides are
+ *  present, bare level string otherwise. */
+export function buildUrgency(overrides: TradingApi.UrgencyOverrides | undefined): TradingApi.Urgency {
+  return overrides ? { level: DEFAULT_URGENCY_LEVEL, overrides } : DEFAULT_URGENCY_LEVEL
+}
 
 interface TradingApiResponseToTradeArgs {
   currencyIn: Currency
@@ -78,9 +85,9 @@ export function transformTradingApiResponseToTrade(params: TradingApiResponseToT
       // We validate the token addresses match to ensure the trade is valid.
       if (
         !areAddressesEqual({
-          addressInput1: { address: currencyIn.wrapped.address, chainId: currencyIn.chainId },
+          addressInput1: { address: getTokenAddressForApi(currencyIn), chainId: currencyIn.chainId },
           addressInput2: { address: quote.orderInfo.input.token, chainId: currencyIn.chainId },
-        }) || // UniswapX quotes should use wrapped native as input, rather than the native token
+        }) ||
         !areAddressesEqual({
           addressInput1: { address: getTokenAddressForApi(currencyOut), chainId: currencyOut.chainId },
           addressInput2: { address: quote.orderInfo.outputs[0]?.token, chainId: currencyOut.chainId },
@@ -149,6 +156,7 @@ function computeRoutes({
   }
 
   const tokenIn = quote.route[0]?.[0]?.tokenIn
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
   const tokenOut = quote.route[0]?.[quote.route[0]?.length - 1]?.tokenOut
 
   if (!tokenIn || !tokenOut) {
@@ -543,9 +551,9 @@ export function createGetQuoteSlippageParams(ctx: {
       return { slippageTolerance: customSlippageTolerance }
     }
 
-    // For bridging or USD quotes, we do not apply any slippage settings
+    // For cross-chain swaps, use default as it will be handled by the backend
     if (tokenInChainId !== tokenOutChainId || isUSDQuote) {
-      return undefined
+      return { autoSlippage: TradingApi.AutoSlippage.DEFAULT }
     }
 
     // L2 chains should use the minimum slippage tolerance defined in the dynamic config

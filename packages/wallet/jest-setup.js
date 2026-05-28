@@ -1,10 +1,9 @@
+import '@universe/environment/jest-package-mocks'
 import 'utilities/jest-package-mocks'
 import 'config/jest-presets/ui/ui-package-mocks'
 import 'uniswap/jest-package-mocks'
 import 'wallet/jest-package-mocks'
-
 import 'uniswap/src/i18n' // Uses real translations for tests
-
 
 jest.mock('uniswap/src/features/gas/hooks', () => ({
   useActiveGasStrategy: jest.fn().mockReturnValue({
@@ -41,7 +40,6 @@ jest.mock('uniswap/src/config', () => ({
     tradingApiUrlOverride: '',
     tradingApiWebTestEnv: '',
     uniswapApiKey: 'test-uniswap-key',
-    unitagsApiUrlOverride: '',
     walletConnectProjectId: 'test-wallet-connect-id',
     walletConnectProjectIdBeta: 'test-wallet-connect-beta',
     walletConnectProjectIdDev: 'test-wallet-connect-dev',
@@ -63,24 +61,16 @@ jest.mock('ui/src/components/swipeablecards/ClickableWithinGesture', () => {
   return jest.requireActual('ui/src/components/swipeablecards/ClickableWithinGesture.native.tsx')
 })
 
-import crypto from "crypto"
+import crypto from 'crypto'
 
-Object.defineProperty(global, "crypto", {
+Object.defineProperty(global, 'crypto', {
   value: {
     getRandomValues: (arr) => crypto.randomBytes(arr.length),
     subtle: crypto.webcrypto.subtle,
   },
-});
+})
 
 // Use native locales
 jest.mock('utilities/src/device/locales', () => {
   return jest.requireActual('utilities/src/device/locales.native.ts')
-})
-
-// Mock getConfig to use native implementation
-jest.mock('@universe/config', () => {
-  const { getConfig } = jest.requireActual('@universe/config/src/getConfig.native')
-  return {
-    getConfig
-  }
 })

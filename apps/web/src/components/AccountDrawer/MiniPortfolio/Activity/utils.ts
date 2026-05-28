@@ -1,8 +1,6 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import { GraphQLApi, TradingApi } from '@universe/api'
-import { Activity, ActivityMap } from 'components/AccountDrawer/MiniPortfolio/Activity/types'
-import { getYear, isSameDay, isSameMonth, isSameWeek, isSameYear } from 'date-fns'
-import { parseUnits } from 'ethers/lib/utils'
+import dayjs from 'dayjs'
 import { getNativeAddress } from 'uniswap/src/constants/addresses'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { TransactionStatus } from 'uniswap/src/features/transactions/types/transactionDetails'
@@ -10,6 +8,8 @@ import i18n from 'uniswap/src/i18n'
 import { logger } from 'utilities/src/logger/logger'
 import { ONE_SECOND_MS } from 'utilities/src/time/time'
 import { DEFAULT_ERC20_DECIMALS } from 'utilities/src/tokens/constants'
+import { parseUnits } from '~/chains'
+import { Activity, ActivityMap } from '~/components/AccountDrawer/MiniPortfolio/Activity/types'
 
 interface ActivityGroup {
   title: string
@@ -57,18 +57,18 @@ export const createGroups = (activities: Array<Activity> = [], hideSpam = false)
       } else {
         pending.push(activity)
       }
-    } else if (isSameDay(now, addedTime)) {
+    } else if (dayjs(now).isSame(addedTime, 'day')) {
       today.push(activity)
-    } else if (isSameWeek(addedTime, now)) {
+    } else if (dayjs(addedTime).isSame(now, 'week')) {
       currentWeek.push(activity)
-    } else if (isSameMonth(addedTime, now)) {
+    } else if (dayjs(addedTime).isSame(now, 'month')) {
       last30Days.push(activity)
-    } else if (isSameYear(addedTime, now)) {
+    } else if (dayjs(addedTime).isSame(now, 'year')) {
       currentYear.push(activity)
     } else {
-      const year = getYear(addedTime)
+      const year = dayjs(addedTime).year()
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       if (!yearMap[year]) {
         yearMap[year] = [activity]
       } else {
@@ -99,14 +99,14 @@ export const createGroups = (activities: Array<Activity> = [], hideSpam = false)
  * @returns the nonce as BigNumber if available, undefined otherwise
  */
 export function getActivityNonce(activity: Activity): BigNumber | undefined {
+  /* oxlint-disable typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here */
   if (
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    activity.options?.request?.nonce !== undefined &&
-    // TODO(PORT-338): determine why nonce is being sent in as null value
+    // sometime the nonce is being sent in as null value
     // when creating a limit order (should be undefined or BigNumberish)
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    activity.options?.request?.nonce !== undefined &&
     activity.options.request.nonce !== null
   ) {
+    /* oxlint-enable typescript/no-unnecessary-condition */
     return BigNumber.from(activity.options.request.nonce)
   }
 

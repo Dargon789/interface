@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { Flex, styled, Text } from 'ui/src'
-import { NFTViewer } from 'uniswap/src/components/nfts/images/NFTViewer'
+import { NFTViewer } from 'uniswap/src/components/nfts/NFTViewer'
 
 interface NftAmountDisplayProps {
   nftImageUrl?: string
@@ -17,7 +17,7 @@ const NftImageContainer = styled(Flex, {
   backgroundColor: '$surface3',
 })
 
-function _NftAmountDisplay({
+function NftAmountDisplayInner({
   nftImageUrl,
   nftName,
   nftCollectionName,
@@ -54,4 +54,4 @@ function _NftAmountDisplay({
   )
 }
 
-export const NftAmountDisplay = memo(_NftAmountDisplay)
+export const NftAmountDisplay = memo(NftAmountDisplayInner)

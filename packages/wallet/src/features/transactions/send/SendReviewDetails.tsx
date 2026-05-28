@@ -1,4 +1,5 @@
-/* eslint-disable complexity */
+import { isWebPlatform } from '@universe/environment'
+/* oxlint-disable complexity */
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
@@ -28,14 +29,13 @@ import {
   TransactionScreen,
   useTransactionModalContext,
 } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
 import { TransactionDetails } from 'uniswap/src/features/transactions/TransactionDetails/TransactionDetails'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { currencyAddress } from 'uniswap/src/utils/currencyId'
 import { shortenAddress } from 'utilities/src/addresses'
 import { NumberType } from 'utilities/src/format/types'
 import { logger } from 'utilities/src/logger/logger'
-import { isWebPlatform } from 'utilities/src/platform'
 import { useWalletNavigation } from 'wallet/src/contexts/WalletNavigationContext'
 import { useIsErc20Contract } from 'wallet/src/features/contracts/hooks'
 import { useSendContext } from 'wallet/src/features/transactions/contexts/SendContext'
@@ -142,6 +142,7 @@ export function SendReviewDetails({
       submitTranaction()
     }
 
+    // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
     await onSubmitSend?.()
   }, [authTrigger, setScreen, submitTranaction, onSubmitSend])
 
@@ -296,12 +297,10 @@ export function SendReviewDetails({
       <TransactionDetails
         AccountDetails={
           <Flex row alignItems="center" justifyContent="space-between">
-            <Text color="$neutral2" variant="body3">
+            <Text color="$neutral2" variant="body3" pr="$spacing8">
               {t('common.wallet.label')}
             </Text>
             <AddressDisplay
-              disableForcedWidth
-              flexGrow={false}
               address={account.address}
               hideAddressInSubtitle={true}
               horizontalGap="$spacing4"
@@ -312,6 +311,7 @@ export function SendReviewDetails({
         }
         chainId={chainId as UniverseChainId}
         gasFee={gasFee}
+        isSwap={false}
         showWarning={Boolean(transferWarning)}
         warning={transferWarning}
         onShowWarning={onShowWarning}

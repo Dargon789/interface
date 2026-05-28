@@ -8,9 +8,10 @@ import { selectPopupState } from 'src/app/features/popups/selectors'
 import { closePopup, openPopup, PopupName } from 'src/app/features/popups/slice'
 import { AppRoutes } from 'src/app/navigation/constants'
 import { navigate } from 'src/app/navigation/state'
-import { Circle, Flex, Popover, Text, TouchableArea, UniversalImage } from 'ui/src'
+import { Circle, Flex, Popover, TouchableArea, UniversalImage } from 'ui/src'
 import { animationPresets } from 'ui/src/animations'
 import { CopyAlt, Globe, RotatableChevron, Settings } from 'ui/src/components/icons'
+import { DynamicSizeText } from 'ui/src/components/text/DynamicSizeText/DynamicSizeText'
 import { borderRadii, iconSizes } from 'ui/src/theme'
 import { DappIconPlaceholder } from 'uniswap/src/components/dapps/DappIconPlaceholder'
 import { AccountIcon } from 'uniswap/src/features/accounts/AccountIcon'
@@ -23,8 +24,8 @@ import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { ExtensionScreens } from 'uniswap/src/types/screens/extension'
 import { sanitizeAddressText } from 'uniswap/src/utils/addresses'
-import { setClipboard } from 'uniswap/src/utils/clipboard'
 import { shortenAddress } from 'utilities/src/addresses'
+import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { extractNameFromUrl } from 'utilities/src/format/extractNameFromUrl'
 import { AnimatedUnitagDisplayName } from 'wallet/src/components/accounts/AnimatedUnitagDisplayName'
 import useIsFocused from 'wallet/src/features/focus/useIsFocused'
@@ -55,6 +56,7 @@ const RotatingSettingsIcon = ({ onPressSettings }: { onPressSettings(): void }):
         }),
       )
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [isScreenFocused])
 
   const onBegin = (): void => {
@@ -94,7 +96,7 @@ const RotatingSettingsIcon = ({ onPressSettings }: { onPressSettings(): void }):
   )
 }
 
-export const PortfolioHeader = memo(function _PortfolioHeader({ address }: PortfolioHeaderProps): JSX.Element {
+export const PortfolioHeader = memo(function PortfolioHeaderInner({ address }: PortfolioHeaderProps): JSX.Element {
   const dispatch = useDispatch()
 
   const displayName = useDisplayName(address)
@@ -152,12 +154,12 @@ export const PortfolioHeader = memo(function _PortfolioHeader({ address }: Portf
     <Flex gap="$spacing8">
       <Flex row justifyContent="space-between" alignItems="flex-start">
         <TouchableArea pressStyle={{ scale: 0.95 }} onPress={onPressAccount}>
-          <Flex group row alignItems="center" gap="$spacing4">
+          <Flex row alignItems="center" gap="$spacing4">
             <Flex $group-hover={{ opacity: 0.6 }}>
               <AccountIcon address={address} size={iconSizes.icon48} />
             </Flex>
             <Flex $group-hover={{ opacity: 1 }} opacity={0}>
-              <RotatableChevron color="$neutral3" direction="down" height={iconSizes.icon20} width={iconSizes.icon20} />
+              <RotatableChevron color="$neutral3" direction="down" size="$icon.20" />
             </Flex>
           </Flex>
         </TouchableArea>
@@ -207,13 +209,14 @@ export const PortfolioHeader = memo(function _PortfolioHeader({ address }: Portf
         {walletHasName ? (
           <AnimatedUnitagDisplayName address={address} displayName={displayName} />
         ) : (
-          <TouchableArea testID="account-header/address-only" onPress={onPressCopyAddress}>
-            <Flex centered row shrink gap="$spacing4">
-              <Text adjustsFontSizeToFit color="$neutral1" numberOfLines={1} variant="subheading1">
-                {formattedAddress}
-              </Text>
-              <CopyAlt color="$neutral3" size="$icon.16" />
-            </Flex>
+          <TouchableArea testID="account-header/address-only" onPress={onPressCopyAddress} width="100%">
+            <DynamicSizeText
+              variant="subheading1"
+              gap="$spacing4"
+              floatingSuffix={<CopyAlt color="$neutral3" size="$icon.16" />}
+            >
+              {formattedAddress}
+            </DynamicSizeText>
           </TouchableArea>
         )}
       </Flex>

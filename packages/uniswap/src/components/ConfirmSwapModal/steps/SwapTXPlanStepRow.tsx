@@ -18,7 +18,7 @@ import { UniswapXSignatureStep } from 'uniswap/src/features/transactions/swap/st
 import {
   SwapTransactionStep,
   SwapTransactionStepAsync,
-  SwapTransactionStepBatched,
+  SwapTransactionStepWalletCall,
 } from 'uniswap/src/features/transactions/swap/steps/swap'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
 import { logger } from 'utilities/src/logger/logger'
@@ -27,7 +27,7 @@ export type SwapSteps = (
   | SwapTransactionStep
   | SwapTransactionStepAsync
   | UniswapXSignatureStep
-  | SwapTransactionStepBatched
+  | SwapTransactionStepWalletCall
 ) &
   TradingApi.PlanStep
 
@@ -97,7 +97,7 @@ export function SwapTransactionPlanStepRow({
       icon={Icon}
       learnMore={{
         url:
-          step.type === TransactionStepType.SwapTransactionBatched
+          step.type === TransactionStepType.SwapTransactionWalletCall
             ? uniswapUrls.helpArticleUrls.batchedSwaps
             : uniswapUrls.helpArticleUrls.howToSwapTokens,
         text: t('common.learnMoreSwap'),
@@ -141,6 +141,8 @@ function getStatusText(params: {
     switch (status) {
       case StepStatus.Preview:
       case StepStatus.Active:
+      case StepStatus.Failed:
+      case StepStatus.Replaced:
         return t('swap.review.bridge.idle', commonParams)
       case StepStatus.InProgress:
         return t('swap.review.bridge.pending', commonParams)
@@ -158,6 +160,8 @@ function getStatusText(params: {
     switch (status) {
       case StepStatus.Preview:
       case StepStatus.Active:
+      case StepStatus.Failed:
+      case StepStatus.Replaced:
         return t('swap.review.swap.idle', commonParams)
       case StepStatus.InProgress:
         return t('swap.review.swap.pending', commonParams)

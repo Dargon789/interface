@@ -41,7 +41,7 @@ const Header = ({
   logo?: ReactNode
 }): JSX.Element => {
   return (
-    <Flex row alignItems="center" gap="$spacing4">
+    <Flex row alignItems="center" gap="$spacing6">
       {logo}
       {Icon && <Icon size="$icon.16" color={iconColor} />}
       {title.uniswapX ? (
@@ -108,14 +108,7 @@ const LineItemValue = ({
   )
 }
 
-const Description = ({
-  text,
-  learnMoreUrl,
-}: {
-  text: string
-  learnMoreUrl?: string
-  learnMorePinkColor?: boolean
-}): JSX.Element => {
+const Description = ({ text, learnMoreUrl }: { text: string; learnMoreUrl?: string }): JSX.Element => {
   const { t } = useTranslation()
 
   return (
@@ -125,7 +118,7 @@ const Description = ({
       </Text>
       {learnMoreUrl && (
         <Anchor href={learnMoreUrl} rel="noopener noreferrer" target="_blank" textDecorationLine="none">
-          <Text variant="buttonLabel4" color={learnMoreUrl ? '$accent1' : '$neutral1'}>
+          <Text variant="buttonLabel4" color="$neutral1">
             {t('common.button.learn')}
           </Text>
         </Anchor>

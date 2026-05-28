@@ -1,13 +1,14 @@
-/* eslint-disable no-extra-semi */
 import { Signer } from '@ethersproject/abstract-signer'
-import { SignerInfo, waitForFlashbotsProtectReceipt } from 'uniswap/src/features/providers/FlashbotsCommon'
+import { waitForFlashbotsProtectReceipt } from '@universe/chains'
+import { HexString } from '@universe/encoding'
+import { buildFlashbotsUrl, SignerInfo } from 'uniswap/src/features/providers/FlashbotsCommon'
 import { createFlashbotsRpcClient } from 'uniswap/src/features/providers/FlashbotsRpcClient'
-import { HexString } from 'utilities/src/addresses/hex'
 import { Chain, PublicClient } from 'viem'
 import { mainnet } from 'viem/chains'
+import type { Mock, Mocked } from 'vitest'
 
 // Mock fetch
-global.fetch = jest.fn() as jest.Mock
+global.fetch = vi.fn() as Mock
 
 const testAddress = '0xF570F45f598fD48AF83FABD692629a2caFe899ec' as HexString
 
@@ -19,40 +20,40 @@ const mockChain: Chain = {
 }
 
 // Mock the sleep function to avoid waiting in tests
-jest.mock('utilities/src/time/timing', () => ({
-  sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('utilities/src/time/timing', () => ({
+  sleep: vi.fn().mockResolvedValue(undefined),
 }))
 
 describe('FlashbotsRpcClient', () => {
-  let mockSigner: jest.Mocked<Signer>
+  let mockSigner: Mocked<Signer>
   let signerInfo: SignerInfo
   let client: PublicClient
 
   beforeEach(() => {
     // Reset mocks
-    ;(global.fetch as jest.Mock).mockReset()
+    ;(global.fetch as Mock).mockReset()
     // Create mock signer
     mockSigner = {
-      signMessage: jest.fn().mockResolvedValue(`0xsignature` as HexString),
-      getAddress: jest.fn().mockResolvedValue(testAddress),
-      signTransaction: jest.fn(),
-      connect: jest.fn(),
+      signMessage: vi.fn().mockResolvedValue(`0xsignature` as HexString),
+      getAddress: vi.fn().mockResolvedValue(testAddress),
+      signTransaction: vi.fn(),
+      connect: vi.fn(),
       _isSigner: true,
       provider: undefined,
-      _checkProvider: jest.fn(),
-      estimateGas: jest.fn(),
-      call: jest.fn(),
-      resolveProperties: jest.fn(),
-      populateTransaction: jest.fn(),
-      checkTransaction: jest.fn(),
-      sendTransaction: jest.fn(),
-      getBalance: jest.fn(),
-      getTransactionCount: jest.fn(),
-      getChainId: jest.fn(),
-      getGasPrice: jest.fn(),
-      getFeeData: jest.fn(),
-      resolveName: jest.fn(),
-    } as jest.Mocked<Signer>
+      _checkProvider: vi.fn(),
+      estimateGas: vi.fn(),
+      call: vi.fn(),
+      resolveProperties: vi.fn(),
+      populateTransaction: vi.fn(),
+      checkTransaction: vi.fn(),
+      sendTransaction: vi.fn(),
+      getBalance: vi.fn(),
+      getTransactionCount: vi.fn(),
+      getChainId: vi.fn(),
+      getGasPrice: vi.fn(),
+      getFeeData: vi.fn(),
+      resolveName: vi.fn(),
+    } as Mocked<Signer>
 
     // Create signer info
     signerInfo = {
@@ -64,6 +65,7 @@ describe('FlashbotsRpcClient', () => {
     client = createFlashbotsRpcClient({
       chain: mockChain,
       signerInfo,
+      areAddressesEqual: (a, b) => a.toLowerCase() === b.toLowerCase(),
     })
   })
 
@@ -76,6 +78,7 @@ describe('FlashbotsRpcClient', () => {
       const flashbotsClient = createFlashbotsRpcClient({
         chain: mockChain,
         signerInfo,
+        areAddressesEqual: (a, b) => a.toLowerCase() === b.toLowerCase(),
       })
 
       // Make a test request to trigger URL construction
@@ -85,7 +88,7 @@ describe('FlashbotsRpcClient', () => {
       })
 
       // Verify the request was made with the correct URL
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0]
+      const fetchCall = (global.fetch as Mock).mock.calls[0]!
       const requestUrl = fetchCall[0]
 
       // Check base URL
@@ -112,6 +115,7 @@ describe('FlashbotsRpcClient', () => {
         chain: mockChain,
         signerInfo,
         refundPercent,
+        areAddressesEqual: (a, b) => a.toLowerCase() === b.toLowerCase(),
       })
 
       // Make a test request to trigger URL construction
@@ -121,9 +125,62 @@ describe('FlashbotsRpcClient', () => {
       })
 
       // Verify the request was made with the correct URL including custom refund
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0]
+      const fetchCall = (global.fetch as Mock).mock.calls[0]!
       const requestUrl = fetchCall[0]
       expect(requestUrl).toContain(`refund=${testAddress}:${refundPercent}`)
+    })
+  })
+
+  describe('buildFlashbotsUrl hint params', () => {
+    it('should not include hint params when calldataHintsEnabled is false', () => {
+      const url = buildFlashbotsUrl({
+        address: testAddress,
+        refundPercent: 50,
+        calldataHintsEnabled: false,
+      })
+      expect(url).not.toContain('hint=')
+      expect(url).toContain(`refund=${testAddress}:50`)
+      expect(url).toContain('blockRange=10')
+    })
+
+    it('should not include hint params when calldataHintsEnabled is undefined', () => {
+      const url = buildFlashbotsUrl({
+        address: testAddress,
+        refundPercent: 50,
+      })
+      expect(url).not.toContain('hint=')
+    })
+
+    it('should include calldata and logs hints when calldataHintsEnabled is true', () => {
+      const url = buildFlashbotsUrl({
+        address: testAddress,
+        refundPercent: 90,
+        calldataHintsEnabled: true,
+      })
+      expect(url).toContain('hint=calldata')
+      expect(url).toContain('hint=logs')
+      expect(url).toContain(`refund=${testAddress}:90`)
+      expect(url).toContain('blockRange=10')
+    })
+
+    it('should produce the correct full URL for the treatment group', () => {
+      const url = buildFlashbotsUrl({
+        address: testAddress,
+        refundPercent: 90,
+        calldataHintsEnabled: true,
+      })
+      expect(url).toBe(
+        `https://rpc.flashbots.net/fast?originId=uniswapwallet&hint=calldata&hint=logs&refund=${testAddress}:90&blockRange=10`,
+      )
+    })
+
+    it('should produce the correct full URL for the control group', () => {
+      const url = buildFlashbotsUrl({
+        address: testAddress,
+        refundPercent: 50,
+        calldataHintsEnabled: false,
+      })
+      expect(url).toBe(`https://rpc.flashbots.net/fast?originId=uniswapwallet&refund=${testAddress}:50&blockRange=10`)
     })
   })
 
@@ -141,7 +198,7 @@ describe('FlashbotsRpcClient', () => {
       expect(global.fetch).toHaveBeenCalledTimes(1)
 
       // Check that the Flashbots signature header was NOT added (standard request)
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0]
+      const fetchCall = (global.fetch as Mock).mock.calls[0]!
       const headers = fetchCall[1]?.headers
       expect(headers?.['X-Flashbots-Signature']).toBeUndefined()
     })
@@ -160,7 +217,7 @@ describe('FlashbotsRpcClient', () => {
       expect(mockSigner.signMessage).toHaveBeenCalled()
 
       // Check that the Flashbots signature header was added
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0]
+      const fetchCall = (global.fetch as Mock).mock.calls[0]!
       const headers = fetchCall[1]?.headers
       expect(headers?.['X-Flashbots-Signature']).toBe(`${testAddress}:0xsignature`)
     })
@@ -180,7 +237,7 @@ describe('FlashbotsRpcClient', () => {
       expect(global.fetch).toHaveBeenCalledTimes(1)
 
       // Check that the Flashbots signature header was NOT added
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0]
+      const fetchCall = (global.fetch as Mock).mock.calls[0]!
       const headers = fetchCall[1]?.headers
       expect(headers?.['X-Flashbots-Signature']).toBeUndefined()
     })
@@ -228,7 +285,7 @@ describe('FlashbotsRpcClient', () => {
       expect(global.fetch).toHaveBeenCalledTimes(1)
 
       // Verify the request was made with the correct URL and standard transport which has no headers
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0]
+      const fetchCall = (global.fetch as Mock).mock.calls[0]!
 
       const headers = fetchCall[1]?.headers
       expect(headers?.['Content-Type']).toBe('application/json')
@@ -244,7 +301,7 @@ describe('FlashbotsRpcClient', () => {
 
 describe('waitForFlashbotsProtectReceipt', () => {
   beforeEach(() => {
-    ;(global.fetch as jest.Mock).mockReset()
+    ;(global.fetch as Mock).mockReset()
   })
 
   it('should poll until a final status is received', async () => {
@@ -292,7 +349,7 @@ describe('waitForFlashbotsProtectReceipt', () => {
     expect(global.fetch).toHaveBeenCalledTimes(2)
 
     // Verify the URL is correctly formed
-    const fetchCall = (global.fetch as jest.Mock).mock.calls[0]
+    const fetchCall = (global.fetch as Mock).mock.calls[0]!
     expect(fetchCall[0]).toBe(`https://protect.flashbots.net/tx/${transactionHash}`)
   })
 
@@ -323,9 +380,9 @@ describe('waitForFlashbotsProtectReceipt', () => {
 
 // Helper function to mock fetch responses
 function mockFetchResponse(responseData: unknown, ok = true): void {
-  ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+  ;(global.fetch as Mock).mockResolvedValueOnce({
     ok,
-    json: jest.fn().mockResolvedValueOnce(responseData),
+    json: vi.fn().mockResolvedValueOnce(responseData),
     status: ok ? 200 : 400,
     statusText: ok ? 'OK' : 'Bad Request',
     headers: new Headers({

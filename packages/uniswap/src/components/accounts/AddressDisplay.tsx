@@ -1,8 +1,9 @@
 import { SharedEventName } from '@uniswap/analytics-events'
-import { PropsWithChildren, useMemo, useState } from 'react'
-import type { FlexAlignType, LayoutChangeEvent } from 'react-native'
+import { isWebApp } from '@universe/environment'
+import { PropsWithChildren, useMemo } from 'react'
+import type { FlexAlignType } from 'react-native'
 import { useDispatch } from 'react-redux'
-import { AnimatableCopyIcon, ColorTokens, Flex, SpaceTokens, Text, TextProps, TouchableArea } from 'ui/src'
+import { AnimatableCopyIcon, ColorTokens, Flex, SpaceTokens, Text, TouchableArea } from 'ui/src'
 import { fonts } from 'ui/src/theme'
 import { DisplayNameText } from 'uniswap/src/components/accounts/DisplayNameText'
 import { useUniswapContext } from 'uniswap/src/contexts/UniswapContext'
@@ -14,9 +15,8 @@ import { ElementName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { sanitizeAddressText } from 'uniswap/src/utils/addresses'
-import { setClipboard } from 'uniswap/src/utils/clipboard'
 import { shortenAddress } from 'utilities/src/addresses'
-import { isWebApp, isWebPlatform } from 'utilities/src/platform'
+import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { ONE_SECOND_MS } from 'utilities/src/time/time'
 import { useTimeout } from 'utilities/src/time/timing'
@@ -30,12 +30,12 @@ type AddressDisplayProps = {
   size?: number
   variant?: keyof typeof fonts
   textColor?: ColorTokens
+  textHoverColor?: ColorTokens
   alignItems?: 'flex-start' | 'center'
   captionTextColor?: ColorTokens
   captionVariant?: keyof typeof fonts
   centered?: boolean
   direction?: 'row' | 'column'
-  flexGrow?: boolean
   showCopy?: boolean
   showCopyWrapperButton?: boolean
   showAccountIcon?: boolean
@@ -47,12 +47,8 @@ type AddressDisplayProps = {
   notificationsBadgeContainer?: ({ children, address }: { children: JSX.Element; address: string }) => JSX.Element
   gapBetweenLines?: SpaceTokens
   showViewOnlyBadge?: boolean
-  addressNumVisibleCharacters?: 4 | 6
-
-  // TODO WALL-4545 Added flag to disable forced width causing trouble in other screens
-  disableForcedWidth?: boolean
-  // TODO WALL-4545 Consider if this is still needed after removing forced width implementation
-  displayNameTextAlign?: TextProps['textAlign']
+  addressNumVisibleCharacters?: 4 | 6 | 8
+  grow?: boolean
 }
 
 type CopyButtonWrapperProps = {
@@ -74,6 +70,7 @@ function CopyButtonWrapper({ children, onPress }: PropsWithChildren<CopyButtonWr
 
 /** Helper component to display AccountIcon and formatted address */
 
+// oxlint-disable-next-line complexity
 export function AddressDisplay({
   allowFontScaling = true,
   overrideDisplayName,
@@ -82,13 +79,12 @@ export function AddressDisplay({
   size = 24,
   variant = 'body1',
   textColor = '$neutral1',
-  alignItems = 'center',
+  textHoverColor,
   captionTextColor = '$neutral2',
   captionVariant = 'subheading2',
   centered,
   hideAddressInSubtitle = false,
   direction = 'row',
-  flexGrow = true,
   showCopy = false,
   showCopyWrapperButton = false,
   showAccountIcon = true,
@@ -99,15 +95,14 @@ export function AddressDisplay({
   notificationsBadgeContainer,
   includeUnitagSuffix = false,
   gapBetweenLines = '$none',
-  disableForcedWidth = false,
-  displayNameTextAlign,
   addressNumVisibleCharacters = 6,
+  alignItems = 'center',
+  grow,
 }: AddressDisplayProps): JSX.Element {
   const dispatch = useDispatch()
   const { useWalletDisplayName } = useUniswapContext()
   const displayName = useWalletDisplayName(address, { includeUnitagSuffix, overrideDisplayName })
-  const [wrapperWidth, setWrapperWidth] = useState<number | undefined>()
-  // TODO (PORT-431): Make a general/shared CopyHelper component
+  // TODO (CONS-431): Make a general/shared CopyHelper component
   const { value: isCopied, setTrue: setIsCopied, setFalse: setIsNotCopied } = useBooleanState(false)
 
   const showAddressAsSubtitle = !hideAddressInSubtitle && displayName?.type !== DisplayNameType.Address
@@ -150,37 +145,31 @@ export function AddressDisplay({
   }, [address, showIconBackground, showIconBorder, showViewOnlyBadge, size])
 
   return (
-    <Flex
-      shrink
-      flexDirection={direction}
-      alignItems={alignItems}
-      gap={horizontalGap}
-      onLayout={(e: LayoutChangeEvent) => {
-        isWebPlatform && setWrapperWidth(e.nativeEvent.layout.width)
-      }}
-    >
-      {showAccountIcon &&
-        (notificationsBadgeContainer ? notificationsBadgeContainer({ children: icon, address }) : icon)}
-      <Flex flexGrow={flexGrow ? 1 : undefined} gap={gapBetweenLines}>
+    <Flex shrink grow={grow} flexDirection={direction} gap={horizontalGap} alignItems={alignItems}>
+      {showAccountIcon && (
+        <Flex centered={centered}>
+          {notificationsBadgeContainer ? notificationsBadgeContainer({ children: icon, address }) : icon}
+        </Flex>
+      )}
+      <Flex shrink gap={gapBetweenLines}>
         <CopyButtonWrapper onPress={showCopy && !showAddressAsSubtitle ? onPressCopyAddress : undefined}>
-          <Flex row centered={centered} gap="$spacing12">
+          <Flex row gap="$spacing12" mx={showCopy && !showAddressAsSubtitle ? mainSize : undefined}>
             <DisplayNameText
-              disableForcedWidth={disableForcedWidth}
               displayName={displayName}
-              forcedWidth={wrapperWidth}
               gap="$spacing4"
               includeUnitagSuffix={includeUnitagSuffix}
               textProps={{
                 adjustsFontSizeToFit: true,
                 allowFontScaling,
                 color: textColor,
+                hoverStyle: textHoverColor ? { color: textHoverColor } : undefined,
                 ellipsizeMode: 'tail',
                 fontFamily: '$heading',
                 fontSize: mainSize,
                 lineHeight: lineHeight ?? fonts[variant].lineHeight,
                 numberOfLines: 1,
                 testID: `address-display/name/${displayName?.name}`,
-                textAlign: displayNameTextAlign,
+                textAlign: centered ? 'center' : undefined,
               }}
               unitagIconSize={mainSize}
               flexShrink={1}
@@ -191,20 +180,23 @@ export function AddressDisplay({
             )}
           </Flex>
         </CopyButtonWrapper>
-        {showAddressAsSubtitle && (
-          <AddressSubtitle
-            address={address}
-            captionSize={captionSize}
-            captionTextColor={captionTextColor}
-            captionVariant={captionVariant}
-            centered={centered}
-            showCopy={showCopy}
-            showCopyWrapperButton={showCopyWrapperButton}
-            addressNumVisibleCharacters={addressNumVisibleCharacters}
-            isCopied={isCopied}
-            onPressCopyAddress={onPressCopyAddress}
-          />
-        )}
+
+        <Flex centered={centered}>
+          {showAddressAsSubtitle && (
+            <AddressSubtitle
+              address={address}
+              captionSize={captionSize}
+              captionTextColor={captionTextColor}
+              captionVariant={captionVariant}
+              centered={centered}
+              showCopy={showCopy}
+              showCopyWrapperButton={showCopyWrapperButton}
+              addressNumVisibleCharacters={addressNumVisibleCharacters}
+              isCopied={isCopied}
+              onPressCopyAddress={onPressCopyAddress}
+            />
+          )}
+        </Flex>
       </Flex>
     </Flex>
   )

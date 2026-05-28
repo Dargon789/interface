@@ -16,12 +16,13 @@ vi.mock('@tamagui/use-event', () => ({
       return undefined
     }, [])
   },
-  // eslint-disable-next-line
+  // oxlint-disable-next-line
   useGet: (currentValue: unknown, initialValue: unknown, forwardToFunction: unknown) => {
     const curRef = React.useRef(initialValue ?? currentValue)
     React.useLayoutEffect(() => {
       curRef.current = currentValue
     })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
     return React.useCallback(
       forwardToFunction && curRef.current
         ? // @ts-ignore

@@ -7,7 +7,7 @@ export function randomFloat(min: number, max: number): number {
 }
 
 export function randomChoice<T>(choices: T[]): T {
-  // biome-ignore lint/style/noNonNullAssertion: array access is safe here
+  // oxlint-disable-next-line typescript/no-non-null-assertion -- array access is safe here
   return choices[Math.floor(Math.random() * choices.length)]!
 }
 

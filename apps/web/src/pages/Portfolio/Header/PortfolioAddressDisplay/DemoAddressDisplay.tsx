@@ -1,23 +1,34 @@
-import { ReactComponent as Unicon } from 'assets/svg/Emblem/default.svg'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, Tooltip, useSporeColors } from 'ui/src'
 import { Eye } from 'ui/src/components/icons/Eye'
 import { iconSizes } from 'ui/src/theme'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { ReactComponent as Unicon } from '~/assets/svg/demo-wallet-emblem.svg'
+import { HEADER_TRANSITION } from '~/components/StickyCollapsibleHeader/constants'
 
-export default function DemoAddressDisplay() {
+export function DemoAddressDisplay({ isCompact }: { isCompact: boolean }) {
   const colors = useSporeColors()
   const { t } = useTranslation()
 
+  const iconSize = isCompact ? iconSizes.icon24 : iconSizes.icon48
+  const uniconSize = isCompact ? 16 : 32
+
   return (
-    <Flex row alignItems="center" gap="$spacing12">
+    <Flex row alignItems="center" gap="$spacing12" testID={TestID.DemoWalletDisplay}>
       <Flex
         borderRadius="$roundedFull"
         backgroundColor="$accent2"
-        width={iconSizes.icon48}
-        height={iconSizes.icon48}
+        width={iconSize}
+        height={iconSize}
         centered
+        transition={HEADER_TRANSITION}
       >
-        <Unicon width={32} height={32} style={{ color: colors.accent1.val }} fill={colors.accent1.val} />
+        <Unicon
+          width={uniconSize}
+          height={uniconSize}
+          style={{ color: colors.accent1.val }}
+          fill={colors.accent1.val}
+        />
       </Flex>
       <Tooltip>
         <Tooltip.Trigger>

@@ -13,17 +13,18 @@ import {
   TransactionType,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { isNativeCurrencyAddress } from 'uniswap/src/utils/currencyId'
+import { createMonitoredSaga } from 'uniswap/src/utils/saga'
 import { logger } from 'utilities/src/logger/logger'
 import { executeTransaction } from 'wallet/src/features/transactions/executeTransaction/executeTransactionSaga'
 import { SendTokenParams } from 'wallet/src/features/transactions/send/types'
 import { getContractManager, getProvider } from 'wallet/src/features/wallet/context'
-import { createMonitoredSaga } from 'wallet/src/utils/saga'
 
 type Params = {
   sendTokenParams: SendTokenParams
   txRequest: providers.TransactionRequest
 }
 
+// oxlint-disable-next-line typescript/explicit-function-return-type
 export function* sendToken(params: Params) {
   try {
     const { sendTokenParams, txRequest } = params
@@ -68,6 +69,7 @@ function validateSendAmount(amountInWei: string, currentBalance: BigNumberish): 
   }
 }
 
+// oxlint-disable-next-line typescript/explicit-function-return-type
 function* validateSend(sendTokenParams: SendTokenParams) {
   const { type, chainId, tokenAddress, account } = sendTokenParams
   const contractManager = yield* call(getContractManager)
@@ -130,7 +132,7 @@ function getSendTypeInfo(params: SendTokenParams): SendTokenTransactionInfo {
 
   if (assetType === AssetType.ERC721 || assetType === AssetType.ERC1155) {
     typeInfo.tokenId = params.tokenId
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
   } else if (assetType === AssetType.Currency) {
     typeInfo.currencyAmountRaw = params.amountInWei
   }

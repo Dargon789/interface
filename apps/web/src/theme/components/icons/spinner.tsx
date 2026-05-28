@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noRestrictedImports: styled-components needed for keyframes animation
+// oxlint-disable-next-line no-restricted-imports -- styled-components needed for keyframes animation
 import styled, { css, keyframes } from 'styled-components'
 
 const rotate = keyframes`

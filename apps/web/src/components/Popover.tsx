@@ -1,13 +1,13 @@
 import { Options, Placement } from '@popperjs/core'
 import Portal from '@reach/portal'
-import useInterval from 'lib/hooks/useInterval'
-import { deprecatedStyled } from 'lib/styled-components'
 import React, { CSSProperties, memo, useCallback, useMemo, useState } from 'react'
 import { usePopper } from 'react-popper'
-import { Z_INDEX } from 'theme/zIndex'
+import { zIndexes } from 'ui/src/theme'
+import { deprecatedStyled } from '~/lib/deprecated-styled'
+import { useInterval } from '~/lib/hooks/useInterval'
 
 const PopoverContainer = deprecatedStyled.div<{ show: boolean }>`
-  z-index: ${Z_INDEX.popover};
+  z-index: ${zIndexes.popover};
   pointer-events: none;
   visibility: ${(props) => (props.show ? 'visible' : 'hidden')};
   opacity: ${(props) => (props.show ? 1 : 0)};
@@ -86,7 +86,7 @@ export interface PopoverProps {
   style?: CSSProperties
 }
 
-const Popover = memo(function Popover({
+export const Popover = memo(function Popover({
   content,
   show,
   children,
@@ -144,5 +144,3 @@ const Popover = memo(function Popover({
     </>
   )
 })
-
-export default Popover

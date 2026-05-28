@@ -80,5 +80,5 @@ const mockChrome = {
   },
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: need to set chrome to the mock chrome object
+// oxlint-disable-next-line typescript/no-explicit-any -- need to set chrome to the mock chrome object
 ;(global as any).chrome = mockChrome

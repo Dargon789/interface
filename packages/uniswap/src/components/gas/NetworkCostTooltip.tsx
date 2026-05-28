@@ -1,3 +1,4 @@
+import { FormattedUniswapXGasFeeInfo } from '@universe/api'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text } from 'ui/src'
 import { UniswapX } from 'ui/src/components/icons/UniswapX'
@@ -7,35 +8,29 @@ import { TransactionDetailsTooltip as Tooltip } from 'uniswap/src/components/Tra
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { FormattedUniswapXGasFeeInfo } from 'uniswap/src/features/gas/types'
 
-export function NetworkCostTooltipClassic({ chainId }: { chainId: UniverseChainId }): JSX.Element {
+export function NetworkCostTooltip({
+  chainId,
+  includesDelegation,
+}: {
+  chainId: UniverseChainId
+  includesDelegation: boolean
+}): JSX.Element {
   const { t } = useTranslation()
 
+  const learnMoreUrl = includesDelegation
+    ? uniswapUrls.helpArticleUrls.smartWalletDelegation
+    : uniswapUrls.helpArticleUrls.networkFeeInfo
+  const text = includesDelegation
+    ? t('smartWallet.banner.networkCost', { chainName: getChainInfo(chainId).label })
+    : t('transaction.networkCost.description')
   return (
     <Tooltip.Outer>
       <Tooltip.Header
         title={{ title: t('common.chain.networkCost', { chain: getChainInfo(chainId).name }) }}
         logo={<NetworkLogo chainId={chainId} size={16} />}
       />
-      <Tooltip.Description
-        learnMoreUrl={uniswapUrls.helpArticleUrls.networkFeeInfo}
-        text={t('transaction.networkCost.description')}
-      />
-    </Tooltip.Outer>
-  )
-}
-
-export function NetworkCostTooltipSmartWallet(): JSX.Element {
-  const { t } = useTranslation()
-
-  return (
-    <Tooltip.Outer>
-      <Tooltip.Description
-        learnMorePinkColor={true}
-        learnMoreUrl={uniswapUrls.helpArticleUrls.networkFeeInfo}
-        text={t('swap.warning.networkFee.message')}
-      />
+      <Tooltip.Description learnMoreUrl={learnMoreUrl} text={text} />
     </Tooltip.Outer>
   )
 }

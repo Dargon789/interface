@@ -1,5 +1,5 @@
-import type { StorybookConfig } from '@storybook/react-webpack5'
 import { dirname, join, resolve } from 'path'
+import type { StorybookConfig } from '@storybook/react-webpack5'
 import TerserPlugin from 'terser-webpack-plugin'
 import { DefinePlugin } from 'webpack'
 
@@ -40,7 +40,7 @@ const config: StorybookConfig = {
     config.plugins.push(
       new DefinePlugin({
         __DEV__: process.env.NODE_ENV === 'development',
-        'process.env.IS_UNISWAP_EXTENSION': JSON.stringify(process.env.STORYBOOK_EXTENSION || 'false'),
+        'process.env.APP_ID': JSON.stringify(process.env.STORYBOOK_EXTENSION === 'true' ? 'extension' : 'web'),
       }),
     )
 
@@ -147,6 +147,7 @@ const config: StorybookConfig = {
         ...config?.resolve?.alias,
         'react-native$': 'react-native-web',
         'expo-blur': require.resolve('./__mocks__/expo-blur.jsx'),
+        '~': resolve(__dirname, '../src'),
       },
     }
 

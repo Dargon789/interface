@@ -1,7 +1,6 @@
 import { FetchError, isRateLimitFetchError, TradingApi } from '@universe/api'
 import { TFunction } from 'i18next'
 import { Warning, WarningAction, WarningLabel, WarningSeverity } from 'uniswap/src/components/modals/WarningModal/types'
-
 import { DerivedSwapInfo } from 'uniswap/src/features/transactions/swap/types/derivedSwapInfo'
 
 export function getSwapWarningFromError({

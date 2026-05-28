@@ -1,9 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* oxlint-disable typescript/no-unnecessary-condition */
 import { createContext, PropsWithChildren, useContext } from 'react'
 import { getNativeAddress } from 'uniswap/src/constants/addresses'
 import { NavigateToNftItemArgs } from 'uniswap/src/contexts/UniswapContext'
 import { AssetType } from 'uniswap/src/entities/assets'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import type { EarnPositionInfo, EarnVaultInfo } from 'uniswap/src/features/earn/types'
 import { FiatOnRampCurrency } from 'uniswap/src/features/fiatOnRamp/types'
 import { ModalNameType } from 'uniswap/src/features/telemetry/constants'
 import { getSwapPrefilledState } from 'uniswap/src/features/transactions/swap/form/hooks/useSwapPrefilledState'
@@ -98,11 +99,6 @@ export function getNavigateToSendFlowArgsInitialState(args: NavigateToSendFlowAr
       : undefined
 }
 
-export type NavigateToNftCollectionArgs = {
-  collectionAddress: Address
-  chainId: UniverseChainId
-}
-
 export type NavigateToFiatOnRampArgs = {
   prefilledCurrency?: FiatOnRampCurrency
   isOfframp?: boolean
@@ -121,6 +117,11 @@ export type ShareTokenArgs = {
   currencyId: string
 }
 
+export type NavigateToEarnVaultArgs = {
+  vault: EarnVaultInfo
+  position?: EarnPositionInfo
+}
+
 export type WalletNavigationContextState = {
   navigateToAccountActivityList: () => void
   navigateToAccountTokenList: () => void
@@ -129,13 +130,14 @@ export type WalletNavigationContextState = {
   navigateToExternalProfile: (args: NavigateToExternalProfileArgs) => void
   navigateToFiatOnRamp: (args: NavigateToFiatOnRampArgs) => void
   navigateToNftDetails: (args: NavigateToNftItemArgs) => void
-  navigateToNftCollection: (args: NavigateToNftCollectionArgs) => void
   navigateToPoolDetails: (args: NavigateToPoolDetailsArgs) => void
   navigateToSwapFlow: (args: NavigateToSwapFlowArgs) => void
   navigateToTokenDetails: (currencyId: string) => void
   navigateToReceive: () => void
   navigateToSend: (args: NavigateToSendFlowArgs) => void
   handleShareToken: (args: ShareTokenArgs) => void
+  navigateToAdvancedSettings: () => void
+  navigateToEarnVault: (args: NavigateToEarnVaultArgs) => void
 }
 
 export const WalletNavigationContext = createContext<WalletNavigationContextState | undefined>(undefined)

@@ -6,10 +6,6 @@ export const CONVERSION_LEADS_STORAGE_KEY = 'conversion.leads'
 export const CONVERSION_LEADS_EXTERNAL_COOKIE_NAME = 'conversion.leads.external'
 export const CONVERSION_LEADS_EXTERNAL_COOKIE_DOMAIN = __DEV__ ? 'localhost' : '.uniswap.org'
 
-export const DEV_CONVERSION_PROXY_API_BASE_URL_DEPRECATED = 'https://erasld2vrf.execute-api.us-east-2.amazonaws.com'
-export const STAGING_CONVERSION_PROXY_API_BASE_URL_DEPRECATED = 'https://x6ahx1oagk.execute-api.us-east-2.amazonaws.com'
-export const PROD_CONVERSION_PROXY_API_BASE_URL_DEPRECATED = 'https://8mr3mthjba.execute-api.us-east-2.amazonaws.com'
-
 export const DEV_CONVERSION_PROXY_API_BASE_URL = 'https://entry-gateway.backend-dev.api.uniswap.org'
 export const STAGING_CONVERSION_PROXY_API_BASE_URL = 'https://entry-gateway.backend-staging.api.uniswap.org'
 export const PROD_CONVERSION_PROXY_API_BASE_URL = 'https://entry-gateway.backend-prod.api.uniswap.org'
@@ -52,7 +48,7 @@ export const REDDIT_CONVERSION_URL = `https://ads-api.reddit.com/api/v2.0/conver
 
 const GOOGLE_CUSTOMER_ID = '3416874723'
 export const GOOGLE_CONVERSION_URL = `https://googleads.googleapis.com/v21/customers/${GOOGLE_CUSTOMER_ID}:uploadClickConversions`
-export const GOOGLE_CONVERSION_DATETIME_FORMAT = 'yyyy-MM-dd HH:mm:ssXXX'
+export const GOOGLE_CONVERSION_DATETIME_FORMAT = 'YYYY-MM-DD HH:mm:ssZ'
 
 export const GOOGLE_CONVERSION_EVENTS = {
   Web: {

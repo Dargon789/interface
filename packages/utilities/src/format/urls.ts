@@ -1,3 +1,4 @@
+import { isExtensionApp } from '@universe/environment'
 import { logger } from 'utilities/src/logger/logger'
 
 /**
@@ -5,11 +6,13 @@ import { logger } from 'utilities/src/logger/logger'
  * @param uri to convert to fetch-able http url
  */
 export function uriToHttpUrls(uri: string, options?: { allowLocalUri?: boolean }): string[] {
+  if (uri.startsWith('/')) {
+    return options?.allowLocalUri ? [uri] : []
+  }
   const protocol = uri.split(':')[0]?.toLowerCase()
-
   switch (protocol) {
-    case uri: {
-      // If the result of protocol equals the uri, it means the uri has no protocol and is a local file (ie. a relative or absolute path).
+    // if uri is a path to a local file, return it only if allowed
+    case 'file': {
       return options?.allowLocalUri ? [uri] : []
     }
     case 'data':
@@ -18,7 +21,7 @@ export function uriToHttpUrls(uri: string, options?: { allowLocalUri?: boolean }
       return [uri]
     case 'http':
       // In extensions, prioritize HTTP for localhost since HTTPS localhost doesn't work
-      if (typeof process !== 'undefined' && process.env.IS_UNISWAP_EXTENSION === 'true' && uri.includes('localhost')) {
+      if (isExtensionApp && uri.includes('localhost')) {
         return [uri, 'https' + uri.slice(4)]
       }
       return ['https' + uri.slice(4), uri]
@@ -35,7 +38,32 @@ export function uriToHttpUrls(uri: string, options?: { allowLocalUri?: boolean }
       return [`https://arweave.net/${tx}`]
     }
     default:
+      // If protocol equals the full uri, there's no ':' separator — it's a bare path (e.g. "eth-logo.png").
+      // Treat it like a local file URI.
+      if (protocol === uri) {
+        return options?.allowLocalUri ? [uri] : []
+      }
       return []
+  }
+}
+
+/**
+ * Checks if the provided URI uses HTTP or HTTPS protocol.
+ *
+ * @param {Maybe<string>} uri The URI to check.
+ * @returns {boolean} True if the URI uses http:// or https://, false otherwise.
+ */
+export function isHttpUri(uri: Maybe<string>): boolean {
+  if (typeof uri !== 'string' || !uri.trim()) {
+    return false
+  }
+
+  try {
+    const url = new URL(uri)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    logger.warn('format/urls', 'isHttpUri', 'Invalid URI', { uri })
+    return false
   }
 }
 
@@ -122,4 +150,24 @@ export function extractUrlHost(url?: string): string | undefined {
 /** Returns the url origin (includes http or https) */
 export function extractBaseUrl(url?: string): string | undefined {
   return parseUrl(url)?.origin
+}
+
+/**
+ * Sanitizes an avatar URL by ensuring it uses HTTP or HTTPS protocol.
+ * Returns null for any URL that doesn't use a safe protocol.
+ *
+ * @param {string | null} url The URL to sanitize.
+ * @returns {string | null} The original URL if it uses http/https, null otherwise.
+ */
+export function sanitizeAvatarUrl(url: string | null): string | null {
+  if (!url) {
+    return null
+  }
+
+  if (isHttpUri(url)) {
+    return url
+  }
+
+  logger.warn('format/urls', 'sanitizeAvatarUrl', 'Rejected non-HTTP avatar URL', { url })
+  return null
 }

@@ -11,6 +11,7 @@ export const CHAINED_ACTIONS_SUPPORTED_CHAINS: UniverseChainId[] = [
   UniverseChainId.Mainnet,
   UniverseChainId.ArbitrumOne,
   UniverseChainId.Base,
+  UniverseChainId.Linea,
   UniverseChainId.Optimism,
   UniverseChainId.Soneium,
   UniverseChainId.Unichain,

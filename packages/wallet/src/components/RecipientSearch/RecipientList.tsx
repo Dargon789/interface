@@ -1,4 +1,5 @@
 import { BottomSheetSectionList } from '@gorhom/bottom-sheet'
+import { isWebPlatform } from '@universe/environment'
 import { memo, useCallback } from 'react'
 import { ListRenderItemInfo, SectionList, SectionListData } from 'react-native'
 import { FadeIn, FadeOut } from 'react-native-reanimated'
@@ -15,11 +16,15 @@ import { WalletEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { UNITAG_SUFFIX } from 'uniswap/src/features/unitags/constants'
 import { useAppInsets } from 'uniswap/src/hooks/useAppInsets'
-import { isWebPlatform } from 'utilities/src/platform'
+import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+
+export type RecipientSection = SectionListData<SearchableRecipient> & {
+  title?: string
+}
 
 interface RecipientListProps {
   renderedInModal?: boolean
-  sections: SectionListData<SearchableRecipient>[]
+  sections: RecipientSection[]
   onPress: (recipient: string) => void
 }
 
@@ -62,7 +67,7 @@ export function RecipientList({ onPress, sections, renderedInModal = false }: Re
   )
 }
 
-function SectionHeader(info: { section: SectionListData<SearchableRecipient> }): JSX.Element | null {
+function SectionHeader(info: { section: RecipientSection }): JSX.Element | null {
   return info.section.title ? (
     <AnimatedFlex
       backgroundColor="$surface1"
@@ -109,12 +114,13 @@ export const RecipientRow = memo(function RecipientRow({ recipient, onPress }: R
   const isNonUnitagSubdomain = !isUnitag && domain !== undefined && domain !== ENS_SUFFIX
 
   return (
-    <TouchableArea onPress={onPressWithAnalytics}>
+    <TouchableArea testID={TestID.SelectRecipientRow} onPress={onPressWithAnalytics}>
       <AddressDisplay
         includeUnitagSuffix
         address={recipient.address}
         overrideDisplayName={isNonUnitagSubdomain && recipient.name ? recipient.name : undefined}
         showViewOnlyBadge={isViewOnlyWallet}
+        addressNumVisibleCharacters={8}
         size={35}
       />
     </TouchableArea>

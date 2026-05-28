@@ -1,7 +1,7 @@
 import '@tamagui/core/reset.css'
 import 'src/app/Global.css'
-
 import { SharedEventName } from '@uniswap/analytics-events'
+import { isDevEnv } from '@universe/environment'
 import { useEffect, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { createHashRouter, RouterProvider } from 'react-router'
@@ -19,12 +19,16 @@ import { SendFlow } from 'src/app/features/send/SendFlow'
 import { BackupRecoveryPhraseScreen } from 'src/app/features/settings/BackupRecoveryPhrase/BackupRecoveryPhraseScreen'
 import { DeviceAccessScreen } from 'src/app/features/settings/DeviceAccessScreen'
 import { DevMenuScreen } from 'src/app/features/settings/DevMenuScreen'
+import { HashcashBenchmarkScreen } from 'src/app/features/settings/HashcashBenchmarkScreen'
+import { SessionsDebugScreen } from 'src/app/features/settings/SessionsDebugScreen'
+import { SettingsDisclosuresScreen } from 'src/app/features/settings/SettingsDisclosuresScreen'
 import { SettingsManageConnectionsScreen } from 'src/app/features/settings/SettingsManageConnectionsScreen/SettingsManageConnectionsScreen'
 import { RemoveRecoveryPhraseVerify } from 'src/app/features/settings/SettingsRecoveryPhraseScreen/RemoveRecoveryPhraseVerify'
 import { RemoveRecoveryPhraseWallets } from 'src/app/features/settings/SettingsRecoveryPhraseScreen/RemoveRecoveryPhraseWallets'
 import { ViewRecoveryPhraseScreen } from 'src/app/features/settings/SettingsRecoveryPhraseScreen/ViewRecoveryPhraseScreen'
 import { SettingsScreen } from 'src/app/features/settings/SettingsScreen'
 import { SettingsScreenWrapper } from 'src/app/features/settings/SettingsScreenWrapper'
+import { SettingsStorageScreen } from 'src/app/features/settings/SettingsStorageScreen'
 import { SmartWalletSettingsScreen } from 'src/app/features/settings/SmartWalletSettingsScreen'
 import { SwapFlowScreen } from 'src/app/features/swap/SwapFlowScreen'
 import { useIsWalletUnlocked } from 'src/app/hooks/useIsWalletUnlocked'
@@ -41,8 +45,8 @@ import { BackgroundToSidePanelRequestType } from 'src/background/messagePassing/
 import { PrimaryAppInstanceDebuggerLazy } from 'src/store/PrimaryAppInstanceDebuggerLazy'
 import { useResetUnitagsQueries } from 'uniswap/src/data/apiClients/unitagsApi/useResetUnitagsQueries'
 import { ExtensionEventName } from 'uniswap/src/features/telemetry/constants'
+import { AnalyticsDebugOverlayLazy } from 'uniswap/src/features/telemetry/debug/AnalyticsDebugOverlayLazy'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
-import { isDevEnv } from 'utilities/src/environment/env'
 import { logger } from 'utilities/src/logger/logger'
 import { ONE_SECOND_MS } from 'utilities/src/time/time'
 import { useInterval } from 'utilities/src/time/timing'
@@ -75,12 +79,22 @@ const router = createHashRouter([
             path: SettingsRoutes.DeviceAccess,
             element: <DeviceAccessScreen />,
           },
-          isDevEnv()
-            ? {
-                path: SettingsRoutes.DevMenu,
-                element: <DevMenuScreen />,
-              }
-            : {},
+          ...(isDevEnv()
+            ? [
+                {
+                  path: SettingsRoutes.DevMenu,
+                  element: <DevMenuScreen />,
+                },
+                {
+                  path: SettingsRoutes.SessionsDebug,
+                  element: <SessionsDebugScreen />,
+                },
+                {
+                  path: SettingsRoutes.HashcashBenchmark,
+                  element: <HashcashBenchmarkScreen />,
+                },
+              ]
+            : []),
           {
             path: SettingsRoutes.ViewRecoveryPhrase,
             element: <ViewRecoveryPhraseScreen />,
@@ -110,6 +124,14 @@ const router = createHashRouter([
             path: SettingsRoutes.SmartWallet,
             element: <SmartWalletSettingsScreen />,
           },
+          {
+            path: SettingsRoutes.Storage,
+            element: <SettingsStorageScreen />,
+          },
+          {
+            path: SettingsRoutes.Disclosures,
+            element: <SettingsDisclosuresScreen />,
+          },
         ],
       },
       {
@@ -134,13 +156,13 @@ function useDappRequestPortListener(): void {
   const [currentPortChannel, setCurrentPortChannel] = useState<DappBackgroundPortChannel | undefined>()
   const [windowId, setWindowId] = useState<string | undefined>()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Only run on component mount for initial setup, disconnect cleanup is managed separately
   useEffect(() => {
     chrome.windows.getCurrent((window) => {
       setWindowId(window.id?.toString())
     })
 
     return () => currentPortChannel?.port.disconnect()
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   useEffect(() => {
@@ -241,6 +263,7 @@ function SidebarContent(): JSX.Element {
   return (
     <>
       <PrimaryAppInstanceDebuggerLazy />
+      <AnalyticsDebugOverlayLazy />
       <RouterProvider router={router} />
     </>
   )

@@ -30,13 +30,8 @@
     "i18next": "23.10.0",
     "i18next-parser": "8.6.0",
     "inquirer": "8.2.6",
-<<<<<<< HEAD
-    "js-yaml": "4.1.1",
-    "knip": "5.50.5",
-=======
     "js-yaml": "4.1.0",
     "knip": "6.5.0",
->>>>>>> upstream/main
     "lefthook": "1.12.2",
     "nx": "22.5.4",
     "oxfmt": "0.41.0",

@@ -31,6 +31,7 @@ export function Password({
 
   const shouldShowBiometricUnlockEnrollment = useShouldShowBiometricUnlockEnrollment({ flow: 'onboarding' })
 
+  // oxlint-disable-next-line no-shadow
   const onPasswordNext = useEvent(async (password: string) => {
     if (shouldShowBiometricUnlockEnrollment) {
       setPassword(password)
@@ -102,6 +103,7 @@ function PasswordScreen({
     }
 
     if (checkSubmit()) {
+      // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
       onNext(password)
     }
   })

@@ -16,39 +16,80 @@ const shownNotifications = new Set<string>()
 export function createNotificationService(config: NotificationServiceConfig): NotificationService {
   const { dataSources, tracker, processor, renderer, telemetry, onNavigate } = config
 
-  const activeRenders = new Map<string, () => void>()
+  const renderedBySource = new Map<string, Map<string, () => void>>()
   const activeNotifications = new Map<string, InAppNotification>()
   const chainedNotifications = new Map<string, InAppNotification>()
 
   const CLEANUP_OLDER_THAN_MS = ms('30d') // Clean up entries older than 30 days
 
+  const CHAINED_SOURCE = '__chained__'
+
+  function findAndRemoveRender(notificationId: string): (() => void) | undefined {
+    for (const [, renders] of renderedBySource) {
+      const cleanup = renders.get(notificationId)
+      if (cleanup) {
+        renders.delete(notificationId)
+        return cleanup
+      }
+    }
+    return undefined
+  }
+
   /**
-   * Renders a single notification if possible
+   * Renders a single chained notification (triggered by POPUP action)
    */
   function renderNotification(notification: InAppNotification): void {
     if (!renderer.canRender(notification)) {
       return
     }
 
-    if (activeRenders.has(notification.id)) {
-      return
+    // Check if already rendered in any source
+    for (const renders of renderedBySource.values()) {
+      if (renders.has(notification.id)) {
+        return
+      }
     }
 
     const cleanup = renderer.render(notification)
-    activeRenders.set(notification.id, cleanup)
+    const chainedRenders = renderedBySource.get(CHAINED_SOURCE) ?? new Map<string, () => void>()
+    chainedRenders.set(notification.id, cleanup)
+    renderedBySource.set(CHAINED_SOURCE, chainedRenders)
     activeNotifications.set(notification.id, notification)
   }
 
-  async function handleNotifications(notifications: InAppNotification[]): Promise<void> {
+  async function handleNotifications(notifications: InAppNotification[], source: string): Promise<void> {
     const result = await processor.process(notifications)
 
     for (const [id, notification] of result.chained.entries()) {
       chainedNotifications.set(id, notification)
     }
 
-    for (const notification of result.primary) {
-      renderNotification(notification)
+    const newIds = new Set(result.primary.map((n) => n.id))
+
+    // Clean up stale renders from this source
+    const prev = renderedBySource.get(source) ?? new Map<string, () => void>()
+    for (const [id, cleanup] of prev) {
+      if (!newIds.has(id)) {
+        cleanup()
+        activeNotifications.delete(id)
+        shownNotifications.delete(id)
+      }
     }
+
+    // Build next render set — keep existing renders, add new ones
+    const next = new Map<string, () => void>()
+    for (const notification of result.primary) {
+      const existingCleanup = prev.get(notification.id)
+      if (existingCleanup) {
+        next.set(notification.id, existingCleanup)
+      } else if (renderer.canRender(notification)) {
+        const cleanup = renderer.render(notification)
+        next.set(notification.id, cleanup)
+        activeNotifications.set(notification.id, notification)
+      }
+    }
+
+    renderedBySource.set(source, next)
   }
 
   /**
@@ -106,10 +147,9 @@ export function createNotificationService(config: NotificationServiceConfig): No
    * Cleans up the render without tracking (tracking only happens on ACK)
    */
   async function handleDismiss(notificationId: string): Promise<void> {
-    const cleanup = activeRenders.get(notificationId)
+    const cleanup = findAndRemoveRender(notificationId)
     if (cleanup) {
       cleanup()
-      activeRenders.delete(notificationId)
     }
 
     activeNotifications.delete(notificationId)
@@ -207,7 +247,7 @@ export function createNotificationService(config: NotificationServiceConfig): No
             }
           }
 
-          handleNotifications(notifications).catch((error) => {
+          handleNotifications(notifications, source).catch((error) => {
             getLogger().error(error, {
               tags: {
                 file: 'createNotificationService',
@@ -232,10 +272,9 @@ export function createNotificationService(config: NotificationServiceConfig): No
 
     onRenderFailed(notificationId: string): void {
       // Clean up the failed render without marking as processed
-      const cleanup = activeRenders.get(notificationId)
+      const cleanup = findAndRemoveRender(notificationId)
       if (cleanup) {
         cleanup()
-        activeRenders.delete(notificationId)
       }
 
       activeNotifications.delete(notificationId)
@@ -329,6 +368,10 @@ export function createNotificationService(config: NotificationServiceConfig): No
       })
     },
 
+    async refresh(): Promise<void> {
+      await Promise.all(dataSources.map((dataSource) => dataSource.refresh?.()))
+    },
+
     destroy(): void {
       // Clean up old tracked notifications on teardown
       const cleanupThreshold = Date.now() - CLEANUP_OLDER_THAN_MS
@@ -352,10 +395,12 @@ export function createNotificationService(config: NotificationServiceConfig): No
         })
       }
 
-      for (const cleanup of activeRenders.values()) {
-        cleanup()
+      for (const renders of renderedBySource.values()) {
+        for (const cleanup of renders.values()) {
+          cleanup()
+        }
       }
-      activeRenders.clear()
+      renderedBySource.clear()
       // Note: receivedNotifications and shownNotifications are intentionally NOT cleared here.
       // They are module-level singletons that persist across service recreations
       // to prevent duplicate telemetry events.

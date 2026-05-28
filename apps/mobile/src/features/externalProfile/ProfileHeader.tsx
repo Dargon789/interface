@@ -28,8 +28,8 @@ import { AddressDisplay } from 'uniswap/src/components/accounts/AddressDisplay'
 import { DisplayNameType } from 'uniswap/src/features/accounts/types'
 import { useAvatar } from 'uniswap/src/features/address/avatar'
 import { useENSDescription, useENSName, useENSTwitterUsername } from 'uniswap/src/features/ens/api'
+import { useToggleWatchedWalletCallback } from 'uniswap/src/features/favorites/hooks/useToggleWatchedWalletCallback'
 import { selectWatchedAddressSet } from 'uniswap/src/features/favorites/selectors'
-import { useToggleWatchedWalletCallback } from 'uniswap/src/features/favorites/useToggleWatchedWalletCallback'
 import { useTestnetModeBannerHeight } from 'uniswap/src/features/settings/hooks'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
@@ -105,7 +105,7 @@ export const ProfileHeader = memo(function ProfileHeader({ address }: ProfileHea
     dispatch(
       openModal({
         name: ModalName.Send,
-        ...{ initialState: initialSendState },
+        initialState: initialSendState,
       }),
     )
   }, [dispatch, initialSendState])
@@ -156,7 +156,7 @@ export const ProfileHeader = memo(function ProfileHeader({ address }: ProfileHea
       {/* header row */}
       <Flex row alignItems="center" justifyContent="space-between" mx="$spacing4" px="$spacing24">
         <Flex centered backgroundColor="$surface4" borderRadius="$roundedFull" p="$spacing4">
-          <BackButton color="$neutral2" size={iconSizes.icon24} />
+          <BackButton color="$neutral2" size="$icon.24" />
         </Flex>
         <ProfileContextMenu address={address} />
       </Flex>
@@ -170,12 +170,12 @@ export const ProfileHeader = memo(function ProfileHeader({ address }: ProfileHea
               showIconBackground
               showIconBorder
               address={address}
-              alignItems="flex-start"
               captionTextColor="$neutral3"
               captionVariant="body3"
               direction="column"
               size={HEADER_ICON_SIZE}
               variant="heading3"
+              alignItems="flex-start"
             />
             {bio ? <LongText color={colors.neutral2.val} initialDisplayedLines={2} text={bio} /> : null}
           </Flex>

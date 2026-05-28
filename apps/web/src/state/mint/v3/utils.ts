@@ -1,12 +1,5 @@
 import { Currency, Price, Token } from '@uniswap/sdk-core'
-import {
-  encodeSqrtRatioX96,
-  FeeAmount,
-  nearestUsableTick,
-  priceToClosestTick,
-  TICK_SPACINGS,
-  TickMath,
-} from '@uniswap/v3-sdk'
+import { encodeSqrtRatioX96, FeeAmount, nearestUsableTick, TICK_SPACINGS, TickMath } from '@uniswap/v3-sdk'
 import JSBI from 'jsbi'
 import { convertScientificNotationToNumber } from 'utilities/src/format/convertScientificNotation'
 
@@ -32,9 +25,9 @@ export function tryParsePrice<T extends Currency>({
 
   const [whole, fraction] = decimalValue.split('.')
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const decimals = fraction?.length ?? 0
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   const withoutDecimals = JSBI.BigInt((whole ?? '') + (fraction ?? ''))
 
   return new Price(
@@ -76,8 +69,7 @@ export function tryParseTick({
   } else if (JSBI.lessThanOrEqual(sqrtRatioX96, TickMath.MIN_SQRT_RATIO)) {
     tick = TickMath.MIN_TICK
   } else {
-    // this function is agnostic to the base, will always return the correct tick
-    tick = priceToClosestTick(price)
+    tick = TickMath.getTickAtSqrtRatio(sqrtRatioX96)
   }
 
   return nearestUsableTick(tick, TICK_SPACINGS[feeAmount])

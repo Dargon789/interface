@@ -6,13 +6,25 @@ import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { toGraphQLChain, toUniswapWebAppLink } from 'uniswap/src/features/chains/utils'
+import type { EarnVaultInfo } from 'uniswap/src/features/earn/types'
 import { BACKEND_NATIVE_CHAIN_ADDRESS_STRING } from 'uniswap/src/features/search/utils'
 import { ServiceProviderInfo } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { currencyIdToChain, currencyIdToGraphQLAddress, isNativeCurrencyAddress } from 'uniswap/src/utils/currencyId'
 import { canOpenURL, openURL } from 'uniswap/src/utils/link'
 import { logger } from 'utilities/src/logger/logger'
 
-const ALLOWED_EXTERNAL_URI_SCHEMES = ['http://', 'https://']
+/**
+ * Checks whether a URI uses an allowed external scheme (http or https).
+ * Uses the URL API for case-insensitive protocol parsing.
+ */
+export function isAllowedExternalUri(uri: string): boolean {
+  try {
+    const parsed = new URL(uri.trim())
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
 
 /**
  * Opens allowed URIs. if isSafeUri is set to true then this will open http:// and https:// as well as some deeplinks.
@@ -38,8 +50,7 @@ export async function openUri({
   controlsColor?: string
   throwOnError?: boolean
 }): Promise<void> {
-  const trimmedURI = uri.trim()
-  if (!isSafeUri && !ALLOWED_EXTERNAL_URI_SCHEMES.some((scheme) => trimmedURI.startsWith(scheme))) {
+  if (!isSafeUri && !isAllowedExternalUri(uri)) {
     const error = new Error('User attempted to open potentially unsafe url')
     logger.error(error, {
       tags: {
@@ -54,10 +65,11 @@ export async function openUri({
     return
   }
 
+  const trimmedURI = uri.trim()
   const isHttp = /^https?:\/\//.test(trimmedURI)
 
   // `canOpenURL` returns `false` for App Links / Universal Links, so we just assume any device can handle the `https://` protocol.
-  const supported = isHttp ? true : await canOpenURL(uri)
+  const supported = isHttp ? true : await canOpenURL(trimmedURI)
 
   if (!supported) {
     const error = new Error(`Cannot open URI: ${uri}`)
@@ -117,7 +129,15 @@ export function getExplorerLink({
   data?: string
   type: ExplorerDataType
 }): string {
-  const { explorer, nativeCurrency } = getChainInfo(chainId)
+  const chainInfo = getChainInfo(chainId)
+
+  // Handle unsupported chain IDs gracefully
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- chainInfo can be undefined in edge cases (SDK mismatch)
+  if (!chainInfo) {
+    return ''
+  }
+
+  const { explorer, nativeCurrency } = chainInfo
   const prefix = explorer.url
 
   if (!data) {
@@ -161,18 +181,15 @@ export function getExplorerLink({
 
 export function getNftExplorerLink({
   chainId,
-  fallbackChainId,
   contractAddress,
   tokenId,
 }: {
-  chainId?: UniverseChainId
-  fallbackChainId: UniverseChainId
+  chainId: UniverseChainId
   contractAddress: string
   tokenId: string
 }): string {
-  const targetChainId = chainId ?? fallbackChainId
   return getExplorerLink({
-    chainId: targetChainId,
+    chainId,
     data: `${contractAddress}/${tokenId}`,
     type: ExplorerDataType.NFT,
   })
@@ -227,6 +244,30 @@ export function getTokenDetailsURL({
   return `/explore/tokens/${chainName}/${adjustedAddress}${inputAddressSuffix}`
 }
 
+type FiatOnRampURLParams = {
+  chainId?: UniverseChainId
+  currencyCode?: string
+  currencyId?: string
+}
+
+export function getFiatOnRampURL(chainIdOrParams?: UniverseChainId | FiatOnRampURLParams): string {
+  const params = typeof chainIdOrParams === 'number' ? { chainId: chainIdOrParams } : chainIdOrParams
+  const searchParams = new URLSearchParams()
+
+  if (params?.chainId) {
+    searchParams.set('chainId', String(params.chainId))
+  }
+  if (params?.currencyCode) {
+    searchParams.set('currencyCode', params.currencyCode)
+  }
+  if (params?.currencyId) {
+    searchParams.set('currencyId', params.currencyId)
+  }
+
+  const queryString = searchParams.toString()
+  return queryString ? `/buy?${queryString}` : '/buy'
+}
+
 export function getPoolDetailsURL(address: string, chain: UniverseChainId): string {
   const chainName = getChainInfo(chain).urlParam
   return `/explore/pools/${chainName}/${address}`
@@ -252,8 +293,8 @@ export async function openOfframpPendingSupportLink(): Promise<void> {
   return openUri({ uri: uniswapUrls.helpArticleUrls.fiatOffRampHelp })
 }
 
-export function getProfileUrl(walletAddress: string): string {
-  return `${uniswapUrls.webInterfaceAddressUrl}/${walletAddress}`
+export function getPortfolioUrl(walletAddress: string): string {
+  return `${uniswapUrls.webInterfacePortfolioUrl}/${walletAddress}`
 }
 
 const UTM_TAGS_MOBILE = 'utm_medium=mobile&utm_source=share-tdp'
@@ -276,6 +317,27 @@ export function getTokenUrl(currencyId: string, addMobileUTMTags: boolean = fals
   } catch {
     return undefined
   }
+}
+
+/**
+ * Query param used on a Token Details Page URL to auto-open the EarnVaultModal
+ * for that token's vault on page load (e.g., when linking from the extension's
+ * earn positions list).
+ */
+export const EARN_VAULT_MODAL_QUERY_PARAM = 'modal'
+export const EARN_VAULT_MODAL_QUERY_VALUE = 'earn-vault'
+
+/**
+ * Build a Uniswap web TDP URL that auto-opens the earn vault modal for the
+ * given vault's underlying token. Returns undefined if the vault's currencyId
+ * cannot be resolved to a token URL.
+ */
+export function getEarnVaultUrl(vault: EarnVaultInfo): string | undefined {
+  const tokenUrl = getTokenUrl(vault.currencyId)
+  if (!tokenUrl) {
+    return undefined
+  }
+  return `${tokenUrl}?${EARN_VAULT_MODAL_QUERY_PARAM}=${EARN_VAULT_MODAL_QUERY_VALUE}`
 }
 
 export function getTwitterLink(twitterName: string): string {

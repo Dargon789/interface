@@ -1,7 +1,9 @@
 import { NetworkStatus, QueryHookOptions } from '@apollo/client'
 import { PartialMessage } from '@bufbuild/protobuf'
 import { FiatOnRampParams } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import { TransactionTypeFilter } from '@uniswap/client-data-api/dist/data/v1/types_pb'
 import { GraphQLApi } from '@universe/api'
+import { isAndroid } from '@universe/environment'
 import isEqual from 'lodash/isEqual'
 import { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +12,7 @@ import { ActivityItem } from 'uniswap/src/components/activity/generateActivityIt
 import { isLoadingItem, isSectionHeader, LoadingItem } from 'uniswap/src/components/activity/utils'
 import { formatTransactionsByDate } from 'uniswap/src/features/activity/formatTransactionsByDate'
 import { useMergeLocalAndRemoteTransactions } from 'uniswap/src/features/activity/hooks/useMergeLocalAndRemoteTransactions'
+import { useSyncRemotePlans } from 'uniswap/src/features/activity/hooks/useSyncRemotePlans'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useListTransactions } from 'uniswap/src/features/dataApi/listTransactions/listTransactions'
 import { PaginationControls } from 'uniswap/src/features/dataApi/types'
@@ -18,16 +21,17 @@ import { useCurrencyIdToVisibility } from 'uniswap/src/features/transactions/sel
 import { TransactionDetails } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { isLimitOrder } from 'uniswap/src/features/transactions/utils/uniswapX.utils'
 import { selectNftsVisibility } from 'uniswap/src/features/visibility/selectors'
-import { isAndroid } from 'utilities/src/platform'
 
 const LOADING_ITEM = (index: number): LoadingItem => ({ itemType: 'LOADING', id: index })
 const LOADING_DATA = [LOADING_ITEM(1), LOADING_ITEM(2), LOADING_ITEM(3), LOADING_ITEM(4)]
 
-const MAX_ACTIVITY_ITEMS = isAndroid ? 100 : 250
+// Native FlatList performance degrades with large lists; callers that don't have this constraint
+// (e.g. web) can pass a higher maxItems value
+const MOBILE_MAX_ACTIVITY_ITEMS = isAndroid ? 100 : 250
 
-function hasReachedLimit(transactions: TransactionDetails[] | undefined): boolean {
+function hasReachedLimit(transactions: TransactionDetails[] | undefined, maxItems: number): boolean {
   const currentTransactionCount = transactions?.length ?? 0
-  return currentTransactionCount >= MAX_ACTIVITY_ITEMS
+  return currentTransactionCount >= maxItems
 }
 
 // Contract for returning Transaction data
@@ -45,6 +49,9 @@ interface UseFormattedTransactionDataOptions {
   pageSize?: number
   skip?: boolean
   chainIds?: UniverseChainId[]
+  filterTransactionTypes?: TransactionTypeFilter[]
+  searchText?: string
+  maxItems?: number
 }
 
 type FormattedTransactionInputs = UseFormattedTransactionDataOptions &
@@ -56,11 +63,13 @@ export interface FormattedTransactionDataResult extends PaginationControls {
   hasData: boolean
   isLoading: boolean
   isFetching: boolean
-  isError: Error | undefined
+  error: Error | undefined
   sectionData: ActivityItem[] | undefined
   keyExtractor: (item: ActivityItem) => string
   onRetry: () => Promise<void>
   skip?: boolean
+  /** Epoch ms when transaction data was last successfully fetched. */
+  dataUpdatedAt?: number
 }
 
 /**
@@ -74,6 +83,9 @@ export function useFormattedTransactionDataForActivity({
   pageSize,
   skip,
   chainIds,
+  filterTransactionTypes,
+  searchText,
+  maxItems = MOBILE_MAX_ACTIVITY_ITEMS,
   showLoadingOnRefetch = false,
   ...queryOptions
 }: FormattedTransactionInputs): FormattedTransactionDataResult {
@@ -92,6 +104,7 @@ export function useFormattedTransactionDataForActivity({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    dataUpdatedAt,
   } = useListTransactions({
     evmAddress,
     svmAddress,
@@ -101,6 +114,8 @@ export function useFormattedTransactionDataForActivity({
     nftVisibility,
     skip,
     chainIds,
+    filterTransactionTypes,
+    searchText,
     ...queryOptions,
   })
 
@@ -109,13 +124,16 @@ export function useFormattedTransactionDataForActivity({
     [evmAddress, svmAddress],
   )
 
+  useSyncRemotePlans(formattedTransactions)
+
   const transactions = useMergeLocalAndRemoteTransactions({
     evmAddress,
     svmAddress,
     remoteTransactions: formattedTransactions,
+    skipLocalTransactions: !!searchText,
   })
 
-  // TODO(PORT-429): update to only TradingApi.Routing.DUTCH_V2 once limit orders can be excluded from REST query
+  // TODO(CONS-722): update to only TradingApi.Routing.DUTCH_V2 once limit orders can be excluded from REST query
   const transactionsWithOutLimitOrders = useMemo(() => {
     // Filter out limit orders
     const withoutLimitOrders = transactions?.filter((tx) => !isLimitOrder(tx))
@@ -138,9 +156,14 @@ export function useFormattedTransactionDataForActivity({
   const hasTransactions = transactions && transactions.length > 0
   const hasData = Boolean(formattedTransactions?.length)
 
-  // show loading if no data and fetching, or refetching when there is error (for UX when "retry" is clicked).
+  // show loading if:
+  // 1. Query has never completed and not intentionally skipped — this is synchronously true from render 1
+  // when there is no cached data, ensuring skeletons appear immediately on mount.
+  // 2. No data and loading (redundant when condition 1 is true, but kept as a safety net)
+  // 3. Error with a retry in progress (for UX when "retry" is clicked)
+  // 4. Explicitly showing loading on refetch
   const showLoading =
-    (!hasData && loading) ||
+    (!hasData && (loading || (!skip && networkStatus === NetworkStatus.loading))) ||
     (Boolean(error) && networkStatus === NetworkStatus.loading) ||
     (showLoadingOnRefetch && isFetching && !isFetchingNextPage)
 
@@ -170,6 +193,7 @@ export function useFormattedTransactionDataForActivity({
   const memoizedSectionData = useMemoizedTransactionSectionData(sectionData, keyExtractor)
 
   const onRetry = useCallback(async () => {
+    // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
     await refetch()
   }, [refetch])
 
@@ -177,13 +201,14 @@ export function useFormattedTransactionDataForActivity({
     onRetry,
     sectionData: memoizedSectionData,
     hasData,
-    isError: error ?? undefined,
+    error: error ?? undefined,
     isLoading: showLoading,
     isFetching,
     keyExtractor,
     fetchNextPage,
-    hasNextPage: hasNextPage && !hasReachedLimit(transactions),
+    hasNextPage: hasNextPage && !hasReachedLimit(transactions, maxItems),
     isFetchingNextPage,
+    dataUpdatedAt,
   }
 }
 

@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/suspicious/noConsole: misc script, so it's okay */
+/* oxlint-disable no-console -- misc script, so it's okay */
 import { promises as fs } from 'fs'
 import path from 'path'
 

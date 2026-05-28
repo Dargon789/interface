@@ -15,7 +15,7 @@ const CARD_HEIGHT = 82
 
 export function UniswapWrapped2025Card({ onPress }: UniswapWrapped2025CardProps): JSX.Element {
   const { t } = useTranslation()
-  const { snowflakes, removeSnowflake } = useSnowflakeAnimation()
+  const { snowflakes, removeSnowflake } = useSnowflakeAnimation({})
   const darkColors = useSporeColorsForTheme('dark')
 
   return (
@@ -27,7 +27,7 @@ export function UniswapWrapped2025Card({ onPress }: UniswapWrapped2025CardProps)
         shadowColor="rgba(77, 10, 79, 0.43)"
         shadowOffset={{ width: 0, height: 6 }}
         shadowRadius={12}
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderColor={darkColors.surface3.val}
         height={CARD_HEIGHT}
         p="$spacing20"

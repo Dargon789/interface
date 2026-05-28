@@ -162,11 +162,9 @@ describe('useLastBalancesReporter', () => {
       )
 
       // Ensure wallet is properly mocked
-      jest
-        .spyOn(walletHooks, 'useWallet')
-        .mockReturnValue({
-          evmAccount: mockAccount,
-        } as ReturnType<typeof walletHooks.useWallet>)
+      jest.spyOn(walletHooks, 'useWallet').mockReturnValue({
+        evmAccount: mockAccount,
+      } as ReturnType<typeof walletHooks.useWallet>)
 
       // Mock portfolioData with proper totalBalance
       ;(portfolioData.usePortfolioDataForReporting as jest.Mock).mockReturnValue({

@@ -1,18 +1,22 @@
-import {
-  Background,
-  Body,
-  BodyItem,
-  Notification,
-} from '@uniswap/client-notification-service/dist/uniswap/notificationservice/v1/api_pb'
-import { BackgroundType, ContentStyle, type InAppNotification, OnClickAction } from '@universe/api'
+import { ContentStyle, type InAppNotification, OnClickAction } from '@universe/api'
 import { createNotificationProcessor } from '@universe/notifications/src/notification-processor/implementations/createNotificationProcessor'
 import {
   type NotificationProcessor,
   type NotificationProcessorResult,
 } from '@universe/notifications/src/notification-processor/NotificationProcessor'
 import { type NotificationTracker } from '@universe/notifications/src/notification-tracker/NotificationTracker'
-import { MONAD_LOGO_FILLED, MONAD_TEST_BANNER_LIGHT } from 'ui/src/assets'
 import { getLogger } from 'utilities/src/logger/logger'
+
+export interface BaseNotificationProcessorOptions {
+  /**
+   * Per-style overrides for the maximum number of concurrent primary notifications.
+   * Defaults: LOWER_LEFT_BANNER=3, SYSTEM_BANNER=1, all others=1.
+   *
+   * Platforms with more LOWER_LEFT_BANNER sources (e.g. mobile) can raise the limit
+   * so lower-priority banners aren't silently dropped by the style cap.
+   */
+  notificationTypeLimits?: Partial<Record<ContentStyle, number>>
+}
 
 /**
  * Creates a base notification processor that implements style-based deduplication and limiting,
@@ -22,15 +26,20 @@ import { getLogger } from 'utilities/src/logger/logger'
  * 1. Builds a dependency graph of notifications based on POPUP actions
  * 2. Uses topological sort to identify root notifications (those with no incoming edges)
  * 3. Filters out notifications that have already been processed (tracked)
- * 4. Limits the number of primary notifications per content style (LOWER_LEFT_BANNER: 3, others: 1)
+ * 4. Limits the number of primary notifications per content style (see `options.notificationTypeLimits`)
  * 5. Returns primary notifications for immediate rendering and chained notifications for later
  *
  * This properly handles notification chains of any length (A → B → C → D → ...).
  *
  * @param tracker - The NotificationTracker to check which notifications have been processed
+ * @param options - Optional per-style limit overrides
  * @returns A NotificationProcessor that applies these rules
  */
-export function createBaseNotificationProcessor(tracker: NotificationTracker): NotificationProcessor {
+export function createBaseNotificationProcessor(
+  tracker: NotificationTracker,
+  options?: BaseNotificationProcessorOptions,
+): NotificationProcessor {
+  const notificationTypeLimits = options?.notificationTypeLimits
   return createNotificationProcessor({
     process: async (notifications: InAppNotification[]): Promise<NotificationProcessorResult> => {
       const processedIds = await tracker.getProcessedIds()
@@ -50,12 +59,14 @@ export function createBaseNotificationProcessor(tracker: NotificationTracker): N
         }
       }
 
-      // Step 3: Filter out notifications that are locally tracked or don't have DISMISS action
+      // Step 3: Filter out notifications that are locally tracked or don't have DISMISS action.
+      // Required cards are exempt from the DISMISS check — they self-dismiss when their
+      // underlying data condition resolves (e.g. wallet receives funds).
       const filteredPrimary = primaryNotifications.filter((notification) => {
         if (processedIds.has(notification.id)) {
           return false
         }
-        if (!hasDismissAction(notification)) {
+        if (!isRequiredCard(notification) && !hasDismissAction(notification)) {
           getLogger().warn(
             'createBaseNotificationProcessor',
             'process',
@@ -71,7 +82,7 @@ export function createBaseNotificationProcessor(tracker: NotificationTracker): N
         if (processedIds.has(notification.id)) {
           return false
         }
-        if (!hasDismissAction(notification)) {
+        if (!isRequiredCard(notification) && !hasDismissAction(notification)) {
           getLogger().warn(
             'createBaseNotificationProcessor',
             'process',
@@ -83,16 +94,12 @@ export function createBaseNotificationProcessor(tracker: NotificationTracker): N
         return true
       })
 
-      // Step 3.5: Process notifications to inject hardcoded images for v1 (before CDN support)
-      const processedPrimary = filteredPrimary.map(injectHardcodedImages)
-      const processedChained = filteredChained.map(injectHardcodedImages)
-
       // Step 4: Limit the number of primary notifications per content style
-      const limitedPrimary = limitNotifications(processedPrimary)
+      const limitedPrimary = limitNotifications(filteredPrimary, notificationTypeLimits)
 
       // Step 5: Convert chained notifications to a Map for fast lookup
       const chainedMap = new Map<string, InAppNotification>()
-      for (const notification of processedChained) {
+      for (const notification of filteredChained) {
         chainedMap.set(notification.id, notification)
       }
 
@@ -102,6 +109,19 @@ export function createBaseNotificationProcessor(tracker: NotificationTracker): N
       }
     },
   })
+}
+
+/**
+ * Returns true if the notification is a required card — one that self-dismisses when its
+ * underlying data condition resolves rather than via explicit user action.
+ */
+function isRequiredCard(notification: InAppNotification): boolean {
+  try {
+    const extra = notification.content?.extra ? JSON.parse(notification.content.extra) : {}
+    return extra.cardType === 'required'
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -210,12 +230,28 @@ function getPopupTarget(onClick: { onClick: OnClickAction[]; onClickLink?: strin
 }
 
 /**
- * Limits the number of notifications per content style.
+ * Default per-style limits. Platforms can override individual entries via
+ * `BaseNotificationProcessorOptions.notificationTypeLimits`.
+ *
  * - LOWER_LEFT_BANNER: up to 3 notifications
+ * - SYSTEM_BANNER: 1 notification (sticky system alerts)
  * - All other styles: 1 notification each
  */
-function limitNotifications(notifications: InAppNotification[]): InAppNotification[] {
-  const groupedByStyle = new Map<ContentStyle, InAppNotification[]>()
+const DEFAULT_STYLE_LIMITS: Partial<Record<ContentStyle, number>> = {
+  [ContentStyle.LOWER_LEFT_BANNER]: 3,
+  [ContentStyle.SYSTEM_BANNER]: 1,
+}
+const FALLBACK_STYLE_LIMIT = 1
+
+/**
+ * Limits the number of notifications per content style, applying any caller overrides
+ * on top of the defaults.
+ */
+function limitNotifications(
+  notifications: InAppNotification[],
+  notificationTypeLimits: Partial<Record<ContentStyle, number>> | undefined,
+): InAppNotification[] {
+  const groupedByStyle = new Map<number, InAppNotification[]>()
 
   for (const notification of notifications) {
     const style = notification.content?.style ?? ContentStyle.UNSPECIFIED
@@ -227,7 +263,7 @@ function limitNotifications(notifications: InAppNotification[]): InAppNotificati
   const limited: InAppNotification[] = []
 
   for (const [style, group] of groupedByStyle.entries()) {
-    const limit = style === ContentStyle.LOWER_LEFT_BANNER ? 3 : 1
+    const limit = getStyleLimit(style, notificationTypeLimits)
     limited.push(...group.slice(0, limit))
   }
 
@@ -235,63 +271,16 @@ function limitNotifications(notifications: InAppNotification[]): InAppNotificati
 }
 
 /**
- * Injects hardcoded images for specific notifications (v1 workaround before CDN support).
- *
- * For Monad notifications:
- * - LOWER_LEFT_BANNER: Adds MONAD_TEST_BANNER_LIGHT as background and MONAD_LOGO_FILLED as icon
- * - MODAL: Adds MONAD_LOGO_FILLED as icon, MONAD_TEST_BANNER_LIGHT as background, and hardcoded feature list
- *
- * This is a temporary solution until remote image uploads and CDN are available.
+ * Returns the maximum number of concurrent notifications for a given content style,
+ * preferring caller overrides, then defaults, then a generic fallback.
  */
-function injectHardcodedImages(notification: InAppNotification): InAppNotification {
-  const notificationId = notification.id.toLowerCase()
-  const style = notification.content?.style
-
-  if (!notificationId.includes('monad')) {
-    return notification
-  }
-
-  // Create a new Notification instance from the plain message and clone it
-  const notificationObj = new Notification(notification)
-  const cloned = notificationObj.clone()
-
-  if (style === ContentStyle.LOWER_LEFT_BANNER) {
-    if (cloned.content) {
-      cloned.content.iconLink = MONAD_LOGO_FILLED
-      cloned.content.background = new Background({
-        backgroundType: BackgroundType.IMAGE,
-        link: MONAD_TEST_BANNER_LIGHT,
-        backgroundOnClick: cloned.content.background?.backgroundOnClick,
-      })
-    }
-  } else if (style === ContentStyle.MODAL) {
-    if (cloned.content) {
-      cloned.content.iconLink = MONAD_LOGO_FILLED
-      cloned.content.background = new Background({
-        backgroundType: BackgroundType.IMAGE,
-        link: MONAD_TEST_BANNER_LIGHT,
-        backgroundOnClick: cloned.content.background?.backgroundOnClick,
-      })
-
-      // Hardcode feature list with temporary icon format
-      cloned.content.body = new Body({
-        items: [
-          new BodyItem({
-            text: cloned.content.body?.items[0]?.text,
-            iconUrl: 'custom:coin-convert-$neutral2',
-          }),
-          new BodyItem({
-            text: cloned.content.body?.items[1]?.text,
-            iconUrl: 'custom:ethereum-$neutral2',
-          }),
-          new BodyItem({
-            text: cloned.content.body?.items[2]?.text,
-            iconUrl: 'custom:gas-$neutral2',
-          }),
-        ],
-      })
-    }
-  }
-
-  return cloned
+function getStyleLimit(
+  style: number,
+  notificationTypeLimits: Partial<Record<ContentStyle, number>> | undefined,
+): number {
+  return (
+    notificationTypeLimits?.[style as ContentStyle] ??
+    DEFAULT_STYLE_LIMITS[style as ContentStyle] ??
+    FALLBACK_STYLE_LIMIT
+  )
 }

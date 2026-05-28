@@ -197,7 +197,7 @@ exports[`RestoreCloudBackupScreen renders correctly 1`] = `
       >
         <RCTScrollView
           collapsable={false}
-          handlerTag={1}
+          handlerTag={-1}
           handlerType="NativeViewGestureHandler"
           onGestureHandlerEvent={[Function]}
           onGestureHandlerStateChange={[Function]}
@@ -349,36 +349,11 @@ exports[`RestoreCloudBackupScreen renders correctly 1`] = `
                     testID="account-icon"
                   >
                     <View
-                      collapsable={false}
-                      forwardedRef={[Function]}
-                      jestAnimatedProps={
-                        {
-                          "value": {},
-                        }
-                      }
-                      jestAnimatedStyle={
-                        {
-                          "value": {
-                            "opacity": 0,
-                          },
-                        }
-                      }
-                      jestInlineStyle={
-                        [
-                          {
-                            "flexDirection": "column",
-                          },
-                        ]
-                      }
                       style={
-                        [
-                          {
-                            "flexDirection": "column",
-                          },
-                          {
-                            "opacity": 0,
-                          },
-                        ]
+                        {
+                          "flex": 1,
+                          "flexDirection": "column",
+                        }
                       }
                     />
                   </View>
@@ -693,36 +668,11 @@ exports[`RestoreCloudBackupScreen renders correctly 1`] = `
                     testID="account-icon"
                   >
                     <View
-                      collapsable={false}
-                      forwardedRef={[Function]}
-                      jestAnimatedProps={
-                        {
-                          "value": {},
-                        }
-                      }
-                      jestAnimatedStyle={
-                        {
-                          "value": {
-                            "opacity": 0,
-                          },
-                        }
-                      }
-                      jestInlineStyle={
-                        [
-                          {
-                            "flexDirection": "column",
-                          },
-                        ]
-                      }
                       style={
-                        [
-                          {
-                            "flexDirection": "column",
-                          },
-                          {
-                            "opacity": 0,
-                          },
-                        ]
+                        {
+                          "flex": 1,
+                          "flexDirection": "column",
+                        }
                       }
                     />
                   </View>

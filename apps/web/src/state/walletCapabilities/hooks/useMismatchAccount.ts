@@ -1,13 +1,6 @@
 import { nanoid } from '@reduxjs/toolkit'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { popupRegistry } from 'components/Popups/registry'
-import { PopupType } from 'components/Popups/types'
 import { useRef } from 'react'
-import { useAppDispatch, useAppSelector } from 'state/hooks'
-import { useIsAtomicBatchingSupportedByChainIdCallback } from 'state/walletCapabilities/hooks/useIsAtomicBatchingSupportedByChain'
-import { useWalletGetCapabilitiesMutation } from 'state/walletCapabilities/hooks/useWalletGetCapabilitiesMutation'
-import { isAtomicBatchingSupportedByChainId } from 'state/walletCapabilities/lib/handleGetCapabilities'
-import { useDelegationService } from 'state/wallets/useDelegationService'
 import { selectHasShownMismatchToast } from 'uniswap/src/features/behaviorHistory/selectors'
 import { setHasShownMismatchToast } from 'uniswap/src/features/behaviorHistory/slice'
 import { createHasMismatchUtil, type HasMismatchUtil } from 'uniswap/src/features/smartWallet/mismatch/mismatch'
@@ -15,6 +8,13 @@ import { UniswapEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { getLogger } from 'utilities/src/logger/logger'
 import { useEvent } from 'utilities/src/react/hooks'
+import { useAppDispatch, useAppSelector } from '~/state/hooks'
+import { popupRegistry } from '~/state/popups/registry'
+import { PopupType } from '~/state/popups/types'
+import { useIsAtomicBatchingSupportedByChainIdCallback } from '~/state/walletCapabilities/hooks/useIsAtomicBatchingSupportedByChain'
+import { useWalletGetCapabilitiesMutation } from '~/state/walletCapabilities/hooks/useWalletGetCapabilitiesMutation'
+import { isAtomicBatchingSupportedByChainId } from '~/state/walletCapabilities/lib/handleGetCapabilities'
+import { useDelegationService } from '~/state/wallets/useDelegationService'
 
 /**
  * [public] useHasMismatchCallback -- gets the mismatch account status for the current account
@@ -81,6 +81,7 @@ export const useShowMismatchToast = () => {
   const isPermitMismatchUxEnabled = useFeatureFlag(FeatureFlags.EnablePermitMismatchUX)
   // create a unique id for the toast when hook is created (so we only show one toast at a time)
   const toastId = useRef<string>(nanoid())
+  // oxlint-disable-next-line no-shadow
   const showMismatchToast = useShowMismatchToastCallback()
   return useEvent(() => {
     if (isPermitMismatchUxEnabled) {

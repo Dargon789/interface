@@ -2,13 +2,10 @@ import { Experiments, getOverrideAdapter, LayerProperties, Layers, useExperiment
 import { useCallback } from 'react'
 import { Flex, Input, Switch, Text } from 'ui/src'
 
-export function LayerRow({
-  value: layerName,
-  layerDefault = false,
-}: {
-  value: Layers
-  layerDefault?: unknown
-}): JSX.Element {
+export function useLayerValue(
+  layerName: Layers,
+  layerDefault: unknown = false,
+): { value: Record<string, unknown>; overrideValue: <T>(newPairs: Record<string, T>) => void } {
   const { get: getLayerValue } = useLayer(layerName)
 
   const value = Object.values(LayerProperties[layerName]).reduce(
@@ -23,10 +20,27 @@ export function LayerRow({
     [layerName, value],
   )
 
+  return { value, overrideValue }
+}
+
+export function LayerRow({
+  value: layerName,
+  layerDefault = false,
+}: {
+  value: Layers
+  layerDefault?: unknown
+}): JSX.Element {
+  const { value, overrideValue } = useLayerValue(layerName, layerDefault)
   return <Row target={layerName} values={value} overrideValue={overrideValue} />
 }
 
-export function ExperimentRow({ value: experimentName }: { value: Experiments }): JSX.Element {
+export function ExperimentRow({
+  value: experimentName,
+  hideTarget = false,
+}: {
+  value: Experiments
+  hideTarget?: boolean
+}): JSX.Element {
   const { value } = useExperiment(experimentName)
 
   const overrideValue = useCallback(
@@ -36,17 +50,19 @@ export function ExperimentRow({ value: experimentName }: { value: Experiments })
     [experimentName],
   )
 
-  return <Row target={experimentName} values={value} overrideValue={overrideValue} />
+  return <Row target={experimentName} values={value} overrideValue={overrideValue} hideTarget={hideTarget} />
 }
 
 function Row({
   target,
   values,
   overrideValue,
+  hideTarget = false,
 }: {
   target: Experiments | Layers
   values: Record<string, unknown>
   overrideValue: <T>(newPairs: Record<string, T>) => void
+  hideTarget?: boolean
 }): JSX.Element {
   const handleBooleanChange = useCallback(
     (key: string) => (newValue: boolean) => {
@@ -82,8 +98,14 @@ function Row({
 
     return (
       valueElement && (
-        <Flex key={key} row alignItems="center" gap="$spacing16" justifyContent="space-between">
-          <Text variant="body1">{key}</Text>
+        <Flex key={key} row alignItems="center" gap="$spacing16" justifyContent="space-between" maxWidth="100%">
+          <Text
+            variant="body1"
+            flexShrink={1}
+            $platform-web={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+          >
+            {key}
+          </Text>
           {valueElement}
         </Flex>
       )
@@ -92,9 +114,17 @@ function Row({
 
   return (
     <Flex>
-      <Text variant="body1">{target}</Text>
+      {!hideTarget && (
+        <Text
+          variant="body1"
+          flexShrink={1}
+          $platform-web={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+        >
+          {target}
+        </Text>
+      )}
       <Flex>
-        <Flex gap="$spacing8" pl="$spacing8">
+        <Flex gap="$spacing8" pl={hideTarget ? 0 : '$spacing8'}>
           {paramRows}
         </Flex>
       </Flex>

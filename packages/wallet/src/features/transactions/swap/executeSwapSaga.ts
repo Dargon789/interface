@@ -1,13 +1,13 @@
 import { DynamicConfigs, getDynamicConfigValue, SyncTransactionSubmissionChainIdsConfigKey } from '@universe/gating'
 import { call, put } from 'typed-redux-saga'
-import type { SignerMnemonicAccountMeta } from 'uniswap/src/features/accounts/types'
+import { AccountType } from 'uniswap/src/features/accounts/types'
+import { CAIP25Session } from 'uniswap/src/features/capabilities/caip25/types'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
 import type { SwapTradeBaseProperties } from 'uniswap/src/features/telemetry/types'
 import { transactionActions } from 'uniswap/src/features/transactions/slice'
-import { FLASHBLOCKS_UI_SKIP_ROUTES } from 'uniswap/src/features/transactions/swap/components/UnichainInstantBalanceModal/constants'
-import { getIsFlashblocksEnabled } from 'uniswap/src/features/transactions/swap/hooks/useIsUnichainFlashblocksEnabled'
+import { SwapExecutionCallbacks } from 'uniswap/src/features/transactions/swap/types/swapCallback'
 import type {
   SwapGasFeeEstimation,
   ValidatedSwapTxContext,
@@ -23,7 +23,7 @@ import {
   getShouldWaitBetweenTransactions,
   getSwapTransactionCount,
 } from 'wallet/src/features/transactions/swap/confirmation'
-import type { createPrepareAndSignSwapSaga } from 'wallet/src/features/transactions/swap/prepareAndSignSwapSaga'
+import { type createPrepareAndSignSwapSaga } from 'wallet/src/features/transactions/swap/prepareAndSignSwapSaga'
 import type { TransactionExecutor } from 'wallet/src/features/transactions/swap/services/transactionExecutor'
 import type {
   ApprovalTransactionData,
@@ -52,18 +52,18 @@ import { finalizeTransaction } from 'wallet/src/features/transactions/watcher/tr
 
 export type SwapParams = {
   txId?: string
-  account: SignerMnemonicAccountMeta
+  address: string
   analytics: SwapTradeBaseProperties
   swapTxContext: ValidatedSwapTxContext
-  onSuccess: () => void
-  onFailure: () => void
-  onPending: () => void
   preSignedTransaction?: PreSignedSwapTransaction
-}
+  getOnPressRetry?: (error: Error | undefined) => (() => void) | undefined
+  caip25Info: CAIP25Session | undefined
+} & SwapExecutionCallbacks
 
 /**
  * Helper function to handle approval transaction execution
  */
+// oxlint-disable-next-line typescript/explicit-function-return-type
 function* executeApprovalStep(params: {
   preSignedTransaction: PreSignedSwapTransaction
   factory: TransactionParamsFactory
@@ -101,6 +101,7 @@ function* executeApprovalStep(params: {
 /**
  * Helper function to handle permit transaction execution
  */
+// oxlint-disable-next-line typescript/explicit-function-return-type
 function* executePermitStep(params: {
   preSignedTransaction: PreSignedSwapTransaction
   factory: TransactionParamsFactory
@@ -133,6 +134,7 @@ function* executePermitStep(params: {
 /**
  * Helper function to execute a transaction step with sync/async fallback behavior
  */
+// oxlint-disable-next-line typescript/explicit-function-return-type
 function* executeTransactionStep(params: {
   executor: TransactionExecutor
   step: TransactionStep
@@ -182,7 +184,10 @@ export function createExecuteSwapSaga(
   return function* executeSwap(params: SwapParams) {
     const userSubmissionTimestampMs = Date.now()
     try {
-      const { account, txId, analytics, onSuccess, onFailure, onPending, swapTxContext } = params
+      const { address, txId, analytics, onSuccess, onFailure, onPending, swapTxContext } = params
+
+      // Temporary -- changed to directly using account 1 PR upstack
+      const account = { address, type: AccountType.SignerMnemonic } as const
 
       const preSignedTransaction =
         params.preSignedTransaction ||
@@ -322,17 +327,12 @@ export function createExecuteSwapSaga(
           params: swapParams,
         }
 
-        if (
-          !getIsFlashblocksEnabled(chainId) ||
-          FLASHBLOCKS_UI_SKIP_ROUTES.includes(preSignedTransaction.swapTxContext.routing)
-        ) {
-          yield* put(
-            pushNotification({
-              type: AppNotificationType.SwapPending,
-              wrapType: WrapType.NotApplicable,
-            }),
-          )
-        }
+        yield* put(
+          pushNotification({
+            type: AppNotificationType.SwapPending,
+            wrapType: WrapType.NotApplicable,
+          }),
+        )
 
         swapResult = yield* executeTransactionStep({
           executor,

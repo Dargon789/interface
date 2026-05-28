@@ -19,7 +19,7 @@ export type RoutingServicesMap = { [K in TradingApi.Routing]: SwapTxAndGasInfoSe
 export function createSwapTxAndGasInfoService(ctx: { services: RoutingServicesMap }): SwapTxAndGasInfoService<Trade> {
   function getServiceForTrade<T extends Trade>(trade: T): SwapTxAndGasInfoService<T> {
     const service = ctx.services[trade.routing]
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (!service) {
       throw new Error(`Unsupported routing: ${trade.routing}`)
     }

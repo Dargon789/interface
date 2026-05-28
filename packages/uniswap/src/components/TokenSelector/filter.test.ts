@@ -47,7 +47,6 @@ const filterAndGetCurrencies = (
   currencies: TokenOption[],
   chainFilter: UniverseChainId | null,
   searchFilter?: string,
-  // eslint-disable-next-line max-params
 ): Currency[] => filter({ tokenOptions: currencies, chainFilter, searchFilter }).map((cm) => cm.currencyInfo.currency)
 
 describe(filter, () => {

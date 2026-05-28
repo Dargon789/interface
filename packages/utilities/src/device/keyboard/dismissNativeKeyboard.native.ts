@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noRestrictedImports: Platform-specific implementation needs internal types
+// oxlint-disable-next-line no-restricted-imports -- Platform-specific implementation needs internal types
 import { Keyboard } from 'react-native'
 
 const KEYBOARD_DISMISS_POLLING_INTERVAL = 25

@@ -1,11 +1,11 @@
 import type { IconProps as TamaguiIconProps } from '@tamagui/helpers-icon'
+import { isWebPlatform } from '@universe/environment'
 import { createElement, forwardRef, useState } from 'react'
 import { Svg, SvgProps } from 'react-native-svg'
 import { ColorTokens, SpecificTokens, Stack, styled, ThemeKeys, usePropsAndStyle, View } from 'tamagui'
 import { withAnimated } from 'ui/src/components/factories/animated'
 import { DynamicColor } from 'ui/src/hooks/useSporeColors'
 import { IconSizeTokens } from 'ui/src/theme'
-import { isWebPlatform } from 'utilities/src/platform'
 
 type SvgPropsWithRef = SvgProps & { ref: React.ForwardedRef<Svg>; style?: { color?: string } }
 
@@ -98,7 +98,7 @@ export function createIcon({
     const flatStyle = isWebPlatform && Array.isArray(style) ? Object.assign({}, ...style) : style
 
     return getIcon({
-      // biome-ignore lint/suspicious/noExplicitAny: Type casting needed for complex SVG prop types
+      // oxlint-disable-next-line typescript/no-explicit-any -- Type casting needed for complex SVG prop types
       ...(rest as any),
       style: flatStyle,
       ref,
@@ -110,7 +110,7 @@ export function createIcon({
   const AnimatedIconPlain = withAnimated(IconPlain)
 
   const AnimatedIcon = forwardRef<Svg, IconProps>((props: IconProps, ref) => (
-    // biome-ignore lint/suspicious/noExplicitAny: AnimatedIconPlain requires any cast for compatibility
+    // oxlint-disable-next-line typescript/no-explicit-any -- AnimatedIconPlain requires any cast for compatibility
     <Icon ref={ref} {...props} Component={AnimatedIconPlain as any} />
   ))
 

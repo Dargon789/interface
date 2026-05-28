@@ -1,20 +1,6 @@
-// Internal types
-
-export type UnitagClaim = {
-  address?: string
-  username: string
-  avatarUri?: string
-}
-
-export type UnitagClaimSource = 'onboarding' | 'home' | 'settings'
-
-export type UnitagClaimContext = {
-  source: UnitagClaimSource
-  hasENSAddress: boolean
-}
+import { UnitagErrorCode } from '@uniswap/client-unitag/dist/uniswap/unitag/v1/UnitagService_pb'
 
 // API types
-
 export type UnitagUsernameRequest = {
   username: string
 }
@@ -78,6 +64,7 @@ export type UnitagClaimEligibilityRequest = {
 }
 
 export type UnitagUpdateMetadataRequestBody = {
+  username: string
   metadata: ProfileMetadata
   clearAvatar?: boolean
 }
@@ -98,11 +85,6 @@ export type UnitagDeleteUsernameRequestBody = {
   username: string
 }
 
-export type UnitagAvatarUploadCredentials = {
-  preSignedUrl?: string
-  s3UploadFields?: Record<string, string>
-}
-
 export type UnitagChangeUsernameRequestBody = {
   username: string
   deviceId: string
@@ -119,4 +101,36 @@ export enum UnitagErrorCodes {
   AddressActiveLimitReached = 'unitags-7',
   NoUnitagForAddress = 'unitags-8',
   UnitagNotActive = 'unitags-9',
+}
+
+export function isOldErrorCode(errorCode: UnitagErrorCodes | UnitagErrorCode): errorCode is UnitagErrorCodes {
+  return typeof errorCode === 'string' && Object.values(UnitagErrorCodes).includes(errorCode as UnitagErrorCodes)
+}
+
+// oxlint-disable-next-line typescript-eslint/consistent-return
+export function ensureNewErrorCode(errorCode: UnitagErrorCodes | UnitagErrorCode): UnitagErrorCode {
+  if (!isOldErrorCode(errorCode)) {
+    return errorCode
+  }
+
+  switch (errorCode) {
+    case UnitagErrorCodes.UnitagNotAvailable:
+      return UnitagErrorCode.UNITAG_ERROR_NOT_AVAILABLE
+    case UnitagErrorCodes.RequiresENSMatch:
+      return UnitagErrorCode.UNITAG_ERROR_REQUIRES_ENS_MATCH
+    case UnitagErrorCodes.IPLimitReached:
+      return UnitagErrorCode.UNITAG_ERROR_IP_LIMIT_REACHED
+    case UnitagErrorCodes.AddressLimitReached:
+      return UnitagErrorCode.UNITAG_ERROR_ADDRESS_LIMIT_REACHED
+    case UnitagErrorCodes.DeviceLimitReached:
+      return UnitagErrorCode.UNITAG_ERROR_DEVICE_LIMIT_REACHED
+    case UnitagErrorCodes.DeviceActiveLimitReached:
+      return UnitagErrorCode.UNITAG_ERROR_DEVICE_ACTIVE_LIMIT
+    case UnitagErrorCodes.AddressActiveLimitReached:
+      return UnitagErrorCode.UNITAG_ERROR_ADDRESS_ACTIVE_LIMIT
+    case UnitagErrorCodes.NoUnitagForAddress:
+      return UnitagErrorCode.UNITAG_ERROR_NO_UNITAG_FOR_ADDRESS
+    case UnitagErrorCodes.UnitagNotActive:
+      return UnitagErrorCode.UNITAG_ERROR_NOT_ACTIVE
+  }
 }

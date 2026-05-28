@@ -1,20 +1,8 @@
-import {
-  createFetchClient,
-  createUnitagsApiClient,
-  getCloudflareApiBaseUrl,
-  provideSessionService,
-  TrafficFlows,
-} from '@universe/api'
-import { getConfig } from '@universe/config'
-import { getIsSessionServiceEnabled } from '@universe/gating'
-import { uniswapUrls } from 'uniswap/src/constants/urls'
+import { createPromiseClient } from '@connectrpc/connect'
+import { createUnitagsServiceApiClient, UnitagService } from '@universe/api'
+import { entryGatewayProdPostTransport } from 'uniswap/src/data/rest/base'
 
-const UnitagsApiFetchClient = createFetchClient({
-  baseUrl: getConfig().unitagsApiUrlOverride || `${getCloudflareApiBaseUrl(TrafficFlows.Unitags)}/v2/unitags`,
-  getSessionService: () =>
-    provideSessionService({ getBaseUrl: () => uniswapUrls.apiBaseUrlV2, getIsSessionServiceEnabled }),
-})
-
-export const UnitagsApiClient = createUnitagsApiClient({
-  fetchClient: UnitagsApiFetchClient,
+export const unitagsApiClient = createUnitagsServiceApiClient({
+  // Always use production calls unless overridden locally to ensure stable name mapping
+  rpcClient: createPromiseClient(UnitagService, entryGatewayProdPostTransport),
 })

@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { ChartBarCrossed } from 'ui/src/components/icons/ChartBarCrossed'
-import { BaseModalProps } from 'uniswap/src/components/BridgedAsset/BridgedAssetModal'
+import type { BaseModalProps } from 'uniswap/src/components/modals/ModalProps'
 import { ReportModal, ReportOption } from 'uniswap/src/components/reporting/ReportModal'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
@@ -34,7 +34,13 @@ export function ReportPoolDataModal({
   const dispatch = useDispatch()
 
   const submitReport = useEvent(
-    ({ checkedItems, reportText }: { checkedItems: Set<PoolDataReportOption>; reportText: string }) => {
+    ({
+      checkedItems,
+      reportTexts,
+    }: {
+      checkedItems: Set<PoolDataReportOption>
+      reportTexts: Map<PoolDataReportOption, string>
+    }) => {
       // Submit report to amplitude
       submitPoolDataReport({
         poolId: poolInfo.poolId,
@@ -43,7 +49,7 @@ export function ReportPoolDataModal({
         token0: poolInfo.token0,
         token1: poolInfo.token1,
         reportOptions: Array.from(checkedItems),
-        reportText,
+        reportTexts,
       })
 
       // Close the modal and register success
@@ -83,6 +89,7 @@ export function ReportPoolDataModal({
       {
         title: t('reporting.token.options.other.title'),
         value: PoolDataReportOption.Other,
+        additionalTextInput: true,
       },
     ],
     [t],
@@ -96,7 +103,6 @@ export function ReportPoolDataModal({
       })}
       icon={ChartBarCrossed}
       reportOptions={reportOptions}
-      textOptionValue={PoolDataReportOption.Other}
       isOpen={isOpen}
       submitReport={submitReport}
       onClose={onClose}

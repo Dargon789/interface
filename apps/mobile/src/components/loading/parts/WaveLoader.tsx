@@ -21,6 +21,7 @@ export function WaveLoader(): JSX.Element {
 
   useEffect(() => {
     yPosition.value = withRepeat(withTiming(1, { duration: WAVE_DURATION }), Infinity, false)
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   const animatedStyle = useAnimatedStyle(() => ({

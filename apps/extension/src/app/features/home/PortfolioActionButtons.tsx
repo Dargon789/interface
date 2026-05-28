@@ -62,11 +62,10 @@ function ActionButton({ label, Icon, onClick, url }: ActionButtonProps): JSX.Ele
   )
 }
 
-export const PortfolioActionButtons = memo(function _PortfolioActionButtons(): JSX.Element {
+export const PortfolioActionButtons = memo(function PortfolioActionButtonsInner(): JSX.Element {
   const { t } = useTranslation()
   const media = useMedia()
   const { isTestnetModeEnabled } = useEnabledChains()
-  const isFiatOffRampEnabled = useFeatureFlag(FeatureFlags.FiatOffRamp)
 
   const onSendClick = (): void => {
     sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
@@ -118,11 +117,7 @@ export const PortfolioActionButtons = memo(function _PortfolioActionButtons(): J
       />
       <Flex row shrink gap="$spacing8" width={isGrid ? '100%' : '50%'}>
         <ActionButton Icon={<CoinConvert />} label={t('home.label.swap')} onClick={onSwapClick} />
-        <ActionButton
-          Icon={<Bank />}
-          label={isFiatOffRampEnabled ? t('home.label.for') : t('home.label.buy')}
-          onClick={onBuyClick}
-        />
+        <ActionButton Icon={<Bank />} label={t('home.label.for')} onClick={onBuyClick} />
       </Flex>
       <Flex row shrink gap="$spacing8" width={isGrid ? '100%' : '50%'}>
         <ActionButton Icon={<SendAction />} label={t('home.label.send')} onClick={onSendClick} />

@@ -1,6 +1,6 @@
-import { useUnmountingAnimation } from 'hooks/useUnmountingAnimation'
-import { css, deprecatedStyled, keyframes } from 'lib/styled-components'
 import { useRef } from 'react'
+import { useUnmountingAnimation } from '~/hooks/useUnmountingAnimation'
+import { css, deprecatedStyled, keyframes } from '~/lib/deprecated-styled'
 
 const fadeIn = keyframes`
   from { opacity: 0;}
@@ -136,6 +136,11 @@ const FadeWrapper = deprecatedStyled.div<{
   ${({ $zIndex }) => $zIndex && `z-index: ${$zIndex};`}
 `
 
+/**
+ * @deprecated Use `AnimateTransition` or `TransitionItem` from `ui/src` instead. This wrapper uses
+ * `deprecated-styled` and `useUnmountingAnimation`, which can leave exiting nodes in normal flow
+ * and stack oddly beside newly mounted siblings.
+ */
 export function FadePresence({
   children,
   className,

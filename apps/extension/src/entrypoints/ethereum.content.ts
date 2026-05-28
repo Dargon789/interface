@@ -1,4 +1,5 @@
 import { addWindowMessageListener } from 'src/background/messagePassing/messageUtils'
+import { isSandboxedFrame } from 'src/contentScript/isSandboxedFrame'
 import {
   ETH_PROVIDER_CONFIG,
   isValidContentScriptToProxyEmission,
@@ -7,7 +8,7 @@ import {
 } from 'src/contentScript/types'
 import { WindowEthereumProxy } from 'src/contentScript/WindowEthereumProxy'
 import { logger } from 'utilities/src/logger/logger'
-import { v4 as uuid } from 'uuid'
+import { uuid } from 'utilities/src/primitives/uuid'
 import { defineContentScript } from 'wxt/utils/define-content-script'
 
 declare global {
@@ -21,6 +22,11 @@ declare global {
 function makeEthereum(): void {
   // Guard against running in Node environment during WXT prepare
   if (typeof window === 'undefined') {
+    return
+  }
+
+  // Do not inject the provider into sandboxed frames without allow-same-origin.
+  if (isSandboxedFrame()) {
     return
   }
   // TODO(xtine): Get this working by importing the svg file directly. The svg text comes from packages/ui/src/assets/icons/uniswap-logo.svg
@@ -63,7 +69,6 @@ function makeEthereum(): void {
     } catch (error) {
       if (__DEV__) {
         // Only log in dev env for debugging purposes to avoid spamming DD with these errors.
-        // eslint-disable-next-line no-restricted-syntax
         logger.error(error, { tags: { file: 'ethereum.ts', function: 'assignWindowEthereum' } })
       }
     }
@@ -150,15 +155,16 @@ function makeEthereum(): void {
   }
 }
 
-// eslint-disable-next-line import/no-unused-modules
 export default defineContentScript({
   matches:
+    // oxlint-disable-next-line eslint-js/no-restricted-syntax allow process.env access
     __DEV__ || process.env.BUILD_ENV === 'dev'
       ? ['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*']
       : ['https://*/*'],
   runAt: 'document_start',
   // TODO(INFRA-1010): not supported by firefox
   world: 'MAIN',
+  allFrames: true,
   main() {
     makeEthereum()
   },

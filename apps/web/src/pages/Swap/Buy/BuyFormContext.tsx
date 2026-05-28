@@ -1,26 +1,23 @@
-import { skipToken } from '@reduxjs/toolkit/query/react'
-import { useUSDTokenUpdater } from 'hooks/useUSDTokenUpdater'
-import useCurrencyBalance from 'lib/hooks/useCurrencyBalance'
-import { useFiatOnRampSupportedTokens, useMeldFiatCurrencyInfo } from 'pages/Swap/Buy/hooks'
-import { formatFORErrorAmount, getOnRampInputAmount, parseAndFormatFiatOnRampFiatAmount } from 'pages/Swap/Buy/shared'
+import { skipToken } from '@tanstack/react-query'
 import { createContext, Dispatch, PropsWithChildren, SetStateAction, useContext, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { buildPartialCurrencyInfo } from 'uniswap/src/constants/routing'
 import { nativeOnChain } from 'uniswap/src/constants/tokens'
 import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { useAppFiatCurrency, useLocalFiatToUSDConverter } from 'uniswap/src/features/fiatCurrency/hooks'
 import {
   useFiatOnRampAggregatorCountryListQuery,
   useFiatOnRampAggregatorCryptoQuoteQuery,
-} from 'uniswap/src/features/fiatOnRamp/api'
+} from 'uniswap/src/features/fiatOnRamp/hooks/useFiatOnRampQueries'
 import {
   FiatCurrencyInfo,
   FiatOnRampCurrency,
   FORCountry,
   FORFilters,
   FORQuoteResponse,
-  FORSupportedCountriesResponse,
   RampDirection,
+  SupportedCountriesResponse,
 } from 'uniswap/src/features/fiatOnRamp/types'
 import {
   InvalidRequestAmountTooHigh,
@@ -34,6 +31,10 @@ import {
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { getSymbolDisplayText } from 'uniswap/src/utils/currency'
 import { useDebounce } from 'utilities/src/time/timing'
+import { useUSDTokenUpdater } from '~/hooks/useUSDTokenUpdater'
+import { useCurrencyBalance } from '~/lib/hooks/useCurrencyBalance'
+import { useFiatOnRampSupportedTokens, useMeldFiatCurrencyInfo } from '~/pages/Swap/Buy/hooks'
+import { formatFORErrorAmount, getOnRampInputAmount, parseAndFormatFiatOnRampFiatAmount } from '~/pages/Swap/Buy/shared'
 
 class BuyFormError extends Error {
   constructor(public readonly message: string) {
@@ -58,13 +59,14 @@ type BuyFormState = {
 type BuyInfo = {
   readonly meldSupportedFiatCurrency?: FiatCurrencyInfo
   readonly notAvailableInThisRegion: boolean
-  readonly countryOptionsResult?: FORSupportedCountriesResponse
+  readonly countryOptionsResult?: SupportedCountriesResponse
   readonly supportedTokens?: FiatOnRampCurrency[]
   readonly amountOut?: string
   readonly amountOutLoading?: boolean
   readonly quotes?: FORQuoteResponse
   readonly fetchingQuotes: boolean
   readonly error?: BuyFormError
+  readonly providerSourceAmount?: number
 }
 
 type BuyFormContextType = {
@@ -82,7 +84,7 @@ const DEFAULT_BUY_FORM_STATE: BuyFormState = {
   countryModalOpen: false,
   currencyModalOpen: false,
   providerModalOpen: false,
-  rampDirection: RampDirection.ONRAMP,
+  rampDirection: RampDirection.ON_RAMP,
   selectedUnsupportedCurrency: undefined,
   paymentMethod: undefined,
   providers: undefined,
@@ -101,6 +103,7 @@ export const BuyFormContext = createContext<BuyFormContextType>({
     quotes: undefined,
     fetchingQuotes: false,
     error: undefined,
+    providerSourceAmount: undefined,
   },
 })
 
@@ -123,6 +126,9 @@ function useDerivedBuyFormInfo(state: BuyFormState): BuyInfo {
   const balance = useCurrencyBalance(accountAddress, state.quoteCurrency?.currencyInfo?.currency)
 
   const { meldSupportedFiatCurrency, notAvailableInThisRegion } = useMeldFiatCurrencyInfo(state.selectedCountry)
+  const appFiatCurrency = useAppFiatCurrency()
+  const localFiatToUSD = useLocalFiatToUSDConverter()
+  const { formatNumberOrString } = useLocalizationContext()
 
   const { data: countryOptionsResult } = useFiatOnRampAggregatorCountryListQuery({
     rampDirection: state.rampDirection,
@@ -140,10 +146,26 @@ function useDerivedBuyFormInfo(state: BuyFormState): BuyInfo {
   )
 
   const [sourceCurrencyCode, destinationCurrencyCode] = useMemo(() => {
-    return state.rampDirection === RampDirection.ONRAMP
+    return state.rampDirection === RampDirection.ON_RAMP
       ? [meldSupportedFiatCurrency.code, state.quoteCurrency?.meldCurrencyCode]
       : [state.quoteCurrency?.meldCurrencyCode, meldSupportedFiatCurrency.code]
   }, [meldSupportedFiatCurrency, state.quoteCurrency, state.rampDirection])
+
+  // When the app display currency differs from the meld provider currency,
+  // convert the input amount so the provider receives the correct value.
+  // e.g., user enters ¥300 (app=JPY) but provider expects USD → send ~$1.89
+  const providerSourceAmount = useMemo(() => {
+    const raw = parseFloat(onRampInputAmount)
+    if (isNaN(raw)) {
+      return undefined
+    }
+    const needsConversion =
+      state.inputInFiat && appFiatCurrency.toLowerCase() !== meldSupportedFiatCurrency.code.toLowerCase()
+    if (!needsConversion) {
+      return raw
+    }
+    return localFiatToUSD(raw)
+  }, [onRampInputAmount, state.inputInFiat, appFiatCurrency, meldSupportedFiatCurrency.code, localFiatToUSD])
 
   const {
     data: quotes,
@@ -157,9 +179,10 @@ function useDerivedBuyFormInfo(state: BuyFormState): BuyInfo {
       accountAddress &&
       state.selectedCountry?.countryCode &&
       sourceCurrencyCode &&
-      destinationCurrencyCode
+      destinationCurrencyCode &&
+      providerSourceAmount !== undefined
       ? {
-          sourceAmount: parseFloat(onRampInputAmount),
+          sourceAmount: providerSourceAmount,
           sourceCurrencyCode,
           destinationCurrencyCode,
           countryCode: state.selectedCountry.countryCode,
@@ -173,11 +196,9 @@ function useDerivedBuyFormInfo(state: BuyFormState): BuyInfo {
     },
   )
 
-  const { formatNumberOrString } = useLocalizationContext()
-
   const error = useMemo(() => {
     if (
-      state.rampDirection === RampDirection.OFFRAMP &&
+      state.rampDirection === RampDirection.OFF_RAMP &&
       onRampInputAmount &&
       balance &&
       Number(onRampInputAmount) > Number(balance.toExact())
@@ -187,6 +208,7 @@ function useDerivedBuyFormInfo(state: BuyFormState): BuyInfo {
 
     if (quotesError && isFiatOnRampApiError(quotesError)) {
       if (isInvalidRequestAmountTooLow(quotesError)) {
+        // oxlint-disable-next-line no-shadow
         const error = quotesError as InvalidRequestAmountTooLow
         const isFiat = error.data.context.unit === 'fiat'
         const quoteCurrency = state.quoteCurrency?.currencyInfo?.currency
@@ -207,6 +229,7 @@ function useDerivedBuyFormInfo(state: BuyFormState): BuyInfo {
       }
 
       if (isInvalidRequestAmountTooHigh(quotesError)) {
+        // oxlint-disable-next-line no-shadow
         const error = quotesError as InvalidRequestAmountTooHigh
         const quoteCurrency = state.quoteCurrency?.currencyInfo?.currency
         const isFiat = error.data.context.unit === 'fiat'
@@ -269,6 +292,7 @@ function useDerivedBuyFormInfo(state: BuyFormState): BuyInfo {
       quotes,
       fetchingQuotes,
       error,
+      providerSourceAmount,
     }),
     [
       amountOut,
@@ -278,6 +302,7 @@ function useDerivedBuyFormInfo(state: BuyFormState): BuyInfo {
       fetchingQuotes,
       meldSupportedFiatCurrency,
       notAvailableInThisRegion,
+      providerSourceAmount,
       quotes,
       supportedTokens,
     ],

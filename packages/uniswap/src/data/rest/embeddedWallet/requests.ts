@@ -1,28 +1,34 @@
-import { createPromiseClient } from '@connectrpc/connect'
-import { EmbeddedWalletService } from '@uniswap/client-embeddedwallet/dist/uniswap/embeddedwallet/v1/service_connect'
-
-import { createConnectTransportWithDefaults, createEmbeddedWalletApiClient } from '@universe/api'
+import { createPromiseClient, type Transport } from '@connectrpc/connect'
+import { EmbeddedWalletService as OldEmbeddedWalletService } from '@uniswap/client-embeddedwallet/dist/uniswap/embeddedwallet/v1/service_connect'
+import { EmbeddedWalletService as NewEmbeddedWalletService } from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_connect'
+import type { EmbeddedWalletClientContext } from '@universe/api'
+import { createEmbeddedWalletApiClient, getTransport } from '@universe/api'
+import { isMobileApp, REQUEST_SOURCE } from '@universe/environment'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
-import { getVersionHeader } from 'uniswap/src/data/constants'
-import { isBetaEnv, isProdEnv } from 'utilities/src/environment/env'
-import { isExtensionApp, isMobileApp } from 'utilities/src/platform'
-import { REQUEST_SOURCE } from 'utilities/src/platform/requestSource'
+import { getVersionHeader } from 'uniswap/src/data/getVersionHeader'
+import { getEmbeddedWalletBaseUrl } from 'uniswap/src/features/passkey/hooks/useEmbeddedWalletBaseUrl'
 
-const isWalletBeta = (isExtensionApp || isMobileApp) && isBetaEnv()
-
-const EmbeddedWalletTransport = createConnectTransportWithDefaults(
-  {
-    baseUrl: isProdEnv() || isWalletBeta ? uniswapUrls.evervaultProductionUrl : uniswapUrls.evervaultStagingUrl,
-    additionalHeaders: {
-      ...(isMobileApp && { Origin: uniswapUrls.requestOriginUrl }),
+function createEmbeddedWalletTransport(): Transport {
+  return getTransport({
+    getBaseUrl: () => uniswapUrls.privyEmbeddedWalletUrl,
+    getHeaders: () => ({
+      ...(isMobileApp && { Origin: getEmbeddedWalletBaseUrl() }),
       'x-request-source': REQUEST_SOURCE,
       'x-app-version': getVersionHeader(),
-    },
-  },
-  {
-    credentials: 'include',
-  },
-)
-const EmbeddedWalletRpcClient = createPromiseClient(EmbeddedWalletService, EmbeddedWalletTransport)
+    }),
+  })
+}
 
-export const EmbeddedWalletApiClient = createEmbeddedWalletApiClient({ rpcClient: EmbeddedWalletRpcClient })
+const embeddedWalletTransport = createEmbeddedWalletTransport()
+
+const oldEmbeddedWalletRpcClient = createPromiseClient(OldEmbeddedWalletService, embeddedWalletTransport)
+
+const newRpcClient = createPromiseClient(
+  NewEmbeddedWalletService,
+  embeddedWalletTransport,
+) as unknown as EmbeddedWalletClientContext['rpcClient']
+
+export const EmbeddedWalletApiClient = createEmbeddedWalletApiClient({
+  rpcClient: newRpcClient,
+  legacyRpcClient: oldEmbeddedWalletRpcClient,
+})

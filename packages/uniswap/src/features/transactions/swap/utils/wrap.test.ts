@@ -1,4 +1,4 @@
-import { nativeOnChain } from 'uniswap/src/constants/tokens'
+import { nativeOnChain, PATHUSD_TEMPO } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { getWrapType } from 'uniswap/src/features/transactions/swap/utils/wrap'
 import { WrapType } from 'uniswap/src/features/transactions/types/wrap'
@@ -6,10 +6,10 @@ import { wrappedNativeCurrency } from 'uniswap/src/utils/currency'
 
 describe(getWrapType, () => {
   const eth = nativeOnChain(UniverseChainId.Mainnet)
-  const weth = wrappedNativeCurrency(UniverseChainId.Mainnet)
+  const weth = wrappedNativeCurrency(UniverseChainId.Mainnet)!
 
   const arbEth = nativeOnChain(UniverseChainId.ArbitrumOne)
-  const arbWeth = wrappedNativeCurrency(UniverseChainId.ArbitrumOne)
+  const arbWeth = wrappedNativeCurrency(UniverseChainId.ArbitrumOne)!
 
   it('handles undefined args', () => {
     expect(getWrapType(undefined, weth)).toEqual(WrapType.NotApplicable)
@@ -31,5 +31,16 @@ describe(getWrapType, () => {
     // different chains
     expect(getWrapType(weth, arbEth)).toEqual(WrapType.NotApplicable)
     expect(getWrapType(arbWeth, eth)).toEqual(WrapType.NotApplicable)
+  })
+
+  it('wrappedNativeCurrency returns undefined for Tempo', () => {
+    expect(wrappedNativeCurrency(UniverseChainId.Tempo)).toBeUndefined()
+  })
+
+  it('returns NotApplicable for chains without wrapped native currency (Tempo)', () => {
+    const tempoNative = nativeOnChain(UniverseChainId.Tempo)
+    const tempoPathUSD = PATHUSD_TEMPO
+    expect(getWrapType(tempoNative, tempoPathUSD)).toEqual(WrapType.NotApplicable)
+    expect(getWrapType(tempoPathUSD, tempoNative)).toEqual(WrapType.NotApplicable)
   })
 })

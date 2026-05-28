@@ -1,6 +1,6 @@
-import { NATIVE_CHAIN_ID } from 'constants/tokens'
 import { CHROME_EXTENSION_UNINSTALL_URL_PATH } from 'uniswap/src/constants/urls'
 import { InterfacePageName } from 'uniswap/src/features/telemetry/constants'
+import { NATIVE_CHAIN_ID } from '~/constants/tokens'
 
 export function getCurrentPageFromLocation(locationPathname: string): InterfacePageName | undefined {
   switch (true) {
@@ -10,6 +10,8 @@ export function getCurrentPageFromLocation(locationPathname: string): InterfaceP
       return InterfacePageName.SwapPage
     case locationPathname.startsWith('/portfolio/tokens'):
       return InterfacePageName.PortfolioTokensPage
+    case locationPathname.startsWith('/portfolio/pools'):
+      return InterfacePageName.PortfolioPoolsPage
     case locationPathname.startsWith('/portfolio/defi'):
       return InterfacePageName.PortfolioDefiPage
     case locationPathname.startsWith('/portfolio/nfts'):
@@ -39,14 +41,6 @@ export function getCurrentPageFromLocation(locationPathname: string): InterfaceP
       return InterfacePageName.PoolPage
     case locationPathname.startsWith('/tokens'):
       return InterfacePageName.TokensPage
-    case locationPathname.startsWith('/nfts/profile'):
-      return InterfacePageName.NftProfilePage
-    case locationPathname.startsWith('/nfts/asset'):
-      return InterfacePageName.NftDetailsPage
-    case locationPathname.startsWith('/nfts/collection'):
-      return InterfacePageName.NftCollectionPage
-    case locationPathname.startsWith('/nfts'):
-      return InterfacePageName.NftExplorePage
     case locationPathname.startsWith(CHROME_EXTENSION_UNINSTALL_URL_PATH):
       return InterfacePageName.ExtensionUninstall
     default:

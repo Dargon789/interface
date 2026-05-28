@@ -2,8 +2,29 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Mobile App",
   "extends": "../../config/tsconfig/expo.json",
-  "exclude": [".storybook/storybook.requires.ts"],
+  "exclude": [".storybook/storybook.requires.ts", "oxlint.config.ts"],
   "references": [
+    {
+      "path": "../../packages/sessions"
+    },
+    {
+      "path": "../../packages/notifications"
+    },
+    {
+      "path": "../../packages/hashcash-native"
+    },
+    {
+      "path": "../../packages/gating"
+    },
+    {
+      "path": "../../packages/encoding"
+    },
+    {
+      "path": "../../packages/config"
+    },
+    {
+      "path": "../../packages/api"
+    },
     {
       "path": "../../packages/wallet"
     },
@@ -11,24 +32,20 @@
       "path": "../../packages/utilities"
     },
     {
+      "path": "../../packages/environment"
+    },
+    {
+      "path": "../../packages/ui"
+    },
+    {
       "path": "../../packages/uniswap"
-    },
-    {
-      "path": "../../packages/sessions"
-    },
-    {
-      "path": "../../packages/gating"
-    },
-    {
-      "path": "../../packages/api"
-    },
-    {
-      "path": "../../packages/gating"
     }
   ],
   "compilerOptions": {
-    "baseUrl": "./",
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "paths": {
+      "src/*": ["./src/*"]
+    }
   },
-  "include": ["**/*.ts", "**/*.tsx", "global.d.ts"]
+  "include": ["**/*.ts", "**/*.tsx", "src/polyfills/**/*.js", "global.d.ts"]
 }

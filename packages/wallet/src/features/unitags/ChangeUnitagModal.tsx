@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { UnitagErrorCodes } from '@universe/api'
+import { UnitagErrorCode } from '@universe/api'
+import { isAndroid, isExtensionApp, isMobileApp } from '@universe/environment'
 import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
@@ -9,7 +10,7 @@ import { AlertTriangleFilled, Person } from 'ui/src/components/icons'
 import { fonts, spacing } from 'ui/src/theme'
 import { TextInput } from 'uniswap/src/components/input/TextInput'
 import { Modal } from 'uniswap/src/components/modals/Modal'
-import { UnitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
+import { unitagsApiClient } from 'uniswap/src/data/apiClients/unitagsApi/UnitagsApiClient'
 import { useResetUnitagsQueries } from 'uniswap/src/data/apiClients/unitagsApi/useResetUnitagsQueries'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
@@ -23,7 +24,6 @@ import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { dismissNativeKeyboard } from 'utilities/src/device/keyboard/dismissNativeKeyboard'
 import { uniqueIdQuery } from 'utilities/src/device/uniqueIdQuery'
 import { logger } from 'utilities/src/logger/logger'
-import { isAndroid, isExtensionApp, isMobileApp } from 'utilities/src/platform'
 import { ModalBackButton } from 'wallet/src/components/modals/ModalBackButton'
 import { ChangeUnitagConfirmButton } from 'wallet/src/features/unitags/ChangeUnitagConfirmButton'
 import { useCanAddressClaimUnitag } from 'wallet/src/features/unitags/hooks/useCanAddressClaimUnitag'
@@ -54,13 +54,13 @@ export function ChangeUnitagModal({
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [isChangeResponseLoading, setIsChangeResponseLoading] = useState(false)
 
-  const { error: canClaimUnitagNameError, loading: canClaimUnitagLoading } = useCanClaimUnitagName(newUnitag)
+  const { error: canClaimUnitagNameError, loading: canClaimUnitagLoading } = useCanClaimUnitagName(newUnitag, address)
   const { errorCode } = useCanAddressClaimUnitag(address, true)
   const resetUnitagsQueries = useResetUnitagsQueries()
 
   const isUnitagEdited = unitag !== newUnitag
   const isUnitagValid = !!newUnitag && isUnitagEdited && !canClaimUnitagNameError && !canClaimUnitagLoading
-  const hasReachedAddressLimit = errorCode === UnitagErrorCodes.AddressLimitReached
+  const hasReachedAddressLimit = errorCode === UnitagErrorCode.UNITAG_ERROR_ADDRESS_LIMIT_REACHED
   const isSubmitButtonDisabled = !deviceId || hasReachedAddressLimit || !isUnitagValid
 
   const onFinishEditing = (): void => {
@@ -92,7 +92,7 @@ export function ChangeUnitagModal({
     setIsChangeResponseLoading(true)
     try {
       // Change unitag backend call
-      const changeResponse = await UnitagsApiClient.changeUnitag({
+      const changeResponse = await unitagsApiClient.changeUnitag({
         data: {
           username: newUnitag,
           deviceId,
@@ -123,8 +123,8 @@ export function ChangeUnitagModal({
             title: t('unitags.notification.username.title'),
           }),
         )
-        onSuccess?.()
         onClose()
+        onSuccess?.()
       }
     } catch (e) {
       // If some other error occurs, log it and display a generic error message
@@ -194,7 +194,7 @@ export function ChangeUnitagModal({
                   px="$none"
                   py="$spacing20"
                   returnKeyType="done"
-                  value={newUnitag}
+                  defaultValue={newUnitag}
                   width="100%"
                   onChangeText={(text: string) => setNewUnitag(text.trim().toLowerCase())}
                   onSubmitEditing={onFinishEditing}
@@ -284,8 +284,8 @@ function ChangeUnitagConfirmModal({
         <Text color="$neutral2" textAlign="center" variant={isExtensionApp ? 'body3' : 'body2'}>
           {t('unitags.editUsername.confirm.subtitle')}
         </Text>
-        <Flex py="$spacing32">
-          <UnitagName animateText name={unitag} textProps={{ fontSize: fonts.heading3.fontSize }} />
+        <Flex pt="$spacing24" pb="$spacing32">
+          <UnitagName animateText displayIconInline name={unitag} textProps={{ fontSize: fonts.heading3.fontSize }} />
         </Flex>
         <Flex row gap="$spacing12" width="100%">
           {isMobileApp && (

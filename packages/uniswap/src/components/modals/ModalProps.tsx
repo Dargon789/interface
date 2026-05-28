@@ -1,9 +1,14 @@
 import type { BottomSheetModal as BaseModal, BottomSheetView } from '@gorhom/bottom-sheet'
 import type { ComponentProps, PropsWithChildren, ReactNode } from 'react'
 import type { SharedValue } from 'react-native-reanimated'
-import type { ColorTokens, SpaceTokens, View } from 'ui/src'
+import type { ColorTokens, GetProps, Sheet, SpaceTokens, View } from 'ui/src'
 import type { HandleBarProps } from 'uniswap/src/components/modals/HandleBar'
 import type { ModalNameType } from 'uniswap/src/features/telemetry/constants'
+
+export type BaseModalProps = {
+  isOpen: boolean
+  onClose: () => void
+}
 
 export type ModalProps = PropsWithChildren<{
   animatedPosition?: SharedValue<number>
@@ -12,6 +17,7 @@ export type ModalProps = PropsWithChildren<{
   name: ModalNameType
   enableDynamicSizing?: boolean
   onClose?: () => void
+  snapPointsMode?: GetProps<typeof Sheet>['snapPointsMode']
   snapPoints?: Array<string | number>
   stackBehavior?: ComponentProps<typeof BaseModal>['stackBehavior']
   containerComponent?: ComponentProps<typeof BaseModal>['containerComponent']
@@ -52,5 +58,8 @@ export type ModalProps = PropsWithChildren<{
   flex?: ComponentProps<typeof View>['flex']
   zIndex?: number
   borderWidth?: number
+  borderColor?: ColorTokens
+  overlayOpacity?: number
   focusHook?: ComponentProps<typeof BottomSheetView>['focusHook']
+  testID?: string
 }>

@@ -82,7 +82,7 @@ export function ModalWithOverlay({
   }, [])
 
   const measureContent = useCallback((parentHeight: number) => {
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
       if (h > parentHeight) {
         setShowOverlay(!startedScrollingRef.current)

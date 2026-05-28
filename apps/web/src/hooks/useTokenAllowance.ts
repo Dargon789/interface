@@ -1,17 +1,17 @@
 import { ContractTransaction } from '@ethersproject/contracts'
 import { CurrencyAmount, MaxUint256, Token } from '@uniswap/sdk-core'
-import { useTokenContract } from 'hooks/useContract'
-import { useTriggerOnTransactionType } from 'hooks/useTriggerOnTransactionType'
 import { useCallback, useMemo, useRef } from 'react'
 import { InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { ApproveTransactionInfo, TransactionType } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
-import { UserRejectedRequestError } from 'utils/errors'
-import { didUserReject } from 'utils/swapErrorToUserReadableMessage'
-import { assume0xAddress } from 'utils/wagmi'
 import { erc20Abi } from 'viem'
 import { useReadContract } from 'wagmi'
+import { useTokenContract } from '~/hooks/useContract'
+import { useTriggerOnTransactionType } from '~/hooks/useTriggerOnTransactionType'
+import { UserRejectedRequestError } from '~/utils/errors'
+import { didUserReject } from '~/utils/swapErrorToUserReadableMessage'
+import { assume0xAddress } from '~/utils/wagmi'
 
 const MAX_ALLOWANCE = MaxUint256.toString()
 
@@ -60,6 +60,7 @@ export function useUpdateTokenAllowance(
 
   return useCallback(async () => {
     try {
+      // oxlint-disable-next-line no-shadow
       const contract = contractRef.current
       if (!amount) {
         throw new Error('missing amount')
@@ -73,6 +74,7 @@ export function useUpdateTokenAllowance(
 
       const allowance = amount.equalTo(0) ? '0' : MAX_ALLOWANCE
       const response = await (async () => {
+        // oxlint-disable-next-line no-shadow
         const contract = contractRef.current
         try {
           if (!contract) {

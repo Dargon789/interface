@@ -1,5 +1,6 @@
-import { expect, getTest } from 'playwright/fixtures'
+import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { expect, getTest } from '~/playwright/fixtures'
 
 const test = getTest()
 
@@ -78,7 +79,7 @@ test.describe(
       })
 
       test('Company menu displays complete sections, links, and legal content', async ({ page }) => {
-        await page.goto('/?featureFlagOverride=conversion-tracking')
+        await page.goto('/')
         await page.getByTestId(TestID.NavCompanyMenu).hover()
         const dropdown = page.getByTestId(TestID.NavCompanyDropdown).first()
         await expect(dropdown).toBeVisible()
@@ -109,7 +110,7 @@ test.describe(
         await expect(page.getByTestId(TestID.NavCompanyDropdown).getByText('Terms of Service')).toBeVisible()
 
         await expect(
-          page.getByTestId(TestID.NavCompanyDropdown).locator('a[href="https://uniswap.org/terms-of-service"]'),
+          page.getByTestId(TestID.NavCompanyDropdown).locator(`a[href="${uniswapUrls.termsOfServiceUrl}"]`),
         ).toBeVisible()
       })
 
@@ -126,7 +127,7 @@ test.describe(
       test.beforeEach(async ({ page }) => {
         // Set a mobile viewport
         await page.setViewportSize({ width: 449, height: 900 })
-        await page.goto('/?featureFlagOverride=conversion-tracking')
+        await page.goto('/')
         await page.waitForTimeout(500)
         await page.getByTestId(TestID.NavCompanyMenu).click()
       })
@@ -168,7 +169,7 @@ test.describe(
         await expect(drawer.getByText('Privacy Policy')).toBeVisible()
         await expect(drawer.getByText('Terms of Service')).toBeVisible()
 
-        await expect(drawer.locator('a[href="https://uniswap.org/terms-of-service"]')).toBeVisible()
+        await expect(drawer.locator(`a[href="${uniswapUrls.termsOfServiceUrl}"]`)).toBeVisible()
       })
 
       test('displays mobile-specific UI elements', async ({ page }) => {
@@ -190,12 +191,11 @@ test.describe(
       })
 
       test('displays bottom bar on token details page', async ({ page }) => {
-        // Verify bottom bar on token details page
         await page.goto('/explore/tokens/ethereum/NATIVE')
         const bottomBar = page.getByTestId(TestID.TokenDetailsMobileBottomBar)
         await expect(bottomBar).toBeVisible()
         await expect(bottomBar.getByText('Buy')).toBeVisible()
-        await expect(bottomBar.getByText('Sell')).toBeVisible()
+        // "Sell" only appears when the connected wallet has a token balance
       })
     })
   },

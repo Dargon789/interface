@@ -1,18 +1,17 @@
-// biome-ignore assist/source/organizeImports: we want to keep the import order
+// Eagerly register Statsig before any saga can call .instance(). Must be first.
+import './src/app/statsigBootstrap'
 import './wdyr'
-// biome-ignore assist/source/organizeImports: we want to keep the import order
-import { isNonTestDev } from 'utilities/src/environment/constants'
+import { isNonTestDev } from '@universe/environment'
 
 if (isNonTestDev) {
   require('./ReactotronConfig')
 }
 
-import { AppRegistry } from 'react-native'
 import 'react-native-gesture-handler'
 import 'react-native-reanimated'
 import 'src/logbox'
 import 'src/polyfills'
-// biome-ignore assist/source/organizeImports: we want to keep the import order
+import { AppRegistry } from 'react-native'
 import App from 'src/app/App'
 import AppConfig from './app.config'
 

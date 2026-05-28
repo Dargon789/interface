@@ -95,7 +95,9 @@ export const mockTransactionSagaDependencies: jest.Mocked<TransactionSagaDepende
   createTransactionConfigService: jest.fn(),
   createTransactionSignerService: jest.fn(),
   createBundledDelegationTransactionSignerService: jest.fn(),
+  createBundledDelegationUserOpSignerService: jest.fn(),
   createTransactionService: jest.fn(),
+  createUserOpService: jest.fn(),
   createAnalyticsService: jest.fn(),
   createTransactionRepository: jest.fn(),
   createFeatureFlagService: jest.fn(),
@@ -265,13 +267,15 @@ export const prepareUniswapXPreSignedSwapTransaction = createFixture<UniswapXPre
  */
 export const prepareExecuteSwapSagaParams = createFixture<SwapParams>()(() => ({
   txId: 'test-tx-id',
-  account: mockSignerAccount,
+  address: mockSignerAccount.address,
   analytics: mockAnalytics,
   swapTxContext: prepareSwapTxContext(),
   onSuccess: jest.fn(),
   onFailure: jest.fn(),
   onPending: jest.fn(),
+  onClearForm: jest.fn(),
   preSignedTransaction: preparePreSignedSwapTransaction(),
   setCurrentStep: jest.fn(),
   setSteps: jest.fn(),
+  caip25Info: undefined,
 }))

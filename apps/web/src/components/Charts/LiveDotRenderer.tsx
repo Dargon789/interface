@@ -4,22 +4,29 @@ import { Flex, useSporeColors } from 'ui/src'
 export interface ChartModelWithLiveDot {
   getLastPointCoordinates?: () => { x: number; y: number } | null
   fitContent?: () => void
+  isZoomed?: () => boolean
 }
 
 interface LiveDotRendererProps {
   chartModel: ChartModelWithLiveDot
   isHovering: boolean
+  isZoomed?: boolean
+  hoverCoordinates?: { x: number; y: number } | null
   chartContainer?: HTMLElement | null
   overrideColor?: string
   dataKey?: string | number // Tracks when chart data changes (e.g., time period change)
+  coordinateOverride?: { x: number; y: number } | null // Synchronous coordinates from controller.update()
 }
 
 export function LiveDotRenderer({
   chartModel,
   isHovering,
+  isZoomed,
+  hoverCoordinates,
   chartContainer,
   overrideColor,
   dataKey,
+  coordinateOverride,
 }: LiveDotRendererProps) {
   const colors = useSporeColors()
   const [coordinates, setCoordinates] = useState<{ x: number; y: number } | null>(null)
@@ -37,12 +44,18 @@ export function LiveDotRenderer({
       setCoordinates(coords ?? null)
     }
 
-    // Try immediately
-    updateCoordinates()
-
     // Listen to chart container resize events
     let resizeObserver: ResizeObserver | null = null
     let rafId: number | null = null
+
+    // Use RAF chain to ensure chart layout is complete before calculating coordinates
+    // (same pattern as resize handler)
+    rafId = requestAnimationFrame(() => {
+      rafId = requestAnimationFrame(() => {
+        updateCoordinates()
+        rafId = null
+      })
+    })
 
     if (chartContainer) {
       resizeObserver = new ResizeObserver(() => {
@@ -83,7 +96,20 @@ export function LiveDotRenderer({
     }
   }, [chartModel, chartContainer, dataKey])
 
-  if (!coordinates || isHovering || isResizing) {
+  if (isResizing || isZoomed) {
+    return null
+  }
+
+  if (isHovering && !hoverCoordinates) {
+    return null
+  }
+
+  if (!isHovering && !coordinateOverride && !coordinates) {
+    return null
+  }
+
+  const renderCoordinates = isHovering ? hoverCoordinates : (coordinateOverride ?? coordinates)
+  if (!renderCoordinates) {
     return null
   }
 
@@ -92,8 +118,8 @@ export function LiveDotRenderer({
       position="absolute"
       pointerEvents="none"
       style={{
-        left: `${coordinates.x}px`,
-        top: `${coordinates.y}px`,
+        left: `${renderCoordinates.x}px`,
+        top: `${renderCoordinates.y}px`,
         transform: 'translate(-50%, -50%)',
         zIndex: 3,
       }}

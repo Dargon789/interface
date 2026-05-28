@@ -62,6 +62,7 @@ export function useEagerExternalProfileRootNavigation(): EagerExternalProfileRoo
   )
 
   const navigate = useEvent(async (address: string, callback?: () => void) => {
+    // oxlint-disable-next-line typescript/await-thenable -- biome-parity: oxlint is stricter here
     await rootNavigate(MobileScreens.ExternalProfile, { address })
     callback?.()
   })

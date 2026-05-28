@@ -52,10 +52,9 @@ export function getTradeService(ctx: TradeServiceContext): TradeService {
     logger: getLogger(),
   })
 
-  const svmTradeService =
-    createSolanaTradeService(
-      // { tradeRepository: getSolanaTradeRepository() } // TODO(SWAP-383): build Solana Trade Repository
-    )
+  const svmTradeService = createSolanaTradeService(
+    // { tradeRepository: getSolanaTradeRepository() } // TODO(SWAP-383): build Solana Trade Repository
+  )
 
   return createTradeService({
     serviceByPlatform: {

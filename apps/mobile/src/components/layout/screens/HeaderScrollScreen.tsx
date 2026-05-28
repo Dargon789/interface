@@ -37,7 +37,7 @@ export function HeaderScrollScreen({
   const colors = useSporeColors()
 
   // difficult to properly type
-  // biome-ignore lint/suspicious/noExplicitAny: FlatList generic type is complex and varies by data
+  // oxlint-disable-next-line typescript/no-explicit-any -- FlatList generic type is complex and varies by data
   const listRef = useRef<FlatList<any>>(null)
 
   // scrolls to top when tapping on the active tab

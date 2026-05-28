@@ -1,13 +1,17 @@
-import { ReactNode, useCallback } from 'react'
+import { isMobileApp } from '@universe/environment'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { type ReactNode, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flex, IconProps, Switch, Text, TouchableArea, useSporeColors } from 'ui/src'
+import { Flex, type IconProps, Switch, Text, TouchableArea, useSporeColors } from 'ui/src'
+import { Box } from 'ui/src/components/icons/Box'
+import { Gas } from 'ui/src/components/icons/Gas'
 import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import { SmartWallet } from 'ui/src/components/icons/SmartWallet'
 import { Wrench } from 'ui/src/components/icons/Wrench'
 import { iconSizes } from 'ui/src/theme'
 import { Modal } from 'uniswap/src/components/modals/Modal'
+import { useEnableCustomGasFeeEntry } from 'uniswap/src/features/gas/hooks/useEnableCustomGasFeeEntry'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
-import { isMobileApp } from 'utilities/src/platform'
 
 const iconProps: IconProps = {
   color: '$neutral2',
@@ -21,6 +25,8 @@ type SmartWalletAdvancedSettingsModalProps = {
   isTestnetEnabled?: boolean
   onTestnetModeToggled?: (isChecked: boolean) => void
   onPressSmartWallet?: () => void
+  onPressStorage?: () => void
+  onPressNetworkCost?: () => void
   onClose: () => void
 }
 
@@ -31,14 +37,28 @@ export function SmartWalletAdvancedSettingsModal({
   isTestnetEnabled = false,
   onTestnetModeToggled,
   onPressSmartWallet,
+  onPressStorage,
+  onPressNetworkCost,
   onClose,
 }: SmartWalletAdvancedSettingsModalProps): JSX.Element {
   const { t } = useTranslation()
+  const isGasFeeOverridesEnabled = useFeatureFlag(FeatureFlags.GasFeeOverrides)
+  const enableCustomGasFeeEntry = useEnableCustomGasFeeEntry()
 
   const toggleSmartWalletMode = useCallback(() => {
     onClose()
     onPressSmartWallet?.()
   }, [onClose, onPressSmartWallet])
+
+  const handlePressStorage = useCallback(() => {
+    onClose()
+    onPressStorage?.()
+  }, [onClose, onPressStorage])
+
+  const handlePressNetworkCost = useCallback(() => {
+    onClose()
+    onPressNetworkCost?.()
+  }, [onClose, onPressNetworkCost])
 
   return (
     <Modal name={ModalName.SmartWalletAdvancedSettingsModal} isModalOpen={isOpen} onClose={onClose}>
@@ -64,6 +84,21 @@ export function SmartWalletAdvancedSettingsModal({
           isHoverable={false}
           onCheckedChange={onTestnetModeToggled}
         />
+        {isGasFeeOverridesEnabled && onPressNetworkCost && (
+          <AdvancedSettingsOptions
+            icon={<Gas {...iconProps} size="$icon.24" />}
+            title={t('gas.override.title')}
+            trailingValue={enableCustomGasFeeEntry ? t('gas.override.mode.custom') : t('gas.override.mode.auto')}
+            isHoverable={true}
+            onPress={handlePressNetworkCost}
+          />
+        )}
+        <AdvancedSettingsOptions
+          icon={<Box {...iconProps} size="$icon.24" />}
+          title={t('settings.setting.storage.title')}
+          isHoverable={true}
+          onPress={handlePressStorage}
+        />
         <AdvancedSettingsOptions
           icon={<SmartWallet {...iconProps} size="$icon.24" />}
           title={t('settings.setting.smartWallet.action.smartWallet')}
@@ -80,6 +115,7 @@ interface AdvancedSettingsOptionsProps {
   icon: ReactNode
   active?: boolean
   title: string
+  trailingValue?: string
   onCheckedChange?: (isChecked: boolean) => void
   onPress?: () => void
   isHoverable: boolean
@@ -89,6 +125,7 @@ function AdvancedSettingsOptions({
   icon,
   active,
   title,
+  trailingValue,
   onCheckedChange,
   onPress,
   isHoverable,
@@ -127,7 +164,14 @@ function AdvancedSettingsOptions({
           }}
         />
       ) : (
-        <RotatableChevron color="$neutral3" direction="right" height={iconSizes.icon24} width={iconSizes.icon24} />
+        <Flex row alignItems="center" gap="$spacing4">
+          {trailingValue && (
+            <Text color="$neutral2" variant="body3">
+              {trailingValue}
+            </Text>
+          )}
+          <RotatableChevron color="$neutral3" direction="right" size="$icon.24" />
+        </Flex>
       )}
     </TouchableArea>
   )

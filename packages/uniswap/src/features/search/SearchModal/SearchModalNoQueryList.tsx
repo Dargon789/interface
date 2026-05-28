@@ -2,11 +2,12 @@ import { ContentStyle } from '@shopify/flash-list'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, GeneratedIcon, Text } from 'ui/src'
-import { Gallery, Person } from 'ui/src/components/icons'
+import { Person } from 'ui/src/components/icons'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useSectionsForNoQuerySearch } from 'uniswap/src/features/search/SearchModal/hooks/useSectionsForNoQuerySearch'
 import { SearchModalList, SearchModalListProps } from 'uniswap/src/features/search/SearchModal/SearchModalList'
 import { SearchTab } from 'uniswap/src/features/search/SearchModal/types'
+import { useMultichainSearchModalMetricsAnalytics } from 'uniswap/src/features/search/SearchModal/useMultichainSearchModalMetricsAnalytics'
 
 function EmptyPretypeSection({ title, icon: Icon }: { title: string; icon: GeneratedIcon }): JSX.Element {
   return (
@@ -27,7 +28,7 @@ interface SearchModalNoQueryListProps {
   contentContainerStyle?: ContentStyle
 }
 
-export const SearchModalNoQueryList = memo(function _SearchModalNoQueryList({
+export const SearchModalNoQueryList = memo(function SearchModalNoQueryListInner({
   chainFilter,
   activeTab,
   onSelect,
@@ -46,16 +47,18 @@ export const SearchModalNoQueryList = memo(function _SearchModalNoQueryList({
     activeTab,
   })
 
+  useMultichainSearchModalMetricsAnalytics({
+    sections,
+    isSearchResultsLoading: loading,
+    isSearchQueryPending: false,
+  })
+
   // Handle empty pretype cases for assets without default results
   const getEmptyElementComponent = (): JSX.Element | undefined => {
-    switch (activeTab) {
-      case SearchTab.NFTCollections:
-        return <EmptyPretypeSection title={t('search.results.pretype.nfts')} icon={Gallery} />
-      case SearchTab.Wallets:
-        return <EmptyPretypeSection title={t('search.results.pretype.wallets')} icon={Person} />
-      default:
-        return undefined
+    if (activeTab === SearchTab.Wallets) {
+      return <EmptyPretypeSection title={t('search.results.pretype.wallets')} icon={Person} />
     }
+    return undefined
   }
 
   return (

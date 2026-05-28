@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-import { isAndroid } from 'utilities/src/platform'
+/* oxlint-disable typescript/no-unused-expressions */
+import { isAndroid } from '@universe/environment'
 
 // TODO: [MOB-247] remove polyfill once Hermes support it
 // https://github.com/facebook/hermes/issues/23

@@ -1,19 +1,24 @@
 import { useTranslation } from 'react-i18next'
 import { Flex, Text } from 'ui/src'
+import { AlertTriangleFilled } from 'ui/src/components/icons'
 import { iconSizes } from 'ui/src/theme'
-import { BridgeIcon, SplitLogo } from 'uniswap/src/components/CurrencyLogo/SplitLogo'
+import { CrossChainIcon, SplitLogo } from 'uniswap/src/components/CurrencyLogo/SplitLogo'
 import { NotificationToast } from 'uniswap/src/components/notifications/NotificationToast'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { BridgeTxNotification } from 'uniswap/src/features/notifications/slice/types'
+import { BridgeTxNotification, PlanTxNotification } from 'uniswap/src/features/notifications/slice/types'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
-import { BridgingCurrencyRow } from 'uniswap/src/features/transactions/swap/components/BridgingCurrencyRow'
+import { CrossChainCurrencyRow } from 'uniswap/src/features/transactions/swap/components/CrossChainCurrencyRow'
 import { TransactionStatus } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { getFormattedCurrencyAmount } from 'uniswap/src/utils/currency'
 import { useWalletNavigation } from 'wallet/src/contexts/WalletNavigationContext'
 import { formBridgeNotificationTitle } from 'wallet/src/features/notifications/utils'
 import { useCreateSwapFormState } from 'wallet/src/features/transactions/hooks/useCreateSwapFormState'
 
-export function BridgeNotification({ notification }: { notification: BridgeTxNotification }): JSX.Element {
+export function CrossChainNotification({
+  notification,
+}: {
+  notification: BridgeTxNotification | PlanTxNotification
+}): JSX.Element {
   const { t } = useTranslation()
   const formatter = useLocalizationContext()
   const { navigateToAccountActivityList, navigateToSwapFlow } = useWalletNavigation()
@@ -60,6 +65,8 @@ export function BridgeNotification({ notification }: { notification: BridgeTxNot
     formatter,
   })
 
+  const showWarningIcon = txStatus === TransactionStatus.AwaitingAction
+
   const contentOverride = (
     <Flex grow row gap="$spacing12" alignItems="center" width="100%">
       <Flex centered>
@@ -68,20 +75,27 @@ export function BridgeNotification({ notification }: { notification: BridgeTxNot
           inputCurrencyInfo={inputCurrencyInfo}
           outputCurrencyInfo={outputCurrencyInfo}
           size={iconSizes.icon40}
-          customIcon={BridgeIcon}
+          customIcon={<CrossChainIcon status={txStatus} />}
         />
       </Flex>
-      <Flex gap="$spacing4">
+      <Flex shrink gap="$spacing4">
         <Text color="$neutral2" variant="body3">
           {title}
         </Text>
-        <BridgingCurrencyRow
-          inputCurrencyInfo={inputCurrencyInfo}
-          outputCurrencyInfo={outputCurrencyInfo}
+        <CrossChainCurrencyRow
+          inputChainId={inputCurrencyInfo?.currency.chainId ?? null}
+          inputSymbol={inputCurrencyInfo?.currency.symbol ?? ''}
+          outputChainId={outputCurrencyInfo?.currency.chainId ?? null}
+          outputSymbol={outputCurrencyInfo?.currency.symbol ?? ''}
           formattedInputTokenAmount={formattedInputTokenAmount}
           formattedOutputTokenAmount={formattedOutputTokenAmount}
         />
       </Flex>
+      {showWarningIcon && (
+        <Flex ml="auto">
+          <AlertTriangleFilled color="$statusWarning" size="$icon.20" />
+        </Flex>
+      )}
     </Flex>
   )
 

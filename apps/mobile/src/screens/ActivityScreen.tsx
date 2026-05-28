@@ -1,71 +1,34 @@
-import { useApolloClient } from '@apollo/client'
-import { useScrollToTop } from '@react-navigation/native'
-import { useQuery } from '@tanstack/react-query'
-import { GQLQueries } from '@universe/api'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { ESTIMATED_BOTTOM_TABS_HEIGHT } from 'src/app/navigation/tabs/CustomTabBar/constants'
 import { ActivityContent } from 'src/components/activity/ActivityContent'
 import { Screen } from 'src/components/layout/Screen'
-import { useAppStateTrigger } from 'src/utils/useAppStateTrigger'
 import { Text } from 'ui/src'
 import { spacing } from 'ui/src/theme'
+import { AccountType } from 'uniswap/src/features/accounts/types'
+import { DataApiOutageBanner } from 'uniswap/src/features/dataApi/outage/DataApiOutageBanner'
+import { DataApiOutageModalContent } from 'uniswap/src/features/dataApi/outage/DataApiOutageModalContent'
+import type { DataApiOutageState } from 'uniswap/src/features/dataApi/types'
 import { useSelectAddressHasNotifications } from 'uniswap/src/features/notifications/slice/hooks'
 import { setNotificationStatus } from 'uniswap/src/features/notifications/slice/slice'
 import { useAppInsets } from 'uniswap/src/hooks/useAppInsets'
-import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
+import { useEvent } from 'utilities/src/react/hooks'
 import { useActiveAccountWithThrow } from 'wallet/src/features/wallet/hooks'
-
-const useRefreshActivityData = (owner: Address): { refreshing: boolean; onRefreshActivityData: () => void } => {
-  const apolloClient = useApolloClient()
-
-  const refreshFn = useCallback(
-    () =>
-      apolloClient.refetchQueries({
-        include: [GQLQueries.TransactionList],
-      }),
-    [apolloClient],
-  )
-
-  const { refetch, isRefetching } = useQuery({
-    queryKey: [ReactQueryCacheKey.ActivityScreenRefresh, owner],
-    enabled: false,
-    retry: 0,
-    queryFn: refreshFn,
-  })
-
-  return { refreshing: isRefetching, onRefreshActivityData: refetch }
-}
 
 export function ActivityScreen(): JSX.Element {
   const { t } = useTranslation()
   const activeAccount = useActiveAccountWithThrow()
   const dispatch = useDispatch()
-  const scrollRef = useRef(null)
-
-  useScrollToTop(scrollRef)
-
-  const { refreshing, onRefreshActivityData } = useRefreshActivityData(activeAccount.address)
-
-  // Automatically refresh activity data when app comes to foreground
-  useAppStateTrigger({
-    from: 'background',
-    to: 'active',
-    callback: onRefreshActivityData,
-  })
-
   const insets = useAppInsets()
-  const isBottomTabsEnabled = useFeatureFlag(FeatureFlags.BottomTabs)
 
   const containerProps = useMemo(
     () => ({
       contentContainerStyle: {
-        paddingBottom: isBottomTabsEnabled ? ESTIMATED_BOTTOM_TABS_HEIGHT + insets.bottom + spacing.spacing32 : 0,
+        paddingBottom: ESTIMATED_BOTTOM_TABS_HEIGHT + insets.bottom + spacing.spacing32,
       },
     }),
-    [isBottomTabsEnabled, insets.bottom],
+    [insets.bottom],
   )
 
   // clear all notification indicator if the user is on the activity screen
@@ -77,17 +40,36 @@ export function ActivityScreen(): JSX.Element {
     }
   }, [hasNotifications, activeAccount.address, dispatch])
 
+  const [activityError, setActivityError] = useState<Error | undefined>()
+  const [dataUpdatedAt, setDataUpdatedAt] = useState<number | undefined>()
+  const [isOutageSheetOpen, setIsOutageSheetOpen] = useState(false)
+
+  const handleErrorStateChange = useEvent(({ error, dataUpdatedAt: updatedAt }: DataApiOutageState) => {
+    setActivityError(error)
+    setDataUpdatedAt(updatedAt)
+  })
+
+  const handleOutageBannerPress = useEvent(() => setIsOutageSheetOpen(true))
+  const handleOutageSheetClose = useEvent(() => setIsOutageSheetOpen(false))
+
   return (
     <Screen>
+      {activityError ? (
+        <DataApiOutageBanner title={t('dataApi.outage.banner.activity.title')} onPress={handleOutageBannerPress} />
+      ) : null}
+      <DataApiOutageModalContent
+        isOpen={isOutageSheetOpen}
+        lastUpdatedAt={dataUpdatedAt}
+        onClose={handleOutageSheetClose}
+      />
       <Text variant="heading3" py="$padding16" px="$spacing24">
         {t('common.activity')}
       </Text>
       <ActivityContent
-        ref={scrollRef}
-        refreshing={refreshing}
+        isExternalProfile={activeAccount.type === AccountType.Readonly}
         containerProps={containerProps}
         owner={activeAccount.address}
-        onRefresh={onRefreshActivityData}
+        onErrorStateChange={handleErrorStateChange}
       />
     </Screen>
   )

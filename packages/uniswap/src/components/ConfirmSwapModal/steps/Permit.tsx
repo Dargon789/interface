@@ -45,6 +45,7 @@ const ContractIcon = (): JSX.Element => (
 )
 
 export function Permit2TransactionStepRow({
+  // oxlint-disable-next-line no-unused-vars -- biome-parity: oxlint is stricter here
   step,
   status,
   currentStepIndex,
@@ -62,6 +63,8 @@ export function Permit2TransactionStepRow({
 
   const title = {
     [StepStatus.Preview]: t('common.approvePermitTx', { indexText }),
+    [StepStatus.Failed]: t('common.approvePermitTx', { indexText }),
+    [StepStatus.Replaced]: t('common.approvePermitTx', { indexText }),
     [StepStatus.Active]: t('common.approvePermitTx.active', { indexText }),
     [StepStatus.InProgress]: t('common.approvePermitTx.pending', { indexText }),
     [StepStatus.Complete]: t('common.approvePermitTx', { indexText }),

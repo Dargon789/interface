@@ -1,14 +1,13 @@
 import { useApolloClient } from '@apollo/client'
 import { SharedEventName } from '@uniswap/analytics-events'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { memo, useCallback, useEffect, useState } from 'react'
+import { getIsNotificationServiceLocalOverrideEnabled } from '@universe/notifications'
+import React, { memo, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 import { ActivityTab } from 'src/app/components/tabs/ActivityTab'
 import { NftsTab } from 'src/app/components/tabs/NftsTab'
 import { useSmartWalletNudges } from 'src/app/context/SmartWalletNudgesContext'
-import AppRatingModal from 'src/app/features/appRating/AppRatingModal'
-import { useAppRating } from 'src/app/features/appRating/hooks/useAppRating'
 import { HomeIntroCardStack } from 'src/app/features/home/introCards/HomeIntroCardStack'
 import { PortfolioActionButtons } from 'src/app/features/home/PortfolioActionButtons'
 import { PortfolioHeader } from 'src/app/features/home/PortfolioHeader'
@@ -19,9 +18,19 @@ import { PinReminder } from 'src/app/features/onboarding/PinReminder'
 import { useOptimizedSearchParams } from 'src/app/hooks/useOptimizedSearchParams'
 import { HomeQueryParams, HomeTabs } from 'src/app/navigation/constants'
 import { navigate } from 'src/app/navigation/state'
+import { ExtensionNotificationServiceManager } from 'src/notification-service/ExtensionNotificationServiceManager'
 import { Flex, Loader, styled, Text, TouchableArea } from 'ui/src'
 import { SMART_WALLET_UPGRADE_VIDEO } from 'ui/src/assets'
+import { buildWrappedUrl } from 'uniswap/src/components/banners/shared/utils'
+import { UniswapWrapped2025Banner } from 'uniswap/src/components/banners/UniswapWrapped2025Banner/UniswapWrapped2025Banner'
 import { NFTS_TAB_DATA_DEPENDENCIES } from 'uniswap/src/components/nfts/constants'
+import { UNISWAP_WEB_URL } from 'uniswap/src/constants/urls'
+import { selectHasDismissedUniswapWrapped2025Banner } from 'uniswap/src/features/behaviorHistory/selectors'
+import { setHasDismissedUniswapWrapped2025Banner } from 'uniswap/src/features/behaviorHistory/slice'
+import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
+import { usePortfolioTotalValue } from 'uniswap/src/features/dataApi/balances/balancesRest'
+import { DataApiOutageBanner } from 'uniswap/src/features/dataApi/outage/DataApiOutageBanner'
+import { DataApiOutageModalContent } from 'uniswap/src/features/dataApi/outage/DataApiOutageModalContent'
 import { useSelectAddressHasNotifications } from 'uniswap/src/features/notifications/slice/hooks'
 import { setNotificationStatus } from 'uniswap/src/features/notifications/slice/slice'
 import { PortfolioBalance } from 'uniswap/src/features/portfolio/PortfolioBalance/PortfolioBalance'
@@ -35,6 +44,7 @@ import { SmartWalletEnabledModal } from 'wallet/src/components/smartWallet/modal
 import { SmartWalletUpgradeModals } from 'wallet/src/components/smartWallet/modals/SmartWalletUpgradeModal'
 import { useOpenSmartWalletNudgeOnCompletedSwap } from 'wallet/src/components/smartWallet/smartAccounts/hooks'
 import { setIncrementNumPostSwapNudge } from 'wallet/src/features/behaviorHistory/slice'
+import { HomeScreenEarningSection } from 'wallet/src/features/earn/HomeScreenEarningSection'
 import { PendingNotificationBadge } from 'wallet/src/features/notifications/components/PendingNotificationBadge'
 import { useActiveAccountAddressWithThrow, useActiveAccountWithThrow } from 'wallet/src/features/wallet/hooks'
 import { setSmartWalletConsent } from 'wallet/src/features/wallet/slice'
@@ -56,7 +66,7 @@ const MemoizedVideo = memo(() => (
 
 MemoizedVideo.displayName = 'MemoizedVideo'
 
-export const HomeScreen = memo(function _HomeScreen(): JSX.Element {
+export const HomeScreen = memo(function HomeScreenInner(): JSX.Element {
   const { t } = useTranslation()
   const activeAccount = useActiveAccountWithThrow()
   const [showTabs, setShowTabs] = useState(false)
@@ -71,6 +81,41 @@ export const HomeScreen = memo(function _HomeScreen(): JSX.Element {
   const isSmartWalletEnabled = useFeatureFlag(FeatureFlags.SmartWallet)
   const [isSmartWalletEnabledModalOpen, setIsSmartWalletEnabledModalOpen] = useState(false)
   const dispatch = useDispatch()
+
+  // UniswapWrapped2025 banner state
+  const isWrappedBannerEnabled = useFeatureFlag(FeatureFlags.UniswapWrapped2025)
+  const hasDismissedWrappedBanner = useSelector(selectHasDismissedUniswapWrapped2025Banner)
+  const shouldShowWrappedBanner = isWrappedBannerEnabled && !hasDismissedWrappedBanner
+
+  // Notification service feature flag
+  const isNotificationServiceEnabledFlag = useFeatureFlag(FeatureFlags.NotificationService)
+  const isNotificationServiceEnabled =
+    getIsNotificationServiceLocalOverrideEnabled() || isNotificationServiceEnabledFlag
+
+  // Portfolio outage detection — shares the same React Query cache key as PortfolioBalance, no extra fetch
+  const { chains } = useEnabledChains()
+  const { error: portfolioError, dataUpdatedAt: portfolioDataUpdatedAt } = usePortfolioTotalValue({
+    evmAddress: address,
+    chainIds: chains,
+  })
+
+  const [isOutageModalOpen, setIsOutageModalOpen] = useState(false)
+  const handleOutageBannerPress = useEvent(() => setIsOutageModalOpen(true))
+  const handleOutageModalClose = useEvent(() => setIsOutageModalOpen(false))
+
+  const handleDismissWrappedBanner = useCallback(() => {
+    dispatch(setHasDismissedUniswapWrapped2025Banner(true))
+  }, [dispatch])
+
+  const handlePressWrappedBanner = useCallback(() => {
+    try {
+      const url = buildWrappedUrl(UNISWAP_WEB_URL, address)
+      window.open(url, '_blank')
+      dispatch(setHasDismissedUniswapWrapped2025Banner(true))
+    } catch (error) {
+      logger.error(error, { tags: { file: 'HomeScreen', function: 'handlePressWrappedBanner' } })
+    }
+  }, [address, dispatch])
 
   useEffect(() => {
     if (selectedTab) {
@@ -158,107 +203,145 @@ export const HomeScreen = memo(function _HomeScreen(): JSX.Element {
     }
   }, [apolloClient, shouldRefetchNfts])
 
-  const { appRatingModalVisible, onAppRatingModalClose } = useAppRating()
-
   return (
-    <Flex fill alignItems="center" backgroundColor="$surface1" p="$spacing12">
-      {address ? (
-        <Flex backgroundColor="$surface1" gap="$spacing12" width="100%">
-          {isPinRequestOpen && (
-            <Flex position="relative" width="100%">
-              <PinReminder style="popup" onClose={onClosePinRequest} />
-            </Flex>
-          )}
-          <Flex grow gap="$spacing8">
-            <Flex pl="$spacing4" position="relative" pt="$spacing4">
-              <PortfolioHeader address={address} />
-            </Flex>
-            <Flex pb="$spacing8" pl="$spacing4">
-              <PortfolioBalance owner={address} />
-            </Flex>
-
-            <PortfolioActionButtons />
-
-            <HomeIntroCardStack />
-
-            <Flex flex={1} width="100%">
-              <Flex row gap="$spacing16" px="$spacing4" py="$spacing8">
-                <TabButton isActive={selectedTab === HomeTabs.Tokens} onPress={() => setSelectedTab(HomeTabs.Tokens)}>
-                  {t('home.tokens.title')}
-                </TabButton>
-
-                <TabButton
-                  isActive={selectedTab === HomeTabs.NFTs}
-                  onPress={() => {
-                    setSelectedTab(HomeTabs.NFTs)
-                    maybeRefetchNfts()
-                  }}
-                >
-                  {t('home.nfts.title')}
-                </TabButton>
-
-                <TabButton
-                  showPendingNotificationBadge
-                  isActive={selectedTab === HomeTabs.Activity}
-                  onPress={() => setSelectedTab(HomeTabs.Activity)}
-                >
-                  {t('home.activity.title')}
-                </TabButton>
+    <>
+      {portfolioError && <DataApiOutageBanner onPress={handleOutageBannerPress} />}
+      <Flex
+        fill
+        alignItems="center"
+        backgroundColor="$surface1"
+        px="$spacing12"
+        py={portfolioError ? '$spacing4' : '$spacing12'}
+      >
+        {address ? (
+          <Flex backgroundColor="$surface1" gap="$spacing12" width="100%">
+            {isPinRequestOpen && (
+              <Flex position="relative" width="100%">
+                <PinReminder style="popup" onClose={onClosePinRequest} />
+              </Flex>
+            )}
+            {shouldShowWrappedBanner && (
+              <Flex width="calc(100% + 24px)" ml={-12} mt={-12}>
+                <UniswapWrapped2025Banner
+                  handleDismiss={handleDismissWrappedBanner}
+                  handlePress={handlePressWrappedBanner}
+                  bannerHeight={80}
+                />
+                <Flex
+                  height="$spacing12"
+                  width="100%"
+                  mt={-12}
+                  mb={-12}
+                  backgroundColor="$surface1"
+                  borderTopLeftRadius={24}
+                  borderTopRightRadius={24}
+                  flexShrink={0}
+                  zIndex="$overlay"
+                />
+              </Flex>
+            )}
+            <Flex grow gap="$spacing8">
+              <Flex pl="$spacing4" position="relative" pt="$spacing4">
+                <PortfolioHeader address={address} />
+              </Flex>
+              <Flex pb="$spacing8" pl="$spacing4">
+                <PortfolioBalance evmOwner={address} />
               </Flex>
 
-              <Flex row height="100%" width="100%">
-                {showTabs ? (
-                  <>
-                    <AnimatedTab hideLeft={selectedTab !== HomeTabs.Tokens} isActive={selectedTab === HomeTabs.Tokens}>
-                      <ExtensionTokenBalanceList owner={address} />
-                    </AnimatedTab>
+              <PortfolioActionButtons />
 
-                    <AnimatedTab
-                      hideLeft={selectedTab === HomeTabs.Activity}
-                      hideRight={selectedTab === HomeTabs.Tokens}
-                      isActive={selectedTab === HomeTabs.NFTs}
-                    >
-                      <NftsTab owner={address} skip={selectedTab !== HomeTabs.NFTs} />
-                    </AnimatedTab>
+              <HomeScreenEarningSection evmAddress={address} />
 
-                    <AnimatedTab
-                      hideRight={selectedTab !== HomeTabs.Activity}
-                      isActive={selectedTab === HomeTabs.Activity}
-                    >
-                      <ActivityTab address={address} skip={selectedTab !== HomeTabs.Activity} />
-                    </AnimatedTab>
-                  </>
-                ) : (
-                  <Flex fill mx="$spacing8">
-                    <Loader.Token withPrice repeat={6} />
-                  </Flex>
-                )}
+              <ExtensionNotificationServiceManager />
+
+              {!isNotificationServiceEnabled && <HomeIntroCardStack />}
+
+              <Flex flex={1} width="100%">
+                <Flex row gap="$spacing16" px="$spacing4" py="$spacing8">
+                  <TabButton isActive={selectedTab === HomeTabs.Tokens} onPress={() => setSelectedTab(HomeTabs.Tokens)}>
+                    {t('home.tokens.title')}
+                  </TabButton>
+
+                  <TabButton
+                    isActive={selectedTab === HomeTabs.NFTs}
+                    onPress={() => {
+                      setSelectedTab(HomeTabs.NFTs)
+                      maybeRefetchNfts()
+                    }}
+                  >
+                    {t('home.nfts.title')}
+                  </TabButton>
+
+                  <TabButton
+                    showPendingNotificationBadge
+                    isActive={selectedTab === HomeTabs.Activity}
+                    onPress={() => setSelectedTab(HomeTabs.Activity)}
+                  >
+                    {t('home.activity.title')}
+                  </TabButton>
+                </Flex>
+
+                <Flex row height="100%" width="100%">
+                  {showTabs ? (
+                    <>
+                      <AnimatedTab
+                        hideLeft={selectedTab !== HomeTabs.Tokens}
+                        isActive={selectedTab === HomeTabs.Tokens}
+                      >
+                        <ExtensionTokenBalanceList owner={address} />
+                      </AnimatedTab>
+
+                      <AnimatedTab
+                        hideLeft={selectedTab === HomeTabs.Activity}
+                        hideRight={selectedTab === HomeTabs.Tokens}
+                        isActive={selectedTab === HomeTabs.NFTs}
+                      >
+                        <NftsTab owner={address} skip={selectedTab !== HomeTabs.NFTs} />
+                      </AnimatedTab>
+
+                      <AnimatedTab
+                        hideRight={selectedTab !== HomeTabs.Activity}
+                        isActive={selectedTab === HomeTabs.Activity}
+                      >
+                        <ActivityTab address={address} skip={selectedTab !== HomeTabs.Activity} />
+                      </AnimatedTab>
+                    </>
+                  ) : (
+                    <Flex fill mx="$spacing8">
+                      <Loader.Token withPrice repeat={6} />
+                    </Flex>
+                  )}
+                </Flex>
               </Flex>
             </Flex>
           </Flex>
-        </Flex>
-      ) : (
-        <Text color="$statusCritical" variant="subheading1">
-          {t('home.extension.error')}
-        </Text>
-      )}
-      {appRatingModalVisible && <AppRatingModal onClose={onAppRatingModalClose} />}
-      {isSmartWalletEnabled && !activeModal && (
-        <SmartWalletUpgradeModals
-          account={activeAccount}
-          video={<MemoizedVideo />}
-          onEnableSmartWallet={handleSmartWalletEnable}
-        />
-      )}
+        ) : (
+          <Text color="$statusCritical" variant="subheading1">
+            {t('home.extension.error')}
+          </Text>
+        )}
+        {isSmartWalletEnabled && !activeModal && (
+          <SmartWalletUpgradeModals
+            account={activeAccount}
+            video={<MemoizedVideo />}
+            onEnableSmartWallet={handleSmartWalletEnable}
+          />
+        )}
 
-      {isSmartWalletEnabledModalOpen && isSmartWalletEnabled ? (
-        <SmartWalletEnabledModal
-          isOpen
-          showReconnectDappPrompt={false}
-          onClose={() => setIsSmartWalletEnabledModalOpen(false)}
+        {isSmartWalletEnabledModalOpen && isSmartWalletEnabled ? (
+          <SmartWalletEnabledModal
+            isOpen
+            showReconnectDappPrompt={false}
+            onClose={() => setIsSmartWalletEnabledModalOpen(false)}
+          />
+        ) : undefined}
+        <DataApiOutageModalContent
+          isOpen={isOutageModalOpen}
+          lastUpdatedAt={portfolioDataUpdatedAt}
+          onClose={handleOutageModalClose}
         />
-      ) : undefined}
-    </Flex>
+      </Flex>
+    </>
   )
 })
 
@@ -272,7 +355,7 @@ const TabButton = ({
   onPress: () => void
   children: React.ReactNode
   showPendingNotificationBadge?: boolean
-}): JSX.Element => {
+}): React.JSX.Element => {
   return (
     <TouchableArea alignItems="center" flexDirection="row" gap="$spacing4" p="$spacing2" onPress={onPress}>
       <Text color={isActive ? '$neutral1' : '$neutral2'} userSelect="none" variant="subheading2">

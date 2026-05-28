@@ -125,6 +125,7 @@ export function OTPInput(): JSX.Element {
         newCharacters[index] = event.nativeEvent.text
         setCharacterSequence(newCharacters)
 
+        // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
         if (newCharacters[index]?.length === 1 && inputRefs.current[index + 1]?.current) {
           inputRefs.current[index + 1]?.current?.focus()
         }

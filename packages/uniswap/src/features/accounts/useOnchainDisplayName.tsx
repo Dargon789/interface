@@ -37,7 +37,6 @@ export function useOnchainDisplayName(
   const hookOptions = { ...defaultOptions, ...options }
   const { showShortenedEns, includeUnitagSuffix, overrideDisplayName } = hookOptions
 
-  // TODO(WEB-8012): Update to support Solana
   const validated = getValidAddress({ address, platform: Platform.EVM })
   const ens = useENSName(validated ?? undefined)
   const { data: unitag } = useUnitagsAddressQuery({

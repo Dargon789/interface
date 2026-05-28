@@ -1,8 +1,12 @@
 import { renderHook } from '@testing-library/react'
-import { useTokenDetailsCTAVariant } from 'src/components/TokenDetails/useTokenDetailsCTAVariant'
-import { CurrencyField } from 'uniswap/src/types/currency'
+import { useMultichainBuyVariant } from 'src/components/TokenDetails/useTokenDetailsCTAVariant'
+import { Bank } from 'ui/src/components/icons'
 
-const mockOnPress = jest.fn()
+const defaultHandlers = {
+  onPressBuyWithCash: jest.fn(),
+  onPressGet: jest.fn(),
+  onPressBuy: jest.fn(),
+}
 
 const defaultParams = {
   hasTokenBalance: false,
@@ -10,132 +14,132 @@ const defaultParams = {
   nativeFiatOnRampCurrency: undefined,
   fiatOnRampCurrency: undefined,
   bridgingTokenWithHighestBalance: undefined,
-  hasZeroNativeBalance: false,
+  hasZeroGasBalance: undefined,
   tokenSymbol: 'UNI',
-  onPressBuyFiatOnRamp: mockOnPress,
-  onPressGet: mockOnPress,
-  onPressSwap: mockOnPress,
+  ...defaultHandlers,
 }
 
-describe('useTokenDetailsCTAVariant', () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
+describe(useMultichainBuyVariant, () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('should return onPressBuy with no custom title when user has balance', () => {
+    const { result } = renderHook(() =>
+      useMultichainBuyVariant({
+        ...defaultParams,
+        hasTokenBalance: true,
+      }),
+    )
+
+    expect(result.current.title).toBeUndefined()
+    expect(result.current.onPress).toBe(defaultHandlers.onPressBuy)
   })
 
-  describe('Token Details CTA variant', () => {
-    it('returns Buy button when no token balance, is native currency, supports fiat on-ramp and no bridging tokens', () => {
-      const { result } = renderHook(() =>
-        useTokenDetailsCTAVariant({
-          ...defaultParams,
-          hasTokenBalance: false,
-          isNativeCurrency: true,
-          fiatOnRampCurrency: {},
-          bridgingTokenWithHighestBalance: undefined,
-        }),
-      )
-      expect(result.current.title).toBe('Buy')
-    })
+  it('should return "Buy with cash" with Bank icon when fiat on-ramp supported and no bridging token', () => {
+    const { result } = renderHook(() =>
+      useMultichainBuyVariant({
+        ...defaultParams,
+        fiatOnRampCurrency: { symbol: 'UNI' },
+      }),
+    )
 
-    it('returns Buy button when no token balance, supports fiat on-ramp and no bridging tokens', () => {
-      const { result } = renderHook(() =>
-        useTokenDetailsCTAVariant({
-          ...defaultParams,
-          hasTokenBalance: false,
-          isNativeCurrency: false,
-          fiatOnRampCurrency: {},
-          bridgingTokenWithHighestBalance: undefined,
-        }),
-      )
-      expect(result.current.title).toBe('Buy')
-    })
+    expect(result.current.title).toBe('Buy with cash')
+    expect(result.current.icon).toBe(Bank)
+    expect(result.current.onPress).toBe(defaultHandlers.onPressBuyWithCash)
+  })
 
-    it('returns Get button when no token balance, not native currency, and has zero native balance', () => {
-      const { result } = renderHook(() =>
-        useTokenDetailsCTAVariant({
-          ...defaultParams,
-          hasTokenBalance: false,
-          isNativeCurrency: false,
-          hasZeroNativeBalance: true,
-          tokenSymbol: 'ABC',
-        }),
-      )
-      expect(result.current.title).toBe('Get ABC')
-    })
+  it('should return "Buy with cash" with Bank icon for native currency with native fiat on-ramp support', () => {
+    const { result } = renderHook(() =>
+      useMultichainBuyVariant({
+        ...defaultParams,
+        isNativeCurrency: true,
+        nativeFiatOnRampCurrency: { symbol: 'ETH' },
+      }),
+    )
 
-    it('returns Get Token fallback when no token symbol', () => {
-      const { result } = renderHook(() =>
-        useTokenDetailsCTAVariant({
-          ...defaultParams,
-          hasTokenBalance: false,
-          isNativeCurrency: false,
-          hasZeroNativeBalance: true,
-          tokenSymbol: undefined,
-        }),
-      )
-      expect(result.current.title).toBe('Get Token')
-    })
+    expect(result.current.title).toBe('Buy with cash')
+    expect(result.current.icon).toBe(Bank)
+    expect(result.current.onPress).toBe(defaultHandlers.onPressBuyWithCash)
+  })
 
-    it('returns Swap button when no token balance, is native currency, supports fiat on-ramp and has bridging token', () => {
-      const { result } = renderHook(() =>
-        useTokenDetailsCTAVariant({
-          ...defaultParams,
-          hasTokenBalance: false,
-          isNativeCurrency: true,
-          fiatOnRampCurrency: {},
-          bridgingTokenWithHighestBalance: {},
-        }),
-      )
-      expect(result.current.title).toBe('Swap')
-    })
+  it('should return "Get {token}" when non-native with zero native balance', () => {
+    const { result } = renderHook(() =>
+      useMultichainBuyVariant({
+        ...defaultParams,
+        isNativeCurrency: false,
+        hasZeroGasBalance: true,
+        tokenSymbol: 'UNI',
+      }),
+    )
 
-    it('returns Swap button if not FOR currency', () => {
-      const { result } = renderHook(() =>
-        useTokenDetailsCTAVariant({
-          ...defaultParams,
-          hasTokenBalance: false,
-          isNativeCurrency: false,
-        }),
-      )
-      expect(result.current.title).toBe('Swap')
-    })
+    expect(result.current.title).toBe('Get UNI')
+    expect(result.current.onPress).toBe(defaultHandlers.onPressGet)
+  })
 
-    it('returns Swap button when user has token balance', () => {
-      const { result } = renderHook(() =>
-        useTokenDetailsCTAVariant({
-          ...defaultParams,
-          hasTokenBalance: true,
-        }),
-      )
-      expect(result.current.title).toBe('Swap')
-    })
+  it('should return fallback "Get Token" when symbol is undefined', () => {
+    const { result } = renderHook(() =>
+      useMultichainBuyVariant({
+        ...defaultParams,
+        isNativeCurrency: false,
+        hasZeroGasBalance: true,
+        tokenSymbol: undefined,
+      }),
+    )
 
-    it('returns Swap button as default when no other conditions met', () => {
-      const { result } = renderHook(() => useTokenDetailsCTAVariant(defaultParams))
-      expect(result.current.title).toBe('Swap')
-    })
+    expect(result.current.title).toBe('Get Token')
+    expect(result.current.onPress).toBe(defaultHandlers.onPressGet)
+  })
 
-    it('passes CurrencyField.INPUT to swap function when user has token balance', () => {
-      const { result } = renderHook(() =>
-        useTokenDetailsCTAVariant({
-          ...defaultParams,
-          hasTokenBalance: true,
-        }),
-      )
+  it('should prefer "Buy with cash" over "Get {token}" when both conditions match', () => {
+    const { result } = renderHook(() =>
+      useMultichainBuyVariant({
+        ...defaultParams,
+        fiatOnRampCurrency: { symbol: 'UNI' },
+        isNativeCurrency: false,
+        hasZeroGasBalance: true,
+      }),
+    )
 
-      result.current.onPress()
-      expect(mockOnPress).toHaveBeenCalledWith(CurrencyField.INPUT)
-    })
+    expect(result.current.title).toBe('Buy with cash')
+    expect(result.current.onPress).toBe(defaultHandlers.onPressBuyWithCash)
+  })
 
-    it('passes CurrencyField.OUTPUT to swap function when user has no token balance', () => {
-      const { result } = renderHook(() =>
-        useTokenDetailsCTAVariant({
-          ...defaultParams,
-          hasTokenBalance: false,
-        }),
-      )
+  it('should return "Get {token}" when native currency with zero balance', () => {
+    const { result } = renderHook(() =>
+      useMultichainBuyVariant({
+        ...defaultParams,
+        isNativeCurrency: true,
+        hasZeroGasBalance: true,
+        tokenSymbol: 'MON',
+      }),
+    )
 
-      result.current.onPress()
-      expect(mockOnPress).toHaveBeenCalledWith(CurrencyField.OUTPUT)
-    })
+    expect(result.current.title).toBe('Get MON')
+    expect(result.current.onPress).toBe(defaultHandlers.onPressGet)
+  })
+
+  it('should fall back to onPressBuy when no special conditions match', () => {
+    const { result } = renderHook(() =>
+      useMultichainBuyVariant({
+        ...defaultParams,
+        isNativeCurrency: true,
+        hasZeroGasBalance: false,
+      }),
+    )
+
+    expect(result.current.title).toBeUndefined()
+    expect(result.current.onPress).toBe(defaultHandlers.onPressBuy)
+  })
+
+  it('should fall back to onPressBuy when on-ramp is supported but bridging token exists', () => {
+    const { result } = renderHook(() =>
+      useMultichainBuyVariant({
+        ...defaultParams,
+        fiatOnRampCurrency: { symbol: 'UNI' },
+        bridgingTokenWithHighestBalance: { balance: 100 },
+      }),
+    )
+
+    expect(result.current.title).toBeUndefined()
+    expect(result.current.onPress).toBe(defaultHandlers.onPressBuy)
   })
 })

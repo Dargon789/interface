@@ -7,8 +7,8 @@ exports[`AccountHeader renders correctly 1`] = `
       "flexDirection": "column",
       "gap": 12,
       "overflow": "scroll",
-      "paddingLeft": 12,
-      "paddingRight": 12,
+      "paddingLeft": 24,
+      "paddingRight": 24,
       "paddingTop": 8,
       "width": "100%",
     }
@@ -137,36 +137,11 @@ exports[`AccountHeader renders correctly 1`] = `
             testID="account-icon"
           >
             <View
-              collapsable={false}
-              forwardedRef={[Function]}
-              jestAnimatedProps={
-                {
-                  "value": {},
-                }
-              }
-              jestAnimatedStyle={
-                {
-                  "value": {
-                    "opacity": 0,
-                  },
-                }
-              }
-              jestInlineStyle={
-                [
-                  {
-                    "flexDirection": "column",
-                  },
-                ]
-              }
               style={
-                [
-                  {
-                    "flexDirection": "column",
-                  },
-                  {
-                    "opacity": 0,
-                  },
-                ]
+                {
+                  "flex": 1,
+                  "flexDirection": "column",
+                }
               }
             >
               <View

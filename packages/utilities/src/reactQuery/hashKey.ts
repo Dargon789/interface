@@ -12,6 +12,7 @@ import { MutationKey, hashKey as originalHashKey, QueryKey } from '@tanstack/rea
  * hashKey(['token', { chainId: ['2', '1'] }])
  *
  */
+// oxlint-disable-next-line typescript/no-duplicate-type-constituents -- biome-parity: oxlint is stricter here
 export function hashKey(queryKey: QueryKey | MutationKey): string {
   const normalizedKey = normalizeArrays(queryKey)
   return originalHashKey(normalizedKey)
@@ -21,6 +22,7 @@ export function hashKey(queryKey: QueryKey | MutationKey): string {
  * Recursively normalize arrays in the queryKey structure
  */
 export function normalizeArrays<T>(value: T): T {
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (value === null || value === undefined) {
     return value
   }

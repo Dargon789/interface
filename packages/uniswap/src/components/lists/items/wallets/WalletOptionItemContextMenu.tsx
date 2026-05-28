@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 import { Heart } from 'ui/src/components/icons/Heart'
 import { HeartSlash } from 'ui/src/components/icons/HeartSlash'
-import { ContextMenu, MenuOptionItem } from 'uniswap/src/components/menus/ContextMenuV2'
+import { ContextMenu, MenuOptionItem } from 'uniswap/src/components/menus/ContextMenu'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
+import { useToggleWatchedWalletCallback } from 'uniswap/src/features/favorites/hooks/useToggleWatchedWalletCallback'
 import { selectWatchedAddressSet } from 'uniswap/src/features/favorites/selectors'
-import { useToggleWatchedWalletCallback } from 'uniswap/src/features/favorites/useToggleWatchedWalletCallback'
 
 interface WalletOptionItemContextMenuProps {
   children: ReactNode
@@ -16,7 +16,7 @@ interface WalletOptionItemContextMenuProps {
   closeMenu: () => void
 }
 
-function _WalletOptionItemContextMenu({
+function WalletOptionItemContextMenuInner({
   children,
   address,
   isOpen,
@@ -53,4 +53,4 @@ function _WalletOptionItemContextMenu({
   )
 }
 
-export const WalletOptionItemContextMenu = React.memo(_WalletOptionItemContextMenu)
+export const WalletOptionItemContextMenu = React.memo(WalletOptionItemContextMenuInner)

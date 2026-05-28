@@ -17,7 +17,7 @@ export function flattenObjectOfObjects<T>(
 }
 
 // yolo copied from https://stackoverflow.com/questions/44134212/best-way-to-flatten-js-object-keys-and-values-to-a-single-depth-array
-// biome-ignore lint/suspicious/noExplicitAny: Generic type parameter needed for flexibility
+// oxlint-disable-next-line typescript/no-explicit-any -- Generic type parameter needed for flexibility
 export function unnestObject(ob: Record<string, any>): Record<string, string> {
   const toReturn: Record<string, string> = {}
 
@@ -72,7 +72,7 @@ export function getAllKeysOfNestedObject(obj: Record<string, unknown>, prefix = 
 }
 
 export function sortKeysRecursively<T extends Record<string, unknown>>(input: T): T {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
     return input
   }

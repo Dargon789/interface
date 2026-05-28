@@ -16,7 +16,7 @@ import {
   setHasDismissedSmartWalletHomeScreenNudge,
   setHasShownSmartWalletHomeScreenNudge,
 } from 'wallet/src/features/behaviorHistory/slice'
-import { Account } from 'wallet/src/features/wallet/accounts/types'
+import { type Account } from 'wallet/src/features/wallet/accounts/types'
 import { useDisplayName, useHasSmartWalletConsent } from 'wallet/src/features/wallet/hooks'
 import { setSmartWalletConsent } from 'wallet/src/features/wallet/slice'
 
@@ -27,6 +27,7 @@ interface SmartWalletUpgradeModalsProps {
   isHomeScreenFocused?: boolean
 }
 
+// oxlint-disable-next-line typescript/consistent-return -- biome-parity: oxlint is stricter here
 export function SmartWalletUpgradeModals({
   account,
   onEnableSmartWallet,
@@ -35,7 +36,7 @@ export function SmartWalletUpgradeModals({
 }: SmartWalletUpgradeModalsProps): JSX.Element | null {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const { status: delegationStatus } = useSmartWalletDelegationStatus({ isSmartWalletUpgradeModal: true })
+  const { status: delegationStatus } = useSmartWalletDelegationStatus()
   const hasSmartWalletConsent = useHasSmartWalletConsent()
   const [showModal, setShowModal] = useState(true)
   const selectedWalletDisplayName = useDisplayName(account.address, { includeUnitagSuffix: true })

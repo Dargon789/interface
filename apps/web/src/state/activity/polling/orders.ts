@@ -1,13 +1,12 @@
 import { TradeType } from '@uniswap/sdk-core'
 import { TradingApi } from '@universe/api'
-import { useAccount } from 'hooks/useAccount'
 import ms from 'ms'
 import { useEffect, useRef, useState } from 'react'
-import { ActivityUpdateTransactionType, OnActivityUpdate } from 'state/activity/types'
-import { usePendingUniswapXOrders } from 'state/transactions/hooks'
-import { OrderQueryResponse, UniswapXBackendOrder } from 'types/uniswapx'
 import { uniswapUrls } from 'uniswap/src/constants/urls'
 import { isL2ChainId } from 'uniswap/src/features/chains/utils'
+import { InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
+import { tradeRoutingToFillType } from 'uniswap/src/features/transactions/swap/analytics'
 import {
   ExactInputSwapTransactionInfo,
   TransactionStatus,
@@ -16,6 +15,11 @@ import {
 import { isFinalizedTxStatus } from 'uniswap/src/features/transactions/types/utils'
 import { convertOrderStatusToTransactionStatus } from 'uniswap/src/features/transactions/utils/uniswapX.utils'
 import { logger } from 'utilities/src/logger/logger'
+import { getConfig } from '~/config'
+import { useAccount } from '~/hooks/useAccount'
+import { ActivityUpdateTransactionType, OnActivityUpdate } from '~/state/activity/types'
+import { usePendingUniswapXOrders } from '~/state/transactions/hooks'
+import { OrderQueryResponse, UniswapXBackendOrder } from '~/types/uniswapx'
 
 const STANDARD_POLLING_INITIAL_INTERVAL = ms(`2s`)
 const STANDARD_POLLING_MAX_INTERVAL = ms('30s')
@@ -27,10 +31,7 @@ export const QUICK_POLL_MAX_INTERVAL = ms('30s')
 export const QUICK_POLL_INITIAL_PHASE = ms('10s')
 export const QUICK_POLL_MEDIUM_PHASE = ms('200s')
 
-const UNISWAP_GATEWAY_DNS_URL = process.env.REACT_APP_UNISWAP_GATEWAY_DNS
-if (UNISWAP_GATEWAY_DNS_URL === undefined) {
-  throw new Error(`UNISWAP_GATEWAY_DNS_URL must be defined environment variables`)
-}
+const UNISWAP_GATEWAY_DNS_URL = getConfig().uniswapGatewayDns
 
 export function getQuickPollingInterval(orderStartTime: number) {
   const elapsedTime = Date.now() - orderStartTime
@@ -144,10 +145,26 @@ function updateOrders({
       if ('tradeType' in pendingOrder.typeInfo && pendingOrder.typeInfo.tradeType === TradeType.EXACT_INPUT) {
         const exactInputTypeInfo = updatedTransaction.typeInfo as ExactInputSwapTransactionInfo
         exactInputTypeInfo.settledOutputCurrencyAmountRaw = updatedOrder.settledAmounts[0].amountOut
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       } else if ('tradeType' in pendingOrder.typeInfo && pendingOrder.typeInfo.tradeType === TradeType.EXACT_OUTPUT) {
         // TODO(WEB-3962): Handle settled EXACT_OUTPUT amounts
       }
+    }
+
+    // Send analytics event when order becomes finalized
+    if (isFinalizedTxStatus(transactionStatus)) {
+      const txHash =
+        transactionStatus === TransactionStatus.Success && 'txHash' in updatedOrder
+          ? updatedOrder.txHash
+          : pendingOrder.hash
+      sendAnalyticsEvent(InterfaceEventName.SwapConfirmedOnClient, {
+        time: Date.now() - pendingOrder.addedTime,
+        swap_success: transactionStatus === TransactionStatus.Success,
+        success: transactionStatus === TransactionStatus.Success,
+        chainId: pendingOrder.chainId,
+        txHash: txHash ?? '',
+        transactionType: pendingOrder.typeInfo.type,
+        routing: tradeRoutingToFillType({ routing: pendingOrder.routing, indicative: false }),
+      })
     }
 
     onActivityUpdate({

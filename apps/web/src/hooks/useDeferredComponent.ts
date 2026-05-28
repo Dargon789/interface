@@ -4,7 +4,7 @@ import { logger } from 'utilities/src/logger/logger'
 export function useDeferredComponent<T extends React.ComponentType<any>>(importFn: () => Promise<{ default: T }>) {
   const [Component, setComponent] = useState<T | null>(null)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Only runs once on mount to set up deferred loading
+  /* oxlint-disable react/exhaustive-deps -- Only runs once on mount to set up deferred loading */
   useEffect(() => {
     if ('requestIdleCallback' in window) {
       requestIdleCallback(

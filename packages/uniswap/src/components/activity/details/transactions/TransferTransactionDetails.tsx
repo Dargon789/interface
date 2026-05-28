@@ -1,4 +1,5 @@
 import { SharedEventName } from '@uniswap/analytics-events'
+import { isWebPlatform } from '@universe/environment'
 import { Flex, Loader, Text, TouchableArea } from 'ui/src'
 import { fonts, iconSizes } from 'ui/src/theme'
 import { NftTransactionDetails } from 'uniswap/src/components/activity/details/transactions/NftTransactionDetails'
@@ -18,7 +19,6 @@ import {
 } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { getSymbolDisplayText } from 'uniswap/src/utils/currency'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
-import { isWebPlatform } from 'utilities/src/platform'
 
 export function TransferTransactionDetails({
   transactionDetails,
@@ -35,7 +35,7 @@ export function TransferTransactionDetails({
     isCurrency ? buildCurrencyId(transactionDetails.chainId, typeInfo.tokenAddress) : undefined,
   )
 
-  const { amount, value } = useFormattedCurrencyAmountAndUSDValue({
+  const { amount, value, isLoading } = useFormattedCurrencyAmountAndUSDValue({
     currency: currencyInfo?.currency,
     currencyAmountRaw: typeInfo.currencyAmountRaw,
     formatter,
@@ -48,12 +48,13 @@ export function TransferTransactionDetails({
   return isCurrency ? (
     <CurrencyTransferContent
       currencyInfo={currencyInfo}
+      isLoading={isLoading}
       tokenAmountWithSymbol={tokenAmountWithSymbol}
       value={value}
       onClose={onClose}
     />
   ) : (
-    <NftTransactionDetails transactionDetails={transactionDetails} typeInfo={typeInfo} onClose={onClose} />
+    <NftTransactionDetails typeInfo={typeInfo} />
   )
 }
 
@@ -63,12 +64,14 @@ export function CurrencyTransferContent({
   value,
   onClose,
   showValueAsHeading = false,
+  isLoading,
 }: {
   tokenAmountWithSymbol: string | undefined
   currencyInfo: Maybe<CurrencyInfo>
   value: string
   onClose: () => void
   showValueAsHeading?: boolean
+  isLoading?: boolean
 }): JSX.Element {
   const { navigateToTokenDetails } = useUniswapContext()
 
@@ -89,13 +92,10 @@ export function CurrencyTransferContent({
   const headingText = showValueAsHeading ? value : tokenAmountWithSymbol
   const subtitleText = showValueAsHeading ? tokenAmountWithSymbol : value
 
-  const headingIsLoading = headingText === '-'
-  const subtitleIsLoading = subtitleText === '-'
-
   return (
     <TouchableArea onPress={onPressToken}>
       <Flex centered gap="$spacing8" p="$spacing32">
-        {headingIsLoading ? (
+        {isLoading ? (
           <Loader.Box height={fonts.heading2.lineHeight} width={iconSizes.icon100} />
         ) : (
           <Text variant="heading2" textAlign="center">
@@ -104,7 +104,7 @@ export function CurrencyTransferContent({
         )}
         <Flex centered row gap="$spacing8">
           <CurrencyLogo currencyInfo={currencyInfo} size={iconSizes.icon20} />
-          {subtitleIsLoading ? (
+          {isLoading ? (
             <Loader.Box height={fonts.body2.lineHeight} width={iconSizes.icon48} />
           ) : (
             <Text color="$neutral2" variant="body2">

@@ -1,4 +1,4 @@
-// biome-ignore lint/style/noRestrictedImports: styled-components needed for 3D rotation animation
+// oxlint-disable-next-line no-restricted-imports -- styled-components needed for 3D rotation animation
 import styled, { keyframes } from 'styled-components'
 
 const rotateImg = keyframes`

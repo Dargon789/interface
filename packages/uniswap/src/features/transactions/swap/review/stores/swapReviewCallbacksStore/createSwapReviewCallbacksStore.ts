@@ -1,4 +1,4 @@
-import { isDevEnv } from 'utilities/src/environment/env'
+import { isDevEnv } from '@universe/environment'
 import type { StoreApi, UseBoundStore } from 'zustand'
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
@@ -9,7 +9,6 @@ export type SwapReviewCallbacksStoreState = {
   onCancelWarning: () => void
   onShowWarning: () => void
   onCloseWarning: () => void
-  onAcceptTrade: () => void
 }
 
 export const createSwapReviewCallbacksStore = (

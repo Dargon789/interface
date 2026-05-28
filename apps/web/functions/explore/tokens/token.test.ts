@@ -1,4 +1,11 @@
-import { NATIVE_CHAIN_ID } from 'src/constants/tokens'
+import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+
+// Scope snapshots to just the meta tags the middleware injects (it stamps
+// every injected tag with data-rh="true"). Catches unintended UX changes
+// in OG/Twitter card output without coupling to the SPA HTML template.
+function extractInjectedMetaTags(body: string): string {
+  return (body.match(/<meta[^>]*data-rh="true"[^>]*>/g) ?? []).join('\n')
+}
 
 const tokens = [
   {
@@ -30,7 +37,7 @@ const tokens = [
 test.each(tokens)('should inject metadata for valid tokens', async (token) => {
   const url = 'http://localhost:3000/explore/tokens/' + token.network + '/' + token.address
   const body = await fetch(new Request(url)).then((res) => res.text())
-  expect(body).toMatchSnapshot()
+  expect(extractInjectedMetaTags(body)).toMatchSnapshot()
   expect(body).toContain(`<meta property="og:title" content="Get ${token.tokenData.symbol} on Uniswap" data-rh="true">`)
   expect(body).not.toContain(`<meta property="og:description"`)
   expect(body).not.toContain(`<meta name="description"`)

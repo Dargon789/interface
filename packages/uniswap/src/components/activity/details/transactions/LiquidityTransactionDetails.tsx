@@ -52,11 +52,19 @@ export function LiquidityTransactionContent({
 
   const onPressToken0 = useTokenDetailsNavigation(currency0, onClose)
 
-  const { descriptor: token0Descriptor, value: token0Value } = useTokenAmountInfo({
+  const {
+    descriptor: token0Descriptor,
+    value: token0Value,
+    isLoading: isLoading0,
+  } = useTokenAmountInfo({
     currency: currency0?.currency,
     amountRaw: currency0AmountRaw,
   })
-  const { descriptor: token1Descriptor, value: token1Value } = useTokenAmountInfo({
+  const {
+    descriptor: token1Descriptor,
+    value: token1Value,
+    isLoading: isLoading1,
+  } = useTokenAmountInfo({
     currency: currency1?.currency,
     amountRaw: currency1AmountRaw || '0',
   })
@@ -72,6 +80,8 @@ export function LiquidityTransactionContent({
         usdValueA={token0Value}
         tokenDescriptorB={token1Descriptor}
         usdValueB={token1Value}
+        isLoadingA={isLoading0}
+        isLoadingB={isLoading1}
         separatorElement={
           <Text variant="body3" color="$neutral2">
             {t('common.and')}
@@ -89,7 +99,7 @@ export function LiquidityTransactionContent({
         <Flex centered row justifyContent="space-between">
           <Flex>
             <Text variant="heading3">{token0Descriptor}</Text>
-            <ValueText value={token0Value} />
+            <ValueText value={token0Value} isLoading={isLoading0} />
           </Flex>
           <CurrencyLogo hideNetworkLogo currencyInfo={currency0} size={iconSizes.icon40} />
         </Flex>

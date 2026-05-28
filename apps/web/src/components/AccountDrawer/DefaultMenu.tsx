@@ -1,26 +1,25 @@
-import LanguageMenu from 'components/AccountDrawer/LanguageMenu'
-import LocalCurrencyMenu from 'components/AccountDrawer/LocalCurrencyMenu'
-import { MainMenu } from 'components/AccountDrawer/MainMenu/MainMenu'
-import { useAccountDrawer } from 'components/AccountDrawer/MiniPortfolio/hooks'
-import { LimitsMenu } from 'components/AccountDrawer/MiniPortfolio/Limits/LimitsMenu'
-import { UniExtensionPoolsMenu } from 'components/AccountDrawer/MiniPortfolio/Pools/UniExtensionPoolsMenu'
-import { MenuStateVariant, useMenuState, useSetMenuCallback } from 'components/AccountDrawer/menuState'
-import PasskeyMenu from 'components/AccountDrawer/PasskeyMenu/PasskeyMenu'
-import PortfolioBalanceMenu from 'components/AccountDrawer/PortfolioBalanceMenu'
-import SettingsMenu from 'components/AccountDrawer/SettingsMenu'
-import { OtherWalletsModal } from 'components/WalletModal/OtherWalletsModal'
-import { SwitchWalletModal } from 'components/WalletModal/SwitchWalletModal'
-import usePrevious from 'hooks/usePrevious'
 import { useEffect, useMemo } from 'react'
 import { Flex } from 'ui/src'
 import { TransitionItem } from 'ui/src/animations'
-import { useActiveAddresses } from 'uniswap/src/features/accounts/store/hooks'
 import { InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
+import { LanguageMenu } from '~/components/AccountDrawer/LanguageMenu'
+import { LocalCurrencyMenu } from '~/components/AccountDrawer/LocalCurrencyMenu'
+import { MainMenu } from '~/components/AccountDrawer/MainMenu/MainMenu'
+import { MenuStateVariant, useMenuState, useSetMenuCallback } from '~/components/AccountDrawer/menuState'
+import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
+import { NetworkCostMenu } from '~/components/AccountDrawer/NetworkCostMenu'
+import { PasskeyMenu } from '~/components/AccountDrawer/PasskeyMenu/PasskeyMenu'
+import { PortfolioBalanceMenu } from '~/components/AccountDrawer/PortfolioBalanceMenu'
+import { RecoveryPhraseDownloadPrompt } from '~/components/AccountDrawer/RecoveryPhraseMenu/RecoveryPhraseDownloadPrompt'
+import { RecoveryPhraseMenu } from '~/components/AccountDrawer/RecoveryPhraseMenu/RecoveryPhraseMenu'
+import { SettingsMenu } from '~/components/AccountDrawer/SettingsMenu'
+import { StorageMenu } from '~/components/AccountDrawer/StorageMenu'
+import { OtherWalletsModal } from '~/components/WalletModal/OtherWalletsModal'
+import { SwitchWalletModal } from '~/components/WalletModal/SwitchWalletModal'
+import { usePrevious } from '~/hooks/usePrevious'
 
-function DefaultMenu() {
-  const activeAccount = useActiveAddresses()
-
+export function DefaultMenu() {
   const { menuState } = useMenuState()
   const openSettings = useSetMenuCallback(MenuStateVariant.SETTINGS)
   const returnToMain = useSetMenuCallback(MenuStateVariant.MAIN)
@@ -28,33 +27,37 @@ function DefaultMenu() {
   const openLocalCurrencySettings = useSetMenuCallback(MenuStateVariant.LOCAL_CURRENCY_SETTINGS)
   const openPortfolioBalanceSettings = useSetMenuCallback(MenuStateVariant.PORTFOLIO_BALANCE_SETTINGS)
   const openPasskeySettings = useSetMenuCallback(MenuStateVariant.PASSKEYS)
+  const openRecoveryPhraseDownloadPrompt = useSetMenuCallback(MenuStateVariant.RECOVERY_PHRASE_DOWNLOAD_PROMPT)
+  const openRecoveryPhraseWarning = useSetMenuCallback(MenuStateVariant.RECOVERY_PHRASE)
+  const openStorageSettings = useSetMenuCallback(MenuStateVariant.STORAGE_SETTINGS)
+  const openNetworkCostSettings = useSetMenuCallback(MenuStateVariant.NETWORK_COST_SETTINGS)
 
   const { isOpen: drawerOpen } = useAccountDrawer()
 
   const prevMenuVariant = usePrevious(menuState.variant)
 
   const animationDirection = useMemo(() => {
-    const menuIndices = {
+    const menuIndices: Partial<Record<MenuStateVariant, number>> = {
       [MenuStateVariant.MAIN]: 0,
       [MenuStateVariant.SWITCH]: 1,
       [MenuStateVariant.CONNECT_PLATFORM]: 1,
       [MenuStateVariant.SETTINGS]: 2,
-      [MenuStateVariant.POOLS]: 1,
       [MenuStateVariant.OTHER_WALLETS]: 1,
       [MenuStateVariant.LANGUAGE_SETTINGS]: 2,
       [MenuStateVariant.LOCAL_CURRENCY_SETTINGS]: 2,
       [MenuStateVariant.PORTFOLIO_BALANCE_SETTINGS]: 2,
-      [MenuStateVariant.LIMITS]: 2,
       [MenuStateVariant.PASSKEYS]: 2,
-    } as const
+      [MenuStateVariant.RECOVERY_PHRASE_DOWNLOAD_PROMPT]: 2,
+      [MenuStateVariant.RECOVERY_PHRASE]: 3,
+      [MenuStateVariant.STORAGE_SETTINGS]: 3,
+      [MenuStateVariant.NETWORK_COST_SETTINGS]: 3,
+    }
 
     if (!prevMenuVariant || prevMenuVariant === menuState.variant) {
       return 'forward'
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const newIndex = menuIndices[menuState.variant] ?? 2
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const oldIndex = menuIndices[prevMenuVariant] ?? 2
     return newIndex > oldIndex ? 'forward' : 'backward'
   }, [menuState.variant, prevMenuVariant])
@@ -83,7 +86,6 @@ function DefaultMenu() {
     )
   }, [menuState])
 
-  // eslint-disable-next-line consistent-return
   const SubMenu = useMemo(() => {
     switch (menuState.variant) {
       case MenuStateVariant.MAIN:
@@ -101,34 +103,41 @@ function DefaultMenu() {
             openLanguageSettings={openLanguageSettings}
             openLocalCurrencySettings={openLocalCurrencySettings}
             openPasskeySettings={openPasskeySettings}
+            openRecoveryPhraseSettings={openRecoveryPhraseDownloadPrompt}
             openPortfolioBalanceSettings={openPortfolioBalanceSettings}
+            openStorageSettings={openStorageSettings}
+            openNetworkCostSettings={openNetworkCostSettings}
           />
         )
-
       case MenuStateVariant.LANGUAGE_SETTINGS:
         return <LanguageMenu onClose={openSettings} />
       case MenuStateVariant.PORTFOLIO_BALANCE_SETTINGS:
         return <PortfolioBalanceMenu onClose={openSettings} />
       case MenuStateVariant.LOCAL_CURRENCY_SETTINGS:
         return <LocalCurrencyMenu onClose={openSettings} />
-      case MenuStateVariant.LIMITS:
-        return activeAccount.evmAddress ? (
-          <LimitsMenu onClose={returnToMain} account={activeAccount.evmAddress} />
-        ) : null
-      case MenuStateVariant.POOLS:
-        return activeAccount.evmAddress ? (
-          <UniExtensionPoolsMenu account={activeAccount.evmAddress} onClose={returnToMain} />
-        ) : null
+      case MenuStateVariant.STORAGE_SETTINGS:
+        return <StorageMenu onClose={openSettings} />
+      case MenuStateVariant.NETWORK_COST_SETTINGS:
+        return <NetworkCostMenu onClose={openSettings} />
       case MenuStateVariant.PASSKEYS:
         return <PasskeyMenu onClose={openSettings} />
+      case MenuStateVariant.RECOVERY_PHRASE_DOWNLOAD_PROMPT:
+        return <RecoveryPhraseDownloadPrompt onBack={openSettings} onContinueOnWeb={openRecoveryPhraseWarning} />
+      case MenuStateVariant.RECOVERY_PHRASE:
+        return <RecoveryPhraseMenu onClose={openSettings} />
+      default:
+        return null
     }
   }, [
-    activeAccount.evmAddress,
     menuState,
     openLanguageSettings,
     openLocalCurrencySettings,
     openPortfolioBalanceSettings,
     openPasskeySettings,
+    openRecoveryPhraseDownloadPrompt,
+    openRecoveryPhraseWarning,
+    openStorageSettings,
+    openNetworkCostSettings,
     openSettings,
     returnToMain,
   ])
@@ -141,5 +150,3 @@ function DefaultMenu() {
     </Flex>
   )
 }
-
-export default DefaultMenu

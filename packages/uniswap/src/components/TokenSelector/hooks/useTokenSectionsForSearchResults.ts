@@ -9,6 +9,7 @@ import { usePortfolioBalancesForAddressById } from 'uniswap/src/components/Token
 import { usePortfolioTokenOptions } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioTokenOptions'
 import { mergeSearchResultsWithBridgingTokens } from 'uniswap/src/components/TokenSelector/utils'
 import { TradeableAsset } from 'uniswap/src/entities/assets'
+import type { AddressGroup } from 'uniswap/src/features/accounts/store/types/AccountsState'
 import { useBridgingTokensOptions } from 'uniswap/src/features/bridging/hooks/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { getChainLabel } from 'uniswap/src/features/chains/utils'
@@ -16,15 +17,13 @@ import { useSearchTokens } from 'uniswap/src/features/dataApi/searchTokens'
 import type { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 
 export function useTokenSectionsForSearchResults({
-  evmAddress,
-  svmAddress,
+  addresses,
   chainFilter,
   searchFilter,
   isBalancesOnlySearch,
   input,
 }: {
-  evmAddress?: string
-  svmAddress?: string
+  addresses: AddressGroup
   chainFilter: UniverseChainId | null
   searchFilter: string | null
   isBalancesOnlySearch: boolean
@@ -32,19 +31,20 @@ export function useTokenSectionsForSearchResults({
 }): GqlResult<OnchainItemSection<TokenOption>[]> {
   const { t } = useTranslation()
 
+  const portfolioData = usePortfolioBalancesForAddressById(addresses)
   const {
     data: portfolioBalancesById,
     error: portfolioBalancesByIdError,
     refetch: refetchPortfolioBalances,
     loading: portfolioBalancesByIdLoading,
-  } = usePortfolioBalancesForAddressById({ evmAddress, svmAddress })
+  } = portfolioData
 
   const {
     data: portfolioTokenOptions,
     error: portfolioTokenOptionsError,
     refetch: refetchPortfolioTokenOptions,
     loading: portfolioTokenOptionsLoading,
-  } = usePortfolioTokenOptions({ evmAddress, svmAddress, chainFilter, searchFilter: searchFilter ?? undefined })
+  } = usePortfolioTokenOptions({ chainFilter, searchFilter: searchFilter ?? undefined, portfolioData })
 
   // Bridging tokens are only shown if input is provided
   const {
@@ -52,7 +52,7 @@ export function useTokenSectionsForSearchResults({
     error: bridgingTokenOptionsError,
     refetch: refetchBridgingTokenOptions,
     loading: bridgingTokenOptionsLoading,
-  } = useBridgingTokensOptions({ oppositeSelectedToken: input, evmAddress, svmAddress, chainFilter })
+  } = useBridgingTokensOptions({ oppositeSelectedToken: input, chainFilter, portfolioData })
 
   // Only call search endpoint if isBalancesOnlySearch is false
   const {

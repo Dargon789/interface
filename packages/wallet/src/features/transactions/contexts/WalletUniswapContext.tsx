@@ -7,15 +7,16 @@ import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledCh
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useUpdateDelegatedState } from 'uniswap/src/features/smartWallet/delegation/hooks/useUpdateDelegateState'
 import { useHasAccountMismatchCallback } from 'uniswap/src/features/smartWallet/mismatch/hooks'
-import { MismatchContextProvider } from 'uniswap/src/features/smartWallet/mismatch/MismatchContext'
 import type {
   HasMismatchInput,
   HasMismatchResult,
   HasMismatchUtil,
 } from 'uniswap/src/features/smartWallet/mismatch/mismatch'
 import { createHasMismatchUtil } from 'uniswap/src/features/smartWallet/mismatch/mismatch'
+import { MismatchContextProvider } from 'uniswap/src/features/smartWallet/mismatch/MismatchContext'
 import { useGetCanSignPermits } from 'uniswap/src/features/transactions/hooks/useGetCanSignPermits'
 import { prepareSwapFormState } from 'uniswap/src/features/transactions/types/transactionState'
+import { CurrencyField } from 'uniswap/src/types/currency'
 import { getLogger, logger } from 'utilities/src/logger/logger'
 import { useEvent } from 'utilities/src/react/hooks'
 import { useWalletNavigation } from 'wallet/src/contexts/WalletNavigationContext'
@@ -77,17 +78,29 @@ function WalletUniswapProviderInner({ children }: PropsWithChildren): JSX.Elemen
     navigateToReceive,
     navigateToExternalProfile,
     navigateToPoolDetails,
-    navigateToNftCollection,
     handleShareToken,
+    navigateToAdvancedSettings,
   } = useWalletNavigation()
   const showSwapNetworkNotification = useShowSwapNetworkNotification()
 
   const navigateToSwapFromCurrencyIds = useCallback(
-    ({ inputCurrencyId, outputCurrencyId }: { inputCurrencyId?: string; outputCurrencyId?: string }) => {
+    ({
+      inputCurrencyId,
+      outputCurrencyId,
+      exactCurrencyField,
+      exactAmountToken,
+    }: {
+      inputCurrencyId?: string
+      outputCurrencyId?: string
+      exactCurrencyField?: CurrencyField
+      exactAmountToken?: string
+    }) => {
       const initialState = prepareSwapFormState({
         inputCurrencyId,
         outputCurrencyId,
         defaultChainId: UniverseChainId.Mainnet,
+        exactCurrencyField,
+        exactAmountToken,
       })
       navigateToSwapFlow({ initialState })
     },
@@ -105,7 +118,6 @@ function WalletUniswapProviderInner({ children }: PropsWithChildren): JSX.Elemen
 
   const getCanSignPermits = useGetCanSignPermits()
   const getSwapDelegationInfo = useGetSwapDelegationInfoForActiveAccount()
-  const getCanPayGasInAnyToken = useCallback(() => false, [])
 
   return (
     <UniswapProvider
@@ -117,9 +129,9 @@ function WalletUniswapProviderInner({ children }: PropsWithChildren): JSX.Elemen
       navigateToTokenDetails={navigateToTokenDetails}
       navigateToExternalProfile={navigateToExternalProfile}
       navigateToNftDetails={navigateToNftDetails}
-      navigateToNftCollection={navigateToNftCollection}
       navigateToPoolDetails={navigateToPoolDetails}
       handleShareToken={handleShareToken}
+      navigateToAdvancedSettings={navigateToAdvancedSettings}
       signer={signer}
       useProviderHook={useWalletProvider}
       useWalletDisplayName={useDisplayName}
@@ -127,7 +139,6 @@ function WalletUniswapProviderInner({ children }: PropsWithChildren): JSX.Elemen
       getCanSignPermits={getCanSignPermits}
       getSwapDelegationInfo={getSwapDelegationInfo}
       useAccountsStoreContextHook={useAccountsStoreContext}
-      getCanPayGasInAnyToken={getCanPayGasInAnyToken}
       onSwapChainsChanged={showSwapNetworkNotification}
     >
       {children}

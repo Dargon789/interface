@@ -1,6 +1,5 @@
 import { G, Path, Svg } from 'react-native-svg'
-
-// eslint-disable-next-line no-relative-import-paths/no-relative-import-paths
+// oxlint-disable-next-line universe-custom/no-relative-import-paths
 import { createIcon } from '../factories/createIcon'
 
 export const [ArrowUpRight, AnimatedArrowUpRight] = createIcon({
@@ -18,5 +17,4 @@ export const [ArrowUpRight, AnimatedArrowUpRight] = createIcon({
       </G>
     </Svg>
   ),
-  defaultFill: '#7D7D7D',
 })

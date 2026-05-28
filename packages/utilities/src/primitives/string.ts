@@ -37,6 +37,7 @@ export function containsNonPrintableChars(msg: string): boolean {
   const regex = /[\p{C}\p{Z}]/gu
 
   if (regex.test(msg)) {
+    // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
     return ![...msg].every((char) => char === '\n' || char === '\r' || char === '\t' || !/\p{C}/u.test(char))
   }
 
@@ -48,3 +49,11 @@ export function containsNonPrintableChars(msg: string): boolean {
  * unintentionally in the code. This makes its explicit.
  */
 export const SPACE_STRING = ' '
+
+export function chunkString(value: string, size: number): string[] {
+  const chunks: string[] = []
+  for (let i = 0; i < value.length; i += size) {
+    chunks.push(value.slice(i, i + size))
+  }
+  return chunks
+}

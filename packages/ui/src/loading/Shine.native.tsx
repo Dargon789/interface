@@ -30,6 +30,7 @@ export function Shine({ shimmerDurationSeconds = 2, children, disabled }: ShineP
 
   useEffect(() => {
     xPosition.value = withRepeat(withTiming(1, { duration: shimmerDuration }), Infinity, false)
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [shimmerDuration])
 
   const animatedStyle = useAnimatedStyle(() => ({

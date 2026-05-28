@@ -3,23 +3,35 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "packages/sessions/src",
   "projectType": "library",
-  "tags": [],
+  "tags": ["scope:sessions", "type:lib"],
   "targets": {
     "typecheck": {},
-    "lint:biome": {},
-    "lint:biome:fix": {},
-    "lint:eslint": {},
-    "lint:eslint:fix": {},
+    "typecheck:tsc": {},
+    "typecheck:tsgo": {},
+    "format": {},
+    "format:check": {},
+    "lint:oxlint": {},
+    "lint:oxlint:fix": {},
+    "lint:oxlint:fast": {},
     "lint": {},
     "lint:fix": {},
+    "check": {},
+    "check:fast": {},
+    "check:deps:usage": {},
     "test": {
       "command": "vitest run",
       "options": {
         "cwd": "{projectRoot}"
       }
     },
-    "test:coverage": {
-      "command": "vitest run --coverage",
+    "test:watch": {
+      "command": "vitest dev",
+      "options": {
+        "cwd": "{projectRoot}"
+      }
+    },
+    "test:integration:backend": {
+      "command": "vitest run --config vitest.integration.config.ts",
       "options": {
         "cwd": "{projectRoot}"
       }

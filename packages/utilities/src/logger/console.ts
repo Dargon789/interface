@@ -1,5 +1,3 @@
-// biome-ignore-all lint/suspicious/noConsole: need to use console here
-
 const consoleError = console.error
 const consoleWarn = console.warn
 

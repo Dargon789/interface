@@ -16,6 +16,7 @@ export type TokenFeeInfo = {
   fee: Percent
   formattedUsdAmount: string
   formattedAmount: string
+  isLoading?: boolean
 }
 
 export type TokenWarningProps = {

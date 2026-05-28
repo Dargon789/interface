@@ -11,7 +11,15 @@ import {
   useTokenMarketPartsFragment,
   useTokenProjectMarketsPartsFragment,
 } from 'uniswap/src/data/graphql/uniswap-data-api/fragments'
+import type {
+  MarketDataInput,
+  ProjectMarketDataInput,
+  TokenMarketStats,
+} from 'uniswap/src/features/dataApi/tokenDetails/tokenMarketStatsUtils'
+import { computeTokenMarketStats } from 'uniswap/src/features/dataApi/tokenDetails/tokenMarketStatsUtils'
 import type { CurrencyId } from 'uniswap/src/types/currency'
+
+export type { TokenMarketStats } from 'uniswap/src/features/dataApi/tokenDetails/tokenMarketStatsUtils'
 
 /**
  * Returns the current spot price for a token
@@ -22,12 +30,14 @@ import type { CurrencyId } from 'uniswap/src/types/currency'
  *
  * Prefers per-chain subgraph data, falls back to aggregated CoinGecko data
  */
-export function useTokenSpotPrice(currencyId: CurrencyId): number | undefined {
-  const tokenMarket = useTokenMarketPartsFragment({ currencyId }).data.market
-  const projectMarkets = useTokenProjectMarketsPartsFragment({ currencyId }).data.project?.markets
+export function useTokenSpotPrice(currencyId: CurrencyId | undefined): number | undefined {
+  const id = currencyId ?? ''
+  const tokenMarket = useTokenMarketPartsFragment({ currencyId: id }).data.market
+  const projectMarkets = useTokenProjectMarketsPartsFragment({ currencyId: id }).data.project?.markets
 
   return useMemo(() => {
     return tokenMarket?.price?.value ?? projectMarkets?.[0]?.price?.value
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [tokenMarket?.price?.value, projectMarkets?.[0]?.price?.value])
 }
 
@@ -39,56 +49,43 @@ export function useTokenPriceChange(currencyId: CurrencyId): number | undefined 
 
   return useMemo(() => {
     return projectMarkets?.[0]?.pricePercentChange24h?.value
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [projectMarkets?.[0]?.pricePercentChange24h?.value])
 }
 
-/**
- * Returns market statistics for a token with defensive fallback logic
- *
- * Each stat will automatically fallback to the alternate source if available,
- * ensuring the UI always displays data when any source has it.
- */
-export interface TokenMarketStats {
-  marketCap: number | undefined
-  fdv: number | undefined
-  volume: number | undefined
-  high52w: number | undefined
-  low52w: number | undefined
+/** Optional aggregated market + project data (e.g. from TDP TokenWebQuery when multichain). When provided, stats are computed from this instead of fragment queries. */
+export interface TokenMarketStatsAggregatedInput {
+  market?: MarketDataInput
+  project?: { markets?: Array<ProjectMarketDataInput | undefined> }
 }
 
-export function useTokenMarketStats(currencyId: CurrencyId): TokenMarketStats {
+export interface UseTokenMarketStatsParams {
+  currentPriceOverride?: number
+  aggregatedData?: TokenMarketStatsAggregatedInput | null
+}
+
+export function useTokenMarketStats(currencyId: CurrencyId, params?: UseTokenMarketStatsParams): TokenMarketStats {
+  const { currentPriceOverride, aggregatedData } = params ?? {}
   const tokenMarket = useTokenMarketPartsFragment({ currencyId }).data.market
   const projectMarkets = useTokenProjectMarketsPartsFragment({ currencyId }).data.project?.markets
 
   return useMemo(() => {
-    const currentPrice = projectMarkets?.[0]?.price?.value ?? tokenMarket?.price?.value
-    const marketCap = projectMarkets?.[0]?.marketCap?.value ?? undefined
-    const fdv = projectMarkets?.[0]?.fullyDilutedValuation?.value ?? undefined
-    const volume = tokenMarket?.volume?.value ?? undefined
-    const rawHigh52w = projectMarkets?.[0]?.priceHigh52W?.value ?? tokenMarket?.priceHigh52W?.value ?? undefined
-    const rawLow52w = projectMarkets?.[0]?.priceLow52W?.value ?? tokenMarket?.priceLow52W?.value ?? undefined
-
-    // Adjust 52w bounds if current price exceeds them
-    const high52w =
-      currentPrice !== undefined && rawHigh52w !== undefined ? Math.max(currentPrice, rawHigh52w) : rawHigh52w
-    const low52w = currentPrice !== undefined && rawLow52w !== undefined ? Math.min(currentPrice, rawLow52w) : rawLow52w
-
-    return {
-      marketCap,
-      fdv,
-      volume,
-      high52w,
-      low52w,
+    const hasAggregated =
+      aggregatedData &&
+      (aggregatedData.market?.volume24H?.value != null ||
+        aggregatedData.market?.priceHigh52W?.value != null ||
+        (aggregatedData.project?.markets?.length ?? 0) > 0)
+    if (hasAggregated) {
+      return computeTokenMarketStats({
+        market: aggregatedData.market,
+        projectMarket: aggregatedData.project?.markets?.[0],
+        currentPrice: currentPriceOverride,
+      })
     }
-  }, [
-    projectMarkets?.[0]?.price?.value,
-    projectMarkets?.[0]?.marketCap?.value,
-    projectMarkets?.[0]?.fullyDilutedValuation?.value,
-    projectMarkets?.[0]?.priceHigh52W?.value,
-    projectMarkets?.[0]?.priceLow52W?.value,
-    tokenMarket?.volume?.value,
-    tokenMarket?.price?.value,
-    tokenMarket?.priceHigh52W?.value,
-    tokenMarket?.priceLow52W?.value,
-  ])
+    return computeTokenMarketStats({
+      market: tokenMarket,
+      projectMarket: projectMarkets?.[0],
+      currentPrice: currentPriceOverride,
+    })
+  }, [aggregatedData, currentPriceOverride, projectMarkets, tokenMarket])
 }

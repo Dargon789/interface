@@ -1,6 +1,5 @@
-import { Circle as _Circle, Path, Svg } from 'react-native-svg'
-
-// eslint-disable-next-line no-relative-import-paths/no-relative-import-paths
+import { Circle, Path, Svg } from 'react-native-svg'
+// oxlint-disable-next-line universe-custom/no-relative-import-paths
 import { createIcon } from '../factories/createIcon'
 
 export const [OneToOne, AnimatedOneToOne] = createIcon({
@@ -17,8 +16,8 @@ export const [OneToOne, AnimatedOneToOne] = createIcon({
         d="M7.942 15.25V11.416H6.439V10.408H6.637C7.501 10.408 8.131 10.174 8.185 9.13V9.058H9.364V15.25H7.942Z"
         fill="white"
       />
-      <_Circle cx="12" cy="10.9" r="0.75" fill="white" />
-      <_Circle cx="12" cy="13.6" r="0.75" fill="white" />
+      <Circle cx="12" cy="10.9" r="0.75" fill="white" />
+      <Circle cx="12" cy="13.6" r="0.75" fill="white" />
       <Path
         d="M15.442 15.25V11.416H13.939V10.408H14.137C15.001 10.408 15.631 10.174 15.685 9.13V9.058H16.864V15.25H15.442Z"
         fill="white"

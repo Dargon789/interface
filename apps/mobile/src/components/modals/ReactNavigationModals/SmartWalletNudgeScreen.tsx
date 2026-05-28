@@ -10,6 +10,7 @@ export const SmartWalletNudgeScreen = (props: AppStackScreenProp<typeof ModalNam
 
   const modalComponent = useMemo(() => {
     // Create a wrapper component that pre-fills the onEnableSmartWallet prop if it's not defined
+    // oxlint-disable-next-line universe-custom/no-nested-component-definitions -- memoized wrapper component
     return function SmartWalletNudgeWrapper(modalProps: SmartWalletNudgeProps) {
       if (modalProps.onEnableSmartWallet) {
         return <SmartWalletNudge {...modalProps} />

@@ -19,13 +19,13 @@ export function PasswordImport({
     useOnboardingContext()
   const mnemonicString = getOnboardingAccountMnemonicString()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Only run once on component mount to generate addresses
   useEffect(() => {
     generateInitialAddresses().catch((error) => {
       logger.error(error, {
         tags: { file: 'PasswordImport.tsx', function: 'generateInitialAddresses' },
       })
     })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [])
 
   const onSubmit = useCallback(

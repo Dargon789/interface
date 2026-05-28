@@ -1,5 +1,6 @@
-import { GraphQLApi } from '@universe/api'
+import { GraphQLApi, TradingApi } from '@universe/api'
 import { ETH_LOGO, ZORA_LOGO } from 'ui/src/assets'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
 import { DEFAULT_NATIVE_ADDRESS_LEGACY, getQuicknodeEndpointUrl } from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
 import { GENERIC_L2_GAS_CONFIG } from 'uniswap/src/features/chains/gasDefaults'
@@ -45,6 +46,7 @@ export const ZORA_CHAIN_INFO = {
   label: 'Zora Network',
   logo: ZORA_LOGO,
   networkLayer: NetworkLayer.L2,
+  blockTimeMs: 2000,
   nativeCurrency: {
     name: 'Zora ETH',
     symbol: 'ETH',
@@ -60,9 +62,10 @@ export const ZORA_CHAIN_INFO = {
   },
   tokens,
   statusPage: undefined,
+  supportedURVersions: [TradingApi.UniversalRouterVersion._2_0, TradingApi.UniversalRouterVersion._2_1_1],
   supportsV4: true,
   supportsNFTs: true,
-  urlParam: 'zora',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Zora],
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
     symbol: 'WETH',

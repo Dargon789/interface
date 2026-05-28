@@ -1,11 +1,11 @@
 import { flush, getUserId, Identify, identify, init, setDeviceId, track } from '@amplitude/analytics-react-native'
 import { ANONYMOUS_DEVICE_ID } from '@uniswap/analytics'
+// oxlint-disable-next-line no-restricted-imports -- platform implementation file
 import {
   Analytics,
   AnalyticsInitConfig,
   TestnetModeConfig,
   UserPropertyValue,
-  // biome-ignore lint/style/noRestrictedImports: needed here
 } from 'utilities/src/telemetry/analytics/analytics'
 import {
   AMPLITUDE_NATIVE_TRACKING_OPTIONS,
@@ -45,6 +45,7 @@ export const analytics: Analytics = {
         undefined, // User ID should be undefined to let Amplitude default to Device ID
         {
           transportProvider, // Used to support custom reverse proxy header
+          disableCookies: true, // Disable cookies for React Native (no document.cookie API)
           // Disable tracking of private user information by Amplitude
           trackingOptions: {
             ...AMPLITUDE_SHARED_TRACKING_OPTIONS,
@@ -104,7 +105,7 @@ export const analytics: Analytics = {
     loggers.flushEvents()
     flush()
   },
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   setUserProperty(property: string, value: UserPropertyValue, insert?: boolean): void {
     if (!allowAnalytics && initCalled) {
       return

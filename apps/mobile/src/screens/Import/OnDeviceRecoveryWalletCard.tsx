@@ -41,11 +41,11 @@ export function OnDeviceRecoveryWalletCard({
   const firstWalletInfo = targetWalletInfos[0]
   const remainingWalletCount = targetWalletInfos.length - 1
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to recalculate this only when loading, screenLoading changes
   useEffect(() => {
     if (!loading && screenLoading) {
       onLoadComplete(significantRecoveryWalletInfos.length)
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [loading, screenLoading])
 
   if (screenLoading || !firstWalletInfo) {

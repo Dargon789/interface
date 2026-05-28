@@ -1,5 +1,6 @@
 import { createAction } from '@reduxjs/toolkit'
-import { FeatureFlags, getFeatureFlagName, getStatsigClient } from '@universe/gating'
+import { isAndroid } from '@universe/environment'
+import { FeatureFlags, getFeatureFlagName, getOverrideAdapter, getStatsigClient } from '@universe/gating'
 import { parseUri } from '@walletconnect/utils'
 import { Alert } from 'react-native'
 import { navigate } from 'src/app/navigation/rootNavigation'
@@ -9,6 +10,7 @@ import {
   isAllowedUwuLinkRequest,
   parseUwuLinkDataFromDeeplink,
 } from 'src/components/Requests/Uwulink/utils'
+import { getConfig } from 'src/config'
 import { getUwuLinkAllowlist } from 'src/features/deepLinking/configUtils'
 import {
   DeepLinkAction,
@@ -36,7 +38,6 @@ import { MobileScreens } from 'uniswap/src/types/screens/mobile'
 import { UwULinkRequest } from 'uniswap/src/types/walletConnect'
 import { openUri } from 'uniswap/src/utils/linking'
 import { logger } from 'utilities/src/logger/logger'
-import { isAndroid } from 'utilities/src/platform'
 import { ScantasticParams } from 'wallet/src/features/scantastic/types'
 import { getContractManager, getProviderManager } from 'wallet/src/features/wallet/context'
 import { selectAccounts, selectActiveAccount } from 'wallet/src/features/wallet/selectors'
@@ -55,11 +56,17 @@ export function* deepLinkWatcher() {
   yield* takeLatest(openDeepLink.type, handleDeepLink)
 }
 
-// eslint-disable-next-line complexity
 export function* handleDeepLink(action: ReturnType<typeof openDeepLink>) {
   try {
     const { coldStart } = action.payload
     const deepLinkAction = parseDeepLinkUrl(action.payload.url)
+
+    // Handle E2E gate overrides early, before account check, since tests may call this at any point
+    if (deepLinkAction.action === DeepLinkAction.E2EOverrideGates) {
+      yield* call(handleE2EOverrideGates, deepLinkAction.data)
+      return
+    }
+
     const activeAccount = yield* select(selectActiveAccount)
 
     if (!activeAccount) {
@@ -323,5 +330,18 @@ function* handleUwuLinkDeepLink(uri: string): Generator {
       },
     ])
     return
+  }
+}
+
+function handleE2EOverrideGates({ enable }: { enable: string[] }): void {
+  if (!getConfig().isE2ETest) {
+    return
+  }
+
+  const overrideAdapter = getOverrideAdapter()
+  overrideAdapter.removeAllOverrides()
+
+  for (const gate of enable) {
+    overrideAdapter.overrideGate(gate, true)
   }
 }

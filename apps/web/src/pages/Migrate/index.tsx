@@ -1,48 +1,23 @@
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import type { Currency, CurrencyAmount } from '@uniswap/sdk-core'
-import { BreadcrumbNavLink } from 'components/BreadcrumbNav'
-import { ErrorCallout } from 'components/ErrorCallout'
-import { getLPBaseAnalyticsProperties } from 'components/Liquidity/analytics'
-import { FormStepsWrapper, FormWrapper } from 'components/Liquidity/Create/FormWrapper'
-import { useLiquidityUrlState } from 'components/Liquidity/Create/hooks/useLiquidityUrlState'
-import { useLPSlippageValue } from 'components/Liquidity/Create/hooks/useLPSlippageValues'
-import { DEFAULT_POSITION_STATE, InitialPosition, PositionFlowStep } from 'components/Liquidity/Create/types'
-import { LiquidityPositionCard } from 'components/Liquidity/LiquidityPositionCard'
-import { LoadingRow } from 'components/Liquidity/Loader'
-import { ReviewModal } from 'components/Liquidity/ReviewModal'
-import type { PositionInfo } from 'components/Liquidity/types'
-import { getCurrencyForProtocol } from 'components/Liquidity/utils/currency'
-import { parseRestPosition } from 'components/Liquidity/utils/parseFromRest'
-import { LoadingRows } from 'components/Loader/styled'
-import { useAccount } from 'hooks/useAccount'
-import { usePositionOwnerV2 } from 'hooks/usePositionOwnerV2'
-import useSelectChain from 'hooks/useSelectChain'
-import {
-  CreateLiquidityContextProvider,
-  DEFAULT_DEPOSIT_STATE,
-  DEFAULT_PRICE_RANGE_STATE,
-  useCreateLiquidityContext,
-} from 'pages/CreatePosition/CreateLiquidityContextProvider'
-import { SharedCreateModals } from 'pages/CreatePosition/CreatePosition'
-import useInitialPosition from 'pages/Migrate/hooks/useInitialPosition'
-import { MigratePositionTxContextProvider, useMigrateTxContext } from 'pages/Migrate/MigrateLiquidityTxContext'
-import type { Dispatch, SetStateAction } from 'react'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronRight } from 'react-feather'
-import { Trans, useTranslation } from 'react-i18next'
+import type { Dispatch, SetStateAction } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { useLocation, useNavigate, useParams } from 'react-router'
-import { MultichainContextProvider } from 'state/multichain/MultichainContext'
-import { liquiditySaga } from 'state/sagas/liquidity/liquiditySaga'
 import { Button, Flex, Main, styled } from 'ui/src'
 import { ArrowDown } from 'ui/src/components/icons/ArrowDown'
+import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import { RotateLeft } from 'ui/src/components/icons/RotateLeft'
 import { useGetPositionQuery } from 'uniswap/src/data/rest/getPosition'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
+import { parseRestPosition } from 'uniswap/src/features/positions/parseRestPosition'
+import type { PositionInfo } from 'uniswap/src/features/positions/types'
 import { InterfacePageName, ModalName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { LPTransactionSettingsStoreContextProvider } from 'uniswap/src/features/transactions/components/settings/stores/transactionSettingsStore/LPTransactionSettingsStoreContextProvider'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
 import { isValidLiquidityTxContext } from 'uniswap/src/features/transactions/liquidity/types'
 import { getErrorMessageToDisplay } from 'uniswap/src/features/transactions/liquidity/utils'
 import type { TransactionStep } from 'uniswap/src/features/transactions/steps/types'
@@ -51,7 +26,34 @@ import { isSignerMnemonicAccountDetails } from 'uniswap/src/features/wallet/type
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
 import { currencyId, currencyIdToAddress } from 'uniswap/src/utils/currencyId'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
-import { useChainIdFromUrlParam } from 'utils/chainParams'
+import { BreadcrumbNavLink } from '~/components/BreadcrumbNav'
+import { ErrorCallout } from '~/components/ErrorCallout'
+import { LoadingRows } from '~/components/Loader/styled'
+import { getLPBaseAnalyticsProperties } from '~/features/Liquidity/analytics'
+import { FormStepsWrapper, FormWrapper } from '~/features/Liquidity/Create/FormWrapper'
+import { useLiquidityUrlState } from '~/features/Liquidity/Create/hooks/useLiquidityUrlState'
+import { useLPSlippageValue } from '~/features/Liquidity/Create/hooks/useLPSlippageValues'
+import { DEFAULT_POSITION_STATE, MigratingPosition, PositionFlowStep } from '~/features/Liquidity/Create/types'
+import { LiquidityPositionCard } from '~/features/Liquidity/LiquidityPositionCard'
+import { LoadingRow } from '~/features/Liquidity/Loader'
+import { ReviewModal } from '~/features/Liquidity/ReviewModal'
+import { getCurrencyForProtocol } from '~/features/Liquidity/utils/currency'
+import { useAccount } from '~/hooks/useAccount'
+import { usePositionOwnerV2 } from '~/hooks/usePositionOwnerV2'
+import { useSelectChain } from '~/hooks/useSelectChain'
+import {
+  CreateLiquidityContextProvider,
+  DEFAULT_DEPOSIT_STATE,
+  DEFAULT_PRICE_RANGE_STATE,
+  useCreateLiquidityContext,
+} from '~/pages/CreatePosition/CreateLiquidityContextProvider'
+import { SharedCreateModals } from '~/pages/CreatePosition/CreatePosition'
+import { useMigratingPosition } from '~/pages/Migrate/hooks/useMigratingPosition'
+import { MigratePositionTxContextProvider, useMigrateTxContext } from '~/pages/Migrate/MigrateLiquidityTxContext'
+import { useSetOverrideOneClickSwapFlag } from '~/pages/Swap/settings/OneClickSwap'
+import { MultichainContextProvider } from '~/state/multichain/MultichainContext'
+import { liquiditySaga } from '~/state/sagas/liquidity/liquiditySaga'
+import { useChainIdFromUrlParam } from '~/utils/params/chainParams'
 
 const BodyWrapper = styled(Main, {
   backgroundColor: '$surface1',
@@ -76,6 +78,7 @@ function MigrateInner({
 }) {
   const { pairAddress } = useParams<{ tokenId: string; chainName: string; pairAddress: string }>()
   const trace = useTrace()
+  const isCentralizedPricesEnabled = useFeatureFlag(FeatureFlags.CentralizedPrices)
   const { t } = useTranslation()
 
   const { setStep, setCurrentTransactionStep } = useCreateLiquidityContext()
@@ -89,6 +92,7 @@ function MigrateInner({
   const dispatch = useDispatch()
   const { txInfo, transactionError, refetch, setTransactionError, refundedAmounts } = useMigrateTxContext()
   const navigate = useNavigate()
+  const overrideBatchedTransactions = useSetOverrideOneClickSwapFlag()
 
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
 
@@ -136,6 +140,7 @@ function MigrateInner({
         liquidityTxContext: txInfo,
         setCurrentStep: setCurrentTransactionStep,
         setSteps: setTransactionSteps,
+        disableOneClickSwap: overrideBatchedTransactions,
         onSuccess: () => {
           onClose()
           navigate('/positions')
@@ -164,6 +169,7 @@ function MigrateInner({
             currency1AmountUsd: currency1FiatAmount,
             poolId: positionInfo.poolId,
             version: ProtocolVersion.V3,
+            isCentralizedPricesEnabled,
           }),
           action: 'V3->V4',
         },
@@ -185,9 +191,10 @@ function MigrateInner({
     setTransactionError,
     currency0Amount.currency,
     currency1Amount.currency,
+    overrideBatchedTransactions,
+    isCentralizedPricesEnabled,
   ])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: +setIsReviewModalOpen
   const priceRangeProps = useMemo(() => {
     return {
       positionInfo,
@@ -261,38 +268,39 @@ function getCurrencyInputs(positionInfo?: PositionInfo) {
 }
 
 function Toolbar({
-  initialPosition,
+  migratingPosition,
   currency0Amount,
   currency1Amount,
   setCurrencyInputs,
 }: {
-  initialPosition: InitialPosition | undefined
+  migratingPosition: MigratingPosition | undefined
   currency0Amount: CurrencyAmount<Currency>
   currency1Amount: CurrencyAmount<Currency>
   setCurrencyInputs: Dispatch<SetStateAction<{ tokenA: Maybe<Currency>; tokenB: Maybe<Currency> }>>
 }) {
+  const { t } = useTranslation()
   const { positionState, priceRangeState, setPositionState, setStep, setPriceRangeState, setDepositState } =
     useCreateLiquidityContext()
   const { fee, hook, protocolVersion: finalProtocolVersion } = positionState
 
   const isFormUnchanged = useMemo(() => {
-    const isRangeUnchanged = initialPosition?.isOutOfRange
+    const isRangeUnchanged = migratingPosition?.isOutOfRange
       ? true
       : priceRangeState.fullRange === DEFAULT_PRICE_RANGE_STATE.fullRange &&
-        priceRangeState.maxPrice === DEFAULT_PRICE_RANGE_STATE.maxPrice &&
-        priceRangeState.minPrice === DEFAULT_PRICE_RANGE_STATE.minPrice
+        priceRangeState.maxTick === DEFAULT_PRICE_RANGE_STATE.maxTick &&
+        priceRangeState.minTick === DEFAULT_PRICE_RANGE_STATE.minTick
 
     return (
       fee &&
-      initialPosition &&
-      fee.feeAmount === initialPosition.fee.feeAmount &&
-      fee.tickSpacing === initialPosition.fee.tickSpacing &&
-      fee.isDynamic === initialPosition.fee.isDynamic &&
+      migratingPosition &&
+      fee.feeAmount === migratingPosition.fee.feeAmount &&
+      fee.tickSpacing === migratingPosition.fee.tickSpacing &&
+      fee.isDynamic === migratingPosition.fee.isDynamic &&
       hook === DEFAULT_POSITION_STATE.hook &&
       priceRangeState.initialPrice === DEFAULT_PRICE_RANGE_STATE.initialPrice &&
       isRangeUnchanged
     )
-  }, [fee, hook, priceRangeState, initialPosition])
+  }, [fee, hook, priceRangeState, migratingPosition])
 
   return (
     <Flex>
@@ -305,9 +313,9 @@ function Toolbar({
         onPress={() => {
           setPositionState({
             ...DEFAULT_POSITION_STATE,
-            initialPosition,
+            migratingPosition,
             protocolVersion: finalProtocolVersion,
-            fee: initialPosition?.fee,
+            fee: migratingPosition?.fee,
           })
           setCurrencyInputs({
             tokenA: getCurrencyForProtocol(currency0Amount.currency, finalProtocolVersion),
@@ -318,7 +326,7 @@ function Toolbar({
           setStep(PositionFlowStep.SELECT_TOKENS_AND_FEE_TIER)
         }}
       >
-        <Trans i18nKey="common.button.reset" />
+        {t('common.button.reset')}
       </Button>
     </Flex>
   )
@@ -327,7 +335,7 @@ function Toolbar({
 /**
  * The page for migrating any v3 LP position to v4.
  */
-export default function MigrateV3() {
+export function MigrateV3() {
   const { t } = useTranslation()
   const { chainName, tokenId } = useParams<{ tokenId: string; chainName: string }>()
   const { pairAddress } = useParams<{ pairAddress: string }>()
@@ -357,8 +365,8 @@ export default function MigrateV3() {
 
   const positionInfo = useMemo(() => parseRestPosition(position), [position])
 
-  // Need the initial position when migrating out of range positions.
-  const initialPosition = useInitialPosition(positionInfo)
+  // Need the migrating (source) position when migrating out of range positions.
+  const migratingPosition = useMigratingPosition(positionInfo)
   const initialCurrencyInputs = useMemo(() => getCurrencyInputs(positionInfo), [positionInfo])
   const initialProtocolVersion = positionInfo?.version
 
@@ -415,8 +423,8 @@ export default function MigrateV3() {
         <LPTransactionSettingsStoreContextProvider autoSlippageTolerance={autoSlippageTolerance}>
           <CreateLiquidityContextProvider
             initialPositionState={{
-              initialPosition,
-              fee: initialPosition?.fee,
+              migratingPosition,
+              fee: migratingPosition?.fee,
               protocolVersion: initialProtocolVersion === ProtocolVersion.V2 ? ProtocolVersion.V3 : ProtocolVersion.V4,
             }}
             currencyInputs={currencyInputs}
@@ -435,12 +443,13 @@ export default function MigrateV3() {
                         : `/positions/v3/${chainName}/${tokenId}`
                     }
                   >
-                    {currency0Amount.currency.symbol} / {currency1Amount.currency.symbol} <ChevronRight size={14} />
+                    {currency0Amount.currency.symbol} / {currency1Amount.currency.symbol}{' '}
+                    <RotatableChevron direction="right" size="$icon.16" />
                   </BreadcrumbNavLink>
                 }
                 toolbar={
                   <Toolbar
-                    initialPosition={initialPosition}
+                    migratingPosition={migratingPosition}
                     currency0Amount={currency0Amount}
                     currency1Amount={currency1Amount}
                     setCurrencyInputs={setCurrencyInputs}
@@ -461,3 +470,5 @@ export default function MigrateV3() {
     </Trace>
   )
 }
+
+export default MigrateV3

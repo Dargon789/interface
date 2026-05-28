@@ -77,7 +77,7 @@ function allowsDismissWarning(tokenProtectionWarning: TokenProtectionWarning): b
   return WARNINGS_ALLOWING_DISMISSAL.includes(tokenProtectionWarning)
 }
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 function TokenWarningModalContent({
   currencyInfo0,
   currencyInfo1,
@@ -161,6 +161,7 @@ function TokenWarningModalContent({
       tokenAddress: currencyIdToAddress(currencyInfo0.currencyId),
       tokenName: currencyInfo0.currency.name,
       reportText,
+      reportMultichainAsset: Boolean(currencyInfo0.searchMultichainParent),
     })
 
     // report success for the given case

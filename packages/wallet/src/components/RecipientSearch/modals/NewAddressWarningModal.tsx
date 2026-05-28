@@ -1,3 +1,4 @@
+import { isMobileApp } from '@universe/environment'
 import { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex, GetProps, ScrollView, Text } from 'ui/src'
@@ -13,7 +14,6 @@ import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { getValidAddress } from 'uniswap/src/utils/addresses'
 import { shortenAddress } from 'utilities/src/addresses'
-import { isMobileApp } from 'utilities/src/platform'
 import { useDisplayName } from 'wallet/src/features/wallet/hooks'
 
 type NewAddressWarningModalProps = {
@@ -58,7 +58,11 @@ export function NewAddressWarningModal({ address, onAcknowledge, onClose }: NewA
 
   return (
     <Modal name={ModalName.NewAddressWarning} onClose={onClose}>
-      <Flex px={isMobileApp ? '$spacing24' : undefined} py={isMobileApp ? '$spacing12' : undefined}>
+      <Flex
+        px={isMobileApp ? '$spacing24' : '$spacing16'}
+        pb={isMobileApp ? '$spacing12' : '$spacing16'}
+        pt={isMobileApp ? '$spacing12' : '$spacing32'}
+      >
         <GenericHeader
           Icon={Person}
           iconSize="$icon.24"
@@ -75,7 +79,7 @@ export function NewAddressWarningModal({ address, onAcknowledge, onClose }: NewA
           borderRadius="$rounded16"
           borderWidth="$spacing1"
           flexDirection="column"
-          py="$padding12"
+          py="$padding16"
         >
           {displayName?.type === DisplayNameType.Unitag && (
             <LeftRightText
@@ -89,7 +93,6 @@ export function NewAddressWarningModal({ address, onAcknowledge, onClose }: NewA
                   lineHeight={fonts.body3.lineHeight}
                   size={16}
                   variant="body3"
-                  disableForcedWidth={true}
                 />
               }
             />
@@ -148,7 +151,7 @@ export function NewAddressWarningModal({ address, onAcknowledge, onClose }: NewA
 const styles = {
   scrollViewContent: {
     flexDirection: 'column',
-    py: '$spacing16',
     flexGrow: 1,
+    gap: '$spacing8',
   } satisfies GetProps<typeof ScrollView>['contentContainerStyle'],
 }

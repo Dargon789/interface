@@ -1,18 +1,17 @@
-import { ColumnCenter } from 'components/deprecated/Column'
-import { useCurrency } from 'hooks/Tokens'
-import { useScroll } from 'hooks/useScroll'
-import { Hover, RiseIn, RiseInText } from 'pages/Landing/components/animations'
-import { TokenCloud } from 'pages/Landing/components/TokenCloud'
-import { Swap } from 'pages/Swap'
 import { Fragment, useCallback, useMemo } from 'react'
-import { ChevronDown } from 'react-feather'
 import { Trans, useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { serializeSwapStateToURLParameters } from 'state/swap/hooks'
-import { Flex, Text, useMedia } from 'ui/src'
+import { Flex, Text, useMedia, useSporeColors } from 'ui/src'
+import { RotatableChevron } from 'ui/src/components/icons/RotatableChevron'
 import { INTERFACE_NAV_HEIGHT } from 'ui/src/theme'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { SwapRedirectFn } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
+import { serializeSwapStateToURLParameters } from '~/features/Swap/state/swap/tradeQueryParams'
+import { useCurrency } from '~/hooks/Tokens'
+import { Hover, RiseIn, RiseInText } from '~/pages/Landing/components/animations'
+import { TokenCloud } from '~/pages/Landing/components/TokenCloud'
+import { useScrollParallax } from '~/pages/Landing/sections/useScrollParallax'
+import { Swap } from '~/pages/Swap'
 
 interface HeroProps {
   scrollToRef: () => void
@@ -21,21 +20,15 @@ interface HeroProps {
 
 export function Hero({ scrollToRef, transition }: HeroProps) {
   const media = useMedia()
-  const { height: scrollPosition } = useScroll({ enabled: !media.sm })
+  const colors = useSporeColors()
   const { defaultChainId, chains } = useEnabledChains()
+  const { outerRef, innerRef, chevronRef } = useScrollParallax(!media.sm)
   const initialInputCurrency = useCurrency({
     address: 'ETH',
     chainId: defaultChainId,
   })
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { translateY, opacityY } = useMemo(
-    () => ({
-      translateY: !media.sm ? -scrollPosition / 7 : 0,
-      opacityY: !media.sm ? 1 - scrollPosition / 1000 : 1,
-    }),
-    [media.sm, scrollPosition],
-  )
 
   const swapRedirectCallback = useCallback(
     ({ inputCurrency, outputCurrency, typedValue, independentField, chainId }: Parameters<SwapRedirectFn>[0]) => {
@@ -71,12 +64,11 @@ export function Hero({ scrollToRef, transition }: HeroProps) {
 
   return (
     <Flex
+      ref={outerRef}
       position="relative"
       justifyContent="center"
-      y={translateY}
-      opacity={opacityY}
       minWidth="100%"
-      minHeight="90vh"
+      minHeight="100vh"
       height="min-content"
       pt={INTERFACE_NAV_HEIGHT}
       pointerEvents="none"
@@ -84,13 +76,12 @@ export function Hero({ scrollToRef, transition }: HeroProps) {
       {!media.sm && <TokenCloud />}
 
       <Flex
+        ref={innerRef}
         alignSelf="center"
         maxWidth="85vw"
         pointerEvents="none"
         pt={48}
         gap="$gap20"
-        transform={`translate(0px, ${translateY}px)`}
-        opacity={opacityY}
         $lg={{ pt: 24 }}
         $sm={{ pt: 8 }}
         $platform-web={{
@@ -129,14 +120,17 @@ export function Hero({ scrollToRef, transition }: HeroProps) {
               initialInputChainId={defaultChainId}
               initialInputCurrency={initialInputCurrency}
               swapRedirectCallback={swapRedirectCallback}
-              usePersistedFilteredChainIds
             />
           </Flex>
         </RiseIn>
 
         <RiseIn delay={0.3}>
           <Text variant="body1" textAlign="center" maxWidth={430} color="$neutral2" $short={{ variant: 'body2' }}>
-            <Trans i18nKey="hero.subtitle" values={{ amount: chains.length }} />
+            <Trans
+              i18nKey="hero.subtitle"
+              values={{ amount: chains.length }}
+              components={{ highlight: <Text variant="body1" $short={{ variant: 'body2' }} color="$accent1" /> }}
+            />
           </Text>
         </RiseIn>
       </Flex>
@@ -144,15 +138,16 @@ export function Hero({ scrollToRef, transition }: HeroProps) {
       <Flex flex={1} />
 
       <Flex
+        ref={chevronRef}
         position="absolute"
         width="100%"
         centered
         pointerEvents="none"
         bottom={48}
-        style={{ transform: `translate(0px, ${translateY}px)`, opacity: opacityY }}
+        style={{ transition: 'opacity 0.3s ease-out' }}
         $lgHeight={{ display: 'none' }}
       >
-        <RiseIn delay={0.3}>
+        <RiseIn delay={2}>
           <Flex
             alignItems="center"
             justifyContent="flex-start"
@@ -161,16 +156,25 @@ export function Hero({ scrollToRef, transition }: HeroProps) {
             width={500}
           >
             <Hover>
-              <ColumnCenter>
-                <Text variant="body2">
-                  <Trans i18nKey="hero.scroll" />
-                </Text>
-                <ChevronDown />
-              </ColumnCenter>
+              <Flex width="100%" alignItems="center">
+                <Text variant="body2">{t('hero.scroll')}</Text>
+                <RotatableChevron direction="down" />
+              </Flex>
             </Hover>
           </Flex>
         </RiseIn>
       </Flex>
+
+      <Flex
+        position="absolute"
+        bottom={0}
+        width="100%"
+        height={200}
+        pointerEvents="none"
+        style={{
+          background: `linear-gradient(to bottom, transparent 100%, ${colors.surface1.val} 100%)`,
+        }}
+      />
     </Flex>
   )
 }

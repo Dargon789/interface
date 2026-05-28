@@ -1,3 +1,4 @@
+import { isAndroid, isIOS, isWebAndroid, isWebIOS } from '@universe/environment'
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, FlexProps, GeneratedIcon, Text, TouchableArea } from 'ui/src'
@@ -9,7 +10,6 @@ import { PaypalLogo } from 'ui/src/components/icons/PaypalLogo'
 import { VenmoLogo } from 'ui/src/components/icons/VenmoLogo'
 import { iconSizes } from 'ui/src/theme'
 import { FORFilters, FORFiltersMap, FORQuote } from 'uniswap/src/features/fiatOnRamp/types'
-import { isAndroid, isIOS, isWebAndroid, isWebIOS } from 'utilities/src/platform'
 
 export type PaymentMethodFilterProps = FlexProps & {
   quotes?: Maybe<FORQuote[]>
@@ -76,7 +76,7 @@ export function useEnabledPaymentMethodFilters(quotes?: Maybe<FORQuote[]>): Paym
 
   return useMemo(() => {
     const useablePaymentMethods = quotes
-      ?.flatMap((quote) => quote.serviceProviderDetails.paymentMethods)
+      ?.flatMap((quote) => quote.serviceProviderDetails?.paymentMethods ?? [])
       .flatMap((paymentMethod) => {
         const mappedFilter = FORFiltersMap[paymentMethod]
         return mappedFilter
@@ -125,7 +125,7 @@ export function PaymentMethodItem({
         pl="$spacing4"
         backgroundColor={isSelected ? '$surface3' : '$surface1'}
         borderColor="$surface3"
-        borderWidth={1}
+        borderWidth="$spacing1"
         borderRadius="$rounded12"
       >
         <Icon size={iconSizes.icon20} color="$neutral1" />

@@ -12,7 +12,7 @@ import { getCurrencyDisplayText, getFormattedCurrencyAmount, getSymbolDisplayTex
 import { currencyIdToAddress } from 'uniswap/src/utils/currencyId'
 import { shortenAddress } from 'utilities/src/addresses'
 
-// eslint-disable-next-line consistent-return
+// oxlint-disable-next-line typescript/consistent-return
 export const formWCNotificationTitle = (appNotification: WalletConnectNotification): string => {
   const { event, dappName, chainId } = appNotification
 
@@ -43,13 +43,15 @@ export function formApproveNotificationTitle({
   currency,
   tokenAddress,
   spender,
+  tokenSymbol,
 }: {
   txStatus: TransactionStatus
   currency: Maybe<Currency>
   tokenAddress: Address
   spender: Address
+  tokenSymbol?: string
 }): string {
-  const currencyDisplayText = getCurrencyDisplayText(currency, tokenAddress)
+  const currencyDisplayText = tokenSymbol ?? getCurrencyDisplayText(currency, tokenAddress)
   const address = shortenAddress({ address: spender })
   return txStatus === TransactionStatus.Success
     ? i18n.t('notification.transaction.approve.success', {
@@ -72,6 +74,8 @@ export const formBridgeNotificationTitle = (txStatus: TransactionStatus): string
       return i18n.t('transaction.status.swap.success')
     case TransactionStatus.Canceled:
       return i18n.t('transaction.status.swap.canceled')
+    case TransactionStatus.AwaitingAction:
+      return i18n.t('transaction.status.plan.interrupted')
     default:
       return i18n.t('transaction.status.swap.failed')
   }
@@ -130,8 +134,8 @@ export const formSwapNotificationTitle = ({
       })
     case TransactionStatus.Expired:
       return i18n.t('notification.transaction.swap.expired', {
-        inputCurrencySymbol,
-        outputCurrencySymbol,
+        inputCurrencyAmountWithSymbol,
+        outputCurrencyAmountWithSymbol,
       })
     default:
       return i18n.t('notification.transaction.swap.fail', {

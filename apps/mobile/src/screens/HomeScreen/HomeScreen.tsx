@@ -1,25 +1,25 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import { useApolloClient } from '@apollo/client'
 import { useIsFocused, useScrollToTop } from '@react-navigation/native'
 import { SharedQueryClient } from '@universe/api'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getIsNotificationServiceLocalOverrideEnabled } from '@universe/notifications'
+import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Freeze } from 'react-freeze'
 import { useTranslation } from 'react-i18next'
 import { StyleProp, View, ViewProps, ViewStyle } from 'react-native'
 import Animated, { FadeIn, interpolateColor, useAnimatedStyle, useDerivedValue } from 'react-native-reanimated'
 import { SceneRendererProps, TabBar } from 'react-native-tab-view'
-import { Video } from 'react-native-video'
 import { useDispatch, useSelector } from 'react-redux'
 import { useHomeScreenCustomAndroidBackButton } from 'src/app/navigation/hooks'
-import { NavBar, SWAP_BUTTON_HEIGHT } from 'src/app/navigation/NavBar'
 import { navigate } from 'src/app/navigation/rootNavigation'
+import { ESTIMATED_BOTTOM_TABS_HEIGHT } from 'src/app/navigation/tabs/CustomTabBar/constants'
 import { AppStackScreenProp } from 'src/app/navigation/types'
 import { AccountHeader } from 'src/components/accounts/AccountHeader'
-import { ActivityContent } from 'src/components/activity/ActivityContent'
 import { HomeExploreTab } from 'src/components/home/HomeExploreTab'
 import { OnboardingIntroCardStack } from 'src/components/home/introCards/OnboardingIntroCardStack'
 import { NftsTab } from 'src/components/home/NftsTab'
+import { PortfolioOverview } from 'src/components/home/PortfolioChart/PortfolioOverview'
 import { TokensTab } from 'src/components/home/TokensTab'
 import { Screen } from 'src/components/layout/Screen'
 import {
@@ -39,44 +39,46 @@ import { useBiometricPrompt } from 'src/features/biometricsSettings/hooks'
 import { selectSomeModalOpen } from 'src/features/modals/selectSomeModalOpen'
 import { useHideSplashScreen } from 'src/features/splashScreen/useHideSplashScreen'
 import { useWalletRestore } from 'src/features/wallet/useWalletRestore'
+import { MobileNotificationServiceManager } from 'src/notification-service/MobileNotificationServiceManager'
 import { HomeScreenQuickActions } from 'src/screens/HomeScreen/HomeScreenQuickActions'
 import { HomeScreenTabIndex } from 'src/screens/HomeScreen/HomeScreenTabIndex'
+import { SmartWalletModals } from 'src/screens/HomeScreen/SmartWalletModals'
 import { useHomeScreenState } from 'src/screens/HomeScreen/useHomeScreenState'
 import { useHomeScrollRefs } from 'src/screens/HomeScreen/useHomeScrollRefs'
-import { useOpenBackupReminderModal } from 'src/utils/useOpenBackupReminderModal'
-import { Flex, Image, Text, TouchableArea, useMedia, useSporeColors } from 'ui/src'
-import { SMART_WALLET_UPGRADE_FALLBACK, SMART_WALLET_UPGRADE_VIDEO } from 'ui/src/assets'
+import { Flex, Text, TouchableArea, useMedia, useSporeColors } from 'ui/src'
 import { AnimatedFlex } from 'ui/src/components/layout/AnimatedFlex'
 import { useDeviceDimensions } from 'ui/src/hooks/useDeviceDimensions'
 import { spacing } from 'ui/src/theme'
+import { buildWrappedUrl } from 'uniswap/src/components/banners/shared/utils'
+import { UniswapWrapped2025Banner } from 'uniswap/src/components/banners/UniswapWrapped2025Banner/UniswapWrapped2025Banner'
 import { NFTS_TAB_DATA_DEPENDENCIES } from 'uniswap/src/components/nfts/constants'
+import { UNISWAP_WEB_URL } from 'uniswap/src/constants/urls'
 import { getPortfolioQuery } from 'uniswap/src/data/rest/getPortfolio'
 import { getListTransactionsQuery } from 'uniswap/src/data/rest/listTransactions'
 import { AccountType } from 'uniswap/src/features/accounts/types'
-import { useSelectAddressHasNotifications } from 'uniswap/src/features/notifications/slice/hooks'
-import { setNotificationStatus } from 'uniswap/src/features/notifications/slice/slice'
-import { PortfolioBalance } from 'uniswap/src/features/portfolio/PortfolioBalance/PortfolioBalance'
+import { selectHasDismissedUniswapWrapped2025Banner } from 'uniswap/src/features/behaviorHistory/selectors'
+import { setHasDismissedUniswapWrapped2025Banner } from 'uniswap/src/features/behaviorHistory/slice'
+import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
+import { usePortfolioTotalValue } from 'uniswap/src/features/dataApi/balances/balancesRest'
+import { DataApiOutageBanner } from 'uniswap/src/features/dataApi/outage/DataApiOutageBanner'
+import { DataApiOutageModalContent } from 'uniswap/src/features/dataApi/outage/DataApiOutageModalContent'
 import { ModalName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import { useAppInsets } from 'uniswap/src/hooks/useAppInsets'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { MobileScreens } from 'uniswap/src/types/screens/mobile'
+import { openUri } from 'uniswap/src/utils/linking'
 import { logger } from 'utilities/src/logger/logger'
 import { useEvent } from 'utilities/src/react/hooks'
-import { SmartWalletCreatedModal } from 'wallet/src/components/smartWallet/modals/SmartWalletCreatedModal'
-import { SmartWalletUpgradeModals } from 'wallet/src/components/smartWallet/modals/SmartWalletUpgradeModal'
 import { useOpenSmartWalletNudgeOnCompletedSwap } from 'wallet/src/components/smartWallet/smartAccounts/hooks'
-import { selectHasSeenCreatedSmartWalletModal } from 'wallet/src/features/behaviorHistory/selectors'
-import {
-  setHasSeenSmartWalletCreatedWalletModal,
-  setIncrementNumPostSwapNudge,
-} from 'wallet/src/features/behaviorHistory/slice'
-import { useAccountCountChanged, useActiveAccountWithThrow } from 'wallet/src/features/wallet/hooks'
+import { setIncrementNumPostSwapNudge } from 'wallet/src/features/behaviorHistory/slice'
+import { HomeScreenEarningSection } from 'wallet/src/features/earn/HomeScreenEarningSection'
+import { useActiveAccountWithThrow } from 'wallet/src/features/wallet/hooks'
 import { setSmartWalletConsent } from 'wallet/src/features/wallet/slice'
 
 type HomeRoute = {
   key: (typeof SectionName)[keyof typeof SectionName]
   title: string
-} & Pick<TabLabelProps, 'textStyleType' | 'enableNotificationBadge'>
+} & Pick<TabLabelProps, 'textStyleType'>
 
 const CONTENT_HEADER_HEIGHT_ESTIMATE = 270
 
@@ -86,7 +88,20 @@ const CONTENT_HEADER_HEIGHT_ESTIMATE = 270
  */
 export function WrappedHomeScreen(props: AppStackScreenProp<MobileScreens.Home>): JSX.Element {
   const activeAccount = useActiveAccountWithThrow()
-  return <HomeScreen key={activeAccount.address} {...props} />
+
+  const [isLayoutReady, setIsLayoutReady] = useState(false)
+
+  return (
+    <>
+      <HomeScreen
+        key={activeAccount.address}
+        isLayoutReady={isLayoutReady}
+        setIsLayoutReady={setIsLayoutReady}
+        {...props}
+      />
+      <SmartWalletModals isLayoutReady={isLayoutReady} />
+    </>
+  )
 }
 
 /**
@@ -94,10 +109,18 @@ export function WrappedHomeScreen(props: AppStackScreenProp<MobileScreens.Home>)
  * Manages TokensTabs and NftsTab scroll offsets when header is collapsed
  * Borrowed from: https://stormotion.io/blog/how-to-create-collapsing-tab-header-using-react-native/
  */
-function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element {
+function HomeScreen({
+  isLayoutReady,
+  setIsLayoutReady,
+  ...props
+}: AppStackScreenProp<MobileScreens.Home> & {
+  isLayoutReady: boolean
+  setIsLayoutReady: Dispatch<SetStateAction<boolean>>
+}): JSX.Element {
   const activeAccount = useActiveAccountWithThrow()
   const { t } = useTranslation()
   const colors = useSporeColors()
+  const darkColors = useSporeColors('dark')
   const media = useMedia()
   const insets = useAppInsets()
   const dimensions = useDeviceDimensions()
@@ -106,20 +129,27 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
   const isModalOpen = useSelector(selectSomeModalOpen)
   const isHomeScreenBlur = !isFocused || isModalOpen
   const hideSplashScreen = useHideSplashScreen()
-  const isSmartWalletEnabled = useFeatureFlag(FeatureFlags.SmartWallet)
-  const SmartWalletDisableVideo = useFeatureFlag(FeatureFlags.SmartWalletDisableVideo)
   const { requiredForTransactions: requiresBiometrics } = useBiometricAppSettings()
 
-  const isBottomTabsEnabled = useFeatureFlag(FeatureFlags.BottomTabs)
+  const isPnLEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
+  const isWrappedBannerEnabled = useFeatureFlag(FeatureFlags.UniswapWrapped2025)
+  const isNotificationServiceEnabledFlag = useFeatureFlag(FeatureFlags.NotificationService)
+  const isNotificationServiceEnabled =
+    getIsNotificationServiceLocalOverrideEnabled() || isNotificationServiceEnabledFlag
+
+  const hasDismissedWrappedBanner = useSelector(selectHasDismissedUniswapWrapped2025Banner)
+  const shouldShowWrappedBanner = isWrappedBannerEnabled && !hasDismissedWrappedBanner
 
   const { showEmptyWalletState, isTabsDataLoaded } = useHomeScreenState()
+  const [hasIntroCards, setHasIntroCards] = useState(false)
+  const { chains } = useEnabledChains()
 
   // opens the wallet restore modal if recovery phrase is missing after the app is opened
   useWalletRestore({ openModalImmediately: true })
 
   const { trigger } = useBiometricPrompt()
 
-  const [routeTabIndex, setRouteTabIndex] = useState(props?.route.params?.tab ?? HomeScreenTabIndex.Tokens)
+  const [routeTabIndex, setRouteTabIndex] = useState(props.route.params?.tab ?? HomeScreenTabIndex.Tokens)
   // Ensures that tabIndex has the proper value between the empty state and non-empty state
   const tabIndex = showEmptyWalletState ? HomeScreenTabIndex.Tokens : routeTabIndex
 
@@ -128,7 +158,6 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
   // Necessary to declare these as direct dependencies due to race condition with initializing react-i18next and useMemo
   const tokensTitle = t('home.tokens.title')
   const nftsTitle = t('home.nfts.title')
-  const activityTitle = t('home.activity.title')
   const exploreTitle = t('home.explore.title')
 
   const routes = useMemo((): HomeRoute[] => {
@@ -144,24 +173,21 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
     const tabs: Array<HomeRoute> = [
       { key: SectionName.HomeTokensTab, title: tokensTitle },
       { key: SectionName.HomeNFTsTab, title: nftsTitle },
-      ...(!isBottomTabsEnabled ? [{ key: SectionName.HomeActivityTab, title: activityTitle }] : []),
     ]
 
     return tabs
-  }, [showEmptyWalletState, tokensTitle, nftsTitle, isBottomTabsEnabled, activityTitle, exploreTitle])
+  }, [showEmptyWalletState, tokensTitle, nftsTitle, exploreTitle])
 
   useEffect(
     function syncTabIndex() {
-      const newTabIndex = props?.route.params?.tab
+      const newTabIndex = props.route.params?.tab
       if (newTabIndex === undefined) {
         return
       }
       setRouteTabIndex(newTabIndex)
     },
-    [props?.route.params?.tab],
+    [props.route.params?.tab],
   )
-
-  const [isLayoutReady, setIsLayoutReady] = useState(false)
 
   const [headerHeight, setHeaderHeight] = useState(CONTENT_HEADER_HEIGHT_ESTIMATE)
   const headerConfig = useMemo<HeaderConfig>(
@@ -174,23 +200,23 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
   const { heightCollapsed, heightExpanded } = headerConfig
   const headerHeightDiff = heightExpanded - heightCollapsed
 
-  const handleHeaderLayout = useCallback<NonNullable<ViewProps['onLayout']>>((event) => {
-    setHeaderHeight(event.nativeEvent.layout.height)
-    setIsLayoutReady(true)
-  }, [])
+  const handleHeaderLayout = useCallback<NonNullable<ViewProps['onLayout']>>(
+    (event) => {
+      setHeaderHeight(event.nativeEvent.layout.height)
+      setIsLayoutReady(true)
+    },
+    [setIsLayoutReady],
+  )
 
   const {
     tokensTabScrollValue,
     nftsTabScrollValue,
-    activityTabScrollValue,
     exploreTabScrollValue,
     tokensTabScrollHandler,
     nftsTabScrollHandler,
-    activityTabScrollHandler,
     exploreTabScrollHandler,
     tokensTabScrollRef,
     nftsTabScrollRef,
-    activityTabScrollRef,
     exploreTabScrollRef,
     resetScrollState,
   } = useHomeScrollRefs()
@@ -200,14 +226,10 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
       return exploreTabScrollValue.value
     } else if (tabIndex === HomeScreenTabIndex.Tokens) {
       return tokensTabScrollValue.value
-    } else if (tabIndex === HomeScreenTabIndex.NFTs) {
+    } else {
       return nftsTabScrollValue.value
-    } else if (tabIndex === HomeScreenTabIndex.Activity) {
-      return activityTabScrollValue.value
     }
-    return 0
   }, [
-    activityTabScrollValue.value,
     exploreTabScrollValue.value,
     showEmptyWalletState,
     nftsTabScrollValue.value,
@@ -215,30 +237,16 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
     tokensTabScrollValue.value,
   ])
 
-  // Only enable scroll to top for bottom tab mode
-  const dummyRef = useRef(null)
-  useScrollToTop(isBottomTabsEnabled ? tokensTabScrollRef : dummyRef)
-  useScrollToTop(isBottomTabsEnabled ? exploreTabScrollRef : dummyRef)
+  useScrollToTop(tokensTabScrollRef)
+  useScrollToTop(exploreTabScrollRef)
   // We need to create a new ref for this because the nfts tab is a flash list, which is not supported by useScrollToTop
   const nftsScrollToTopRef = useRef({
     scrollToTop: () => nftsTabScrollRef.current?.scrollToOffset({ offset: 0, animated: true }),
   })
 
-  useScrollToTop(isBottomTabsEnabled ? nftsScrollToTopRef : dummyRef)
-
-  // clear the notification indicator if the user is on the activity tab
-  const hasNotifications = useSelectAddressHasNotifications(activeAccount.address)
-  useEffect(() => {
-    if (isBottomTabsEnabled) {
-      return
-    }
-    if (tabIndex === 2 && hasNotifications) {
-      dispatch(setNotificationStatus({ address: activeAccount.address, hasNotifications: false }))
-    }
-  }, [dispatch, activeAccount.address, tabIndex, hasNotifications, isBottomTabsEnabled])
+  useScrollToTop(nftsScrollToTopRef)
 
   // If accounts are switched, we want to scroll to top and show full header
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to trigger this effect also when activeAccount changes
   useEffect(() => {
     resetScrollState()
   }, [activeAccount, resetScrollState])
@@ -259,17 +267,8 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
     () => [
       { list: tokensTabScrollRef, position: tokensTabScrollValue, index: 0 },
       { list: nftsTabScrollRef, position: nftsTabScrollValue, index: 1 },
-      ...(!isBottomTabsEnabled ? [{ list: activityTabScrollRef, position: activityTabScrollValue, index: 2 }] : []),
     ],
-    [
-      activityTabScrollRef,
-      activityTabScrollValue,
-      isBottomTabsEnabled,
-      nftsTabScrollRef,
-      nftsTabScrollValue,
-      tokensTabScrollRef,
-      tokensTabScrollValue,
-    ],
+    [nftsTabScrollRef, nftsTabScrollValue, tokensTabScrollRef, tokensTabScrollValue],
   )
 
   const { sync } = useScrollSync({ currentTabIndex, scrollPairs, headerConfig })
@@ -279,27 +278,82 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
   // Hide actions when active account isn't a signer account.
   const isSignerAccount = activeAccount.type === AccountType.SignerMnemonic
 
-  // This hooks handles the logic for when to open the BackupReminderModal
-  useOpenBackupReminderModal(activeAccount)
+  // Sets isLayoutReady to false when switching a wallet
+  useEffect(() => {
+    return () => setIsLayoutReady(false)
+  }, [setIsLayoutReady])
 
   const viewOnlyLabel = t('home.warning.viewOnly')
 
+  // Portfolio outage detection — shares the same React Query cache key as PortfolioBalance, no extra fetch
+  const { error: portfolioError, dataUpdatedAt: portfolioDataUpdatedAt } = usePortfolioTotalValue({
+    evmAddress: activeAccount.address,
+    chainIds: chains,
+  })
+
+  const [isOutageSheetOpen, setIsOutageSheetOpen] = useState(false)
+  const handleOutageBannerPress = useEvent(() => setIsOutageSheetOpen(true))
+  const handleOutageSheetClose = useEvent(() => setIsOutageSheetOpen(false))
+
+  const handleDismissWrappedBanner = useCallback(() => {
+    dispatch(setHasDismissedUniswapWrapped2025Banner(true))
+  }, [dispatch])
+
+  const handlePressWrappedBanner = useCallback(async () => {
+    try {
+      const url = buildWrappedUrl(UNISWAP_WEB_URL, activeAccount.address)
+      await openUri({ uri: url, openExternalBrowser: true })
+      dispatch(setHasDismissedUniswapWrapped2025Banner(true))
+    } catch (error) {
+      logger.error(error, { tags: { file: 'HomeScreen', function: 'handlePressWrappedBanner' } })
+    }
+  }, [activeAccount.address, dispatch])
+
+  const handleIntroCardsChange = useCallback((hasCards: boolean) => {
+    setHasIntroCards(hasCards)
+  }, [])
+
   const promoBanner = useMemo(
-    () => <OnboardingIntroCardStack isLoading={!isTabsDataLoaded} showEmptyWalletState={showEmptyWalletState} />,
-    [showEmptyWalletState, isTabsDataLoaded],
+    () =>
+      isNotificationServiceEnabled ? (
+        <MobileNotificationServiceManager isLoading={!isTabsDataLoaded} />
+      ) : (
+        <OnboardingIntroCardStack
+          isLoading={!isTabsDataLoaded}
+          showEmptyWalletState={showEmptyWalletState}
+          onCardsChange={handleIntroCardsChange}
+        />
+      ),
+    [showEmptyWalletState, isTabsDataLoaded, isNotificationServiceEnabled, handleIntroCardsChange],
   )
 
   const contentHeader = useMemo(() => {
     return (
       <Flex
+        pointerEvents="box-none"
         backgroundColor="$surface1"
-        pb={showEmptyWalletState ? '$spacing8' : '$spacing16'}
-        px={isBottomTabsEnabled ? '$none' : '$spacing12'}
+        pb={hasIntroCards ? '$none' : showEmptyWalletState ? '$spacing8' : '$spacing16'}
+        px="$none"
       >
+        {portfolioError && <DataApiOutageBanner onPress={handleOutageBannerPress} />}
+        {shouldShowWrappedBanner && (
+          <Flex>
+            <UniswapWrapped2025Banner
+              handleDismiss={handleDismissWrappedBanner}
+              handlePress={handlePressWrappedBanner}
+            />
+            <Flex
+              height="$spacing24"
+              width="100%"
+              mt={-24}
+              backgroundColor="$surface1"
+              borderTopLeftRadius={24}
+              borderTopRightRadius={24}
+            />
+          </Flex>
+        )}
         <AccountHeader />
-        <Flex py="$spacing20" px={isBottomTabsEnabled ? '$spacing24' : '$spacing12'}>
-          <PortfolioBalance owner={activeAccount.address} />
-        </Flex>
+        <PortfolioOverview evmAddress={activeAccount.address} chainIds={chains} isPnLEnabled={isPnLEnabled} />
         {isSignerAccount ? (
           <HomeScreenQuickActions />
         ) : (
@@ -311,49 +365,30 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
             </Flex>
           </TouchableArea>
         )}
+        <HomeScreenEarningSection evmAddress={activeAccount.address} mt="$spacing12" mx="$spacing12" />
         {promoBanner}
       </Flex>
     )
   }, [
+    hasIntroCards,
     showEmptyWalletState,
-    isBottomTabsEnabled,
+    isPnLEnabled,
+    chains,
+    shouldShowWrappedBanner,
+    handleDismissWrappedBanner,
+    handlePressWrappedBanner,
     activeAccount.address,
+    portfolioError,
+    handleOutageBannerPress,
     isSignerAccount,
     onPressViewOnlyLabel,
     viewOnlyLabel,
     promoBanner,
   ])
 
-  const [hasVideoError, setVideoHasError] = useState(false)
-
-  const MemoizedVideo = useMemo(() => {
-    if (hasVideoError) {
-      return (
-        <Flex width="100%" borderRadius="$rounded12" overflow="hidden">
-          <Image height={200} source={SMART_WALLET_UPGRADE_FALLBACK} maxWidth="100%" />
-        </Flex>
-      )
-    }
-
-    return (
-      <Flex borderRadius="$rounded16" width="100%" aspectRatio={16 / 9} overflow="hidden" mb="$spacing8">
-        <Video
-          disableFocus={true}
-          source={SMART_WALLET_UPGRADE_VIDEO}
-          poster={SMART_WALLET_UPGRADE_FALLBACK}
-          resizeMode="cover"
-          style={{ width: '100%', height: '100%' }}
-          onError={(error) => {
-            logger.warn('HomeScreen', 'MemoizedVideo', 'video error', error)
-            setVideoHasError(true)
-          }}
-        />
-      </Flex>
-    )
-  }, [hasVideoError])
-
   const paddingTop = headerHeight + TAB_BAR_HEIGHT + (showEmptyWalletState ? 0 : TAB_STYLES.tabListInner.paddingTop)
-  const paddingBottom = insets.bottom + SWAP_BUTTON_HEIGHT + TAB_STYLES.tabListInner.paddingBottom + spacing.spacing12
+  const paddingBottom =
+    insets.bottom + ESTIMATED_BOTTOM_TABS_HEIGHT + TAB_STYLES.tabListInner.paddingBottom + spacing.spacing12
 
   const contentContainerStyle = useMemo<StyleProp<ViewStyle>>(
     () => ({ paddingTop, paddingBottom }),
@@ -393,29 +428,19 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
   )
 
   const statusBarStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      currentScrollValue.value,
-      [0, headerHeightDiff],
-      [colors.surface1.val, colors.surface1.val],
-    ),
+    backgroundColor: shouldShowWrappedBanner
+      ? darkColors.surface1.val
+      : interpolateColor(currentScrollValue.value, [0, headerHeightDiff], [colors.surface1.val, colors.surface1.val]),
   }))
 
   const apolloClient = useApolloClient()
 
   const renderTabLabel = useCallback(
     ({ route, focused, isExternalProfile }: { route: HomeRoute; focused: boolean; isExternalProfile?: boolean }) => {
-      const { textStyleType: theme, enableNotificationBadge, ...rest } = route
-      return (
-        <TabLabel
-          enableNotificationBadge={isBottomTabsEnabled ? false : enableNotificationBadge}
-          focused={focused}
-          isExternalProfile={isExternalProfile}
-          route={rest}
-          textStyleType={theme}
-        />
-      )
+      const { textStyleType: theme, ...rest } = route
+      return <TabLabel focused={focused} isExternalProfile={isExternalProfile} route={rest} textStyleType={theme} />
     },
-    [isBottomTabsEnabled],
+    [],
   )
 
   const renderTabBar = useCallback(
@@ -523,21 +548,6 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
               />
             </Freeze>
           )
-        case SectionName.HomeActivityTab:
-          return (
-            <Freeze freeze={tabIndex !== HomeScreenTabIndex.Activity && isHomeScreenBlur}>
-              <ActivityContent
-                ref={activityTabScrollRef}
-                containerProps={sharedProps}
-                headerHeight={headerHeight}
-                owner={activeAccount.address}
-                refreshing={refreshing}
-                scrollHandler={activityTabScrollHandler}
-                testID={TestID.ActivityTab}
-                onRefresh={onRefreshHomeData}
-              />
-            </Freeze>
-          )
         case SectionName.HomeExploreTab:
           return (
             <HomeExploreTab
@@ -566,51 +576,10 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
       onRefreshHomeData,
       nftsTabScrollRef,
       nftsTabScrollHandler,
-      activityTabScrollRef,
-      activityTabScrollHandler,
       exploreTabScrollRef,
       exploreTabScrollHandler,
     ],
   )
-
-  const handleSmartWalletEnable = useCallback(
-    async (onComplete?: () => void): Promise<void> => {
-      const successAction = (): void => {
-        dispatch(setSmartWalletConsent({ address: activeAccount.address, smartWalletConsent: true }))
-        onComplete?.()
-        navigate(ModalName.SmartWalletEnabledModal, {
-          showReconnectDappPrompt: false,
-        })
-      }
-
-      if (requiresBiometrics) {
-        await trigger({ successCallback: successAction })
-      } else {
-        successAction()
-      }
-    },
-    [dispatch, activeAccount.address, requiresBiometrics, trigger],
-  )
-
-  const hasSeenCreatedSmartWalletModal = useSelector(selectHasSeenCreatedSmartWalletModal)
-  const [shouldShowCreatedModal, setShouldShowCreatedModal] = useState(false)
-
-  // Setup listener for account creation events to show the SmartWalletCreatedModal
-  useAccountCountChanged(
-    useEvent(() => {
-      if (hasSeenCreatedSmartWalletModal) {
-        return
-      }
-      setShouldShowCreatedModal(true)
-    }),
-  )
-
-  const shouldOpenSmartWalletCreatedModal =
-    isSmartWalletEnabled &&
-    isTabsDataLoaded &&
-    isLayoutReady &&
-    shouldShowCreatedModal &&
-    !hasSeenCreatedSmartWalletModal
 
   useOpenSmartWalletNudgeOnCompletedSwap(
     useEvent(() => {
@@ -641,12 +610,14 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
   return (
     <Screen edges={['left', 'right']} onLayout={hideSplashScreen}>
       <View style={TAB_STYLES.container}>
-        <Animated.View style={headerContainerStyle} onLayout={handleHeaderLayout}>
+        <Animated.View pointerEvents="box-none" style={headerContainerStyle} onLayout={handleHeaderLayout}>
           {contentHeader}
         </Animated.View>
 
         {isTabsDataLoaded && isLayoutReady && (
           <TraceTabView
+            // Force remount when transitioning between empty wallet and funded wallet
+            key={showEmptyWalletState ? 'empty' : 'filled'}
             lazy
             initialLayout={{
               height: dimensions.fullHeight,
@@ -660,7 +631,11 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
           />
         )}
       </View>
-      {!isBottomTabsEnabled && <NavBar />}
+      <DataApiOutageModalContent
+        isOpen={isOutageSheetOpen}
+        lastUpdatedAt={portfolioDataUpdatedAt}
+        onClose={handleOutageSheetClose}
+      />
       <AnimatedFlex
         height={insets.top}
         position="absolute"
@@ -668,23 +643,6 @@ function HomeScreen(props?: AppStackScreenProp<MobileScreens.Home>): JSX.Element
         top={0}
         width="100%"
         zIndex="$sticky"
-      />
-
-      {isSmartWalletEnabled && (
-        <SmartWalletUpgradeModals
-          account={activeAccount}
-          video={!SmartWalletDisableVideo && MemoizedVideo}
-          isHomeScreenFocused={isFocused}
-          onEnableSmartWallet={handleSmartWalletEnable}
-        />
-      )}
-
-      <SmartWalletCreatedModal
-        isOpen={shouldOpenSmartWalletCreatedModal}
-        onClose={() => {
-          setShouldShowCreatedModal(false)
-          dispatch(setHasSeenSmartWalletCreatedWalletModal())
-        }}
       />
     </Screen>
   )

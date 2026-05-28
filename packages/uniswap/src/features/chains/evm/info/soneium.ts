@@ -1,8 +1,13 @@
 import { Token } from '@uniswap/sdk-core'
-import { GraphQLApi } from '@universe/api'
+import { GraphQLApi, TradingApi } from '@universe/api'
+import { isWebApp } from '@universe/environment'
 import { ETH_LOGO, SONEIUM_LOGO } from 'ui/src/assets'
-import { config } from 'uniswap/src/config'
-import { DEFAULT_NATIVE_ADDRESS_LEGACY, DEFAULT_RETRY_OPTIONS } from 'uniswap/src/features/chains/evm/rpc'
+import { CHAIN_ID_TO_URL_PARAM } from 'uniswap/src/features/chains/chainUrlParam'
+import {
+  DEFAULT_NATIVE_ADDRESS_LEGACY,
+  DEFAULT_RETRY_OPTIONS,
+  getQuicknodeEndpointUrl,
+} from 'uniswap/src/features/chains/evm/rpc'
 import { buildChainTokens } from 'uniswap/src/features/chains/evm/tokens'
 import { GENERIC_L2_GAS_CONFIG } from 'uniswap/src/features/chains/gasDefaults'
 import {
@@ -14,7 +19,6 @@ import {
 } from 'uniswap/src/features/chains/types'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ElementName } from 'uniswap/src/features/telemetry/constants'
-import { isWebApp } from 'utilities/src/platform'
 import { soneium } from 'wagmi/chains'
 
 const tokens = buildChainTokens({
@@ -48,10 +52,10 @@ export const SONEIUM_CHAIN_INFO = {
   explorer: {
     name: 'Blockscout',
     url: 'https://soneium.blockscout.com/',
-    apiURL: 'https://soneium.blockscout.com/api',
   },
   openseaName: 'soneium',
   interfaceName: 'soneium',
+  searchAliases: ['sony', 'sonieum'],
   label: 'Soneium',
   logo: SONEIUM_LOGO,
   nativeCurrency: {
@@ -62,18 +66,21 @@ export const SONEIUM_CHAIN_INFO = {
     logo: ETH_LOGO,
   },
   networkLayer: NetworkLayer.L2,
+  blockTimeMs: 2000,
   pendingTransactionsRetryOptions: DEFAULT_RETRY_OPTIONS,
   rpcUrls: {
-    // TODO (WEB-6702) - update public rpc to quicknode url when available
-    [RPCType.Public]: { http: [`https://soneium-mainnet.g.alchemy.com/v2/${config.alchemyApiKey}`] },
+    [RPCType.Public]: { http: [getQuicknodeEndpointUrl(UniverseChainId.Soneium)] },
     [RPCType.Default]: { http: ['https://rpc.soneium.org'] },
-    [RPCType.Interface]: { http: [`https://soneium-mainnet.g.alchemy.com/v2/${config.alchemyApiKey}`] },
+    [RPCType.Interface]: {
+      http: [getQuicknodeEndpointUrl(UniverseChainId.Soneium)],
+    },
   },
   tokens,
   statusPage: 'https://status.soneium.org/',
+  supportedURVersions: [TradingApi.UniversalRouterVersion._2_0, TradingApi.UniversalRouterVersion._2_1_1],
   supportsV4: true,
   supportsNFTs: true,
-  urlParam: 'soneium',
+  urlParam: CHAIN_ID_TO_URL_PARAM[UniverseChainId.Soneium],
   wrappedNativeCurrency: {
     name: 'Wrapped Ether',
     symbol: 'WETH',

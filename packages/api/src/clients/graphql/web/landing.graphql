@@ -17,22 +17,22 @@ query TokenPromo($chain: Chain!, $address: String = null) {
   }
 }
 
-query CollectionPromo($addresses: [String!]!) {
-  nftCollections(filter: { addresses: $addresses }) {
-    edges {
-      node {
-        markets(currencies: ETH) {
-          floorPricePercentChange(duration: DAY) {
-            value
-          }
-        }
+query TokensPromo($contracts: [ContractInput!]!) {
+  tokens(contracts: $contracts) {
+    id
+    name
+    address
+    chain
+    market(currency: USD) {
+      id
+      price {
+        id
+        value
+      }
+      pricePercentChange(duration: DAY) {
+        id
+        value
       }
     }
-  }
-}
-
-query DailyProtocolVolume($version: ProtocolVersion!) {
-  historicalProtocolVolume(chain: ETHEREUM, version: $version, duration: MONTH) {
-    value
   }
 }

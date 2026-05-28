@@ -1,8 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { PositionInfo } from 'components/Liquidity/types'
-import { PopupType } from 'components/Popups/types'
-import { ReceiveCryptoModalInitialState } from 'components/ReceiveCryptoModal/types'
+import type { PositionInfo } from 'uniswap/src/features/positions/types'
 import { ModalName, ModalNameType } from 'uniswap/src/features/telemetry/constants'
+import { PopupType } from '~/state/popups/types'
+import type { AuthenticatorProvider } from '~/types/authenticatorProvider'
+import { ReceiveCryptoModalInitialState } from '~/types/receiveCryptoModal'
 
 export type LiquidityModalInitialState = PositionInfo
 
@@ -31,6 +32,68 @@ type ReceiveCryptoModalParams = {
   initialState: ReceiveCryptoModalInitialState
 }
 
+type DeletePasskeyModalInitialState = {
+  authenticatorId: string
+  authenticatorLabel: string
+  authenticatorProvider: AuthenticatorProvider
+  isLastAuthenticator: boolean
+  // Unix ms of the most recent successful seed phrase export, or undefined if never exported.
+  lastExportedMs?: number
+}
+
+export type DeletePasskeyModalParams = {
+  name: typeof ModalName.DeletePasskey
+  initialState: DeletePasskeyModalInitialState
+}
+
+type RemoveBackupLoginModalInitialState = {
+  recoveryMethodType: string
+  recoveryMethodIdentifier?: string
+}
+
+export type RemoveBackupLoginModalParams = {
+  name: typeof ModalName.RemoveBackupLogin
+  initialState: RemoveBackupLoginModalInitialState
+}
+
+type DataApiOutageModalInitialState = {
+  dataUpdatedAt?: number
+}
+
+export type DataApiOutageModalParams = {
+  name: typeof ModalName.DataApiOutage
+  initialState: DataApiOutageModalInitialState
+}
+
+type RecoverWalletModalInitialState = {
+  initialMethod?: 'email'
+}
+
+export type RecoverWalletModalParams = {
+  name: typeof ModalName.RecoverWallet
+  initialState: RecoverWalletModalInitialState
+}
+
+type GetTheAppModalInitialState = {
+  initialInnerPage?: 'mobile'
+}
+
+export type GetTheAppModalParams = {
+  name: typeof ModalName.GetTheApp
+  initialState: GetTheAppModalInitialState
+}
+
+type UnitagRateLimitSpeedbumpModalInitialState = {
+  walletAddress: string
+  walletId: string
+  exported?: boolean
+}
+
+export type UnitagRateLimitSpeedbumpModalParams = {
+  name: typeof ModalName.UnitagRateLimitSpeedbump
+  initialState: UnitagRateLimitSpeedbumpModalInitialState
+}
+
 export type OpenModalParams =
   | { name: ModalNameType; initialState?: undefined }
   | AddLiquidityModalParams
@@ -38,6 +101,12 @@ export type OpenModalParams =
   | ClaimFeeModalParams
   | BlockedAccountModalParams
   | ReceiveCryptoModalParams
+  | DeletePasskeyModalParams
+  | RemoveBackupLoginModalParams
+  | DataApiOutageModalParams
+  | RecoverWalletModalParams
+  | GetTheAppModalParams
+  | UnitagRateLimitSpeedbumpModalParams
 
 type CloseModalParams = ModalNameType
 
@@ -45,29 +114,18 @@ export interface ApplicationState {
   readonly chainId: number | null
   readonly openModal: OpenModalParams | null
   readonly suppressedPopups: PopupType[]
-  /** List of addresses where the graduated wallet card has been dismissed for this session. The same property in the user reducer is if the card has been dismissed for 30 days. */
-  readonly downloadGraduatedWalletCardsDismissed: string[]
 }
 
 const initialState: ApplicationState = {
   chainId: null,
   openModal: null,
   suppressedPopups: [],
-  downloadGraduatedWalletCardsDismissed: [],
 }
 
 const applicationSlice = createSlice({
   name: 'application',
   initialState,
   reducers: {
-    updateDownloadGraduatedWalletCardsDismissed(
-      state,
-      { payload: { walletAddress } }: PayloadAction<{ walletAddress: string }>,
-    ) {
-      state.downloadGraduatedWalletCardsDismissed = Array.from(
-        new Set([...state.downloadGraduatedWalletCardsDismissed, walletAddress]),
-      )
-    },
     updateChainId(state, action) {
       const { chainId } = action.payload
       state.chainId = chainId
@@ -87,6 +145,7 @@ const applicationSlice = createSlice({
     removeSuppressedPopups(state, { payload: { popupTypes } }) {
       state.suppressedPopups = state.suppressedPopups.filter((type) => !popupTypes.includes(type))
     },
+    resetApplication: () => initialState,
   },
 })
 
@@ -96,6 +155,6 @@ export const {
   setCloseModal,
   addSuppressedPopups,
   removeSuppressedPopups,
-  updateDownloadGraduatedWalletCardsDismissed,
+  resetApplication,
 } = applicationSlice.actions
 export default applicationSlice.reducer

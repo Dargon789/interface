@@ -1,15 +1,33 @@
-/* eslint-disable max-lines */
+/* oxlint-disable max-lines */
 import '@testing-library/jest-dom' // jest custom assertions
-import 'jest-styled-components' // adds style diffs to snapshot tests
-import 'polyfills' // add polyfills
-// eslint-disable-next-line
-import './test-utils/mockTamagui' // mock problematic Tamagui components
+import '~/polyfills' // add polyfills
 
-import { createPopper } from '@popperjs/core'
+// ResizeObserver is not available in jsdom — provide a minimal stub for tests
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+}
+
+// Deterministic crypto.randomUUID for snapshot stability
+let _testUuidCounter = 0
+crypto.randomUUID = (() => `test-uuid-${_testUuidCounter++}`) as typeof crypto.randomUUID
+// Reset counter between tests so snapshots are stable
+beforeEach(() => {
+  _testUuidCounter = 0
+  crypto.randomUUID = (() => `test-uuid-${_testUuidCounter++}`) as typeof crypto.randomUUID
+})
+// oxlint-disable-next-line
+import './test-utils/mockTamagui' // mock problematic Tamagui components
+import { Readable } from 'stream'
+import { TextDecoder, TextEncoder } from 'util'
+import { type createPopper } from '@popperjs/core'
 import {
   BaseWalletAdapter,
-  SupportedTransactionVersions,
-  WalletName,
+  type SupportedTransactionVersions,
+  type WalletName,
   WalletReadyState,
 } from '@solana/wallet-adapter-base'
 import { useFeatureFlag } from '@universe/gating'
@@ -18,13 +36,11 @@ import { config as loadEnv } from 'dotenv'
 import failOnConsole from 'jest-fail-on-console'
 import { disableNetConnect, restore as restoreNetConnect } from 'nock'
 import React from 'react'
-import { Readable } from 'stream'
-import { toBeVisible } from 'test-utils/matchers'
-import { mocked } from 'test-utils/mocked'
-import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { type UniverseChainId } from 'uniswap/src/features/chains/types'
 import { setupi18n } from 'uniswap/src/i18n/i18n-setup-interface'
 import { mockLocalizationContext } from 'uniswap/src/test/mocks/locale'
-import { TextDecoder, TextEncoder } from 'util'
+import { toBeVisible } from '~/test-utils/matchers'
+import { mocked } from '~/test-utils/mocked'
 
 loadEnv()
 
@@ -106,19 +122,21 @@ setupi18n()
 globalThis.origin = 'https://app.uniswap.org'
 
 // Polyfill browser APIs (jest is a node.js environment):
-// biome-ignore lint/complexity/noUselessLoneBlockStatements: block used to scope polyfill assignments
+// oxlint-disable-next-line no-lone-blocks -- block used to scope polyfill assignments
 {
   window.open = vi.fn()
+  window.scrollTo = vi.fn()
   window.getComputedStyle = vi.fn()
 
   if (typeof globalThis.TextEncoder === 'undefined') {
     globalThis.ReadableStream = Readable as unknown as typeof globalThis.ReadableStream
-    globalThis.TextEncoder = TextEncoder
+    // Cast through unknown due to Node.js TextEncoder vs Web API TextEncoder type compatibility
+    globalThis.TextEncoder = TextEncoder as unknown as typeof globalThis.TextEncoder
     globalThis.TextDecoder = TextDecoder as typeof globalThis.TextDecoder
   }
 
   globalThis.matchMedia =
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     globalThis.matchMedia ||
     ((query) => {
       const reducedMotion = query.match(/prefers-reduced-motion: ([a-zA-Z0-9-]+)/)
@@ -134,6 +152,35 @@ globalThis.origin = 'https://app.uniswap.org'
 
   globalThis.performance.measure = vi.fn()
   globalThis.performance.mark = vi.fn()
+
+  // jsdom does not implement Canvas 2D (getContext('2d') logs console.error).
+  // DynamicSizeText and similar code need a minimal context with measureText.
+  const canvasProto = HTMLCanvasElement.prototype
+  const originalGetContext = canvasProto.getContext
+  const patchedGetContext = function (
+    this: HTMLCanvasElement,
+    contextId: string,
+    ...args: unknown[]
+  ): RenderingContext | null {
+    if (contextId === '2d') {
+      let font = ''
+      return {
+        get font(): string {
+          return font
+        },
+        set font(value: string) {
+          font = value
+        },
+        measureText(text: string): TextMetrics {
+          const match = /^(\d+)px/.exec(font)
+          const px = match ? Number.parseInt(match[1], 10) : 16
+          return { width: Math.max(1, text.length * px * 0.52) } as TextMetrics
+        },
+      } as unknown as CanvasRenderingContext2D
+    }
+    return originalGetContext.call(this, contextId, ...args) as RenderingContext | null
+  }
+  canvasProto.getContext = patchedGetContext as typeof originalGetContext
 
   globalThis.React = React
 }
@@ -223,8 +270,8 @@ vi.mock('utilities/src/telemetry/analytics/constants', () => ({
   __esModule: true,
 }))
 
-vi.mock('utilities/src/platform', async () => {
-  const actual = await vi.importActual('utilities/src/platform')
+vi.mock('@universe/environment', async () => {
+  const actual = await vi.importActual('@universe/environment')
   return {
     ...actual,
     isWebPlatform: true,
@@ -343,8 +390,8 @@ vi.mock('@web3-react/core', async () => {
   }
 })
 
-vi.mock('state/routing/slice', async () => {
-  const routingSlice = await vi.importActual('state/routing/slice')
+vi.mock('~/state/routing/slice', async () => {
+  const routingSlice = await vi.importActual('~/state/routing/slice')
   return {
     ...routingSlice,
     // Prevents unit tests from logging errors from failed getQuote queries
@@ -451,7 +498,7 @@ vi.mock('uniswap/src/features/chains/hooks/useOrderedChainIds', () => {
 })
 
 function muteStatsigWarnings() {
-  // biome-ignore lint/suspicious/noConsole: strictly for testing
+  // oxlint-disable-next-line no-console -- strictly for testing
   const originalWarn = console.warn
   vi.spyOn(console, 'warn').mockImplementation((message, ...args) => {
     const isStatsigWarning = args.some((arg) => {
@@ -467,7 +514,7 @@ function muteStatsigWarnings() {
   })
 }
 
-// biome-ignore lint/suspicious/noConsole: strictly for testing
+// oxlint-disable-next-line no-console -- strictly for testing
 const originalConsoleDebug = console.debug
 // Mocks are configured to reset between tests (by CRA), so they must be set in a beforeEach.
 beforeEach(() => {
@@ -504,3 +551,15 @@ afterEach(() => {
 expect.extend({
   toBeVisible,
 })
+
+vi.mock('./components/Table/TableSizeProvider', () => ({
+  useTableSize: vi.fn(() => ({
+    width: 1024,
+    height: 768,
+    top: 0,
+    left: 0,
+  })),
+  TableSizeProvider: ({ children }: { children: JSX.Element }) => {
+    return React.createElement(React.Fragment, {}, children)
+  },
+}))

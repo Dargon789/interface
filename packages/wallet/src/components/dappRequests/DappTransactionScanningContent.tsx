@@ -1,8 +1,8 @@
-import type { BlockaidScanTransactionRequest } from '@universe/api'
+import type { BlockaidScanTransactionRequest, GasFeeResult } from '@universe/api'
 import { useEffect, useMemo } from 'react'
 import { Flex } from 'ui/src'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
-import type { GasFeeResult } from 'uniswap/src/features/gas/types'
+import type { GasFeeOverrides } from 'uniswap/src/features/gas/types'
 import type { EthTransaction } from 'uniswap/src/types/walletConnect'
 import { DappRequestFooter } from 'wallet/src/components/dappRequests/DappRequestFooter'
 import { TransactionErrorType } from 'wallet/src/components/dappRequests/TransactionErrorSection'
@@ -30,6 +30,8 @@ interface DappTransactionScanningContentProps {
   gasFee?: GasFeeResult
   requestMethod?: string
   showSmartWalletActivation?: boolean
+  gasOverrides?: GasFeeOverrides
+  onChangeGasOverrides?: (overrides: GasFeeOverrides | undefined) => void
 }
 
 /**
@@ -48,6 +50,8 @@ export function DappTransactionScanningContent({
   gasFee,
   requestMethod,
   showSmartWalletActivation,
+  gasOverrides,
+  onChangeGasOverrides,
 }: DappTransactionScanningContentProps): JSX.Element {
   const { to: toAddress, data } = transaction
 
@@ -82,6 +86,11 @@ export function DappTransactionScanningContent({
     onRiskLevelChange(riskLevel)
   }, [riskLevel, onRiskLevelChange])
 
+  // The Network cost editor (under FeatureFlags.GasFeeOverrides) needs a
+  // `TransactionRequest` for the recommended-values fetch — `EthTransaction`
+  // is already wire-compatible, just attach the chainId.
+  const txRequest = useMemo(() => ({ ...transaction, chainId }), [transaction, chainId])
+
   if (isScanLoading) {
     return <TransactionLoadingState />
   }
@@ -108,6 +117,9 @@ export function DappTransactionScanningContent({
         gasFee={gasFee}
         requestMethod={requestMethod}
         showSmartWalletActivation={showSmartWalletActivation}
+        tx={txRequest}
+        gasOverrides={gasOverrides}
+        onChangeGasOverrides={onChangeGasOverrides}
         onConfirmRisk={onConfirmRisk}
       />
     </Flex>

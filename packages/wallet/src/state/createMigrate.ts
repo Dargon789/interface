@@ -13,7 +13,7 @@ export function createMigrate(
         return Promise.resolve(undefined)
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
       const inboundVersion: number = state._persist.version ?? DEFAULT_VERSION
 
       if (inboundVersion === currentVersion) {
@@ -36,7 +36,7 @@ export function createMigrate(
       const migratedState: PersistedState = migrationKeys.reduce((versionState: PersistedState, versionKey) => {
         logger.debug('redux-persist', 'createMigrate', `running migration for versionKey: ${versionKey}`)
         // Safe non-null assertion because `versionKey` comes from `Object.keys(migrations)`
-        // biome-ignore lint/style/noNonNullAssertion: Safe assertion in test or migration context
+        // oxlint-disable-next-line typescript/no-non-null-assertion -- Safe assertion in test or migration context
         return migrations[versionKey]!(versionState)
       }, state)
 

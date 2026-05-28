@@ -1,27 +1,30 @@
-import { renderHook } from '@testing-library/react'
 import { useListTransactions } from 'uniswap/src/features/dataApi/listTransactions/listTransactions'
 import { renderHookWithProviders } from 'uniswap/src/test/render'
 
+// Use vi.hoisted to create mock function that can be controlled in tests
+const { mockUseListTransactionsQuery } = vi.hoisted(() => ({
+  mockUseListTransactionsQuery: vi.fn(),
+}))
+
 // Mock the chains hook
-jest.mock('uniswap/src/features/chains/hooks/useEnabledChains', () => ({
-  useEnabledChains: jest.fn(() => ({
+vi.mock('uniswap/src/features/chains/hooks/useEnabledChains', () => ({
+  useEnabledChains: vi.fn(() => ({
     chains: [1],
   })),
 }))
 
-// Mock the REST hook
-jest.mock('uniswap/src/data/rest/listTransactions', () => ({
-  useListTransactionsQuery: jest.fn(),
+// Mock the REST hook with hoisted mock function
+vi.mock('uniswap/src/data/rest/listTransactions', () => ({
+  useListTransactionsQuery: mockUseListTransactionsQuery,
 }))
-
-const mockUseListTransactionsQuery = jest.requireMock('uniswap/src/data/rest/listTransactions').useListTransactionsQuery
 
 describe('useListTransactions', () => {
   const mockAddress = '0x1234567890123456789012345678901234567890'
   const mockPageSize = 10
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
+    window.localStorage.clear()
 
     // Default REST mock
     mockUseListTransactionsQuery.mockReturnValue({
@@ -29,9 +32,9 @@ describe('useListTransactions', () => {
       isLoading: false,
       isFetching: false,
       error: undefined,
-      refetch: jest.fn(),
+      refetch: vi.fn(),
       status: 'success',
-      fetchNextPage: jest.fn(),
+      fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetchingNextPage: false,
     })
@@ -94,7 +97,7 @@ describe('useListTransactions', () => {
   })
 
   it('should handle skip option correctly', () => {
-    const mockRefetch = jest.fn()
+    const mockRefetch = vi.fn()
 
     // Mock the REST hook to return our mock refetch function
     mockUseListTransactionsQuery.mockReturnValue({
@@ -104,7 +107,7 @@ describe('useListTransactions', () => {
       error: undefined,
       refetch: mockRefetch,
       status: 'success',
-      fetchNextPage: jest.fn(),
+      fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetchingNextPage: false,
     })
@@ -175,6 +178,56 @@ describe('useListTransactions', () => {
         fiatOnRampParams: undefined,
       },
       enabled: true,
+    })
+  })
+
+  describe('dataUpdatedAt', () => {
+    it('should return dataUpdatedAt from query', () => {
+      mockUseListTransactionsQuery.mockReturnValue({
+        data: { pages: [{ transactions: [] }] },
+        isLoading: false,
+        isFetching: false,
+        error: undefined,
+        refetch: vi.fn(),
+        status: 'success',
+        dataUpdatedAt: 1710000000000,
+        fetchNextPage: vi.fn(),
+        hasNextPage: false,
+        isFetchingNextPage: false,
+      })
+
+      const { result } = renderHookWithProviders(() =>
+        useListTransactions({
+          evmAddress: mockAddress,
+          pageSize: mockPageSize,
+        }),
+      )
+
+      expect(result.current.dataUpdatedAt).toBe(1710000000000)
+    })
+
+    it('should return dataUpdatedAt as undefined when query has no timestamp', () => {
+      mockUseListTransactionsQuery.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        isFetching: false,
+        error: undefined,
+        refetch: vi.fn(),
+        status: 'success',
+        dataUpdatedAt: 0,
+        fetchNextPage: vi.fn(),
+        hasNextPage: false,
+        isFetchingNextPage: false,
+      })
+
+      const { result } = renderHookWithProviders(() =>
+        useListTransactions({
+          evmAddress: mockAddress,
+          pageSize: mockPageSize,
+        }),
+      )
+
+      expect(result.current.dataUpdatedAt).toBeUndefined()
     })
   })
 })

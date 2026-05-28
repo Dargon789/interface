@@ -23,9 +23,9 @@ export type ErroredQueuedOrder = UniswapXOrderDetails & {
 function isErroredQueuedOrder(tx: TransactionDetails): tx is ErroredQueuedOrder {
   return Boolean(
     isUniswapX(tx) &&
-      tx.status === TransactionStatus.Pending &&
-      tx.queueStatus &&
-      ERRORED_QUEUE_STATUSES.some((status) => status === tx.queueStatus),
+    tx.status === TransactionStatus.Pending &&
+    tx.queueStatus &&
+    ERRORED_QUEUE_STATUSES.some((status) => status === tx.queueStatus),
   )
 }
 

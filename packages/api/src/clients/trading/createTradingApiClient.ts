@@ -1,39 +1,21 @@
-import type {
-  GetLPPriceDiscrepancyRequest,
-  GetLPPriceDiscrepancyResponse,
-  PoolInfoRequest,
-  PoolInfoResponse,
-} from '@uniswap/client-trading/dist/trading/v1/api_pb'
 import type { FetchClient } from '@universe/api/src/clients/base/types'
 import { createFetcher } from '@universe/api/src/clients/base/utils'
 import type {
   ApprovalRequest,
   ApprovalResponse,
   ChainId,
-  CheckApprovalLPRequest,
-  CheckApprovalLPResponse,
-  ClaimLPFeesRequest,
-  ClaimLPFeesResponse,
-  ClaimLPRewardsRequest,
-  ClaimLPRewardsResponse,
-  CreateLPPositionRequest,
-  CreateLPPositionResponse,
   CreateSwap5792Request,
   CreateSwap5792Response,
   CreateSwap7702Request,
   CreateSwap7702Response,
   CreateSwapRequest,
   CreateSwapResponse,
-  DecreaseLPPositionRequest,
-  DecreaseLPPositionResponse,
+  Encode4337Request,
+  Encode4337Response,
   Encode7702ResponseBody,
   GetOrdersResponse,
   GetSwappableTokensResponse,
   GetSwapsResponse,
-  IncreaseLPPositionRequest,
-  IncreaseLPPositionResponse,
-  MigrateLPPositionRequest,
-  MigrateLPPositionResponse,
   OrderRequest,
   OrderResponse,
   OrderStatus,
@@ -55,18 +37,6 @@ import { logger } from 'utilities/src/logger/logger'
 // TODO(app-infra), de-duplicate with uniswapUrls.tradingApiPaths when other consumers are migrated to use TradingApiClient
 export const TRADING_API_PATHS = {
   approval: 'check_approval',
-  lp: {
-    priceDiscrepancy: 'lp/price_discrepancy',
-    claimFees: 'lp/claim',
-    claimRewards: 'lp/claim_rewards',
-    create: 'lp/create',
-    decrease: 'lp/decrease',
-    increase: 'lp/increase',
-    approve: 'lp/approve',
-    migrateV3ToV4: 'lp/migrate',
-    migrateV2ToV3: 'lp/migrate_v2_to_v3',
-    poolInfo: 'lp/pool_info',
-  },
   order: 'order',
   orders: 'orders',
   quote: 'quote',
@@ -79,12 +49,16 @@ export const TRADING_API_PATHS = {
   wallet: {
     checkDelegation: 'wallet/check_delegation',
     encode7702: 'wallet/encode_7702',
+    encode4337: 'wallet/encode_4337',
   },
 }
 
 export interface TradingClientContext {
   fetchClient: FetchClient
-  getFeatureFlagHeaders: (tradingApiPath: (typeof TRADING_API_PATHS)[keyof typeof TRADING_API_PATHS]) => HeadersInit
+  getFeatureFlagHeaders: (
+    tradingApiPath: (typeof TRADING_API_PATHS)[keyof typeof TRADING_API_PATHS],
+    chainId?: ChainId,
+  ) => HeadersInit | Promise<HeadersInit>
   getApiPathPrefix: () => string
 }
 
@@ -94,7 +68,11 @@ export interface TradingApiClient {
   fetchSwap: (params: CreateSwapRequest) => Promise<CreateSwapResponse>
   fetchSwap5792: (params: CreateSwap5792Request) => Promise<CreateSwap5792Response>
   fetchSwap7702: (params: CreateSwap7702Request) => Promise<CreateSwap7702Response>
-  fetchSwaps: (params: { txHashes: TransactionHash[]; chainId: ChainId }) => Promise<GetSwapsResponse>
+  fetchSwaps: (params: {
+    txHashes?: TransactionHash[]
+    userOpHashes?: string[]
+    chainId: ChainId
+  }) => Promise<GetSwapsResponse>
   fetchCheckApproval: (params: ApprovalRequest) => Promise<ApprovalResponse>
   submitOrder: (params: OrderRequest) => Promise<OrderResponse>
   fetchOrders: (params: { orderIds: string[] }) => Promise<GetOrdersResponse>
@@ -104,19 +82,14 @@ export interface TradingApiClient {
     orderStatus: OrderStatus
   }) => Promise<GetOrdersResponse>
   fetchSwappableTokens: (params: SwappableTokensParams) => Promise<GetSwappableTokensResponse>
-  getLPPriceDiscrepancy: (params: GetLPPriceDiscrepancyRequest) => Promise<GetLPPriceDiscrepancyResponse>
-  createLpPosition: (params: CreateLPPositionRequest) => Promise<CreateLPPositionResponse>
-  decreaseLpPosition: (params: DecreaseLPPositionRequest) => Promise<DecreaseLPPositionResponse>
-  increaseLpPosition: (params: IncreaseLPPositionRequest) => Promise<IncreaseLPPositionResponse>
-  checkLpApproval: (params: CheckApprovalLPRequest, headers?: HeadersInit) => Promise<CheckApprovalLPResponse>
-  claimLpFees: (params: ClaimLPFeesRequest) => Promise<ClaimLPFeesResponse>
-  migrateV3ToV4LpPosition: (params: MigrateLPPositionRequest) => Promise<MigrateLPPositionResponse>
-  fetchPoolInfo: (params: PoolInfoRequest) => Promise<PoolInfoResponse>
-  fetchClaimLpIncentiveRewards: (params: ClaimLPRewardsRequest) => Promise<ClaimLPRewardsResponse>
   fetchWalletEncoding7702: (params: WalletEncode7702RequestBody) => Promise<Encode7702ResponseBody>
+  fetchWalletEncoding4337: (params: Encode4337Request) => Promise<Encode4337Response>
   checkWalletDelegationWithoutBatching: (
     params: WalletCheckDelegationRequestBody,
   ) => Promise<WalletCheckDelegationResponseBody>
+}
+
+export interface PlanEndpoints {
   createNewPlan: (params: CreatePlanRequest) => Promise<PlanResponse>
   fetchPlan: (params: ExistingPlanRequest) => Promise<PlanResponse>
   updateExistingPlan: (params: UpdatePlanRequestWithPlanId) => Promise<PlanResponse>
@@ -124,12 +97,16 @@ export interface TradingApiClient {
   refreshExistingPlan: (params: ExistingPlanRequest) => Promise<PlanResponse>
 }
 
-type IndicativeQuoteRequest = Pick<
+type IndicativeQuoteBase = Pick<
   QuoteRequest,
   'type' | 'amount' | 'tokenInChainId' | 'tokenOutChainId' | 'tokenIn' | 'tokenOut' | 'swapper'
 >
 
-export function createTradingApiClient(ctx: TradingClientContext): TradingApiClient {
+type IndicativeQuoteRequest =
+  | (IndicativeQuoteBase & Pick<QuoteRequest, 'autoSlippage'> & { slippageTolerance?: never })
+  | (IndicativeQuoteBase & Pick<QuoteRequest, 'slippageTolerance'> & { autoSlippage?: never })
+
+export function createTradingApiClient(ctx: TradingClientContext): TradingApiClient & PlanEndpoints {
   const { fetchClient: client, getFeatureFlagHeaders, getApiPathPrefix } = ctx
   const getApiPath = (path: string): string => `${getApiPathPrefix()}/${path}`
 
@@ -137,8 +114,8 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     client,
     url: getApiPath(TRADING_API_PATHS.quote),
     method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.quote),
+    transformRequest: async ({ params }) => ({
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.quote, params.tokenInChainId),
     }),
     on404: (params: QuoteRequest & { isUSDQuote?: boolean }) => {
       logger.warn('TradingApiClient', 'fetchQuote', 'Quote 404', {
@@ -165,8 +142,8 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     client,
     url: getApiPath(TRADING_API_PATHS.swap),
     method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.swap),
+    transformRequest: async ({ params }) => ({
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swap, params.quote.chainId),
     }),
   })
 
@@ -174,8 +151,8 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     client,
     url: getApiPath(TRADING_API_PATHS.swap5792),
     method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.swap5792),
+    transformRequest: async ({ params }) => ({
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swap5792, params.quote.chainId),
     }),
   })
 
@@ -183,8 +160,8 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     client,
     url: getApiPath(TRADING_API_PATHS.swap7702),
     method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.swap7702),
+    transformRequest: async ({ params }) => ({
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swap7702, params.quote.chainId),
     }),
   })
 
@@ -192,8 +169,8 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     client,
     url: getApiPath(TRADING_API_PATHS.approval),
     method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.approval),
+    transformRequest: async ({ params }) => ({
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.approval, params.chainId),
     }),
   })
 
@@ -202,7 +179,7 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.order),
     method: 'post',
     transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.order),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.order),
     }),
   })
 
@@ -211,7 +188,7 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.orders),
     method: 'get',
     transformRequest: async ({ params }) => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.orders),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.orders),
       params: {
         orderIds: params.orderIds.join(','),
       },
@@ -230,7 +207,7 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.orders),
     method: 'get',
     transformRequest: async ({ params }) => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.orders),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.orders),
       params: {
         swapper: params.swapper,
         orderStatus: params.orderStatus,
@@ -244,71 +221,14 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.swappableTokens),
     method: 'get',
     transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.swappableTokens),
-    }),
-  })
-
-  const getLPPriceDiscrepancy = createFetcher<GetLPPriceDiscrepancyRequest, GetLPPriceDiscrepancyResponse>({
-    client,
-    url: getApiPath(TRADING_API_PATHS.lp.priceDiscrepancy),
-    method: 'post',
-    transformRequest: async ({ params }) => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.lp.priceDiscrepancy),
-      params: {
-        // this needs to be destructured because otherwise the enums get stringified to the key and the backend expects the value.
-        ...params,
-      },
-    }),
-  })
-
-  const createLpPosition = createFetcher<CreateLPPositionRequest, CreateLPPositionResponse>({
-    client,
-    url: getApiPath(TRADING_API_PATHS.lp.create),
-    method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.lp.create),
-    }),
-  })
-
-  const decreaseLpPosition = createFetcher<DecreaseLPPositionRequest, DecreaseLPPositionResponse>({
-    client,
-    url: getApiPath(TRADING_API_PATHS.lp.decrease),
-    method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.lp.decrease),
-    }),
-  })
-
-  const increaseLpPosition = createFetcher<IncreaseLPPositionRequest, IncreaseLPPositionResponse>({
-    client,
-    url: getApiPath(TRADING_API_PATHS.lp.increase),
-    method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.lp.increase),
-    }),
-  })
-
-  const checkLpApproval = createFetcher<CheckApprovalLPRequest, CheckApprovalLPResponse>({
-    client,
-    url: getApiPath(TRADING_API_PATHS.lp.approve),
-    method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.lp.approve),
-    }),
-  })
-
-  const claimLpFees = createFetcher<ClaimLPFeesRequest, ClaimLPFeesResponse>({
-    client,
-    url: getApiPath(TRADING_API_PATHS.lp.claimFees),
-    method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.lp.claimFees),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swappableTokens),
     }),
   })
 
   const fetchSwaps = createFetcher<
     {
-      txHashes: TransactionHash[]
+      txHashes?: TransactionHash[]
+      userOpHashes?: string[]
       chainId: ChainId
     },
     GetSwapsResponse
@@ -317,41 +237,11 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.swaps),
     method: 'get',
     transformRequest: async ({ params }) => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.swaps),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swaps, params.chainId),
       params: {
-        txHashes: params.txHashes.join(','),
+        ...(params.txHashes ? { txHashes: params.txHashes.join(',') } : {}),
+        ...(params.userOpHashes ? { userOpHashes: params.userOpHashes.join(',') } : {}),
         chainId: params.chainId,
-      },
-    }),
-  })
-
-  const migrateV3ToV4LpPosition = createFetcher<MigrateLPPositionRequest, MigrateLPPositionResponse>({
-    client,
-    url: getApiPath(TRADING_API_PATHS.lp.migrateV3ToV4),
-    method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.lp.migrateV3ToV4),
-    }),
-  })
-
-  const fetchClaimLpIncentiveRewards = createFetcher<ClaimLPRewardsRequest, ClaimLPRewardsResponse>({
-    client,
-    url: getApiPath(TRADING_API_PATHS.lp.claimRewards),
-    method: 'post',
-    transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.lp.claimRewards),
-    }),
-  })
-
-  const fetchPoolInfo = createFetcher<PoolInfoRequest, PoolInfoResponse>({
-    client,
-    url: getApiPath(TRADING_API_PATHS.lp.poolInfo),
-    method: 'post',
-    transformRequest: async ({ params }) => ({
-      headers: { ...getFeatureFlagHeaders(TRADING_API_PATHS.lp.poolInfo), 'x-uniquote-enabled': 'true' },
-      params: {
-        // this needs to be destructured because otherwise the enums get stringified to the key and the backend expects the value.
-        ...params,
       },
     }),
   })
@@ -361,7 +251,16 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.wallet.encode7702),
     method: 'post',
     transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.wallet.encode7702),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.wallet.encode7702),
+    }),
+  })
+
+  const fetchWalletEncoding4337 = createFetcher<Encode4337Request, Encode4337Response>({
+    client,
+    url: getApiPath(TRADING_API_PATHS.wallet.encode4337),
+    method: 'post',
+    transformRequest: async () => ({
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.wallet.encode4337),
     }),
   })
 
@@ -373,17 +272,16 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.wallet.checkDelegation),
     method: 'post',
     transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.wallet.checkDelegation),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.wallet.checkDelegation),
     }),
   })
 
-  // TODO: SWAP-429 - Uses this endpoint.
-  const fetchNewPlan = createFetcher<CreatePlanRequest, PlanResponse>({
+  const createNewPlan = createFetcher<CreatePlanRequest, PlanResponse>({
     client,
     url: getApiPath(TRADING_API_PATHS.plan),
     method: 'post',
     transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.plan),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.plan),
     }),
   })
 
@@ -392,7 +290,7 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.plan),
     method: 'post',
     transformRequest: async () => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.plan),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.plan),
     }),
   })
 
@@ -401,7 +299,7 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.plan),
     method: 'patch',
     transformRequest: async ({ params, url }) => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.plan),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.plan),
       params: {
         steps: params.steps,
       },
@@ -414,7 +312,7 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.plan),
     method: 'get',
     transformRequest: async ({ params, url }) => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.plan),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.plan),
       url: `${url}/${params.planId}`,
       params: {},
     }),
@@ -425,7 +323,7 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.plan),
     method: 'get',
     transformRequest: async ({ params, url }) => ({
-      headers: getFeatureFlagHeaders(TRADING_API_PATHS.plan),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.plan),
       url: `${url}/${params.planId}`,
       params: {
         forceRefresh: true,
@@ -445,18 +343,10 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     fetchOrders,
     fetchOrdersWithoutIds,
     fetchSwappableTokens,
-    getLPPriceDiscrepancy,
-    createLpPosition,
-    decreaseLpPosition,
-    increaseLpPosition,
-    checkLpApproval,
-    claimLpFees,
-    migrateV3ToV4LpPosition,
-    fetchPoolInfo,
-    fetchClaimLpIncentiveRewards,
     fetchWalletEncoding7702,
+    fetchWalletEncoding4337,
     checkWalletDelegationWithoutBatching,
-    createNewPlan: fetchNewPlan,
+    createNewPlan,
     fetchPlan,
     updateExistingPlan,
     getExistingPlan,

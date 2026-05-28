@@ -38,7 +38,7 @@ export function HelpContent({ onClose }: HelpContentProps) {
       width={240}
       zIndex="$tooltip"
       borderRadius="$rounded12"
-      borderWidth={1}
+      borderWidth="$spacing1"
       borderColor="$surface3"
       backgroundColor="$surface2"
       userSelect="none"

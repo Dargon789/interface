@@ -1,3 +1,4 @@
+import { isMobileApp } from '@universe/environment'
 import type { MutableRefObject, ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { TextInputProps } from 'react-native'
@@ -18,17 +19,15 @@ import { useTemporaryExactOutputUnavailableWarning } from 'uniswap/src/features/
 import { useUpdateSwapFormOnMountIfExactOutputWillFail } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/hooks/useUpdateSwapFormOnMountIfExactOutputWillFail'
 import { SwapFormScreenStoreContext } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/SwapFormScreenStoreContext'
 import { useSwapFormScreenCallbacks } from 'uniswap/src/features/transactions/swap/form/stores/swapFormScreenStore/useSwapFormScreenCallbacks'
-
 import {
   useSwapFormStore,
   useSwapFormStoreDerivedSwapInfo,
 } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
 import { getExactOutputWillFail } from 'uniswap/src/features/transactions/swap/utils/getExactOutputWillFail'
 import { CurrencyField } from 'uniswap/src/types/currency'
-// biome-ignore lint/style/noRestrictedImports: legacy import will be migrated
+// oxlint-disable-next-line no-restricted-imports -- legacy import will be migrated
 import { formatCurrencyAmount } from 'utilities/src/format/localeBased'
 import { NumberType } from 'utilities/src/format/types'
-import { isMobileApp } from 'utilities/src/platform'
 import { useHasValueChanged } from 'utilities/src/react/useHasValueChanged'
 
 const useExactValueRef = (): MutableRefObject<string> => {
@@ -122,12 +121,14 @@ export const SwapFormScreenStoreContextProvider = ({
 
   // Chained Actions and Across only supports exact-in
   const isCrossChain = Boolean(input && output && input.chainId !== output.chainId)
-  const exactOutputDisabled = isCrossChain || exactOutputWillFail
+  const sameAssetBridgeDetected =
+    isCrossChain && !!currencies.input?.projectId && currencies.input.projectId === currencies.output?.projectId
 
   const callbacks = useSwapFormScreenCallbacks({
     exactOutputWouldFailIfCurrenciesSwitched,
     exactFieldIsInput,
     isCrossChain,
+    sameAssetBridgeDetected,
     formattedDerivedValueRef,
     inputRef,
     outputRef,
@@ -137,12 +138,12 @@ export const SwapFormScreenStoreContextProvider = ({
   })
 
   // Keep cursor synced when derived value changes while opposite field is focused
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -callbacks.moveCursorToEnd, decimalPadControlledField, exactCurrencyField
   useEffect(() => {
     if (decimalPadControlledField === exactCurrencyField) {
       return
     }
     callbacks.moveCursorToEnd({ targetInputRef: formattedDerivedValueRef })
+    // oxlint-disable-next-line react/exhaustive-deps -- biome-parity: oxlint is stricter here
   }, [formattedDerivedValue])
 
   const exactValue = isFiatMode ? exactAmountFiat : exactAmountToken
@@ -159,7 +160,7 @@ export const SwapFormScreenStoreContextProvider = ({
   // Always show footer on native mobile; otherwise only when we have tokens & amount & not blocked, or when we have an exact output unavailable warning
   const showFooter = Boolean(
     !hideFooter &&
-      (isMobileApp || (!isBlockedTokens && input && output && exactAmountToken) || showExactOutputUnavailableWarning),
+    (isMobileApp || (!isBlockedTokens && input && output && exactAmountToken) || showExactOutputUnavailableWarning),
   )
 
   // Compose full state object (same shape as SwapFormScreenStoreState)
@@ -182,7 +183,7 @@ export const SwapFormScreenStoreContextProvider = ({
       isFiatMode,
       exactFieldIsInput,
       exactFieldIsOutput,
-      exactOutputDisabled,
+      exactOutputDisabled: exactOutputWillFail,
       resetSelection: callbacks.resetSelection,
       currencyAmountsUSDValue,
       exactValue,
@@ -223,7 +224,7 @@ export const SwapFormScreenStoreContextProvider = ({
       isFiatMode,
       exactFieldIsInput,
       exactFieldIsOutput,
-      exactOutputDisabled,
+      exactOutputWillFail,
       callbacks.resetSelection,
       callbacks.onFocusInput,
       callbacks.onInputSelectionChange,

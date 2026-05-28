@@ -1,15 +1,15 @@
-import { PortfolioTab } from 'pages/Portfolio/types'
 import i18n from 'uniswap/src/i18n'
+import { isPortfolioTab, PortfolioTab } from '~/pages/Portfolio/types'
 
 export const getPortfolioTitle = (path?: string): string => {
   const parts = path?.split('/').filter((part) => part !== '')
-  const tabsToFind = Object.values(PortfolioTab)
-  const tab = (parts?.find((part) => tabsToFind.includes(part as PortfolioTab)) ??
-    PortfolioTab.Overview) as PortfolioTab
+  const tab = parts?.find(isPortfolioTab) ?? PortfolioTab.Overview
 
   switch (tab) {
     case PortfolioTab.Tokens:
       return i18n.t('web.portfolio.title.tokens')
+    case PortfolioTab.Pools:
+      return i18n.t('web.portfolio.title.pools')
     case PortfolioTab.Defi:
       return i18n.t('web.portfolio.title.defi')
     case PortfolioTab.Nfts:

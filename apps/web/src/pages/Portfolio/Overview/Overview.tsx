@@ -1,25 +1,33 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { ChartPeriod } from '@uniswap/client-data-api/dist/data/v1/api_pb'
-import { EmptyWalletCards } from 'components/emptyWallet/EmptyWalletCards'
-import { usePortfolioRoutes } from 'pages/Portfolio/Header/hooks/usePortfolioRoutes'
-import { usePortfolioAddresses } from 'pages/Portfolio/hooks/usePortfolioAddresses'
-import { OverviewActionTiles } from 'pages/Portfolio/Overview/ActionTiles'
-import { OVERVIEW_RIGHT_COLUMN_WIDTH } from 'pages/Portfolio/Overview/constants'
-import { useIsPortfolioZero } from 'pages/Portfolio/Overview/hooks/useIsPortfolioZero'
-import { PortfolioOverviewTables } from 'pages/Portfolio/Overview/OverviewTables'
-import { PortfolioChart } from 'pages/Portfolio/Overview/PortfolioChart'
-import { OverviewStatsTiles } from 'pages/Portfolio/Overview/StatsTiles'
-import { checkBalanceDiffWithinRange } from 'pages/Portfolio/Overview/utils/checkBalanceDiffWithinRange'
-import { memo, useMemo, useState } from 'react'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { Flex, Separator, styled, useMedia } from 'ui/src'
-import { useGetPortfolioHistoricalValueChartQuery } from 'uniswap/src/data/rest/getPortfolioChart'
+import {
+  getPortfolioHistoricalValueChartQuery,
+  useGetPortfolioHistoricalValueChartQuery,
+} from 'uniswap/src/data/rest/getPortfolioChart'
 import { useActivityData } from 'uniswap/src/features/activity/hooks/useActivityData'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
-import { usePortfolioTotalValue } from 'uniswap/src/features/dataApi/balances/balancesRest'
+import {
+  usePortfolioBalanceBreakdown,
+  usePortfolioTotalValue,
+} from 'uniswap/src/features/dataApi/balances/balancesRest'
+import { usePortfolioChartBalanceMismatch } from 'uniswap/src/features/portfolio/usePortfolioChartBalanceMismatch'
 import { ElementName, InterfacePageName, SectionName } from 'uniswap/src/features/telemetry/constants'
 import { Trace } from 'uniswap/src/features/telemetry/Trace'
-import { filterDefinedWalletAddresses } from 'utils/filterDefinedWalletAddresses'
-
-const BALANCE_PERCENT_DIFFERENCE_THRESHOLD = 2
+import { EmptyWalletCards } from '~/components/emptyWallet/EmptyWalletCards'
+import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
+import { usePortfolioAddresses } from '~/pages/Portfolio/hooks/usePortfolioAddresses'
+import { OverviewActionTiles } from '~/pages/Portfolio/Overview/ActionTiles'
+import { OVERVIEW_RIGHT_COLUMN_WIDTH } from '~/pages/Portfolio/Overview/constants'
+import { useIsPortfolioZero } from '~/pages/Portfolio/Overview/hooks/useIsPortfolioZero'
+import { usePortfolioChartSeries } from '~/pages/Portfolio/Overview/hooks/usePortfolioChartSeries'
+import { PortfolioOverviewTables } from '~/pages/Portfolio/Overview/OverviewTables'
+import { PortfolioChart } from '~/pages/Portfolio/Overview/PortfolioChart'
+import { PortfolioPerformance } from '~/pages/Portfolio/Overview/PortfolioPerformance'
+import { OverviewStatsTiles } from '~/pages/Portfolio/Overview/StatsTiles'
+import { filterDefinedWalletAddresses } from '~/utils/filterDefinedWalletAddresses'
 
 const ActionsAndStatsContainer = styled(Flex, {
   width: OVERVIEW_RIGHT_COLUMN_WIDTH,
@@ -36,20 +44,35 @@ const ActionsAndStatsContainer = styled(Flex, {
   } as const,
 })
 
+// Keep in sync with the rendered PortfolioBalanceHeader height.
+const ACTIONS_TOP_OFFSET_WITH_BALANCE_HEADER = 92
+
 export const PortfolioOverview = memo(function PortfolioOverview() {
   const media = useMedia()
   const isFullWidth = media.xl
-  const { chainId } = usePortfolioRoutes()
+  const isProfitLossEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
+  const portfolioPoolsBalancesEnabled = useFeatureFlag(FeatureFlags.PortfolioPoolsBalances)
+  const showBalanceHeaderRow = portfolioPoolsBalancesEnabled
+  const { chainId, isExternalWallet } = usePortfolioRoutes()
   const portfolioAddresses = usePortfolioAddresses()
   const { chains: allChainIds } = useEnabledChains()
 
   const isPortfolioZero = useIsPortfolioZero()
+  const queryClient = useQueryClient()
 
   const [selectedPeriod, setSelectedPeriod] = useState<ChartPeriod>(ChartPeriod.DAY)
 
   const filterChainIds = useMemo(() => (chainId ? [chainId] : allChainIds), [chainId, allChainIds])
 
   const { data: portfolioData } = usePortfolioTotalValue({
+    evmAddress: portfolioAddresses.evmAddress,
+    svmAddress: portfolioAddresses.svmAddress,
+    chainIds: filterChainIds,
+  })
+
+  // Shares the React Query cache entry with `usePortfolioTotalValue` (same input → same key,
+  // different `select`), so this does not trigger an additional network request.
+  const { data: portfolioBreakdown } = usePortfolioBalanceBreakdown({
     evmAddress: portfolioAddresses.evmAddress,
     svmAddress: portfolioAddresses.svmAddress,
     chainIds: filterChainIds,
@@ -70,21 +93,62 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
     enabled: !!(portfolioAddresses.evmAddress || portfolioAddresses.svmAddress),
   })
 
+  const { series, chartPercentChange } = usePortfolioChartSeries({
+    chartData: portfolioChartData,
+    selectedPeriod,
+  })
+  const isChartLoading = isChartPending || !series.length
+  const isChartEmpty = useMemo(() => {
+    if (!series.length) {
+      return true
+    }
+
+    if (series[series.length - 1].close === 0) {
+      return series.every((d) => d.close === 0)
+    }
+
+    return false
+  }, [series])
+
   // Get the latest value from chart endpoint (last point in the array) for comparison
-  const chartTotalBalanceUSD = useMemo(() => {
+  const lastChartValue = useMemo(() => {
     if (!portfolioChartData?.points || portfolioChartData.points.length === 0) {
       return undefined
     }
-    const lastPoint = portfolioChartData.points[portfolioChartData.points.length - 1]
-    return lastPoint.value
+    return portfolioChartData.points[portfolioChartData.points.length - 1]?.value
   }, [portfolioChartData])
 
-  // Compare portfolio balance (EVM + Solana) with chart endpoint balance (for debugging/validation)
-  const isTotalValueMatch = checkBalanceDiffWithinRange({
-    chartTotalBalanceUSD,
+  // Compare portfolio balance (EVM + Solana) with chart endpoint balance to detect spam-token divergence
+  const { isTotalValueMatch } = usePortfolioChartBalanceMismatch({
+    lastChartValue,
     portfolioTotalBalanceUSD: portfolioData?.balanceUSD,
-    percentDifferenceThreshold: BALANCE_PERCENT_DIFFERENCE_THRESHOLD,
   })
+
+  // Prefetch chart data for a timeframe on hover so it's ready when the user clicks
+  const handleHoverPeriod = useCallback(
+    (period: ChartPeriod) => {
+      if (!portfolioAddresses.evmAddress && !portfolioAddresses.svmAddress) {
+        return
+      }
+      if (period === selectedPeriod) {
+        return
+      }
+      const periodQuery = getPortfolioHistoricalValueChartQuery({
+        input: {
+          evmAddress: portfolioAddresses.evmAddress,
+          svmAddress: portfolioAddresses.svmAddress,
+          chainIds: filterChainIds,
+          chartPeriod: period,
+        },
+      })
+      const existingPeriodQueryState = queryClient.getQueryState(periodQuery.queryKey)
+      if (existingPeriodQueryState?.fetchStatus === 'fetching' || existingPeriodQueryState?.status === 'success') {
+        return
+      }
+      queryClient.prefetchQuery(periodQuery).catch(() => undefined)
+    },
+    [queryClient, portfolioAddresses.evmAddress, portfolioAddresses.svmAddress, filterChainIds, selectedPeriod],
+  )
 
   // Fetch activity data once at the top level to share between useSwapsThisWeek and MiniActivityTable
   const activityData = useActivityData({
@@ -97,19 +161,25 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
   })
 
   return (
-    <Trace logImpression page={InterfacePageName.PortfolioOverviewPage}>
+    <Trace logImpression page={InterfacePageName.PortfolioOverviewPage} properties={{ isExternal: isExternalWallet }}>
       <Flex gap="$spacing40" mb="$spacing40">
         <Flex row gap="$spacing40" $xl={{ flexDirection: 'column' }}>
           <Trace section={SectionName.PortfolioOverviewTab} element={ElementName.PortfolioChart}>
             <PortfolioChart
               portfolioTotalBalanceUSD={portfolioData?.balanceUSD}
+              tokensValue={portfolioBreakdown?.tokens}
+              poolsValue={portfolioBreakdown?.pools}
               isPortfolioZero={isPortfolioZero}
-              chartData={portfolioChartData}
-              isPending={isChartPending}
+              series={series}
+              chartPercentChange={chartPercentChange}
+              isLoading={isChartLoading}
+              isChartEmpty={isChartEmpty}
               error={chartError}
               selectedPeriod={selectedPeriod}
               setSelectedPeriod={setSelectedPeriod}
+              onHoverPeriod={handleHoverPeriod}
               isTotalValueMatch={isTotalValueMatch}
+              showBalanceHeaderRow={showBalanceHeaderRow}
             />
           </Trace>
           {isPortfolioZero ? (
@@ -124,9 +194,12 @@ export const PortfolioOverview = memo(function PortfolioOverview() {
             </ActionsAndStatsContainer>
           ) : (
             <Trace section={SectionName.PortfolioOverviewTab} element={ElementName.PortfolioActionTiles}>
-              <ActionsAndStatsContainer fullWidth={isFullWidth}>
+              <ActionsAndStatsContainer
+                fullWidth={isFullWidth}
+                pt={showBalanceHeaderRow && !isFullWidth ? ACTIONS_TOP_OFFSET_WITH_BALANCE_HEADER : undefined}
+              >
                 <OverviewActionTiles />
-                <OverviewStatsTiles activityData={activityData} />
+                {isProfitLossEnabled ? <PortfolioPerformance /> : <OverviewStatsTiles activityData={activityData} />}
               </ActionsAndStatsContainer>
             </Trace>
           )}

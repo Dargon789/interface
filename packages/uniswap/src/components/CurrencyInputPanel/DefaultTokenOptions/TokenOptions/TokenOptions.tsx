@@ -2,9 +2,10 @@ import { useMemo } from 'react'
 import { MAX_NUMBER_OF_TOKENS } from 'uniswap/src/components/CurrencyInputPanel/DefaultTokenOptions/constants'
 import { TokenOptionItem } from 'uniswap/src/components/CurrencyInputPanel/DefaultTokenOptions/TokenOptions/TokenOptionItem/TokenOptionItem'
 import { useCommonTokensOptionsWithFallback } from 'uniswap/src/components/TokenSelector/hooks/useCommonTokensOptionsWithFallback'
+import { usePortfolioBalancesForAddressById } from 'uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddressById'
+import { useActiveAddresses } from 'uniswap/src/features/accounts/store/hooks'
 import type { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { useSwapFormStoreDerivedSwapInfo } from 'uniswap/src/features/transactions/swap/stores/swapFormStore/useSwapFormStore'
-import { useWallet } from 'uniswap/src/features/wallet/hooks/useWallet'
 import type { CurrencyField } from 'uniswap/src/types/currency'
 
 const createKey = (currency: CurrencyInfo['currency']): string =>
@@ -14,13 +15,13 @@ const useCommonTokensOptionsInfo = (): {
   allCurrencyInfos: CurrencyInfo[]
   numberOfCommonTokenOptions: number
 } => {
-  const wallet = useWallet()
+  const addresses = useActiveAddresses()
   const chainId = useSwapFormStoreDerivedSwapInfo((s) => s.chainId)
+  const portfolioData = usePortfolioBalancesForAddressById(addresses)
 
   const { data: commonTokenOptions } = useCommonTokensOptionsWithFallback({
-    evmAddress: wallet.evmAccount?.address,
-    svmAddress: wallet.svmAccount?.address,
     chainFilter: chainId,
+    portfolioData,
   })
 
   const numberOfCommonTokenOptions = commonTokenOptions?.length ?? 0

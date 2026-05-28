@@ -1,3 +1,4 @@
+import { isSandboxedFrame } from 'src/contentScript/isSandboxedFrame'
 import { Message } from 'uniswap/src/extension/messagePassing/messageTypes'
 
 type MessageValidator<T extends Message> = (message: unknown) => message is T
@@ -19,7 +20,7 @@ export function addWindowMessageListener<T extends Message>({
   options?: { removeAfterHandled?: boolean }
 }): (event: MessageEvent) => void {
   const listener = (event: MessageEvent): void => {
-    if (event.source !== window || !validator(event.data)) {
+    if (event.source !== window || isSandboxedFrame() || !validator(event.data)) {
       invalidMessageHandler?.(event.data, event.source)
       return
     }

@@ -8,15 +8,20 @@ import type {
 
 export function createFetchClient({
   baseUrl,
+  getBaseUrl,
   getHeaders,
   getSessionService,
   defaultOptions = {},
 }: FetchClientContext): FetchClient {
+  // Helper to resolve the base URL - prefers getBaseUrl for dynamic resolution
+  const resolveBaseUrl = (): string => getBaseUrl?.() ?? baseUrl ?? ''
+
   return {
     get context() {
       return () => {
         return {
-          baseUrl,
+          baseUrl: resolveBaseUrl(),
+          getBaseUrl,
           getHeaders,
           getSessionService,
           defaultOptions,
@@ -32,13 +37,15 @@ export function createFetchClient({
         const additionalHeaders = getHeaders?.() ?? {}
 
         const headers = new Headers({
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
           ...additionalHeaders,
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
           ...options?.headers,
         })
         if (sessionState?.sessionId) {
           headers.set('x-session-id', sessionState.sessionId)
         }
-        return fetch(`${baseUrl}${path}`, {
+        return fetch(`${resolveBaseUrl()}${path}`, {
           ...defaultOptions,
           ...options,
           headers,
@@ -86,7 +93,8 @@ export function createFetchClient({
 
         _options.headers = {
           'Content-Type': 'application/json',
-          ...(options.headers ?? {}),
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
+          ...options.headers,
         }
 
         return (await this.get(path, { ..._options, method: 'POST' })) as T
@@ -99,7 +107,8 @@ export function createFetchClient({
 
         _options.headers = {
           'Content-Type': 'application/json',
-          ...(options.headers ?? {}),
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
+          ...options.headers,
         }
 
         return (await this.get(path, { ..._options, method: 'PUT' })) as T
@@ -118,7 +127,8 @@ export function createFetchClient({
 
         _options.headers = {
           'Content-Type': 'application/json',
-          ...(options.headers ?? {}),
+          // oxlint-disable-next-line typescript-eslint/no-misused-spread
+          ...options.headers,
         }
 
         return await this.get(path, { ..._options, method: 'PATCH' })

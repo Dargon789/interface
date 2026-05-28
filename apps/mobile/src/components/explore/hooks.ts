@@ -11,8 +11,8 @@ import { openModal } from 'src/features/modals/modalSlice'
 import { ScannerModalState } from 'uniswap/src/components/ReceiveQRCode/constants'
 import { AssetType } from 'uniswap/src/entities/assets'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { useSelectHasTokenFavorited } from 'uniswap/src/features/favorites/useSelectHasTokenFavorited'
-import { useToggleFavoriteCallback } from 'uniswap/src/features/favorites/useToggleFavoriteCallback'
+import { useSelectHasTokenFavorited } from 'uniswap/src/features/favorites/hooks/useSelectHasTokenFavorited'
+import { useToggleFavoriteCallback } from 'uniswap/src/features/favorites/hooks/useToggleFavoriteCallback'
 import type { SectionName } from 'uniswap/src/features/telemetry/constants'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
@@ -122,6 +122,7 @@ export function useExploreTokenContextMenu({
 
   const onContextMenuPress = useCallback(
     async (e: NativeSyntheticEvent<ContextMenuOnPressNativeEvent>): Promise<void> => {
+      // oxlint-disable-next-line typescript/await-thenable, typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
       await menuActions[e.nativeEvent.index]?.onPress?.()
     },
     [menuActions],

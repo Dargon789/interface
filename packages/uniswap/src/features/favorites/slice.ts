@@ -1,15 +1,16 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import { Ether } from '@uniswap/sdk-core'
 import { WBTC } from 'uniswap/src/constants/tokens'
 import { normalizeCurrencyIdForMapLookup } from 'uniswap/src/data/cache'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { CurrencyId } from 'uniswap/src/types/currency'
+import { type CurrencyId } from 'uniswap/src/types/currency'
 import { currencyId as idFromCurrency } from 'uniswap/src/utils/currencyId'
 import { logger } from 'utilities/src/logger/logger'
 
 export interface FavoritesState {
   tokens: CurrencyId[]
   watchedAddresses: Address[]
+  hasMigratedToMultichain?: boolean
 }
 
 // Default currency ids, need to be normalized to match slice add and remove behavior
@@ -71,6 +72,10 @@ export const slice = createSlice({
     setFavoriteWallets: (state, { payload: { addresses } }: PayloadAction<{ addresses: Address[] }>) => {
       state.watchedAddresses = addresses
     },
+    resetFavorites: () => initialFavoritesState,
+    setHasMigratedToMultichain: (state, { payload }: PayloadAction<boolean>) => {
+      state.hasMigratedToMultichain = payload
+    },
   },
 })
 
@@ -81,5 +86,7 @@ export const {
   addWatchedAddress,
   removeWatchedAddress,
   setFavoriteWallets,
+  resetFavorites,
+  setHasMigratedToMultichain,
 } = slice.actions
 export const { reducer: favoritesReducer } = slice

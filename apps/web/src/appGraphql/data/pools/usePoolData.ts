@@ -1,6 +1,5 @@
 import { FeeAmount, TICK_SPACINGS } from '@uniswap/v3-sdk'
 import { GraphQLApi } from '@universe/api'
-import { FeeData } from 'components/Liquidity/Create/types'
 import ms from 'ms'
 import { useMemo } from 'react'
 import { V2_DEFAULT_FEE_TIER } from 'uniswap/src/constants/pools'
@@ -8,6 +7,7 @@ import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledCh
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { isSVMChain } from 'uniswap/src/features/platforms/utils/chains'
+import type { FeeData } from 'uniswap/src/features/positions/types'
 
 interface RewardsCampaign {
   id: string
@@ -124,6 +124,7 @@ export function usePoolData({
     errorPolicy: 'all',
   })
 
+  // oxlint-disable-next-line complexity
   return useMemo(() => {
     const anyError = Boolean(errorV4 || errorV3 || errorV2)
     const anyLoading = Boolean(loadingV4 || loadingV3 || loadingV2)

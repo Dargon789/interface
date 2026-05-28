@@ -1,20 +1,25 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { SharedEventName } from '@uniswap/analytics-events'
 import { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { AppStackParamList } from 'src/app/navigation/types'
 import { useTokenDetailsColors } from 'src/components/TokenDetails/useTokenDetailsColors'
 import { setHasViewedContractAddressExplainer } from 'uniswap/src/features/behaviorHistory/slice'
+import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType, CopyNotificationType } from 'uniswap/src/features/notifications/slice/types'
+import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { MobileScreens } from 'uniswap/src/types/screens/mobile'
-import { setClipboard } from 'uniswap/src/utils/clipboard'
 import { currencyIdToAddress, currencyIdToChain } from 'uniswap/src/utils/currencyId'
+import { setClipboard } from 'utilities/src/clipboard/clipboard'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
+import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
 
 type TokenDetailsContextState = {
   currencyId: string
@@ -22,6 +27,7 @@ type TokenDetailsContextState = {
   address: Address
   chainId: UniverseChainId
   currencyInfo?: CurrencyInfo
+  initialIsMultichainAsset: boolean
   tokenColor: string | null
   tokenColorLoading: boolean
   isChainEnabled: boolean
@@ -33,9 +39,9 @@ type TokenDetailsContextState = {
   isContractAddressExplainerModalOpen: boolean
   openContractAddressExplainerModal: () => void
   closeContractAddressExplainerModal: (markViewed: boolean) => void
-  isAztecWarningModalOpen: boolean
-  openAztecWarningModal: () => void
-  closeAztecWarningModal: () => void
+  isMultichainAddressSheetOpen: boolean
+  openMultichainAddressSheet: () => void
+  closeMultichainAddressSheet: () => void
   copyAddressToClipboard: (address: string) => Promise<void>
   error: unknown | undefined
   setError: (error: unknown | undefined) => void
@@ -47,8 +53,12 @@ export function TokenDetailsContextProvider({
   children,
   currencyId,
   navigation,
-}: PropsWithChildren<Pick<TokenDetailsContextState, 'currencyId' | 'navigation'>>): JSX.Element {
+  initialIsMultichainAsset = false,
+}: PropsWithChildren<
+  Pick<TokenDetailsContextState, 'currencyId' | 'navigation'> & { initialIsMultichainAsset?: boolean }
+>): JSX.Element {
   const dispatch = useDispatch()
+  const trace = useTrace()
 
   const [error, setError] = useState<unknown>(undefined)
 
@@ -58,6 +68,13 @@ export function TokenDetailsContextProvider({
 
   const [isContractAddressExplainerModalOpen, setIsContractAddressExplainerModalOpen] = useState(false)
   const openContractAddressExplainerModal = useCallback(() => setIsContractAddressExplainerModalOpen(true), [])
+
+  const {
+    value: isMultichainAddressSheetOpen,
+    setTrue: openMultichainAddressSheet,
+    setFalse: closeMultichainAddressSheet,
+  } = useBooleanState(false)
+
   const closeContractAddressExplainerModal = useCallback(
     (markViewed: boolean) => {
       if (markViewed) {
@@ -68,12 +85,6 @@ export function TokenDetailsContextProvider({
     [dispatch],
   )
 
-  const {
-    value: isAztecWarningModalOpen,
-    setTrue: openAztecWarningModal,
-    setFalse: closeAztecWarningModal,
-  } = useBooleanState(false)
-
   const copyAddressToClipboard = useCallback(
     async (address: string): Promise<void> => {
       await setClipboard(address)
@@ -83,8 +94,16 @@ export function TokenDetailsContextProvider({
           copyType: CopyNotificationType.ContractAddress,
         }),
       )
+      const copiedChainId = currencyIdToChain(currencyId)
+      if (copiedChainId) {
+        sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
+          ...trace,
+          element: ElementName.CopyAddress,
+          chain_name: getChainInfo(copiedChainId).urlParam,
+        })
+      }
     },
-    [dispatch],
+    [currencyId, dispatch, trace],
   )
 
   // Set if attempting to buy or sell, used for token warning modal.
@@ -112,6 +131,7 @@ export function TokenDetailsContextProvider({
       address,
       chainId,
       currencyInfo,
+      initialIsMultichainAsset,
       tokenColor,
       tokenColorLoading,
       isChainEnabled,
@@ -123,9 +143,9 @@ export function TokenDetailsContextProvider({
       isContractAddressExplainerModalOpen,
       openContractAddressExplainerModal,
       closeContractAddressExplainerModal,
-      isAztecWarningModalOpen,
-      openAztecWarningModal,
-      closeAztecWarningModal,
+      isMultichainAddressSheetOpen,
+      openMultichainAddressSheet,
+      closeMultichainAddressSheet,
       copyAddressToClipboard,
       error,
       setError,
@@ -134,17 +154,18 @@ export function TokenDetailsContextProvider({
     activeTransactionType,
     closeTokenWarningModal,
     closeContractAddressExplainerModal,
-    closeAztecWarningModal,
+    closeMultichainAddressSheet,
     currencyId,
     currencyInfo,
     enabledChains,
     error,
-    isAztecWarningModalOpen,
+    initialIsMultichainAsset,
     isContractAddressExplainerModalOpen,
+    isMultichainAddressSheetOpen,
     isTokenWarningModalOpen,
     navigation,
-    openAztecWarningModal,
     openContractAddressExplainerModal,
+    openMultichainAddressSheet,
     openTokenWarningModal,
     tokenColor,
     tokenColorLoading,

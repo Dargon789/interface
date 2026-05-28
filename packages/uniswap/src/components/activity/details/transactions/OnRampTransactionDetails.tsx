@@ -9,7 +9,6 @@ import {
   OnRampPurchaseInfo,
   OnRampTransferInfo,
   TransactionDetails,
-  TransactionType,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { getSymbolDisplayText } from 'uniswap/src/utils/currency'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
@@ -27,7 +26,11 @@ export function OnRampTransactionDetails({
   const formatter = useLocalizationContext()
   const currencyInfo = useCurrencyInfo(buildCurrencyId(transactionDetails.chainId, typeInfo.destinationTokenAddress))
 
-  const { amount, value: calculatedValue } = useFormattedCurrencyAmountAndUSDValue({
+  const {
+    amount,
+    value: calculatedValue,
+    isLoading,
+  } = useFormattedCurrencyAmountAndUSDValue({
     currency: currencyInfo?.currency,
     currencyAmountRaw: typeInfo.destinationTokenAmount?.toString(),
     formatter,
@@ -35,15 +38,17 @@ export function OnRampTransactionDetails({
     valueType: ValueType.Exact,
   })
 
+  const isPurchase = isOnRampPurchaseTransactionInfo(typeInfo)
+
   const transactionValue = useMemo(() => {
-    return isOnRampPurchaseTransactionInfo(typeInfo)
+    return isPurchase
       ? formatter.formatNumberOrString({
           value: typeInfo.sourceAmount,
           type: NumberType.FiatTokenPrice,
           currencyCode: typeInfo.sourceCurrency,
         })
       : calculatedValue
-  }, [typeInfo, formatter, calculatedValue])
+  }, [isPurchase, typeInfo, formatter, calculatedValue])
 
   const symbol = getSymbolDisplayText(currencyInfo?.currency.symbol)
 
@@ -52,7 +57,8 @@ export function OnRampTransactionDetails({
   return (
     <CurrencyTransferContent
       currencyInfo={currencyInfo}
-      showValueAsHeading={typeInfo.type === TransactionType.OnRampPurchase}
+      isLoading={!isPurchase && isLoading}
+      showValueAsHeading={isPurchase}
       tokenAmountWithSymbol={tokenAmountWithSymbol}
       value={transactionValue}
       onClose={onClose}

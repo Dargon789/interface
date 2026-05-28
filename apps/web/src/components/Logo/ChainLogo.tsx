@@ -1,6 +1,5 @@
 import { CSSProperties } from 'react'
 import { FlexProps } from 'ui/src/components/layout'
-
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { isUniverseChainId } from 'uniswap/src/features/chains/utils'

@@ -21,12 +21,22 @@ export interface UniswapBehaviorHistoryState {
   }
   // whether we have shown the mismatch toast (related to wallet capabilities & wallet bytecode)
   hasShownMismatchToast?: boolean
-  /** Wallet addresses with timestamps that have dismissed the graduate wallet card for 30 days. The same property in the application reducer is a list of wallet addresses that have dismissed the graduated wallet card for this session. */
-  embeddedWalletGraduateCardDismissed?: {
-    [walletAddress: string]: number
-  }
   hasShownSmartWalletNudge?: boolean
+  /** Global flag for when user sees modal without wallet connected */
   hasSeenToucanIntroModal?: boolean
+  /** Per-wallet tracking for Toucan intro modal */
+  toucanIntroModalSeenByWallet?: {
+    [walletAddress: string]: boolean
+  }
+  hasDismissedUniswapWrapped2025Banner?: boolean
+  hasDismissedCrosschainSwapsPromoBanner?: boolean
+  /**
+   * Per-user dismissal flag for the pools-balance coachmark on the Portfolio Overview.
+   * Defaults to `true` in `initialUniswapBehaviorHistoryState` so brand-new users never see it;
+   * existing users' persisted state predates this key and resolves to `undefined` (i.e. not dismissed),
+   * so they see it once until they dismiss.
+   */
+  hasDismissedPoolsBalanceCoachmark?: boolean
 }
 
 export const initialUniswapBehaviorHistoryState: UniswapBehaviorHistoryState = {
@@ -47,6 +57,9 @@ export const initialUniswapBehaviorHistoryState: UniswapBehaviorHistoryState = {
   hasShownMismatchToast: false,
   hasShownSmartWalletNudge: false,
   hasSeenToucanIntroModal: false,
+  hasDismissedUniswapWrapped2025Banner: false,
+  hasDismissedCrosschainSwapsPromoBanner: false,
+  hasDismissedPoolsBalanceCoachmark: true,
 }
 
 const slice = createSlice({
@@ -100,18 +113,27 @@ const slice = createSlice({
     setHasShownMismatchToast: (state, action: PayloadAction<boolean>) => {
       state.hasShownMismatchToast = action.payload
     },
-    setEmbeddedWalletGraduateCardDismissed: (state, action: PayloadAction<{ walletAddress: string }>) => {
-      state.embeddedWalletGraduateCardDismissed ??= {}
-      state.embeddedWalletGraduateCardDismissed[action.payload.walletAddress] = new Date().getTime()
-    },
     setHasShownSmartWalletNudge: (state, action: PayloadAction<boolean>) => {
       state.hasShownSmartWalletNudge = action.payload
     },
     setHasSeenToucanIntroModal: (state, action: PayloadAction<boolean>) => {
       state.hasSeenToucanIntroModal = action.payload
     },
+    setToucanIntroModalSeenByWallet: (state, action: PayloadAction<{ walletAddress: string }>) => {
+      state.toucanIntroModalSeenByWallet ??= {}
+      state.toucanIntroModalSeenByWallet[action.payload.walletAddress.toLowerCase()] = true
+    },
     setHasDismissedBridgedAssetsBannerV2: (state, action: PayloadAction<boolean>) => {
       state.hasDismissedBridgedAssetsBannerV2 = action.payload
+    },
+    setHasDismissedUniswapWrapped2025Banner: (state, action: PayloadAction<boolean>) => {
+      state.hasDismissedUniswapWrapped2025Banner = action.payload
+    },
+    setHasDismissedCrosschainSwapsPromoBanner: (state, action: PayloadAction<boolean>) => {
+      state.hasDismissedCrosschainSwapsPromoBanner = action.payload
+    },
+    setPoolsBalanceCoachmarkDismissed: (state) => {
+      state.hasDismissedPoolsBalanceCoachmark = true
     },
   },
 })
@@ -130,10 +152,13 @@ export const {
   resetUniswapBehaviorHistory,
   setHasViewedContractAddressExplainer,
   setHasShownMismatchToast,
-  setEmbeddedWalletGraduateCardDismissed,
   setHasShownSmartWalletNudge,
   setHasSeenToucanIntroModal,
+  setToucanIntroModalSeenByWallet,
   setHasDismissedBridgedAssetsBannerV2,
+  setHasDismissedUniswapWrapped2025Banner,
+  setHasDismissedCrosschainSwapsPromoBanner,
+  setPoolsBalanceCoachmarkDismissed,
 } = slice.actions
 
 export const uniswapBehaviorHistoryReducer = slice.reducer

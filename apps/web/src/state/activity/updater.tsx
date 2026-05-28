@@ -1,33 +1,36 @@
-import { popupRegistry } from 'components/Popups/registry'
-import { PopupType } from 'components/Popups/types'
-import { DEFAULT_TXN_DISMISS_MS, L2_TXN_DISMISS_MS } from 'constants/misc'
-import { useHandleUniswapXActivityUpdate } from 'hooks/useHandleUniswapXActivityUpdate'
+import { SharedQueryClient } from '@universe/api'
+import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useCallback } from 'react'
-import { usePollPendingBatchTransactions } from 'state/activity/polling/batch'
-import { usePollPendingBridgeTransactions } from 'state/activity/polling/bridge'
-import { usePollPendingOrders } from 'state/activity/polling/orders'
-import { usePollPendingTransactions } from 'state/activity/polling/transactions'
-import { type ActivityUpdate, ActivityUpdateTransactionType, type OnActivityUpdate } from 'state/activity/types'
-import { useAppDispatch } from 'state/hooks'
-import { logSwapFinalized } from 'tracing/swapFlowLoggers'
 import { isL2ChainId } from 'uniswap/src/features/chains/utils'
+import { getDisplayedPriceSource } from 'uniswap/src/features/prices/getDisplayedPriceSource'
 import {
   finalizeTransaction,
   interfaceApplyTransactionHashToBatch,
   interfaceConfirmBridgeDeposit,
   updateTransaction,
 } from 'uniswap/src/features/transactions/slice'
-import { isNonInstantFlashblockTransactionType } from 'uniswap/src/features/transactions/swap/components/UnichainInstantBalanceModal/utils'
-import { getIsFlashblocksEnabled } from 'uniswap/src/features/transactions/swap/hooks/useIsUnichainFlashblocksEnabled'
 import {
+  extractPlanFieldsFromTypeInfo,
   type InterfaceTransactionDetails,
   TransactionStatus,
   TransactionType,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { isFinalizedTx } from 'uniswap/src/features/transactions/types/utils'
-import { currencyIdToChain } from 'uniswap/src/utils/currencyId'
+import { currencyIdToAddress, currencyIdToChain } from 'uniswap/src/utils/currencyId'
 import { logger } from 'utilities/src/logger/logger'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import { DEFAULT_TXN_DISMISS_MS, L2_TXN_DISMISS_MS } from '~/constants/misc'
+import { useHandleUniswapXActivityUpdate } from '~/hooks/useHandleUniswapXActivityUpdate'
+import { usePollPendingBatchTransactions } from '~/state/activity/polling/batch'
+import { usePollPendingBridgeTransactions } from '~/state/activity/polling/bridge'
+import { usePollPendingOrders } from '~/state/activity/polling/orders'
+import { useActivePlanTransactions, usePollPendingPlanTransactions } from '~/state/activity/polling/plans'
+import { usePollPendingTransactions } from '~/state/activity/polling/transactions'
+import { type ActivityUpdate, ActivityUpdateTransactionType, type OnActivityUpdate } from '~/state/activity/types'
+import { useAppDispatch } from '~/state/hooks'
+import { popupRegistry } from '~/state/popups/registry'
+import { PopupType } from '~/state/popups/types'
+import { logSwapFinalized } from '~/tracing/swapFlowLoggers'
 
 export function ActivityStateUpdater() {
   const onActivityUpdate = useOnActivityUpdate()
@@ -44,12 +47,37 @@ function PollingActivityStateUpdater({ onActivityUpdate }: { onActivityUpdate: O
   usePollPendingBatchTransactions(onActivityUpdate)
   usePollPendingBridgeTransactions(onActivityUpdate)
   usePollPendingOrders(onActivityUpdate)
+  useActivePlanTransactions(onActivityUpdate)
+  usePollPendingPlanTransactions(onActivityUpdate)
   return null
+}
+
+function resolveSwapPriceSource({
+  inputCurrencyId,
+  chainId,
+  isCentralizedPricesEnabled,
+}: {
+  inputCurrencyId: string | undefined
+  chainId: number
+  isCentralizedPricesEnabled: boolean
+}) {
+  const address = inputCurrencyId?.includes('-') ? currencyIdToAddress(inputCurrencyId) : undefined
+  if (!address) {
+    return undefined
+  }
+  return getDisplayedPriceSource({
+    isCentralizedPricesEnabled,
+    surface: 'usdc',
+    chainId,
+    address,
+    queryClient: SharedQueryClient,
+  })
 }
 
 function useOnActivityUpdate(): OnActivityUpdate {
   const dispatch = useAppDispatch()
   const analyticsContext = useTrace()
+  const isCentralizedPricesEnabled = useFeatureFlag(FeatureFlags.CentralizedPrices)
   const handleUniswapXActivityUpdate = useHandleUniswapXActivityUpdate()
 
   return useCallback(
@@ -147,42 +175,66 @@ function useOnActivityUpdate(): OnActivityUpdate {
             analyticsContext,
             status: update.status,
             type: original.typeInfo.type,
-            isFinalStep: original.typeInfo.isFinalStep,
             swapStartTimestamp: original.typeInfo.swapStartTimestamp,
+            planAnalytics: extractPlanFieldsFromTypeInfo(original.typeInfo),
+            transactedUSDValue: original.typeInfo.transactedUSDValue,
+            priceSource: resolveSwapPriceSource({
+              inputCurrencyId: original.typeInfo.inputCurrencyId,
+              chainId,
+              isCentralizedPricesEnabled,
+            }),
           })
         } else if (original.typeInfo.type === TransactionType.Bridge) {
+          const bridgeChainIn = currencyIdToChain(original.typeInfo.inputCurrencyId) ?? chainId
           logSwapFinalized({
             id: original.id,
             hash,
             batchId,
-            chainInId: currencyIdToChain(original.typeInfo.inputCurrencyId) ?? chainId,
+            chainInId: bridgeChainIn,
             chainOutId: currencyIdToChain(original.typeInfo.outputCurrencyId) ?? chainId,
             analyticsContext,
             status: update.status,
             type: original.typeInfo.type,
-            isFinalStep: original.typeInfo.isFinalStep,
             swapStartTimestamp: original.typeInfo.swapStartTimestamp,
+            planAnalytics: extractPlanFieldsFromTypeInfo(original.typeInfo),
+            transactedUSDValue: original.typeInfo.transactedUSDValue,
+            priceSource: resolveSwapPriceSource({
+              inputCurrencyId: original.typeInfo.inputCurrencyId,
+              chainId: bridgeChainIn,
+              isCentralizedPricesEnabled,
+            }),
           })
         }
 
-        // Check if this is a flashblock transaction that should skip notifications
-        const isUnichainFlashblock = getIsFlashblocksEnabled(chainId)
-        const shouldShowPopup =
-          !isUnichainFlashblock ||
-          isNonInstantFlashblockTransactionType(original) ||
-          !('isFlashblockTxWithinThreshold' in original) ||
-          !original.isFlashblockTxWithinThreshold
-
-        if (shouldShowPopup && hash) {
+        if (hash) {
           popupRegistry.addPopup({ type: PopupType.Transaction, hash }, hash, popupDismissalTime)
         }
         // TransactionType can only be UniswapXOrder here
         // This check is in place in case more types get added in the future
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       } else if (activity.type === ActivityUpdateTransactionType.UniswapXOrder) {
         handleUniswapXActivityUpdate({ activity, popupDismissalTime })
+      } else if (
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
+        activity.type === ActivityUpdateTransactionType.Plan
+      ) {
+        const { update } = activity
+        if (isFinalizedTx(update)) {
+          dispatch(finalizeTransaction(update))
+          popupRegistry.addPopup(
+            {
+              type: PopupType.Plan,
+              planId: update.typeInfo.planId,
+            },
+            update.typeInfo.planId,
+            popupDismissalTime,
+          )
+        } else {
+          dispatch(updateTransaction(update))
+        }
       }
     },
-    [analyticsContext, dispatch, handleUniswapXActivityUpdate],
+    [analyticsContext, dispatch, handleUniswapXActivityUpdate, isCentralizedPricesEnabled],
   )
 }
+
+export default ActivityStateUpdater

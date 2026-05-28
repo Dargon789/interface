@@ -4,6 +4,7 @@ import type {
   TokenBasicProjectPartsFragment,
   TokenMarketPartsFragment,
   TokenProjectMarketsPartsFragment,
+  TokenProjectTokensTvlPartsFragment,
   TokenProjectUrlsPartsFragment,
 } from '@universe/api/src/clients/graphql/__generated__/operations'
 import {
@@ -11,6 +12,7 @@ import {
   TokenBasicProjectPartsFragmentDoc,
   TokenMarketPartsFragmentDoc,
   TokenProjectMarketsPartsFragmentDoc,
+  TokenProjectTokensTvlPartsFragmentDoc,
   TokenProjectUrlsPartsFragmentDoc,
 } from '@universe/api/src/clients/graphql/__generated__/react-hooks'
 import type { Token } from '@universe/api/src/clients/graphql/__generated__/schema-types'
@@ -87,6 +89,21 @@ export function useTokenProjectMarketsPartsFragment({
   return useFragment<TokenProjectMarketsPartsFragment>({
     fragment: TokenProjectMarketsPartsFragmentDoc,
     fragmentName: 'TokenProjectMarketsParts',
+    from: {
+      __typename: 'Token' satisfies Token['__typename'],
+      address,
+      chain,
+    },
+  })
+}
+
+export function useTokenProjectTokensTvlPartsFragment({
+  address,
+  chain,
+}: UseTokenFragmentParams): UseFragmentResult<TokenProjectTokensTvlPartsFragment> {
+  return useFragment<TokenProjectTokensTvlPartsFragment>({
+    fragment: TokenProjectTokensTvlPartsFragmentDoc,
+    fragmentName: 'TokenProjectTokensTvlParts',
     from: {
       __typename: 'Token' satisfies Token['__typename'],
       address,

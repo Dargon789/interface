@@ -1,3 +1,4 @@
+import { isMobileApp, isWebPlatform } from '@universe/environment'
 import { type BaseSyntheticEvent, useMemo } from 'react'
 import { I18nManager, type Role } from 'react-native'
 import { Spacer, type YStackProps } from 'tamagui'
@@ -7,7 +8,6 @@ import { Flex, type FlexProps } from 'ui/src/components/layout'
 import { Text, type TextProps } from 'ui/src/components/text'
 import { TouchableArea } from 'ui/src/components/touchable'
 import { spacing } from 'ui/src/theme'
-import { isMobileApp, isWebPlatform } from 'utilities/src/platform'
 import { useEvent } from 'utilities/src/react/hooks'
 
 export type DropdownMenuSheetItemProps = {
@@ -23,6 +23,8 @@ export type DropdownMenuSheetItemProps = {
   height?: number
   role?: Role
   subheader?: string
+  rightElement?: React.ReactNode
+  allowMultiline?: boolean
   onPress: () => void
   handleCloseMenu?: () => void
 }
@@ -40,6 +42,8 @@ export const DropdownMenuSheetItem = ({
   height,
   role = 'button',
   subheader,
+  rightElement,
+  allowMultiline = false,
   onPress,
   handleCloseMenu,
 }: DropdownMenuSheetItemProps): JSX.Element => {
@@ -69,6 +73,11 @@ export const DropdownMenuSheetItem = ({
     [destructive, textColor, disabled],
   )
 
+  // Prevents press events from bubbling to parent touchable areas (e.g., row wrappers)
+  const stopPressEventPropagation = useEvent((e: BaseSyntheticEvent): void => {
+    e.stopPropagation()
+  })
+
   return (
     <TouchableArea
       group
@@ -88,6 +97,8 @@ export const DropdownMenuSheetItem = ({
       backgroundColor="$background"
       height={height}
       hoverStyle={touchableAreaHoverStyle}
+      onPressIn={stopPressEventPropagation}
+      onPressOut={stopPressEventPropagation}
       onPress={handlePress}
     >
       <Flex shrink flexDirection={flexDirection} alignItems="center">
@@ -98,8 +109,7 @@ export const DropdownMenuSheetItem = ({
         <Flex maxWidth={isWebPlatform ? `calc(100% - ${spacing.spacing12}px)` : '90%'}>
           <Text
             flexShrink={1}
-            numberOfLines={1}
-            ellipsizeMode="tail"
+            {...(allowMultiline ? {} : { numberOfLines: 1, ellipsizeMode: 'tail' as const })}
             variant={variant === 'small' ? 'buttonLabel3' : 'buttonLabel2'}
             color={textColorValue}
             $group-hover={destructive ? undefined : { color: disabled ? '$neutral2' : '$neutral1Hovered' }}
@@ -120,6 +130,7 @@ export const DropdownMenuSheetItem = ({
             color="$neutral2"
           />
         )}
+        {rightElement}
       </Flex>
 
       {isSelected !== undefined && (

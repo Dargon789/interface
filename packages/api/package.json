@@ -59,7 +59,7 @@
     "openapi-typescript-codegen": "0.27.0",
     "typescript": "5.9.2",
     "viem": "2.30.5",
-    "vitest": "3.2.1",
+    "vitest": "4.1.0",
     "vitest-presets": "workspace:^",
     "zod": "4.3.6"
   },

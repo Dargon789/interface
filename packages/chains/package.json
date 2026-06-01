@@ -23,7 +23,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "@universe/sessions": "workspace:^",
     "typescript": "5.9.2",
-    "vitest": "3.2.1"
+    "vitest": "4.1.0"
   },
   "scripts": {
     "typecheck": "nx typecheck chains",

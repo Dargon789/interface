@@ -57,7 +57,7 @@
     "moti": "0.29.0",
     "typescript": "5.9.2",
     "uppercamelcase": "3.0.0",
-    "vitest": "3.2.1",
+    "vitest": "4.1.0",
     "vitest-presets": "workspace:^"
   },
   "files": [

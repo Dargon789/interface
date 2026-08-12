@@ -4,7 +4,7 @@
  * Each adapter returns raw IDs, amounts, addresses, and translation keys.
  */
 
-import { ActivityFilterType } from '~/pages/Portfolio/Activity/Filters/utils'
+import { ActivityFilterType } from '~/pages/Portfolio/Activity/Filters/activityFilterTypes'
 
 /**
  * Represents the amount/token data for different transaction types
@@ -21,6 +21,12 @@ type ActivityAmountModel =
       kind: 'single'
       currencyId?: string
       amountRaw?: string
+    }
+  | {
+      // An arbitrary number of currencies with no per-currency amount, for transactions that
+      // settle several tokens at once (e.g. collecting LP-incentive rewards across denominations).
+      kind: 'multi-token'
+      currencyIds: string[]
     }
   | {
       kind: 'approve'

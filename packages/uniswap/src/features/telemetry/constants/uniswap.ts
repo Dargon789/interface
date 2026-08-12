@@ -10,6 +10,7 @@ export enum UniswapEventName {
   DataReportSubmitted = 'Data Report Submitted',
   DelegationDetected = 'Delegation Detected',
   ExperimentQualifyingEvent = 'Experiment Qualifying Event',
+  LaunchQuickFilterSelected = 'Launch Quick Filter Selected',
   LowNetworkTokenInfoModalOpened = 'Low Network Token Info Modal Opened',
   LpIncentiveCollectRewardsButtonClicked = 'LP Incentive Collect Rewards Button Clicked',
   LpIncentiveCollectRewardsErrorThrown = 'LP Incentive Collect Rewards Error Thrown',
@@ -23,9 +24,13 @@ export enum UniswapEventName {
   PnlCoverageReport = 'PnL Coverage Report',
   PnlPortfolioReport = 'PnL Portfolio Report',
   PnlTokenReport = 'PnL Token Report',
+  PoolsPositionsReport = 'Pools Positions Report',
+  PoolsStatusFilterSelected = 'Pools Status Filter Selected',
+  RWATokenDetailsViewed = 'RWA Token Details Viewed',
   SmartWalletMismatchDetected = 'Smart Wallet Mismatch Detected',
   SpamReportSubmitted = 'Spam Report Submitted',
   TokenSelected = 'Token Selected',
+  TokenSelectorSidebarToggled = 'Token Selector Sidebar Toggled',
   TooltipOpened = 'Tooltip Opened',
   // alphabetize additional values.
 }

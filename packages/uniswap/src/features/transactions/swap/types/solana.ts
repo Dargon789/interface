@@ -3,7 +3,7 @@ import { Currency, CurrencyAmount, Percent, Price, TradeType } from '@uniswap/sd
 import { JupiterOrderResponse, TradingApi } from '@universe/api'
 import { BIPS_BASE } from 'uniswap/src/constants/misc'
 import { BlockingTradeError } from 'uniswap/src/features/transactions/swap/types/BlockingTradeError'
-import { SwapFee } from 'uniswap/src/features/transactions/swap/types/trade'
+import type { SwapFee } from 'uniswap/src/features/transactions/swap/types/trade'
 import { CurrencyField } from 'uniswap/src/types/currency'
 
 export interface SolanaTrade {
@@ -18,7 +18,7 @@ export interface SolanaTrade {
   readonly inputTax: typeof ZERO_PERCENT
   readonly outputTax: typeof ZERO_PERCENT
   readonly slippageTolerance: number
-  readonly priceImpact?: Percent
+  readonly priceDifference?: Percent
   readonly deadline: undefined
   readonly minAmountOut: CurrencyAmount<Currency>
   readonly maxAmountIn: CurrencyAmount<Currency>
@@ -102,7 +102,7 @@ function getQuoteCurrencyAmounts(params: {
 // Relatively arbitrary; higher number is more precise
 const JUP_PRICE_IMPACT_MULTIPLICATION_BASE = 1000000
 
-function getPriceImpactPercent(quote: JupiterOrderResponse): Percent | undefined {
+function getPriceDifferencePercent(quote: JupiterOrderResponse): Percent | undefined {
   if (!quote.priceImpactPct) {
     return undefined
   }
@@ -161,7 +161,7 @@ export function createSolanaTrade({
     inputTax: ZERO_PERCENT,
     outputTax: ZERO_PERCENT,
     slippageTolerance: quote.slippageBps / 100,
-    priceImpact: getPriceImpactPercent(quote),
+    priceDifference: getPriceDifferencePercent(quote),
     deadline: undefined,
     minAmountOut,
     maxAmountIn,

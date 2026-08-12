@@ -1,10 +1,15 @@
+import type { PartialMessage } from '@bufbuild/protobuf'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import type { ListTokensRequest } from '@uniswap/client-data-api/dist/data/v2/api_pb'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo } from 'react'
-import { dataApiServiceClient, type ListTokensParams } from 'uniswap/src/data/apiClients/dataApiService/listTokens'
+import { dataApiServiceClientV2 } from 'uniswap/src/data/apiClients/dataApiService/clients/DataApiClientV2'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
+import { useFeatureFlaggedChainIds } from 'uniswap/src/features/chains/hooks/useFeatureFlaggedChainIds'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useEvent } from 'utilities/src/react/hooks'
+import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
+import type { PricePoint } from '~/data/util'
 import { EXPLORE_API_PAGE_SIZE } from '~/features/Explore/state/constants'
 import { useInfiniteLoadMore } from '~/features/Explore/state/hooks/useInfiniteLoadMore'
 import { createListTokensService } from '~/features/Explore/state/listTokens/services/listTokensService'
@@ -15,7 +20,6 @@ import {
 } from '~/features/Explore/state/listTokens/types'
 import { useTopTokensLegacy } from '~/features/Explore/state/listTokens/useTopTokensLegacy'
 import { processMultichainTokensForDisplay } from '~/features/Explore/state/listTokens/utils/processMultichainTokensForDisplay'
-import { useExploreBackendSortingEnabled } from '~/features/Explore/state/useExploreBackendSortingEnabled'
 
 /**
  * Runs both legacy (useTopTokensLegacy) and backend (infinite query) data paths and returns
@@ -30,8 +34,12 @@ export function useListTokensService(
 ): UseListTokensServiceResult {
   const effectiveOptions = getEffectiveListTokensOptions(options)
   const { chains: enabledChainIds } = useEnabledChains()
-  const backendSorting = useExploreBackendSortingEnabled()
-  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  // Superset of enabledChainIds by construction: useEnabledChains derives its set FROM
+  // useFeatureFlaggedChainIds (getEnabledChains drops chains outside it), and testnet chains are
+  // never rollout-flag-gated, so every fetched chain passes the display filter in both testnet
+  // states and the pipeline's empty-set hide can never blank a fetched row.
+  const featureFlaggedChainIds = useFeatureFlaggedChainIds()
+  const tokensV2EndpointsEnabled = useFeatureFlag(FeatureFlags.V2EndpointsTokens)
 
   const chainIds = useMemo(() => (chainId !== undefined ? [chainId] : enabledChainIds), [chainId, enabledChainIds])
 
@@ -51,27 +59,31 @@ export function useListTokensService(
       effectiveOptions.filterTimePeriod,
     ],
   )
+  const backendOptionsKeySegment = useMemo(
+    () => [effectiveOptions.sortMethod, effectiveOptions.sortAscending, effectiveOptions.filterTimePeriod] as const,
+    [effectiveOptions.sortMethod, effectiveOptions.sortAscending, effectiveOptions.filterTimePeriod],
+  )
   const listTokensQueryKey = useMemo(
-    () => ['topTokens', chainIds, ...optionsKeySegment, backendSorting] as const,
-    [chainIds, optionsKeySegment, backendSorting],
+    () => [ReactQueryCacheKey.TopTokens, chainIds, ...backendOptionsKeySegment, tokensV2EndpointsEnabled] as const,
+    [chainIds, backendOptionsKeySegment, tokensV2EndpointsEnabled],
   )
   const legacyQueryKey = useMemo(
-    () => ['topTokens', 'legacy', { multichain: multichainTokenUxEnabled }, chainIds, ...optionsKeySegment] as const,
-    [chainIds, multichainTokenUxEnabled, optionsKeySegment],
+    () => [ReactQueryCacheKey.TopTokens, 'legacy', { multichain: true }, chainIds, ...optionsKeySegment] as const,
+    [chainIds, optionsKeySegment],
   )
 
   const legacyResult = useTopTokensLegacy({
-    enabled: !backendSorting,
+    enabled: !tokensV2EndpointsEnabled,
     options: effectiveOptions,
-    multichain: multichainTokenUxEnabled,
+    multichain: true,
   })
   const getTokenStats = useEvent(() => legacyResult.topTokens)
 
   const getSourceType = useEvent((): 'legacy' | 'backend_sorted' => {
-    return backendSorting ? 'backend_sorted' : 'legacy'
+    return tokensV2EndpointsEnabled ? 'backend_sorted' : 'legacy'
   })
 
-  const listTokens = useEvent((params: ListTokensParams) => dataApiServiceClient.listTokens(params))
+  const listTokens = useEvent((params: PartialMessage<ListTokensRequest>) => dataApiServiceClientV2.listTokens(params))
 
   const service = useMemo(
     () =>
@@ -101,7 +113,7 @@ export function useListTokensService(
       }),
     getNextPageParam: (lastPage) => lastPage.nextPageToken || undefined,
     initialPageParam: '',
-    enabled: backendSorting,
+    enabled: tokensV2EndpointsEnabled,
   })
 
   const {
@@ -117,15 +129,30 @@ export function useListTokensService(
         pageSize: EXPLORE_API_PAGE_SIZE,
         pageToken: '',
       }),
-    enabled: !backendSorting && !legacyResult.isLoading,
+    enabled: !tokensV2EndpointsEnabled && !legacyResult.isLoading,
   })
 
   const { topTokens, tokenSortRank } = useMemo(() => {
-    const flat = backendSorting
+    const flat = tokensV2EndpointsEnabled
       ? (data?.pages ?? []).flatMap((p) => p.multichainTokens)
       : (legacyData?.multichainTokens ?? [])
-    return processMultichainTokensForDisplay(flat, effectiveOptions)
-  }, [backendSorting, data?.pages, effectiveOptions, legacyData?.multichainTokens])
+    return processMultichainTokensForDisplay({
+      tokens: flat,
+      options: effectiveOptions,
+      trustBackendOrder: tokensV2EndpointsEnabled,
+      allowedChainIds: featureFlaggedChainIds,
+    })
+  }, [tokensV2EndpointsEnabled, data?.pages, effectiveOptions, legacyData?.multichainTokens, featureFlaggedChainIds])
+
+  const priceHistoryByMultichainId = useMemo((): Partial<Record<string, PricePoint[]>> => {
+    if (tokensV2EndpointsEnabled) {
+      return (data?.pages ?? []).reduce<Partial<Record<string, PricePoint[]>>>(
+        (acc, page) => ({ ...acc, ...page.priceHistoryByMultichainId }),
+        {},
+      )
+    }
+    return legacyData?.priceHistoryByMultichainId ?? {}
+  }, [tokensV2EndpointsEnabled, data?.pages, legacyData?.priceHistoryByMultichainId])
 
   const loadMore = useInfiniteLoadMore({
     fetchNextPage,
@@ -136,16 +163,20 @@ export function useListTokensService(
 
   const legacyPathLoading = legacyResult.isLoading
   const legacyPathError = legacyResult.isError
-  const isLoading = backendSorting ? isBackendLoading : legacyPathLoading || isLegacyQueryLoading
-  const isError = backendSorting ? !!backendError : !!legacyPathError || isLegacyQueryError
+  const isLoading = tokensV2EndpointsEnabled ? isBackendLoading : legacyPathLoading || isLegacyQueryLoading
+  const isError = tokensV2EndpointsEnabled ? !!backendError : !!legacyPathError || isLegacyQueryError
+
+  const isSearchActive = !!effectiveOptions.filterString
+  const canLoadMore = tokensV2EndpointsEnabled && !isSearchActive
 
   return {
     topTokens,
     tokenSortRank,
+    priceHistoryByMultichainId,
     isLoading,
     isError,
-    loadMore: backendSorting ? loadMore : undefined,
-    hasNextPage: backendSorting ? hasNextPage : false,
-    isFetchingNextPage: backendSorting ? isFetchingNextPage : false,
+    loadMore: canLoadMore ? loadMore : undefined,
+    hasNextPage: canLoadMore ? hasNextPage : false,
+    isFetchingNextPage: tokensV2EndpointsEnabled ? isFetchingNextPage : false,
   }
 }

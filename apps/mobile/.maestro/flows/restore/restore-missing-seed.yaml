@@ -2,10 +2,16 @@ appId: com.uniswap.mobile.dev
 jsEngine: graaljs
 env:
   DATADOG_API_KEY: ${DATADOG_API_KEY}
+  PLATFORM: ${PLATFORM}
+  GITHUB_REF_NAME: ${GITHUB_REF_NAME}
+  GITHUB_SHA: ${GITHUB_SHA}
+  GITHUB_RUN_ID: ${GITHUB_RUN_ID}
 ---
 # Initialize tracking at the very beginning
 - runScript:
     file: ../../scripts/performance/dist/actions/init-tracking.js
+    env:
+      PLATFORM: ${PLATFORM}
 
 # Start flow tracking (includes setup time)
 - runScript:
@@ -151,10 +157,12 @@ env:
       TARGET: 'restore-from-cloud'
       PHASE: 'end'
 
+# Bumped 5s → 15s: matches the flow's other RN accessibility-tree timing
+# bumps; covers the cloud-backup fallback navigation + screen mount.
 - extendedWaitUntil:
     visible:
       text: 'No backups found'
-    timeout: 5000 # wait for cloud back to fail
+    timeout: 15000 # wait for cloud backup to fail
 
 # Track incorrect seed phrase input
 - runScript:
@@ -354,4 +362,7 @@ env:
     file: ../../scripts/performance/upload-metrics.js
     env:
       DATADOG_API_KEY: ${DATADOG_API_KEY}
+      GITHUB_REF_NAME: ${GITHUB_REF_NAME}
+      GITHUB_SHA: ${GITHUB_SHA}
+      GITHUB_RUN_ID: ${GITHUB_RUN_ID}
       ENVIRONMENT: 'maestro_cloud'

@@ -58,7 +58,16 @@ function extractErrorNameFromRawMessage(rawMessage: string): string | undefined 
   }
   try {
     const parsed = JSON.parse(rawMessage.slice(jsonStart))
-    return typeof parsed.name === 'string' ? (parsed.name as string) : rawMessage
+    if (typeof parsed.name === 'string') {
+      return parsed.name as string
+    }
+    // Permissioned-pool rejections are keyed on `code` (KYC_REQUIRED,
+    // INVALID_HOOK_FOR_PERMISSIONED_POOL, ...); returning undefined instead of
+    // rawMessage keeps raw JSON payloads out of the UI (ECO-607/ECO-608).
+    if (typeof parsed.code === 'string') {
+      return parsed.code as string
+    }
+    return undefined
   } catch {
     return undefined
   }
@@ -73,6 +82,36 @@ function parseConnectRpcErrorMessage(
   const title = errorName || options.defaultTitle
 
   return options.includeRequestId && title && requestId ? `${title}, id: ${requestId}` : title
+}
+
+const POOL_REJECTS_LIQUIDITY_ERROR_MARKERS = [
+  // Current backend behavior when a pool's hook reverts the add: gas estimation fails
+  'FAILED_TO_ESTIMATE_GAS',
+  // Future machine-readable reason returned by the backend
+  'POOL_REJECTS_LIQUIDITY',
+]
+
+function getErrorMessageText(error: unknown): string | undefined {
+  if (isConnectError(error)) {
+    return error.rawMessage
+  }
+  if (error instanceof Error) {
+    return error.message
+  }
+  if (isLegacyError(error)) {
+    return error.data?.detail ?? error.name
+  }
+  return undefined
+}
+
+/**
+ * Detects a CreatePosition failure consistent with the pool's hook rejecting the added liquidity
+ * (e.g. a `beforeAddLiquidity` hook that reverts). Only meaningful when the pool's hook actually
+ * has the before-add-liquidity permission — callers must check that separately.
+ */
+export function isPoolRejectsLiquidityError(error: unknown): boolean {
+  const message = getErrorMessageText(error)
+  return Boolean(message && POOL_REJECTS_LIQUIDITY_ERROR_MARKERS.some((marker) => message.includes(marker)))
 }
 
 export function parseErrorMessageTitle(

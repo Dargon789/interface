@@ -1,3 +1,4 @@
+import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { GraphQLApi } from '@universe/api'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { ReactNode, useCallback, useState } from 'react'
@@ -19,10 +20,15 @@ import TokenWarningModal from 'uniswap/src/features/tokens/warnings/TokenWarning
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
 import { currencyId } from 'uniswap/src/utils/currencyId'
-import { gqlToCurrency } from '~/appGraphql/data/util'
+import { LPGeoRestrictionBanner } from '~/components/GeoRestriction/LPGeoRestrictionBanner'
 import { MobileBottomBar } from '~/components/NavBar/MobileBottomBar'
 import { LoadingBubble } from '~/components/Tokens/loading'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { gqlToCurrency } from '~/data/util'
+import { getNextFlowStep } from '~/features/Liquidity/Create/flowSteps'
+import { PositionFlowStep } from '~/features/Liquidity/Create/types'
+import { useLPGeoRestriction } from '~/features/Liquidity/useLPGeoRestriction'
+import { getProtocolVersionFromLabel } from '~/features/Liquidity/utils/protocolVersion'
 import { useAccount } from '~/hooks/useAccount'
 import { ScrollDirection, useScroll } from '~/hooks/useScroll'
 import { buildPoolSearchParams } from '~/pages/AddLiquidity/poolLinkParams'
@@ -35,7 +41,6 @@ const PoolDetailsStatsButtonsRow = styled(Flex, {
   row: true,
   gap: '$gap12',
   zIndex: 1,
-  mb: '$spacing24',
   $xl: {
     gap: '$gap8',
     bottom: 0,
@@ -146,6 +151,13 @@ export function PoolDetailsStatsButtons({
   const currencyInfo0 = useCurrencyInfo(currency0 && currencyId(currency0))
   const currencyInfo1 = useCurrencyInfo(currency1 && currencyId(currency1))
 
+  // Fails open while the check is in flight, as swap does: this CTA only navigates, and the
+  // add-liquidity flow it lands in gates again on the same hook before anything is signed.
+  const { isGeoRestricted, restrictedTokenSymbol } = useLPGeoRestriction({
+    token0: currency0,
+    token1: currency1,
+  })
+
   const handleAddLiquidity = async () => {
     if (currency0 && currency1) {
       const currency0Address = currency0.isNative ? NATIVE_CHAIN_ID : currency0.address
@@ -168,6 +180,13 @@ export function PoolDetailsStatsButtons({
           hookAddress,
           protocolVersion: protocolVersion?.toLowerCase(),
         })
+        // The pool already exists here, so creatingPoolOrPair is false.
+        const nextStep = getNextFlowStep({
+          currentStep: PositionFlowStep.SELECT_TOKENS_AND_FEE_TIER,
+          protocolVersion: getProtocolVersionFromLabel(protocolVersion?.toLowerCase()) ?? ProtocolVersion.V4,
+          creatingPoolOrPair: false,
+        })
+        params.set('step', String(nextStep))
         const search = params.toString()
         navigate(`/positions/add/${chainUrlParam}/${poolIdOrAddress}${search ? `?${search}` : ''}`, {
           state: { from: location.pathname, entryPoint: location.pathname },
@@ -214,6 +233,9 @@ export function PoolDetailsStatsButtons({
 
   return (
     <Flex flexDirection="column" gap="$gap24">
+      {/* The banner renders in the column rather than inside PoolButtonsWrapper because on mobile that
+          wrapper is MobileBottomBar — a fixed 100px-max strip that translates away on scroll. */}
+      {isGeoRestricted && <LPGeoRestrictionBanner tokenSymbol={restrictedTokenSymbol} />}
       <PoolButtonsWrapper isMobile={isMobile}>
         <Flex
           row
@@ -229,13 +251,17 @@ export function PoolDetailsStatsButtons({
           >
             {swapModalOpen ? t('common.close') : t('common.swap')}
           </PoolButton>
-          <PoolButton
-            icon={<Plus size="$icon.20" />}
-            onPress={handleAddLiquidity}
-            data-testid={TestID.PoolDetailsAddLiquidityButton}
-          >
-            {t('common.addLiquidity')}
-          </PoolButton>
+          {/* Dropped rather than disabled — the banner above already states the restriction, so a
+              dead half of the row would only repeat it. */}
+          {!isGeoRestricted && (
+            <PoolButton
+              icon={<Plus size="$icon.20" />}
+              onPress={handleAddLiquidity}
+              data-testid={TestID.PoolDetailsAddLiquidityButton}
+            >
+              {t('common.addLiquidity')}
+            </PoolButton>
+          )}
         </Flex>
       </PoolButtonsWrapper>
       <Modal

@@ -1,10 +1,11 @@
-import { type PartialMessage } from '@bufbuild/protobuf'
+import { type PartialMessage, type PlainMessage, toPlainMessage } from '@bufbuild/protobuf'
 import type { GetWalletBalancesRequest, GetWalletBalancesResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { type DataApiServiceClient } from '@universe/api/src/clients/dataApi/createDataApiServiceClient'
 import { transformInput, type WithoutWalletAccount } from '@universe/api/src/connectRpc/utils'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { persistableQueryOptions } from 'utilities/src/reactQuery/persistableQueryOptions'
 import { type QueryOptionsResult } from 'utilities/src/reactQuery/queryOptions'
+import { ONE_MINUTE_MS } from 'utilities/src/time/time'
 
 /** Input used to build queryKey and queryFn. Config (enabled, refetchInterval, select) is applied by the caller. */
 export type GetWalletBalancesQueryParams = {
@@ -28,9 +29,9 @@ export function getGetWalletBalancesQueryOptions(
   client: DataApiServiceClient,
   { input }: GetWalletBalancesQueryParams,
 ): QueryOptionsResult<
-  GetWalletBalancesResponse | undefined,
+  PlainMessage<GetWalletBalancesResponse> | undefined,
   Error,
-  GetWalletBalancesResponse | undefined,
+  PlainMessage<GetWalletBalancesResponse> | undefined,
   GetWalletBalancesQueryKey
 > {
   const transformedInput = transformInput(input)
@@ -44,15 +45,16 @@ export function getGetWalletBalancesQueryOptions(
 
   return persistableQueryOptions({
     queryKey: [ReactQueryCacheKey.GetWalletBalances, addressKey, queryCacheInputs] as const,
-    queryFn: async (): Promise<GetWalletBalancesResponse | undefined> => {
+    queryFn: async (): Promise<PlainMessage<GetWalletBalancesResponse> | undefined> => {
       if (!transformedInput) {
         return undefined
       }
       const response: GetWalletBalancesResponse = await client.getWalletBalances(
         transformedInput as PartialMessage<GetWalletBalancesRequest>,
       )
-      return response
+      return toPlainMessage(response)
     },
-    placeholderData: (prev: GetWalletBalancesResponse | undefined) => prev,
+    placeholderData: (prev: PlainMessage<GetWalletBalancesResponse> | undefined) => prev,
+    staleTime: ONE_MINUTE_MS,
   })
 }

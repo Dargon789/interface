@@ -1,7 +1,10 @@
+import { clearComplianceOverrides } from '@universe/compliance'
 import { TRUSTED_CHROME_EXTENSION_IDS } from '@universe/environment'
-import type { DynamicConfigKeys } from '@universe/gating'
+import type { DynamicConfigKeys, ExperimentProperties } from '@universe/gating'
 import {
   DynamicConfigs,
+  EmbeddedWalletOnboardingProperties,
+  Experiments,
   ExternallyConnectableExtensionConfigKey,
   FeatureFlags,
   getFeatureFlagName,
@@ -9,19 +12,21 @@ import {
   Layers,
   NetworkRequestsConfigKey,
   useDynamicConfigValue,
+  useExperimentValueWithExposureLoggingDisabled,
   useFeatureFlagWithExposureLoggingDisabled,
 } from '@universe/gating'
 import type { PropsWithChildren, ReactNode } from 'react'
 import { memo, useMemo, useState } from 'react'
 import { Button, Flex, FlexProps, Input, ModalCloseIcon, styled, Switch, Text, TouchableArea } from 'ui/src'
 import { Pin } from 'ui/src/components/icons/Pin'
+import { ComplianceOverrides } from 'uniswap/src/components/gating/ComplianceOverrides'
 import { useLayerValue } from 'uniswap/src/components/gating/Rows'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { useEvent } from 'utilities/src/react/hooks'
 import { FeatureFlagSelector } from '~/components/FeatureFlagModal/FeatureFlagSelector'
 import { buildFlagGroups } from '~/components/FeatureFlagModal/flagGroups'
-import { usePinnedExperiments, usePinnedFeatureFlags } from '~/dev/usePinnedFeatureFlags'
+import { usePinnedExperiments, usePinnedFeatureFlags, usePinnedFlagGroups } from '~/dev/usePinnedFeatureFlags'
 import { useModalState } from '~/hooks/useModalState'
 import { useExternallyConnectableExtensionId } from '~/pages/ExtensionPasskeyAuthPopUp/useExternallyConnectableExtensionId'
 import { EllipsisTamaguiStyle } from '~/theme/components/styles'
@@ -43,7 +48,7 @@ const FlagInfo = styled(Flex, {
   flexShrink: 1,
 })
 
-function fuzzyMatch(query: string, ...targets: string[]): boolean {
+function fuzzyMatch(query: string, ...targets: (string | undefined)[]): boolean {
   if (!query.trim()) {
     return true
   }
@@ -115,7 +120,7 @@ function PinnableRow({ isPinned, onPinPress, title, label, rightContent }: Pinna
 }
 
 interface FeatureFlagProps {
-  label: string
+  label?: string
   flag: FeatureFlags
 }
 
@@ -123,11 +128,30 @@ const FeatureFlagGroup = memo(function FeatureFlagGroup({
   name,
   children,
 }: PropsWithChildren<{ name: string }>): JSX.Element {
+  const { isPinned, pinGroup, unpinGroup } = usePinnedFlagGroups()
+  const pinned = isPinned(name)
+
+  const onPinPress = useEvent(() => {
+    if (pinned) {
+      unpinGroup(name)
+    } else {
+      pinGroup(name)
+    }
+  })
+
   return (
     <>
-      <CenteredRow key={name}>
+      <TouchableCenteredRow key={name} group="item" onPress={onPinPress} justifyContent="flex-start" gap="$gap8">
         <Text variant="body1">{name}</Text>
-      </CenteredRow>
+        <Flex
+          alignSelf="center"
+          pl="$padding4"
+          opacity={pinned ? 1 : 0}
+          $group-item-hover={{ opacity: pinned ? 1 : 0.6 }}
+        >
+          <Pin size="$icon.16" color={pinned ? '$accent1' : '$neutral2'} />
+        </Flex>
+      </TouchableCenteredRow>
       {children}
     </>
   )
@@ -170,6 +194,35 @@ const FeatureFlagOption = memo(function FeatureFlagOption({ flag, label }: Featu
     />
   )
 })
+
+// Toggles a boolean experiment param: off mirrors the control group, on mirrors the test group.
+function ExperimentToggleOption<Exp extends keyof ExperimentProperties>({
+  experiment,
+  param,
+  label,
+}: {
+  experiment: Exp
+  param: ExperimentProperties[Exp]
+  label: string
+}): JSX.Element {
+  const enabled = useExperimentValueWithExposureLoggingDisabled({
+    experiment,
+    param,
+    defaultValue: false,
+  })
+
+  const onCheckedChange = useEvent((checked: boolean) => {
+    getOverrideAdapter().overrideExperiment(experiment, { [param]: checked })
+  })
+
+  return (
+    <GatingRowContent
+      title={experiment}
+      label={label}
+      rightContent={<GatingSwitch checked={enabled} onCheckedChange={onCheckedChange} />}
+    />
+  )
+}
 
 interface LayerOptionProps {
   layerName: Layers
@@ -243,9 +296,11 @@ export function FeatureFlagModal(): JSX.Element {
   const { isOpen, closeModal } = useModalState(ModalName.FeatureFlags)
   const externallyConnectableExtensionId = useExternallyConnectableExtensionId()
   const [searchQuery, setSearchQuery] = useState('')
+  const { pinnedGroups } = usePinnedFlagGroups()
 
   const removeAllOverrides = useEvent(() => {
     getOverrideAdapter().removeAllOverrides()
+    clearComplianceOverrides()
   })
 
   const handleReload = useEvent(() => {
@@ -268,16 +323,23 @@ export function FeatureFlagModal(): JSX.Element {
           />
         ),
         networkRequestsConfig: <NetworkRequestsConfig />,
+        experimentOptions: (
+          <Flex ml="$padding8" gap="$gap8">
+            <ExperimentToggleOption
+              experiment={Experiments.EmbeddedWalletOnboarding}
+              param={EmbeddedWalletOnboardingProperties.NewFlowEnabled}
+              label="newFlowEnabled: on = test (new onboarding UX), off = control (current flow)"
+            />
+          </Flex>
+        ),
         layerOptions: (
           <Flex ml="$padding8" gap="$gap8">
-            <FeatureFlagGroup name={Layers.ExplorePage}>
-              <LayerOption layerName={Layers.ExplorePage} />
-            </FeatureFlagGroup>
             <FeatureFlagGroup name={Layers.SwapPage}>
               <LayerOption layerName={Layers.SwapPage} />
             </FeatureFlagGroup>
           </Flex>
         ),
+        complianceOverrides: <ComplianceOverrides />,
       }),
     [externallyConnectableExtensionId],
   )
@@ -319,7 +381,13 @@ export function FeatureFlagModal(): JSX.Element {
           {(() => {
             let hasResults = false
 
-            const groups = flagGroups.map((group) => {
+            const pinned = pinnedGroups
+              .map((name) => flagGroups.find((g) => g.name === name))
+              .filter((g): g is (typeof flagGroups)[number] => g !== undefined)
+            const rest = flagGroups.filter((g) => !pinnedGroups.includes(g.name))
+            const sortedFlagGroups = [...pinned, ...rest]
+
+            const groups = sortedFlagGroups.map((group) => {
               const matchingFlags = isSearching
                 ? group.flags.filter(({ flag, label }) => fuzzyMatch(searchQuery, getFeatureFlagName(flag), label))
                 : group.flags

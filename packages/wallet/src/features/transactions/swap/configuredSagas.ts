@@ -1,7 +1,9 @@
+import { PLAN_SAGA_TIMEOUT_MS } from 'uniswap/src/features/transactions/swap/plan/constants'
 import { createMonitoredSaga } from 'uniswap/src/utils/saga'
 import { getSharedTransactionSagaDependencies } from 'wallet/src/features/transactions/configuredSagas'
 import { createExecutePlanSaga } from 'wallet/src/features/transactions/swap/executePlanSaga'
 import { createExecuteSwapSaga } from 'wallet/src/features/transactions/swap/executeSwapSaga'
+import { createExecuteUserOpSwapSaga } from 'wallet/src/features/transactions/swap/executeUserOpSwapSaga'
 import { createPrepareAndSignSwapSaga } from 'wallet/src/features/transactions/swap/prepareAndSignSwapSaga'
 
 // Create configured saga instances using dependency injection
@@ -11,6 +13,7 @@ export const configuredExecuteSwapSaga = createExecuteSwapSaga(
   configuredPrepareAndSignSwapSaga,
 )
 export const configuredExecutePlanSaga = createExecutePlanSaga(getSharedTransactionSagaDependencies())
+export const configuredExecuteUserOpSwapSaga = createExecuteUserOpSwapSaga(getSharedTransactionSagaDependencies())
 
 // Export the monitored sagas
 export const {
@@ -43,5 +46,16 @@ export const {
   name: 'executePlan',
   options: {
     parallel: true,
+    timeoutDuration: PLAN_SAGA_TIMEOUT_MS,
   },
+})
+
+export const {
+  name: executeUserOpSwapSagaName,
+  wrappedSaga: executeUserOpSwapSaga,
+  reducer: executeUserOpSwapReducer,
+  actions: executeUserOpSwapActions,
+} = createMonitoredSaga({
+  saga: configuredExecuteUserOpSwapSaga,
+  name: 'executeUserOpSwap',
 })

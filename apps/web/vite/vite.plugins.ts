@@ -1,8 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import type { Plugin } from 'vite'
-
-const LOCAL_ENV = '.env.local'
+import type { Plugin, ResolvedConfig } from 'vite'
 
 const CSP_DIRECTIVE_MAP: Record<string, string> = {
   defaultSrc: 'default-src',
@@ -17,16 +15,43 @@ const CSP_DIRECTIVE_MAP: Record<string, string> = {
   formAction: 'form-action',
 }
 
+const ASSET_BASE_URL_CSP_DIRECTIVES = [
+  'scriptSrc',
+  'styleSrc',
+  'fontSrc',
+  'imgSrc',
+  'mediaSrc',
+  'connectSrc',
+  'workerSrc',
+] as const
+
+function getCrossOriginBase(base: string | undefined): string | undefined {
+  if (!base || base === '/') {
+    return undefined
+  }
+
+  try {
+    return new URL(base).origin
+  } catch {
+    return undefined
+  }
+}
+
 // This plugin is used in vite.config.mts
 // oxlint-disable-next-line import/no-unused-modules
-export function cspMetaTagPlugin(mode?: string): Plugin {
+export function cspMetaTagPlugin(mode?: string, envValues?: Record<string, string>): Plugin {
+  let resolvedBase: string | undefined
+
   return {
     name: 'inject-csp-meta',
 
+    configResolved(config: ResolvedConfig) {
+      resolvedBase = config.base
+    },
+
     transformIndexHtml(html) {
-      // oxlint-disable-next-line typescript/no-unnecessary-condition
       const env = mode ?? process.env.NODE_ENV ?? 'development'
-      const skip = process.env.VITE_SKIP_CSP === 'true'
+      const skip = process.env.SKIP_CSP === 'true'
 
       if (skip) {
         return html
@@ -49,10 +74,28 @@ export function cspMetaTagPlugin(mode?: string): Plugin {
         }
       }
 
-      const tradingApiUrlOverride = getLocalEnvUrl('REACT_APP_TRADING_API_URL_OVERRIDE')
+      // Cross-origin asset base (ECS CDN): 'self' no longer covers JS/CSS/fonts/workers.
+      const assetBaseUrlOrigin = getCrossOriginBase(resolvedBase)
+      if (assetBaseUrlOrigin) {
+        for (const directive of ASSET_BASE_URL_CSP_DIRECTIVES) {
+          baseCSP[directive] = [...new Set([...(baseCSP[directive] || []), assetBaseUrlOrigin])]
+        }
+      }
+
+      const tradingApiUrlOverride = envValues?.TRADING_API_URL_OVERRIDE
       if (tradingApiUrlOverride) {
         if (!baseCSP.connectSrc.includes(tradingApiUrlOverride)) {
           baseCSP.connectSrc.push(tradingApiUrlOverride)
+        }
+      }
+
+      // E2E-only: the hermetic WalletConnect relay runs on a local ws port (see
+      // src/playwright/wc/localRelay.ts). Allow a localhost ws origin in connect-src only for the
+      // e2e build, keeping the prod policy (csp.json) free of any localhost ws.
+      if (envValues?.IS_E2E_TEST === 'true') {
+        const localWsOrigin = 'ws://127.0.0.1:*'
+        if (!baseCSP.connectSrc.includes(localWsOrigin)) {
+          baseCSP.connectSrc.push(localWsOrigin)
         }
       }
 
@@ -86,47 +129,5 @@ export function cspMetaTagPlugin(mode?: string): Plugin {
         `<meta http-equiv="Content-Security-Policy" content="${escapedContent}">`,
       )
     },
-  }
-}
-
-/**
- * For development builds, gets the target envUrlKey from the local env
- * file and returns the value.
- */
-const getLocalEnvUrl = (envUrlKey: string) => {
-  try {
-    if (process.env.NODE_ENV !== 'development') {
-      return null
-    }
-    const localEnvPath = path.resolve(process.cwd(), LOCAL_ENV)
-    if (fs.existsSync(localEnvPath)) {
-      const envContent = fs.readFileSync(localEnvPath, 'utf-8')
-      const lines = envContent.split('\n')
-
-      for (const line of lines) {
-        const trimmedLine = line.trim()
-        if (!trimmedLine || trimmedLine.startsWith('#')) {
-          continue
-        }
-        if (trimmedLine.startsWith(`${envUrlKey}=`)) {
-          const value = trimmedLine.split('=')[1]?.trim().replace(/^["']|["']$/g, '') || ''
-          if (value) {
-            try {
-              new URL(value)
-              return value
-            } catch (_e) {
-              // oxlint-disable-next-line no-console -- Required for Vite build debugging
-              console.warn(`Invalid URL found for ${envUrlKey}: ${value}`)
-              return null
-            }
-          }
-        }
-      }
-    }
-    return null
-  } catch (error) {
-    // oxlint-disable-next-line no-console -- Required for Vite build debugging
-    console.error(`Error retrieving environment URL for ${envUrlKey}:`, error)
-    return null
   }
 }

@@ -1,14 +1,15 @@
 import { getWagmiConnectorV2 } from '@binance/w3w-wagmi-connector-v2'
-import { getEntryGatewayUrl } from '@universe/api'
+import { tryProvideSession } from '@universe/api'
 import {
   createObservableTransport,
-  createRpcConfigResolver,
-  createUniRpcConfigResolver,
+  createSessionGatedTransport,
+  createUniRpcRoutedTransport,
   createUniRpcTransportFactory,
   getRpcObserver,
 } from '@universe/chains'
+import { embeddedWallet } from '@universe/embedded-wallet'
 import { isE2eTestEnv, isTestEnv } from '@universe/environment'
-import { FeatureFlags, getFeatureFlag } from '@universe/gating'
+import { SessionGateSource } from '@universe/sessions'
 import { UNISWAP_LOGO } from 'ui/src/assets'
 import { UNISWAP_WEB_URL } from 'uniswap/src/constants/urls'
 import { CONNECTION_PROVIDER_IDS } from 'uniswap/src/constants/web3'
@@ -16,18 +17,19 @@ import type { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { ORDERED_EVM_CHAINS } from 'uniswap/src/features/chains/chainInfo'
 import { RPCType } from 'uniswap/src/features/chains/types'
 import { isTestnetChain } from 'uniswap/src/features/chains/utils'
-import { selectRpcUrl } from 'uniswap/src/features/providers/rpcUrlSelector'
+import { defaultResolveRpcConfig } from 'uniswap/src/features/providers/resolveRpcConfig'
 import { logger } from 'utilities/src/logger/logger'
 import { getNonEmptyArrayOrThrow } from 'utilities/src/primitives/array'
 import type { Chain } from 'viem'
 import { createClient } from 'viem'
 import type { Config } from 'wagmi'
 import { createConfig, fallback, http } from 'wagmi'
-import { coinbaseWallet, injected, safe, walletConnect } from 'wagmi/connectors'
-import { PLAYWRIGHT_CONNECT_ADDRESS } from '~/connection/constants'
-import { embeddedWallet } from '~/connection/EmbeddedWalletConnector'
+import { coinbaseWallet, injected, metaMask, safe } from 'wagmi/connectors'
+import { getConfig } from '~/config'
+import { METAMASK_CONNECT_DAPP_METADATA, PLAYWRIGHT_CONNECT_ADDRESS } from '~/connection/constants'
+import { embeddedWalletProvider } from '~/connection/embeddedWalletProviderInstance'
 import { createRejectableMockConnector } from '~/connection/rejectableConnector'
-import { WC_PARAMS } from '~/connection/walletConnect'
+import { makeInterfaceWalletConnectConnector, uniswapWalletConnect } from '~/connection/walletConnect'
 
 // Only accept Safe Apps SDK messages from the canonical Safe web app.
 // Tested against bypass patterns in wagmiConfig.test.ts.
@@ -82,18 +84,31 @@ function createWagmiConnectors(params: {
   const { includeMockConnector } = params
 
   const baseConnectors = [
+    // MetaMask Connect SDK
+    metaMask({ dapp: METAMASK_CONNECT_DAPP_METADATA }),
     // Binance connector - uses injected for extension, QR code for mobile
     getBinanceConnector(),
     // There are no unit tests that expect WalletConnect to be included here,
     // so we can disable it to reduce log noise.
-    ...(isTestEnv() && !isE2eTestEnv() ? [] : [walletConnect(WC_PARAMS)]),
-    embeddedWallet(),
+    // Isolated WC storage namespace so it doesn't share a relay identity (clientId) with any other
+    // WC SignClient: sharing lets a second client's orphaned-subscription cleanup unsubscribe this
+    // one's active session (dropping the swap's tx confirmation) and cross-deliver pairing messages.
+    // The Uniswap connector is registered here (not created lazily on click) so IntentionalEvmReconnect
+    // can find it by id in config.connectors and restore its session; its own namespace keeps it safe alongside this one.
+    ...(isTestEnv() && !isE2eTestEnv()
+      ? []
+      : [
+          // relayUrl is undefined in production (public relay); the e2e config populates it with
+          // the hermetic in-process relay via WC_RELAY_URL_OVERRIDE (.env.e2e.override).
+          makeInterfaceWalletConnectConnector({ relayUrl: getConfig().walletConnectRelayUrlOverride }),
+          uniswapWalletConnect(),
+        ]),
+    embeddedWallet({ provider: embeddedWalletProvider }),
     coinbaseWallet({
       appName: 'Uniswap',
       // CB SDK doesn't pass the parent origin context to their passkey site
       // Flagged to CB team and can remove UNISWAP_WEB_URL once fixed
       appLogoUrl: `${UNISWAP_WEB_URL}${UNISWAP_LOGO}`,
-      reloadOnDisconnect: false,
     }),
     safe({
       allowedDomains: [SAFE_ALLOWED_ORIGIN],
@@ -111,16 +126,9 @@ function createWagmiConnectors(params: {
     : baseConnectors
 }
 
-const webResolveRpcConfig = createRpcConfigResolver({
-  resolveUniRpcConfig: createUniRpcConfigResolver({
-    getFeatureFlag: () => getFeatureFlag(FeatureFlags.UniRpcEnabled),
-    getEntryGatewayUrl,
-    requestSource: 'uniswap-web',
-    credentials: 'include',
-  }),
-  selectLegacyRpcUrl: selectRpcUrl,
-})
-
+// Cookie-session UniRPC transport factory (web's injected session strategy).
+// The gating decision lives in the shared `defaultResolveRpcConfig` resolver;
+// this only constructs the UniRPC transport once that resolver says to use it.
 const buildWebUniRpcTransport = createUniRpcTransportFactory({
   session: { type: 'cookies' },
 })
@@ -138,40 +146,49 @@ function createWagmiConfig(params: {
     chains: getNonEmptyArrayOrThrow(ORDERED_EVM_CHAINS),
     connectors,
     client({ chain }) {
-      const rpcConfig = webResolveRpcConfig({ chainId: chain.id, rpcType: RPCType.Public })
-      // Branch on the explicit `isUniRpc` flag — header presence used to be
-      // the implicit signal, which would have routed any legacy provider with
-      // static headers through the UniRPC transport by accident.
-      if (rpcConfig?.isUniRpc) {
-        return createClient({
-          chain,
-          batch: { multicall: true },
-          pollingInterval: 12_000,
-          transport: createObservableTransport({
-            baseTransportFactory: buildWebUniRpcTransport({
-              config: { rpcUrl: rpcConfig.rpcUrl, headers: rpcConfig.headers ?? {} },
-            }),
-            observer: getRpcObserver(),
-            meta: { chainId: chain.id, url: rpcConfig.rpcUrl },
-          }),
-        })
-      }
-
+      // wagmi builds this client once per chain and caches it for the session,
+      // so the UniRPC-vs-legacy choice must NOT be snapshotted here: on app
+      // start the gate behind `isUniRpc` is usually still unresolved (Statsig
+      // inits async; a cold load has no cached value), and a snapshot would pin
+      // the chain to the legacy Infura/QuickNode providers for the whole
+      // session even after the gate turns on. createUniRpcRoutedTransport
+      // re-reads the shared resolver per request, so the cached client
+      // self-heals onto UniRPC the moment the gate resolves — same guarantee
+      // ViemClientManager gets by re-resolving per `getViemClient` call.
       return createClient({
         chain,
         batch: { multicall: true },
         pollingInterval: 12_000,
-        transport: fallback(
-          orderedTransportUrls(chain).map((url) =>
+        transport: createUniRpcRoutedTransport({
+          resolveRpcConfig: () => defaultResolveRpcConfig({ chainId: chain.id, rpcType: RPCType.Public }),
+          buildUniRpcTransport: (rpcConfig) =>
             createObservableTransport({
-              baseTransportFactory: http(url, {
-                onFetchResponse: (response) => onFetchResponse(response, chain, url),
+              // Gate UniRPC traffic on session readiness (await ready + retry-once on 401).
+              // Applied inside the per-request-resolved factory so the gate rides along when
+              // the routed transport self-heals onto UniRPC after the flag resolves.
+              baseTransportFactory: createSessionGatedTransport({
+                baseTransportFactory: buildWebUniRpcTransport({
+                  config: { rpcUrl: rpcConfig.rpcUrl, headers: rpcConfig.headers ?? {} },
+                }),
+                getSession: tryProvideSession,
+                source: SessionGateSource.UnirpcViem,
               }),
               observer: getRpcObserver(),
-              meta: { chainId: chain.id, url },
+              meta: { chainId: chain.id, url: rpcConfig.rpcUrl },
             }),
-          ),
-        ),
+          buildLegacyTransport: () =>
+            fallback(
+              orderedTransportUrls(chain).map((url) =>
+                createObservableTransport({
+                  baseTransportFactory: http(url, {
+                    onFetchResponse: (response) => onFetchResponse(response, chain, url),
+                  }),
+                  observer: getRpcObserver(),
+                  meta: { chainId: chain.id, url },
+                }),
+              ),
+            ),
+        }),
       })
     },
   })

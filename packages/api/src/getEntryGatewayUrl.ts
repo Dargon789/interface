@@ -1,4 +1,5 @@
 import {
+  DEV_ENTRY_GATEWAY_API_BASE_URL,
   PROD_ENTRY_GATEWAY_API_BASE_URL,
   STAGING_ENTRY_GATEWAY_API_BASE_URL,
 } from '@universe/api/src/clients/base/urls'
@@ -22,7 +23,7 @@ export const ENTRY_GATEWAY_PROXY_ENV_SEGMENT: Record<Environment, string> = {
  * Get the FOR API URL routed through the Entry Gateway.
  * Delegates to getEntryGatewayUrl() and appends the FOR service path.
  */
-export function getMigratedForApiUrl(): string {
+export function getForApiUrl(): string {
   return `${getEntryGatewayUrl()}/FOR.v1.FORService`
 }
 
@@ -75,7 +76,8 @@ export function getEntryGatewayUrl(options?: GetEntryGatewayUrlOptions): string 
 
   const environment = options?.env ?? getCurrentEnv({ isVercelEnvironment: config.isVercelEnvironment })
   switch (environment) {
-    case Environment.Development: // Dev also currently uses staging builds, as for many features staging is more stable / less prone to breaking testing changes.
+    case Environment.Development:
+      return DEV_ENTRY_GATEWAY_API_BASE_URL
     case Environment.Staging:
       return STAGING_ENTRY_GATEWAY_API_BASE_URL
     case Environment.Production:

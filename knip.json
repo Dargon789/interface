@@ -8,9 +8,9 @@
   ],
   "ignoreDependencies": [
     "typescript",
-    "@typescript/native-preview",
     "oxlint",
-    "@types/.+"
+    "@types/.+",
+    "@vitest/coverage-v8"
   ],
   "workspaces": {
     ".": {
@@ -18,7 +18,6 @@
         "@graphql-codegen/.+",
         "@commitlint/.+",
         "@nx/devkit",
-        "@nx/jest",
         "@nx/js",
         "@nx/plugin",
         "@nx/workspace",
@@ -55,14 +54,18 @@
       ]
     },
     "apps/extension": {
+      "entry": [
+        "src/entrypoints/**/*.{ts,tsx}"
+      ],
       "ignoreDependencies": [
         "@svgr/webpack",
+        "@tailwindcss/vite",
         "@testing-library/dom",
         "@wxt-dev/module-react",
         "concurrently",
         "css-loader",
+        "dotenv",
         "esbuild-loader",
-        "jest-environment-jsdom",
         "react-native-web",
         "serve",
         "style-loader",
@@ -90,7 +93,12 @@
         "react-native-svg-transformer",
         "@amplitude/analytics-react-native",
         "@datadog/datadog-ci",
+        "@ethersproject/shims",
         "@expo/fingerprint",
+        "@formatjs/intl-getcanonicallocales",
+        "@formatjs/intl-locale",
+        "react-native-quick-base64",
+        "react-native-quick-crypto",
         "@react-native-community/cli",
         "@react-native-community/cli-platform-android",
         "@react-native-community/cli-platform-ios",
@@ -98,7 +106,7 @@
         "@shopify/react-native-skia",
         "@tamagui/babel-plugin",
         "@uniswap/ethers-rs-mobile",
-        "babel-jest",
+        "agent-device",
         "babel-loader",
         "babel-plugin-react-native-web",
         "babel-plugin-transform-remove-console",
@@ -113,7 +121,6 @@
         "expo-modules-core",
         "expo-secure-store",
         "inquirer",
-        "madge",
         "postinstall-postinstall",
         "react-native-argon2",
         "react-native-asset",
@@ -122,8 +129,12 @@
         "react-native-passkey",
         "react-native-restart",
         "sp-react-native-in-app-updates",
-        "ts-jest",
-        "ts-node"
+        "ts-node",
+        "@ethersproject/shims",
+        "@formatjs/intl-getcanonicallocales",
+        "@formatjs/intl-locale",
+        "react-native-quick-base64",
+        "react-native-quick-crypto"
       ]
     },
     "apps/web": {
@@ -134,12 +145,14 @@
         "src/sideEffects.ts",
         "src/polyfills.ts",
         "src/tamagui.config.ts",
-        "functions/**/*.ts"
+        "functions/**/*.ts",
+        "scripts/anvil-fork-headers.ts"
       ],
       "vite": false,
       "ignoreDependencies": [
         "@babel/preset-env",
         "@cloudflare/vite-plugin",
+        "@tailwindcss/vite",
         "@tamagui/vite-plugin",
         "vite-plugin-bundlesize",
         "vite-plugin-commonjs",
@@ -153,7 +166,10 @@
         "@ethersproject/.+",
         "@graphql-codegen/.+",
         "@hono/node-server",
+        "@metamask/connect-evm",
         "@rive-app/canvas",
+        "@safe-global/safe-apps-provider",
+        "@safe-global/safe-apps-sdk",
         "@storybook/.+",
         "@svgr/webpack",
         "@swc/core",
@@ -162,10 +178,10 @@
         "@typechain/ethers-v5",
         "@universe/config",
         "@vercel/og",
-        "@vitest/coverage-v8",
         "@walletconnect/ethereum-provider",
         "@web3-react/eip1193",
         "@web3-react/empty",
+        "agentation-mcp",
         "ajv-formats",
         "babel-plugin-react-compiler",
         "browser-cache-mock",
@@ -175,14 +191,12 @@
         "dd-trace",
         "detect-package-manager",
         "dotenv-cli",
-        "esbuild-register",
         "expo-crypto",
         "hono",
         "html-entities",
         "http-server",
         "jpeg-js",
         "lint-staged",
-        "madge",
         "mini-css-extract-plugin",
         "playwright",
         "png-ts",
@@ -201,7 +215,8 @@
         "wait-on",
         "workbox-expiration",
         "workbox-strategies",
-        "wrangler"
+        "wrangler",
+        "ws"
       ]
     },
     "labs/sandbox": {
@@ -227,13 +242,14 @@
         "ws"
       ]
     },
-    "config/jest-presets": {
-      "ignoreDependencies": [
-        "@testing-library/jest-native",
-        "babel-jest",
-        "jest-svg-transformer",
-        "jest-transform-stub",
-        "ts-jest"
+    "labs/workbench": {
+      "entry": [
+        "functions/vercel-entry.ts",
+        "scripts/build-vercel.ts",
+        "scripts/vercel-ignore.ts"
+      ],
+      "ignore": [
+        "app/components/ui/**"
       ]
     },
     "config/vitest-presets": {
@@ -243,13 +259,24 @@
     },
     "packages/api": {
       "ignoreDependencies": [
-        "expo-secure-store",
-        "@vitest/coverage-v8"
+        "expo-secure-store"
+      ]
+    },
+    "packages/compliance": {
+      "ignoreDependencies": [
+        "@universe/api",
+        "@universe/environment"
       ]
     },
     "packages/config-cli": {
       "entry": [
         "src/main.ts"
+      ]
+    },
+    "packages/embedded-wallet": {
+      "ignoreDependencies": [
+        "react-native-argon2",
+        "react-native-passkey"
       ]
     },
     "packages/environment": {
@@ -266,32 +293,37 @@
     },
     "packages/mycelium": {
       "ignoreDependencies": [
-        "tailwindcss"
+        "@legendapp/list",
+        "camelcase",
+        "cheerio",
+        "tailwindcss",
+        "uppercamelcase",
+        "@testing-library/react"
+      ],
+      "ignore": [
+        "src/components/icons/**"
       ]
     },
     "packages/notifications": {
-      "ignoreDependencies": [
-        "@vitest/coverage-v8"
-      ]
+      "ignoreDependencies": []
     },
     "packages/prices": {
       "ignoreDependencies": [
-        "@testing-library/react",
-        "@vitest/coverage-v8"
+        "@testing-library/react"
       ]
     },
     "packages/sessions": {
       "ignoreDependencies": [
         "@bufbuild/protobuf",
         "@tanstack/react-query",
-        "@vitest/coverage-v8",
         "openapi-typescript-codegen"
       ]
     },
     "packages/transactional": {
       "ignoreDependencies": [
         "@react-email/preview-server",
-        "@universe/mycelium"
+        "@universe/mycelium",
+        "@universe/tailwind"
       ]
     },
     "packages/ui": {
@@ -302,6 +334,7 @@
       "ignoreDependencies": [
         "@react-native-masked-view/masked-view",
         "@shopify/react-native-skia",
+        "@tamagui/animations-moti",
         "@tamagui/animations-react-native",
         "@tamagui/font-inter",
         "@tamagui/theme-base",
@@ -319,21 +352,18 @@
     },
     "packages/uniswap": {
       "ignoreDependencies": [
-        "@cloudflare/.+",
         "@graphql-codegen/.+",
-        "@noble/.+",
         "@react-native-masked-view/masked-view",
         "@redux-devtools/extension",
         "@typechain/ethers-v5",
         "expo-blur",
+        "expo-file-system",
         "expo-linear-gradient",
         "i18next-resources-for-ts",
         "react-native-appsflyer",
-        "react-native-argon2",
         "react-native-context-menu-view",
         "react-native-device-info",
-        "react-native-mmkv",
-        "react-native-passkey"
+        "react-native-mmkv"
       ]
     },
     "packages/utilities": {
@@ -347,7 +377,6 @@
     },
     "packages/wallet": {
       "ignoreDependencies": [
-        "jest-presets",
         "react-native-context-menu-view",
         "react-native-image-picker",
         "react-native-restart",
@@ -356,7 +385,6 @@
     },
     "packages/websocket": {
       "ignoreDependencies": [
-        "@vitest/coverage-v8",
         "partysocket"
       ]
     },

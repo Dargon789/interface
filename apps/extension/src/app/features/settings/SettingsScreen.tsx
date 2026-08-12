@@ -1,3 +1,4 @@
+import { PasskeyManagementModal } from '@universe/embedded-wallet'
 import { isDevEnv } from '@universe/environment'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useCallback, useEffect, useState } from 'react'
@@ -30,7 +31,7 @@ import {
   Sliders,
   Wrench,
 } from 'ui/src/components/icons'
-import { uniswapUrls } from 'uniswap/src/constants/urls'
+import { UniswapHelpUrls, UniswapStaticUrls } from 'uniswap/src/constants/urls'
 import { resetUniswapBehaviorHistory } from 'uniswap/src/features/behaviorHistory/slice'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { FiatCurrency, ORDERED_CURRENCIES } from 'uniswap/src/features/fiatCurrency/constants'
@@ -38,7 +39,6 @@ import { getFiatCurrencyName, useAppFiatCurrencyInfo } from 'uniswap/src/feature
 import { NetworkCostPickerModal } from 'uniswap/src/features/gas/components/NetworkCostPickerModal'
 import { Language, WALLET_SUPPORTED_LANGUAGES } from 'uniswap/src/features/language/constants'
 import { getLanguageInfo, useCurrentLanguageInfo } from 'uniswap/src/features/language/hooks'
-import { PasskeyManagementModal } from 'uniswap/src/features/passkey/PasskeyManagementModal'
 import {
   setCurrentFiatCurrency,
   setCurrentLanguage,
@@ -152,11 +152,11 @@ export function SettingsScreen(): JSX.Element {
   const handleAboutModalClose = useEvent(() => setIsAboutModalOpen(false))
 
   const handleOpenPrivacyPolicy = useEvent(() => {
-    window.open(uniswapUrls.privacyPolicyUrl, '_blank', 'noopener,noreferrer')
+    window.open(UniswapStaticUrls.privacyPolicyUrl, '_blank', 'noopener,noreferrer')
   })
 
   const handleOpenTermsOfService = useEvent(() => {
-    window.open(uniswapUrls.termsOfServiceUrl, '_blank', 'noopener,noreferrer')
+    window.open(UniswapStaticUrls.termsOfServiceUrl, '_blank', 'noopener,noreferrer')
   })
 
   const handleDisclosuresPress = useEvent(() => {
@@ -328,7 +328,7 @@ export function SettingsScreen(): JSX.Element {
               <SettingsItem
                 Icon={HelpCenter}
                 title={t('settings.setting.helpCenter.title')}
-                url={uniswapUrls.helpArticleUrls.extensionHelp}
+                url={UniswapHelpUrls.articles.extensionHelp}
                 RightIcon={ArrowUpRight}
               />
               <SettingsItem

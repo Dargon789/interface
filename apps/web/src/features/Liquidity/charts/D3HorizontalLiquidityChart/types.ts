@@ -2,7 +2,7 @@ import type { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/pool
 import type { Currency } from '@uniswap/sdk-core'
 import type * as d3 from 'd3'
 import type { UseSporeColorsReturn } from 'ui/src/hooks/useSporeColors'
-import type { TickData } from '~/appGraphql/data/AllV3TicksQuery'
+import type { TickData } from '~/data/AllV3TicksQuery'
 import type { ChartCoreActions } from '~/features/Liquidity/charts/D3LiquidityChartShared/store/createChartActions'
 import type { LinearTickScale, Renderer } from '~/features/Liquidity/charts/D3LiquidityChartShared/types'
 import type { BucketChartEntry } from '~/features/Liquidity/charts/D3LiquidityChartShared/utils/liquidityBucketing/liquidityBucketing'
@@ -59,6 +59,22 @@ export type HorizontalLiquidityRenderingContext = {
   quoteCurrency: Maybe<Currency>
   priceInverted: boolean
   protocolVersion: ProtocolVersion
+  /** Ephemeral state for smoothing the liquidity height-scale during scroll (see HorizontalLiquidityBarsRenderer). */
+  liquidityScaleSmoothing: HorizontalLiquidityScaleSmoothing
+}
+
+/**
+ * Ephemeral, view-only state used to low-pass the liquidity height-scale while scrolling.
+ * Lives on a stable ref (not in the store) so it survives the per-frame renderer re-init,
+ * without triggering React re-renders. See HorizontalLiquidityBarsRenderer for how it's applied.
+ */
+export type HorizontalLiquidityScaleSmoothing = {
+  /** Eased max-liquidity currently driving bar heights; undefined until the first draw / after reset. */
+  displayedMaxLiquidity?: number
+  /** Timestamp (ms) of the previous draw, for frame-rate-independent easing. */
+  lastFrameTimeMs?: number
+  /** Pending requestAnimationFrame id for the post-scroll settle loop. */
+  settleFrameId?: number
 }
 
 export type { Renderer }

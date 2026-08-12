@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { readdir } from 'fs/promises'
 import path from 'path'
 /**
  * GraphQL type generator that replaces the graphql-codegen CLI.
@@ -37,22 +38,34 @@ const schemaDocumentNode = getCachedDocumentNodeFromSchema(schemaAst)
 // ---------------------------------------------------------------------------
 // 2. Load all document files (matching codegen.config.ts patterns)
 // ---------------------------------------------------------------------------
-const documentPatterns = [
-  'apps/mobile/src/**/*.graphql',
-  'apps/extension/src/**/*.graphql',
-  'packages/wallet/src/**/*.graphql',
-  'packages/uniswap/src/**/*.graphql',
-  'packages/api/src/**/*.graphql',
+const documentRoots = [
+  'apps/mobile/src',
+  'apps/extension/src',
+  'packages/wallet/src',
+  'packages/uniswap/src',
+  'packages/api/src',
 ]
 
-const documentPaths: string[] = []
-for (const pattern of documentPatterns) {
-  const g = new Bun.Glob(pattern)
-  for await (const match of g.scan({ cwd: REPO_ROOT, absolute: true })) {
-    // Skip the schema file itself
-    if (match.endsWith('schema.graphql')) continue
-    documentPaths.push(match)
+// Manual walk instead of Bun.Glob.scan: must skip __generated__ output dirs, which
+// concurrent codegen tasks (e.g. tradingapi:generate) delete/recreate mid-scan.
+async function collectGraphqlFiles(dir: string, out: string[]): Promise<void> {
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => null)
+  if (!entries) return // dir removed mid-scan by a concurrent codegen task
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      if (entry.name === '__generated__') continue
+      await collectGraphqlFiles(path.join(dir, entry.name), out)
+    } else if (entry.name.endsWith('.graphql')) {
+      // Skip the schema file itself
+      if (entry.name.endsWith('schema.graphql')) continue
+      out.push(path.join(dir, entry.name))
+    }
   }
+}
+
+const documentPaths: string[] = []
+for (const root of documentRoots) {
+  await collectGraphqlFiles(path.join(REPO_ROOT, root), documentPaths)
 }
 
 // Deduplicate and sort for deterministic output
@@ -81,54 +94,90 @@ const sharedConfig = {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Generate all 4 files
+// 4. Generate all 4 files in parallel
 // ---------------------------------------------------------------------------
-type GenerateTarget = {
-  filename: string
-  plugins: Array<{ [key: string]: unknown }>
-  pluginMap: { [key: string]: unknown }
-  config: Record<string, unknown>
+const schemaTypesFile = path.join(GEN_DIR, 'schema-types.ts')
+const resolversFile = path.join(GEN_DIR, 'resolvers.ts')
+const operationsFile = path.join(GEN_DIR, 'operations.ts')
+const hooksFile = path.join(GEN_DIR, 'react-hooks.ts')
+
+const runCodegen = (
+  filename: string,
+  plugins: Array<{ [key: string]: unknown }>,
+  pluginMap: { [key: string]: unknown },
+  config: Record<string, unknown>,
+): Promise<string> =>
+  codegen({ filename, schema: schemaDocumentNode, schemaAst, documents, plugins, pluginMap, config })
+
+const [schemaTypesOutput, resolversOutput, operationsOutput, hooksOutput] = await Promise.all([
+  runCodegen(schemaTypesFile, [{ typescript: {} }], { typescript: typescriptPlugin }, sharedConfig),
+  runCodegen(
+    resolversFile,
+    [{ 'typescript-resolvers': {} }],
+    { 'typescript-resolvers': typescriptResolversPlugin },
+    sharedConfig,
+  ),
+  runCodegen(
+    operationsFile,
+    [{ 'typescript-operations': {} }],
+    { 'typescript-operations': typescriptOperationsPlugin },
+    sharedConfig,
+  ),
+  runCodegen(
+    hooksFile,
+    [{ 'typescript-react-apollo': {} }],
+    { 'typescript-react-apollo': typescriptReactApolloPlugin },
+    { ...sharedConfig, withHooks: true },
+  ),
+])
+
+// ---------------------------------------------------------------------------
+// 5. Post-process: prepend cross-file type imports
+//    resolvers.ts and operations.ts import all exports from schema-types.ts
+//    react-hooks.ts imports all exports from operations.ts
+// ---------------------------------------------------------------------------
+const EXPORT_RE = /^export\s+(?:type|interface|enum|const|function)\s+([A-Za-z_]\w*)/gm
+const IMPORT_RE = /^import\s.+$/gm
+
+function extractExports(content: string): string[] {
+  const exports: string[] = []
+  let match: RegExpExecArray | null
+  while ((match = EXPORT_RE.exec(content)) !== null) {
+    exports.push(match[1]!)
+  }
+  return exports
 }
 
-const targets: GenerateTarget[] = [
-  {
-    filename: path.join(GEN_DIR, 'schema-types.ts'),
-    plugins: [{ typescript: {} }],
-    pluginMap: { typescript: typescriptPlugin },
-    config: { ...sharedConfig },
-  },
-  {
-    filename: path.join(GEN_DIR, 'resolvers.ts'),
-    plugins: [{ 'typescript-resolvers': {} }],
-    pluginMap: { 'typescript-resolvers': typescriptResolversPlugin },
-    config: { ...sharedConfig },
-  },
-  {
-    filename: path.join(GEN_DIR, 'operations.ts'),
-    plugins: [{ 'typescript-operations': {} }],
-    pluginMap: { 'typescript-operations': typescriptOperationsPlugin },
-    config: { ...sharedConfig },
-  },
-  {
-    filename: path.join(GEN_DIR, 'react-hooks.ts'),
-    plugins: [{ 'typescript-react-apollo': {} }],
-    pluginMap: { 'typescript-react-apollo': typescriptReactApolloPlugin },
-    config: { ...sharedConfig, withHooks: true },
-  },
-]
+function prependImport(content: string, moduleSpecifier: string, names: string[]): string {
+  if (names.length === 0 || content.includes(`from "${moduleSpecifier}"`)) {
+    return content
+  }
+  const specifiers = names.map((n) => `type ${n}`).join(', ')
+  const importLine = `import { ${specifiers} } from "${moduleSpecifier}";`
 
-for (const target of targets) {
-  const output = await codegen({
-    filename: target.filename,
-    schema: schemaDocumentNode,
-    schemaAst,
-    documents,
-    plugins: target.plugins,
-    pluginMap: target.pluginMap,
-    config: target.config,
-  })
-  await Bun.write(target.filename, output)
-  debug(`Generated ${path.basename(target.filename)}`)
+  let lastImportEnd = -1
+  let match: RegExpExecArray | null
+  while ((match = IMPORT_RE.exec(content)) !== null) {
+    lastImportEnd = match.index + match[0].length
+  }
+  const pos = lastImportEnd === -1 ? 0 : content[lastImportEnd] === '\n' ? lastImportEnd + 1 : lastImportEnd
+  return content.slice(0, pos) + importLine + '\n' + content.slice(pos)
 }
+
+const schemaExports = extractExports(schemaTypesOutput)
+const resolversFinal = prependImport(resolversOutput, './schema-types', schemaExports)
+const operationsFinal = prependImport(operationsOutput, './schema-types', schemaExports)
+const operationsExports = extractExports(operationsFinal)
+const hooksFinal = prependImport(hooksOutput, './operations', operationsExports)
+
+// ---------------------------------------------------------------------------
+// 6. Write all 4 final files in parallel
+// ---------------------------------------------------------------------------
+await Promise.all([
+  Bun.write(schemaTypesFile, schemaTypesOutput),
+  Bun.write(resolversFile, resolversFinal),
+  Bun.write(operationsFile, operationsFinal),
+  Bun.write(hooksFile, hooksFinal),
+])
 
 console.log('✓ GraphQL types generated')

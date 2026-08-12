@@ -69,7 +69,7 @@ vi.mock('uniswap/src/components/TokenSelector/hooks/usePortfolioBalancesForAddre
   usePortfolioBalancesForAddressById: mockUsePortfolioBalancesForAddressById,
 }))
 
-vi.mock('uniswap/src/data/rest/tokenRankings', () => ({
+vi.mock('uniswap/src/data/apiClients/dataApiService/exploreV1/tokenRankings', () => ({
   useTokenRankingsQuery: mockUseTokenRankingsQuery,
   CustomRankingType: {
     Trending: 'TRENDING',
@@ -642,6 +642,20 @@ describe(usePortfolioTokenOptions, () => {
         input: {
           portfolioData: allTokenBalancesPortfolioData,
           chainFilter: fromGraphQLChain(usdcTokenBalance.token.chain),
+        },
+        output: {
+          data: [usdcPortfolioBalanceTokenOption],
+          loading: false,
+          refetch: expect.any(Function),
+          error: undefined,
+        },
+      },
+      {
+        test: 'returns shown tokens filtered by chainIds when no single-chain filter is selected',
+        input: {
+          portfolioData: allTokenBalancesPortfolioData,
+          chainFilter: null,
+          chainIds: [fromGraphQLChain(usdcTokenBalance.token.chain) ?? UniverseChainId.Base],
         },
         output: {
           data: [usdcPortfolioBalanceTokenOption],

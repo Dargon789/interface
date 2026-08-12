@@ -1,15 +1,15 @@
 import { useMemo } from 'react'
+import { getMultichainTokenEntry } from 'uniswap/src/components/MultichainTokenDetails/getMultichainTokenEntry'
 import {
   type MultichainTokenEntry,
   useOrderedMultichainEntries,
 } from 'uniswap/src/components/MultichainTokenDetails/useOrderedMultichainEntries'
-import { getNativeAddress } from 'uniswap/src/constants/addresses'
-import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
-import { isNativeCurrencyAddress } from 'uniswap/src/utils/currencyId'
+import { useFeatureFlaggedChainIds } from 'uniswap/src/features/chains/hooks/useFeatureFlaggedChainIds'
 import type { MultiChainMap } from '~/pages/TokenDetails/context/TDPContext'
 
 /** Maps TDP `multiChainMap` to ordered multichain entries (same ordering as balances / address dropdown). */
 export function useMultichainTokenEntries(multiChainMap: MultiChainMap): MultichainTokenEntry[] {
+  const featureFlaggedChainIds = useFeatureFlaggedChainIds()
   const entries = useMemo(() => {
     const result: MultichainTokenEntry[] = []
     for (const [graphqlChain, data] of Object.entries(multiChainMap)) {
@@ -18,21 +18,12 @@ export function useMultichainTokenEntries(multiChainMap: MultiChainMap): Multich
         continue
       }
 
-      const chainId = fromGraphQLChain(graphqlChain)
-      if (!chainId) {
-        continue
+      const entry = getMultichainTokenEntry({ chain: graphqlChain, address: data.address }, featureFlaggedChainIds)
+      if (entry) {
+        result.push(entry)
       }
-
-      const rawAddress = data.address
-      const isNative = !rawAddress || isNativeCurrencyAddress(chainId, rawAddress)
-
-      result.push({
-        chainId,
-        address: isNative ? getNativeAddress(chainId) : rawAddress,
-        isNative,
-      })
     }
     return result
-  }, [multiChainMap])
+  }, [multiChainMap, featureFlaggedChainIds])
   return useOrderedMultichainEntries(entries)
 }

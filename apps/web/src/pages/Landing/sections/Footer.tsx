@@ -1,12 +1,12 @@
 import { isMobileWeb } from '@universe/environment'
-import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Anchor, Flex, FlexProps, Separator, styled, Text, TouchableArea } from 'ui/src'
+import { Anchor, Flex, FlexProps, Separator, styled, Text } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import { Wiggle } from '~/components/animations/Wiggle'
+import { MobileTouchableArea } from '~/components/MobileTouchableArea'
 import { MenuItem, MenuSectionTitle, useMenuContent } from '~/components/NavBar/CompanyMenu/Content'
-import { MenuLink } from '~/components/NavBar/CompanyMenu/MenuDropdown'
+import { MenuLink } from '~/components/NavBar/CompanyMenu/MenuLink'
 import { useModalState } from '~/hooks/useModalState'
 import { Discord, Github, Twitter } from '~/pages/Landing/components/Icons'
 
@@ -26,26 +26,36 @@ const PolicyLink = styled(Text, {
   style: { transition: '100ms' },
 })
 
-const MobileTouchableArea = isMobileWeb ? TouchableArea : Fragment
+const socialTapPadding = isMobileWeb ? '$spacing12' : undefined
 
-export function Socials({ iconSize, gap }: { iconSize?: string; gap?: FlexProps['gap'] }) {
+export function Socials({
+  iconSize,
+  gap,
+  iconPadding = socialTapPadding,
+  flushLastRight = false,
+}: {
+  iconSize?: string
+  gap?: FlexProps['gap']
+  iconPadding?: FlexProps['p']
+  flushLastRight?: boolean
+}) {
   return (
-    <Flex row gap={gap ?? '$spacing24'} maxHeight={iconSize} alignItems="flex-start">
-      <MobileTouchableArea>
+    <Flex row gap={gap ?? '$spacing24'} maxHeight={isMobileWeb ? undefined : iconSize} alignItems="flex-start">
+      <MobileTouchableArea p={iconPadding}>
         <SocialIcon iconColor="#00C32B">
           <Anchor href="https://github.com/Uniswap" target="_blank">
             <Github size={iconSize} fill="inherit" />
           </Anchor>
         </SocialIcon>
       </MobileTouchableArea>
-      <MobileTouchableArea>
+      <MobileTouchableArea p={iconPadding}>
         <SocialIcon iconColor="#20BAFF">
           <Anchor href="https://x.com/Uniswap" target="_blank">
             <Twitter size={iconSize} fill="inherit" />
           </Anchor>
         </SocialIcon>
       </MobileTouchableArea>
-      <MobileTouchableArea>
+      <MobileTouchableArea p={iconPadding} pr={flushLastRight ? '$none' : undefined}>
         <SocialIcon iconColor="#5F51FF">
           <Anchor href="https://discord.com/invite/uniswap" target="_blank">
             <Discord size={iconSize} fill="inherit" />
@@ -59,7 +69,7 @@ export function Socials({ iconSize, gap }: { iconSize?: string; gap?: FlexProps[
 function FooterSection({ title, items }: { title: string; items: MenuItem[] }) {
   return (
     <Flex width={130} $md={{ width: '100%' }} flexGrow={0} flexShrink={1} flexBasis="auto" gap={8}>
-      <Text variant="subheading2">{title}</Text>
+      <Text variant="buttonLabel2">{title}</Text>
       <Flex gap={5}>
         {items.map((item, index) => (
           <MenuLink
@@ -69,7 +79,8 @@ function FooterSection({ title, items }: { title: string; items: MenuItem[] }) {
             internal={item.internal}
             overflow={item.overflow}
             elementName={item.elementName}
-            textVariant="subheading2"
+            textVariant="body2"
+            color="$neutral2"
           />
         ))}
       </Flex>

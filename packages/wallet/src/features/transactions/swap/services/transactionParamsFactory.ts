@@ -2,6 +2,7 @@ import { permit2Address } from '@uniswap/permit2-sdk'
 import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
 import { GasEstimate, TradingApi } from '@universe/api'
 import { ValidatedSwapTxContext } from 'uniswap/src/features/transactions/swap/types/swapTxAndGasInfo'
+import { isGasSponsoredExecution } from 'uniswap/src/features/transactions/swap/utils/routing'
 import { tradeToTransactionInfo } from 'uniswap/src/features/transactions/swap/utils/trade'
 import {
   ApproveTransactionInfo,
@@ -160,6 +161,13 @@ export function createTransactionParamsFactory(context: BaseTransactionContext):
       gasEstimate: gasFeeEstimation.swapEstimate,
       swapStartTimestamp: context.analytics.swap_start_timestamp,
       isFinalStep: context.analytics.is_final_step,
+      rwaAnalytics: {
+        marketClosed: context.analytics.market_closed,
+        priceWarning: context.analytics.price_warning,
+        tokenInStocks: context.analytics.token_in_stocks,
+        tokenOutStocks: context.analytics.token_out_stocks,
+      },
+      isSponsored: isGasSponsoredExecution(swapTxContext),
     })
 
     const options: TransactionOptions = {
@@ -221,6 +229,14 @@ export function createTransactionParamsFactory(context: BaseTransactionContext):
       gasEstimate: gasFeeEstimation.swapEstimate,
       swapStartTimestamp: context.analytics.swap_start_timestamp,
       isFinalStep: context.analytics.is_final_step,
+      rwaAnalytics: {
+        marketClosed: context.analytics.market_closed,
+        priceWarning: context.analytics.price_warning,
+        tokenInStocks: context.analytics.token_in_stocks,
+        tokenOutStocks: context.analytics.token_out_stocks,
+      },
+      // Always false for orders: the filler pays fill gas, so the quote's sponsorship offer never applies.
+      isSponsored: isGasSponsoredExecution(swapTxContext),
     })
 
     const submitOrderParams: SubmitUniswapXOrderParams = {

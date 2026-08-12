@@ -7,13 +7,17 @@ import type {
   WrapQuoteResponse,
 } from '@universe/api'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
-import type { SwapDelegationInfo } from 'uniswap/src/features/smartWallet/delegation/types'
+import type {
+  SignDelegationAuthorizationFn,
+  SwapDelegationInfo,
+} from 'uniswap/src/features/smartWallet/delegation/types'
 import type { TransactionSettings } from 'uniswap/src/features/transactions/components/settings/types'
 import type {
   EVMSwapRepository,
   SwapData,
 } from 'uniswap/src/features/transactions/swap/review/services/swapTxAndGasInfoService/evm/evmSwapRepository'
 import {
+  create4337EVMSwapRepository,
   create5792EVMSwapRepository,
   create7702EVMSwapRepository,
   createLegacyEVMSwapRepository,
@@ -44,16 +48,28 @@ interface EVMSwapInstructionsServiceContext {
   presignPermit?: PresignPermitFn
   getCanBatchTransactions?: (chainId: UniverseChainId | undefined) => boolean
   getSwapDelegationInfo?: (chainId: UniverseChainId | undefined) => SwapDelegationInfo
+  /** Signs the 7702 delegation auth to bundle into the sponsored /swap_4337 request. */
+  signDelegationAuthorization?: SignDelegationAuthorizationFn
+  /**
+   * Whether this platform can execute a 4337 userOp swap directly (mobile/extension, which have
+   * `executeUserOpSwapSaga`). Web executes embedded-wallet swaps through the EIP-5792
+   * `wallet_sendCalls` surface and has no userOp swap execution path, so it leaves this false and
+   * sponsored delegated swaps route to /swap_5792 instead of the /swap_4337 userOp endpoint.
+   */
+  supportsUserOpSwaps?: boolean
+  /** True when a permissioned token is involved; routes the swap through the permissioned-pool Universal Router version. */
+  isPermissionedToken?: boolean
 }
 
 function createLegacyEVMSwapInstructionsService(
   ctx: Omit<EVMSwapInstructionsServiceContext, 'swapDelegationAddress'> & { swapRepository: EVMSwapRepository },
 ): EVMSwapInstructionsService {
-  const { gasStrategy, gasOverrides, swapRepository } = ctx
+  const { gasStrategy, gasOverrides, isPermissionedToken, swapRepository } = ctx
 
   const prepareSwapRequestParams = createPrepareSwapRequestParams({
     gasStrategy,
     gasOverrides,
+    isPermissionedToken,
   })
 
   const service: EVMSwapInstructionsService = {
@@ -83,14 +99,15 @@ function createLegacyEVMSwapInstructionsService(
   return service
 }
 
-function createWalletCallEVMSwapInstructionsService(
+function createBatchedEVMSwapInstructionsService(
   ctx: Omit<EVMSwapInstructionsServiceContext, 'presignPermit'> & { swapRepository: EVMSwapRepository },
 ): EVMSwapInstructionsService {
-  const { gasStrategy, gasOverrides, swapRepository } = ctx
+  const { gasStrategy, gasOverrides, isPermissionedToken, swapRepository } = ctx
 
   const prepareSwapRequestParams = createPrepareSwapRequestParams({
     gasStrategy,
     gasOverrides,
+    isPermissionedToken,
   })
 
   const service: EVMSwapInstructionsService = {
@@ -100,7 +117,7 @@ function createWalletCallEVMSwapInstructionsService(
         signature: undefined,
         transactionSettings,
         alreadyApproved: approvalAction === ApprovalAction.None,
-        overrideSimulation: true, // always simulate for wallet_sendCalls transactions
+        overrideSimulation: true, // always simulate for batched transactions
       })
 
       const response = await swapRepository.fetchSwapData(swapRequestParams)
@@ -114,15 +131,23 @@ function createWalletCallEVMSwapInstructionsService(
 export function createEVMSwapInstructionsService(ctx: EVMSwapInstructionsServiceContext): EVMSwapInstructionsService {
   const { getSwapDelegationInfo } = ctx
   const smartContractWalletInstructionService = getSwapDelegationInfo
-    ? createWalletCallEVMSwapInstructionsService({
+    ? createBatchedEVMSwapInstructionsService({
         ...ctx,
         swapRepository: create7702EVMSwapRepository({ getSwapDelegationInfo }),
       })
     : undefined
 
-  const walletCallInstructionService = createWalletCallEVMSwapInstructionsService({
+  const walletCallInstructionService = createBatchedEVMSwapInstructionsService({
     ...ctx,
     swapRepository: create5792EVMSwapRepository(),
+  })
+
+  const userOp4337InstructionService = createBatchedEVMSwapInstructionsService({
+    ...ctx,
+    swapRepository: create4337EVMSwapRepository({
+      getSwapDelegationInfo: ctx.getSwapDelegationInfo,
+      signDelegationAuthorization: ctx.signDelegationAuthorization,
+    }),
   })
 
   const legacyInstructionsService = createLegacyEVMSwapInstructionsService({
@@ -135,7 +160,18 @@ export function createEVMSwapInstructionsService(ctx: EVMSwapInstructionsService
       const chainId = tradingApiToUniverseChainId(params.swapQuoteResponse.quote.chainId)
 
       if (smartContractWalletInstructionService && ctx.getSwapDelegationInfo?.(chainId).delegationAddress) {
-        return smartContractWalletInstructionService.getSwapInstructions(params)
+        if (params.swapQuoteResponse.sponsorshipInfo?.sponsored) {
+          // The pre-encoded /swap_4337 userOp is only executable on platforms with a userOp swap
+          // execution path (mobile/extension). Web executes embedded-wallet swaps through the
+          // EIP-5792 `wallet_sendCalls` surface — which encodes 4337/7702 inside the connector — so
+          // it leaves `supportsUserOpSwaps` false and falls through to /swap_5792 below rather than
+          // /swap_4337, which web has no execution path for (would silently reset the swap).
+          if (ctx.supportsUserOpSwaps) {
+            return userOp4337InstructionService.getSwapInstructions(params)
+          }
+        } else {
+          return smartContractWalletInstructionService.getSwapInstructions(params)
+        }
       }
 
       if (ctx.getCanBatchTransactions?.(chainId) || params.swapQuoteResponse.sponsorshipInfo?.sponsored) {

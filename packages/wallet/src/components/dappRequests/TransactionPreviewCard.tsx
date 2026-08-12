@@ -5,13 +5,16 @@ import { ContractInteraction, RotatableChevron } from 'ui/src/components/icons'
 import { TransactionRequestDetails } from 'uniswap/src/components/transactions/requests/TransactionRequestDetails'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
+import { ApprovalContractRow, type ApprovalContractInfo } from 'wallet/src/components/dappRequests/ApprovalContractRow'
 import { TransactionApprovingSection } from 'wallet/src/components/dappRequests/TransactionApprovingSection'
+import { TransactionDepositingSection } from 'wallet/src/components/dappRequests/TransactionDepositingSection'
 import {
   TransactionErrorSection,
   TransactionErrorType,
 } from 'wallet/src/components/dappRequests/TransactionErrorSection'
 import { TransactionReceivingSection } from 'wallet/src/components/dappRequests/TransactionReceivingSection'
 import { TransactionSendingSection } from 'wallet/src/components/dappRequests/TransactionSendingSection'
+import { TransactionWithdrawingSection } from 'wallet/src/components/dappRequests/TransactionWithdrawingSection'
 import {
   TransactionRiskLevel,
   TransactionSection,
@@ -28,6 +31,8 @@ interface TransactionPreviewCardProps {
   rawData?: string
   chainId: UniverseChainId
   errorType?: TransactionErrorType
+  /** Spender contract pinned as an always-visible "Contract" row (approvals) */
+  approvalContract?: ApprovalContractInfo
   // Custom content for signatures or other use cases
   children?: ReactNode
 }
@@ -41,6 +46,7 @@ export function TransactionPreviewCard({
   rawData,
   chainId,
   errorType,
+  approvalContract,
   children,
 }: TransactionPreviewCardProps): JSX.Element {
   const { t } = useTranslation()
@@ -70,15 +76,19 @@ export function TransactionPreviewCard({
     [riskLevel],
   )
 
-  const hasDetails = Boolean(functionName || contractName || rawData)
+  // The pinned contract row replaces the contract line inside the expandable details
+  const detailsContractName = approvalContract ? undefined : contractName
+  const hasDetails = Boolean(functionName || detailsContractName || rawData)
   const showDetailsButton = hasDetails
 
-  // Sort sections: Approving first, then Sending, then Receiving
+  // Sort sections: Approving first, then Earn (deposit/withdraw), then Sending, then Receiving
   const sortedSections = useMemo(() => {
     const order = {
       [TransactionSectionType.Approving]: 0,
-      [TransactionSectionType.Sending]: 1,
-      [TransactionSectionType.Receiving]: 2,
+      [TransactionSectionType.Depositing]: 1,
+      [TransactionSectionType.Withdrawing]: 1,
+      [TransactionSectionType.Sending]: 2,
+      [TransactionSectionType.Receiving]: 3,
     }
     return [...sections].sort((a, b) => order[a.type] - order[b.type])
   }, [sections])
@@ -94,17 +104,20 @@ export function TransactionPreviewCard({
       <Flex gap="$spacing12" pb="$spacing12" pt="$spacing16">
         {errorType && <TransactionErrorSection errorType={errorType} />}
 
-        {sortedSections.map((section, index) => {
-          const SectionComponent = getSectionComponent(section.type)
-
-          return (
-            <Flex key={`section-${section.type}-${index}`} mt={index > 0 ? '$spacing12' : undefined}>
-              <SectionComponent assets={section.assets} riskLevel={riskLevel} />
-            </Flex>
-          )
-        })}
+        {sortedSections.map((section, index) => (
+          <Flex key={`section-${section.type}-${index}`} mt={index > 0 ? '$spacing12' : undefined}>
+            {renderSection(section, riskLevel)}
+          </Flex>
+        ))}
 
         {children}
+
+        {approvalContract && (
+          <Flex>
+            <Flex height={1} backgroundColor="$surface3" mb="$spacing12" />
+            <ApprovalContractRow contract={approvalContract} chainId={chainId} />
+          </Flex>
+        )}
 
         {showDetailsButton && (
           <Flex>
@@ -126,7 +139,7 @@ export function TransactionPreviewCard({
               <Flex pt="$spacing12" px="$spacing16">
                 <TransactionRequestDetails
                   functionName={functionName}
-                  contractName={contractName}
+                  contractName={detailsContractName}
                   contractAddress={contractAddress}
                   rawData={rawData}
                   chainId={chainId}
@@ -142,19 +155,20 @@ export function TransactionPreviewCard({
 }
 
 /**
- * Maps section type to the appropriate component
+ * Renders the appropriate section component for a given section type
  */
-function getSectionComponent(
-  type: TransactionSectionType,
-): typeof TransactionSendingSection | typeof TransactionReceivingSection | typeof TransactionApprovingSection {
-  switch (type) {
-    case TransactionSectionType.Sending:
-      return TransactionSendingSection
+function renderSection(section: TransactionSection, riskLevel: TransactionRiskLevel): JSX.Element {
+  switch (section.type) {
     case TransactionSectionType.Receiving:
-      return TransactionReceivingSection
+      return <TransactionReceivingSection assets={section.assets} riskLevel={riskLevel} />
     case TransactionSectionType.Approving:
-      return TransactionApprovingSection
+      return <TransactionApprovingSection assets={section.assets} riskLevel={riskLevel} />
+    case TransactionSectionType.Depositing:
+      return <TransactionDepositingSection assets={section.assets} apyPercent={section.apyPercent} />
+    case TransactionSectionType.Withdrawing:
+      return <TransactionWithdrawingSection assets={section.assets} />
+    case TransactionSectionType.Sending:
     default:
-      return TransactionSendingSection
+      return <TransactionSendingSection assets={section.assets} riskLevel={riskLevel} />
   }
 }

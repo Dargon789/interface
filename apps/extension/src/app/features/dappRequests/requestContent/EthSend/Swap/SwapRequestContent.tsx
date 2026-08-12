@@ -1,7 +1,12 @@
-import { GasFeeResult } from '@universe/api'
+import { GasFeeResult, TradingApi } from '@universe/api'
 import { useDappLastChainId } from 'src/app/features/dapp/hooks'
 import { useDappRequestQueueContext } from 'src/app/features/dappRequests/DappRequestQueueContext'
+import { PermissionedSwapBlockedContent } from 'src/app/features/dappRequests/requestContent/EthSend/Swap/PermissionedSwapBlockedContent'
 import { SwapDisplay } from 'src/app/features/dappRequests/requestContent/EthSend/Swap/SwapDisplay'
+import {
+  useUniswapXSwapPermissionedBlock,
+  useUniversalRouterSwapPermissionedBlock,
+} from 'src/app/features/dappRequests/requestContent/EthSend/Swap/useSwapRequestPermissionedBlock'
 import { formatUnits, useSwapDetails } from 'src/app/features/dappRequests/requestContent/EthSend/Swap/utils'
 import { UniversalRouterCall } from 'src/app/features/dappRequests/types/UniversalRouterTypes'
 import { DEFAULT_NATIVE_ADDRESS, DEFAULT_NATIVE_ADDRESS_LEGACY } from 'uniswap/src/features/chains/evm/defaults'
@@ -42,6 +47,7 @@ interface SwapRequestContentProps {
   transactionGasFeeResult: GasFeeResult
   parsedCalldata: UniversalRouterCall
   showSmartWalletActivation?: boolean
+  sponsorMetadata?: TradingApi.SponsorMetadata
   onCancel: () => Promise<void>
   onConfirm: (transactionTypeInfo?: TransactionTypeInfo) => Promise<void>
 }
@@ -50,10 +56,11 @@ export function SwapRequestContent({
   transactionGasFeeResult,
   parsedCalldata,
   showSmartWalletActivation,
+  sponsorMetadata,
   onCancel,
   onConfirm,
 }: SwapRequestContentProps): JSX.Element {
-  const { dappUrl } = useDappRequestQueueContext()
+  const { dappUrl, currentAccount } = useDappRequestQueueContext()
   const { defaultChainId } = useEnabledChains()
   const activeChain = useDappLastChainId(dappUrl) || defaultChainId
 
@@ -76,6 +83,14 @@ export function SwapRequestContent({
   const currencyInfo0 = nativeInput ? nativeCurrencyInfo : inputCurrencyInfo
   const currencyInfo1 = nativeOutput ? nativeCurrencyInfo : outputCurrencyInfo
 
+  // Key the KYC check on the account this request will be signed with (currentAccount), not the
+  // wallet's globally-active account. See useDappSwapPermissionedBlock for why. Shared with the
+  // primary dispatch gate (EthSendRequestContent) so the scan UI and this fallback agree.
+  const permissionedBlock = useUniversalRouterSwapPermissionedBlock({
+    parsedCalldata,
+    walletAddress: currentAccount.address,
+  })
+
   const inputAmount = formatUnits(inputValue, inputCurrencyInfo?.currency.decimals || 18)
   const outputAmount = formatUnits(outputValue, outputCurrencyInfo?.currency.decimals || 18)
 
@@ -91,6 +106,18 @@ export function SwapRequestContent({
   })
   const onConfirmWithTransactionTypeInfo = (): Promise<void> => onConfirm(transactionTypeInfo)
 
+  // Refuse instead of offering an approve action for a swap that would revert on-chain
+  // (permissioned token, wallet not allowlisted).
+  if (permissionedBlock.isBlocked) {
+    return (
+      <PermissionedSwapBlockedContent
+        blockedSymbol={permissionedBlock.blockedSymbol}
+        kycUrl={permissionedBlock.kycUrl}
+        onCancel={onCancel}
+      />
+    )
+  }
+
   return (
     <SwapDisplay
       chainId={activeChain}
@@ -99,6 +126,7 @@ export function SwapRequestContent({
       outputAmount={outputAmount}
       outputCurrencyInfo={currencyInfo1}
       transactionGasFeeResult={transactionGasFeeResult}
+      sponsorMetadata={sponsorMetadata}
       showSmartWalletActivation={showSmartWalletActivation}
       isWrap={false}
       isUnwrap={false}
@@ -111,6 +139,7 @@ export function SwapRequestContent({
 // this is a special cased version of SwapRequestContent used for UniswapX swaps
 export function UniswapXSwapRequestContent({ typedData }: { typedData: UniswapXSwapRequest }): JSX.Element {
   const { defaultChainId } = useEnabledChains()
+  const { currentAccount } = useDappRequestQueueContext()
   const { chainId: domainChainId } = typedData.domain
   const activeChain = toSupportedChainId(domainChainId) || defaultChainId
 
@@ -120,6 +149,27 @@ export function UniswapXSwapRequestContent({ typedData }: { typedData: UniswapXS
   const inputCurrencyInfo = useCurrencyInfo(buildCurrencyId(activeChain, inputToken))
   const nativeEthOrOutputToken = outputToken === DEFAULT_NATIVE_ADDRESS ? DEFAULT_NATIVE_ADDRESS_LEGACY : outputToken
   const outputCurrencyInfo = useCurrencyInfo(buildCurrencyId(activeChain, nativeEthOrOutputToken))
+
+  // walletAddress is the dapp-request account (currentAccount), not the active account.
+  // Shared with the SignTypedData dispatch gate so the scan UI and this fallback agree.
+  const permissionedBlock = useUniswapXSwapPermissionedBlock({
+    typedData,
+    walletAddress: currentAccount.address,
+  })
+
+  // Refuse before the assert below: a malformed UniswapX request (missing amounts) for a
+  // permissioned, non-allowlisted wallet should still land on the refusal screen rather than
+  // throw. The assert only guards the amount formatting on the non-blocked SwapDisplay path.
+  // No onCancel here on purpose: like SwapDisplay below, this path relies on the dapp-request
+  // queue context's default cancel handler.
+  if (permissionedBlock.isBlocked) {
+    return (
+      <PermissionedSwapBlockedContent
+        blockedSymbol={permissionedBlock.blockedSymbol}
+        kycUrl={permissionedBlock.kycUrl}
+      />
+    )
+  }
 
   assert(
     firstAmountInParam && lastAmountOutParam,

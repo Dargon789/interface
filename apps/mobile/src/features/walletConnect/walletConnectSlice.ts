@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { TradingApi } from '@universe/api'
 import { type ProposalTypes, type SessionTypes } from '@walletconnect/types'
 import { type UniverseChainId } from 'uniswap/src/features/chains/types'
 import { EthMethod, type EthSignMethod } from 'uniswap/src/features/dappRequests/types'
@@ -49,6 +50,15 @@ interface BaseRequest {
   dappRequestInfo: DappRequestInfo
   chainId: UniverseChainId
   isLinkModeSupported?: boolean
+  /** Verification status parsed from WC Verify's per-request `verifyContext`. */
+  verifyStatus?: DappVerificationStatus
+  /**
+   * The origin URL as reported by WalletConnect Verify (`verifyContext.verified.origin`).
+   * Only set when WC Verify supplied a trusted origin — never sourced from dapp-provided
+   * metadata. Use this (not `dappRequestInfo.url`) when making trust decisions such as the
+   * first-party allowlist override.
+   */
+  trustedOriginUrl?: string
 }
 
 export interface SignRequest extends BaseRequest {
@@ -85,7 +95,7 @@ export interface WalletSendCallsUserOperationRequest extends WalletSendCallsRequ
   unsignedUserOperation: RpcUserOperation<'0.8'>
   requestId: string
   gasSponsored: boolean
-  sponsorMetadata?: { name: string; icon?: string }
+  sponsorMetadata?: TradingApi.SponsorMetadata
   paymasterServiceUrl: string
   paymasterServiceContext?: Record<string, unknown>
 }

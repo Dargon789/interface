@@ -1,20 +1,19 @@
 import { isMobileWeb } from '@universe/environment'
-import { Fragment, useCallback } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Anchor, AnchorProps, Flex, Text, TouchableArea } from 'ui/src'
+import { Anchor, AnchorProps, Flex, Text } from 'ui/src'
 import { spacing } from 'ui/src/theme'
-import { uniswapUrls } from 'uniswap/src/constants/urls'
+import { UniswapStaticUrls } from 'uniswap/src/constants/urls'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { useBooleanState } from 'utilities/src/react/useBooleanState'
 import { Expand } from '~/components/Expand'
 import { PrivacyOptions } from '~/components/Icons/PrivacyOptions'
+import { MobileTouchableArea } from '~/components/MobileTouchableArea'
 import { useModalState } from '~/hooks/useModalState'
-
-const MobileTouchableArea = isMobileWeb ? TouchableArea : Fragment
 
 const MenuLink = ({ children, ...rest }: AnchorProps) => (
   <Anchor textDecorationLine="none" cursor="pointer" group {...rest}>
-    <MobileTouchableArea>
+    <MobileTouchableArea justifyContent="center" minHeight={isMobileWeb ? 28 : undefined}>
       <Text
         color="$neutral2"
         $group-hover={{ color: '$accent1' }}
@@ -50,7 +49,7 @@ export function LegalAndPrivacyMenu({ closeMenu }: { closeMenu?: () => void }) {
       onToggle={toggleIsOpen}
       iconSize="$icon.16"
       button={
-        <Text color="$neutral2" variant="body4" pr={spacing.spacing4}>
+        <Text color="$neutral2" variant="body4" py={isMobileWeb ? '$spacing6' : undefined} pr={spacing.spacing4}>
           {t('common.legalAndPrivacy')}
         </Text>
       }
@@ -62,7 +61,7 @@ export function LegalAndPrivacyMenu({ closeMenu }: { closeMenu?: () => void }) {
           <PrivacyOptions /> {t('common.privacyChoices')}
         </MenuLink>
         <MenuLink onPress={handleOnMenuPress(togglePrivacyPolicy)}>{t('common.privacyPolicy')}</MenuLink>
-        <MenuLink href={uniswapUrls.termsOfServiceUrl} target="_blank">
+        <MenuLink href={UniswapStaticUrls.termsOfServiceUrl} target="_blank">
           {t('common.termsOfService')}
         </MenuLink>
         <MenuLink onPress={handleOnMenuPress(toggleDisclosures)}>{t('common.disclosures')}</MenuLink>

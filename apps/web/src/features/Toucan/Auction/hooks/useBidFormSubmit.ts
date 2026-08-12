@@ -3,7 +3,7 @@ import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
 import { isValidHexString } from '@universe/encoding'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useCallback, useRef, useState } from 'react'
-import { useSubmitBidMutation } from 'uniswap/src/data/rest/auctions/useSubmitBidMutation'
+import { useSubmitBidMutation } from 'uniswap/src/data/apiClients/dataApiService/auctions/useSubmitBidMutation'
 import { TransactionStep } from 'uniswap/src/features/transactions/steps/types'
 import { SetCurrentStepFn } from 'uniswap/src/features/transactions/swap/types/swapCallback'
 import { validateTransactionRequest } from 'uniswap/src/features/transactions/swap/utils/trade'
@@ -62,6 +62,7 @@ interface UseBidFormSubmitParams {
   chainId: number | undefined
   isNativeBidToken: boolean
   currency: string | undefined
+  auctionTokenAddress?: string
   resetBudgetField: () => void
   resetMaxValuationField: () => void
   // Validation flags
@@ -98,6 +99,7 @@ export function useBidFormSubmit({
   chainId,
   isNativeBidToken,
   currency,
+  auctionTokenAddress,
   resetBudgetField,
   resetMaxValuationField,
   budgetAmountIsZero,
@@ -267,6 +269,8 @@ export function useBidFormSubmit({
         maxPriceQ96: sanitizedQ96.toString(),
         auctionContractAddress: auctionContractAddress.toLowerCase(),
         bidTokenAddress: currencyLower,
+        auctionTokenAddress: auctionTokenAddress?.toLowerCase(),
+        auctionTokenSymbol,
         requestId,
         dappInfo: {
           name: 'Uniswap CCA',

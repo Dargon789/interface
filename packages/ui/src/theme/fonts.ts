@@ -158,6 +158,13 @@ export const fonts = {
     fontWeight: BOOK_WEIGHT,
     maxFontSizeMultiplier: 1.4,
   },
+  body5: {
+    family: platformFontFamily('book'),
+    fontSize: adjustedSize(10),
+    lineHeight: 12,
+    fontWeight: BOOK_WEIGHT,
+    maxFontSizeMultiplier: 1.4,
+  },
   buttonLabel1: {
     family: platformFontFamily('medium'),
     fontSize: adjustedSize(18),
@@ -193,6 +200,75 @@ export const fonts = {
     maxFontSizeMultiplier: 1.2,
   },
 } as const
+
+/** Theme typography as <Text variant /> tokens: $body2 → variant="body2". Resolved via getFontStylesForVariant. */
+export type FontVariantToken = `$${TextVariantTokens & string}`
+
+/** Same keys as Text variant and fonts.* (no $). */
+export type TextVariantKey = TextVariantTokens
+
+/** Resolved font style for use in raw inline styles; family is the actual font stack, not a token. */
+export interface ResolvedFontStyle {
+  fontSize: number
+  lineHeight: number
+  family: string
+  fontWeight: string
+  letterSpacing?: string
+}
+
+function isTextVariantKey(key: string): key is TextVariantKey {
+  return key in fonts
+}
+
+/**
+ * Web `fonts.*.family` can be Tamagui tokens (`book`, `medium`); only raw DOM (e.g. AnimatedNumber digit
+ * `<span>`s) needs a real font stack. Prefer `<Text variant>` elsewhere — no public export.
+ */
+function resolveFontFamilyForRawDomStyles(family: string): string {
+  if (!isWebPlatform) {
+    return family
+  }
+  if (family === 'book') {
+    return baselBook
+  }
+  if (family === 'medium') {
+    return baselMedium
+  }
+  if (family in fontFamily.sansSerif) {
+    return String(fontFamily.sansSerif[family as SansSerifFontFamilyKey])
+  }
+  return family
+}
+
+function fontEntryToResolvedStyles(entry: (typeof fonts)[TextVariantKey]): ResolvedFontStyle {
+  return {
+    fontSize: entry.fontSize,
+    lineHeight: entry.lineHeight,
+    family: resolveFontFamilyForRawDomStyles(entry.family),
+    // `fonts.monospace` has no fontWeight; match Text monospace variant (book).
+    fontWeight: 'fontWeight' in entry ? entry.fontWeight : BOOK_WEIGHT,
+    letterSpacing: 'letterSpacing' in entry ? entry.letterSpacing : undefined,
+  }
+}
+
+/** Map a variant token to the Text variant prop (e.g. $heading2 → 'heading2'). */
+export function getTextVariantKey(token: FontVariantToken): TextVariantKey {
+  const key = token.slice(1)
+  return isTextVariantKey(key) ? key : 'heading2'
+}
+
+/**
+ * Resolve a variant token (e.g. $body3) for raw inline styles (e.g. AnimatedNumber digit rails).
+ * Punctuation/loading should use `<Text variant={getTextVariantKey(token)}>`; this exists for non-Text DOM.
+ */
+export function getFontStylesForVariant(token: FontVariantToken): ResolvedFontStyle {
+  return fontEntryToResolvedStyles(fonts[getTextVariantKey(token)])
+}
+
+/** Every `$variant` token from theme fonts (for Storybook selects, etc.). */
+export const ALL_FONT_VARIANT_TOKENS = (Object.keys(fonts) as TextVariantTokens[]).map(
+  (k) => `$${k}` as FontVariantToken,
+)
 
 // TODO: Tamagui breaks font weights on Android if face *not* defined
 // but breaks iOS if face is defined
@@ -242,6 +318,7 @@ export const bodyFont = createFont({
   family: baselBook,
   ...(isAndroid ? { face } : null),
   size: {
+    nano: fonts.body5.fontSize,
     micro: fonts.body4.fontSize,
     small: fonts.body3.fontSize,
     medium: fonts.body2.fontSize,
@@ -250,6 +327,7 @@ export const bodyFont = createFont({
   },
   weight: defaultWeights,
   lineHeight: {
+    nano: fonts.body5.lineHeight,
     micro: fonts.body4.lineHeight,
     small: fonts.body3.lineHeight,
     medium: fonts.body2.lineHeight,

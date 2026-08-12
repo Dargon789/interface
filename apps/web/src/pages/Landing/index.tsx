@@ -4,7 +4,7 @@ import { atomWithStorage } from 'jotai/utils'
 import { parse } from 'qs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import { useConversionTracking } from 'uniswap/src/data/rest/conversionTracking/useConversionTracking'
+import { useConversionTracking } from 'uniswap/src/data/apiClients/conversionTracking/useConversionTracking'
 import { InterfacePageName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
@@ -12,7 +12,6 @@ import { PRIVACY_SHARING_OPT_OUT_STORAGE_KEY } from '~/components/PrivacyChoices
 import { useAccount } from '~/hooks/useAccount'
 import { usePrevious } from '~/hooks/usePrevious'
 import { Landing as LandingContent } from '~/pages/Landing/Landing'
-import { TRANSITION_DURATIONS } from '~/theme/styles'
 
 const privacySharingOptOutAtom = atomWithStorage<boolean>(PRIVACY_SHARING_OPT_OUT_STORAGE_KEY, false)
 
@@ -66,7 +65,7 @@ export function Landing() {
       } else if (account.address && queryParams.intro) {
         disconnect()
       }
-    }, TRANSITION_DURATIONS.fast)
+    }, 125)
     return () => clearTimeout(timeoutId)
   }, [account.address, prevAccount, accountDrawer.isOpen, navigate, queryParams.intro, connector, disconnect])
 

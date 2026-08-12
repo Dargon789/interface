@@ -1,18 +1,17 @@
-import { NetworkStatus } from '@apollo/client'
-import { useWindowVirtualizer } from '@tanstack/react-virtual'
-import { isNonPollingRequestInFlight } from '@universe/api'
+import { useWindowVirtualizer, Virtualizer } from '@tanstack/react-virtual'
 import { isMobileWeb } from '@universe/environment'
-import { Fragment, useCallback, useEffect, useMemo, useRef } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flex, Loader, styled, Text, View } from 'ui/src'
+import { Flex, Loader, styled, View } from 'ui/src'
+import { NoNfts } from 'ui/src/components/icons/NoNfts'
 import { BaseCard } from 'uniswap/src/components/BaseCard/BaseCard'
 import { ExpandoRow } from 'uniswap/src/components/ExpandoRow/ExpandoRow'
-import { useContainerWidth } from 'uniswap/src/components/nfts/hooks/useContainerWidth'
 import { useNftListRenderData } from 'uniswap/src/components/nfts/hooks/useNftListRenderData'
 import { useNftSearch } from 'uniswap/src/components/nfts/hooks/useNftSearch'
 import { NftsListProps } from 'uniswap/src/components/nfts/NftsList'
 import { NftsListEmptyState } from 'uniswap/src/components/nfts/NftsListEmptyState'
 import { NftListHeader } from 'uniswap/src/components/nfts/NftsListHeader'
+import { NftsListLoadingFooter } from 'uniswap/src/components/nfts/NftsListLoadingFooter'
 import { ShowNFTModal } from 'uniswap/src/components/nfts/ShowNFTModal'
 import { useActiveAddresses } from 'uniswap/src/features/accounts/store/hooks'
 import {
@@ -25,8 +24,93 @@ import { getNFTAssetKey } from 'uniswap/src/features/nfts/utils'
 import { WalletEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
+import { useContainerWidth } from 'utilities/src/react/useContainerWidth'
 
 const estimateRowSize = (): number => NFT_GRID_ROW_HEIGHT
+
+const GRID_OVERSCAN = isMobileWeb ? 2 : 12
+
+const keyExtractor = (item: NFTItem): string => getNFTAssetKey(item.contractAddress ?? '', item.tokenId ?? '')
+
+// Virtual grid rows render fresh on every virtualizer tick — intentionally not memoized.
+function renderGridRows({
+  virtualizer,
+  items,
+  itemIndexOffset,
+  numColumns,
+  renderNFTItem,
+}: {
+  virtualizer: Virtualizer<Window, Element>
+  items: NFTItem[]
+  itemIndexOffset: number
+  numColumns: number
+  renderNFTItem: NftsListProps['renderNFTItem']
+}): JSX.Element[] {
+  return virtualizer.getVirtualItems().map((virtualRow) => {
+    const startIndex = virtualRow.index * numColumns
+    const rowItems = items.slice(startIndex, startIndex + numColumns)
+    return (
+      <Flex
+        key={virtualRow.key}
+        position="absolute"
+        top={0}
+        left={0}
+        width="100%"
+        gap="$spacing12"
+        height={virtualRow.size}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${numColumns}, minmax(0, 1fr))`,
+          transform: `translateY(${virtualRow.start - virtualizer.options.scrollMargin}px)`,
+          willChange: 'transform',
+          contain: 'strict',
+          contentVisibility: 'auto',
+        }}
+      >
+        {rowItems.map((item, i) => (
+          <Fragment key={keyExtractor(item)}>{renderNFTItem(item, itemIndexOffset + startIndex + i)}</Fragment>
+        ))}
+      </Flex>
+    )
+  })
+}
+
+// Mounted only when hidden NFTs are visible, so its virtualizer and offset-measure re-renders don't cost the main grid
+function HiddenNftsGrid({
+  items,
+  itemIndexOffset,
+  numColumns,
+  renderNFTItem,
+}: {
+  items: NFTItem[]
+  itemIndexOffset: number
+  numColumns: number
+  renderNFTItem: NftsListProps['renderNFTItem']
+}): JSX.Element {
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const [sectionOffset, setSectionOffset] = useState(0)
+
+  // The window virtualizer needs this section's document offset; getBoundingClientRect over offsetTop because
+  // Tamagui views are position: relative, making offsetTop parent-relative
+  useLayoutEffect(() => {
+    if (sectionRef.current) {
+      setSectionOffset(sectionRef.current.getBoundingClientRect().top + window.scrollY)
+    }
+  }, [itemIndexOffset, numColumns])
+
+  const virtualizer = useWindowVirtualizer({
+    count: Math.ceil(items.length / numColumns),
+    estimateSize: estimateRowSize,
+    overscan: GRID_OVERSCAN,
+    scrollMargin: sectionOffset,
+  })
+
+  return (
+    <Flex ref={sectionRef} position="relative" style={{ height: virtualizer.getTotalSize() }}>
+      {renderGridRows({ virtualizer, items, itemIndexOffset, numColumns, renderNFTItem })}
+    </Flex>
+  )
+}
 
 const AssetsContainer = styled(View, {
   width: '100%',
@@ -66,7 +150,6 @@ export function NftsList({
   chainsFilter,
   onFilteredCountsChange,
   renderExpandoRow,
-  nextFetchPolicy,
   onRefetchReady,
   onLoadingStateChange,
   SearchInputComponent,
@@ -87,12 +170,13 @@ export function NftsList({
     hasNextPage,
     hiddenNftsExpanded,
     setHiddenNftsExpanded,
-    networkStatus,
+    isPending,
+    isFetchingMore: isFetchingMoreNfts,
     onListEndReached,
     refetch,
     shownNfts,
     hiddenNfts,
-  } = useNftListRenderData({ owner, skip, chainsFilter, nextFetchPolicy, pollInterval })
+  } = useNftListRenderData({ owner, skip, chainsFilter, pollInterval })
 
   // Expose refetch function to parent component
   useEffect(() => {
@@ -102,7 +186,7 @@ export function NftsList({
   }, [onRefetchReady, refetch])
 
   // Expose loading state to parent component
-  const isLoadingState = isNonPollingRequestInFlight(networkStatus)
+  const isLoadingState = shownNfts.length === 0 && isPending
   useEffect(() => {
     if (onLoadingStateChange) {
       onLoadingStateChange(isLoadingState)
@@ -112,16 +196,21 @@ export function NftsList({
   const containerRef = useRef<HTMLDivElement>(null)
   const containerWidth = useContainerWidth(containerRef)
 
-  const { search, setSearch, nfts, filteredShownCount, filteredHiddenCount } = useNftSearch({
-    shownNfts,
-    hiddenNfts,
-    hiddenNftsExpanded,
-    hasNextPage,
-  })
+  const { search, setSearch, nfts, filteredShownNfts, filteredHiddenNfts, filteredShownCount, filteredHiddenCount } =
+    useNftSearch({
+      shownNfts,
+      hiddenNfts,
+      hiddenNftsExpanded,
+      hasNextPage,
+    })
+  // NftListHeader owns its own local input state (with debounce). Bumping this key remounts the header
+  // so a parent-initiated clear (e.g. the no-results "Clear search" button) actually empties the input.
+  const [headerResetKey, setHeaderResetKey] = useState(0)
+  const clearSearch = useCallback(() => {
+    setSearch('')
+    setHeaderResetKey((prev) => prev + 1)
+  }, [setSearch])
   const showHeader = shownNfts.length !== 0 || isLoadingState || isErrorState
-
-  const keyExtractor = (item: NFTItem | string): string =>
-    typeof item === 'string' ? item : getNFTAssetKey(item.contractAddress ?? '', item.tokenId ?? '')
 
   // Use filtered count if provided, otherwise use internal count
   const numHidden = filteredNumHidden ?? (search ? filteredHiddenCount : internalNumHidden)
@@ -144,7 +233,6 @@ export function NftsList({
     }
   }, [hiddenNftsExpanded, numHidden, setHiddenNftsExpanded])
 
-  const gridItems = useMemo(() => nfts.filter((item): item is NFTItem => typeof item !== 'string'), [nfts])
   const numColumns = useMemo(
     () =>
       autoColumns && containerWidth > 0
@@ -152,27 +240,27 @@ export function NftsList({
         : NFT_GRID_DEFAULT_COLUMNS,
     [autoColumns, containerWidth],
   )
-  const rowCount = Math.ceil(gridItems.length / numColumns)
-  const isFetchingMore = nfts.length > 0 && networkStatus === NetworkStatus.fetchMore
+  const shownRowCount = Math.ceil(filteredShownNfts.length / numColumns)
+  // Hidden NFTs render below the expando; matches the buildNftsArray gate (showHidden && allPagesFetched)
+  const showHiddenGrid = hiddenNftsExpanded && filteredHiddenNfts.length > 0
+  const isFetchingMore = nfts.length > 0 && isFetchingMoreNfts
 
   const rowVirtualizer = useWindowVirtualizer({
-    count: rowCount,
+    count: shownRowCount,
     estimateSize: estimateRowSize,
-    overscan: isMobileWeb ? 2 : 12,
+    overscan: GRID_OVERSCAN,
   })
 
-  const virtualRows = rowVirtualizer.getVirtualItems()
-
-  const lastVisibleRowIndex = virtualRows[virtualRows.length - 1]?.index
+  const lastVisibleRowIndex = rowVirtualizer.getVirtualItems().at(-1)?.index
   useEffect(() => {
     if (lastVisibleRowIndex === undefined) {
       return
     }
-    if (lastVisibleRowIndex >= rowCount - 3 && hasNextPage && !isLoadingState && !isFetchingMore) {
+    if (lastVisibleRowIndex >= shownRowCount - 3 && hasNextPage && !isLoadingState && !isFetchingMore) {
       // oxlint-disable-next-line typescript/no-floating-promises -- biome-parity: oxlint is stricter here
       onListEndReached()
     }
-  }, [lastVisibleRowIndex, rowCount, hasNextPage, isLoadingState, isFetchingMore, onListEndReached])
+  }, [lastVisibleRowIndex, shownRowCount, hasNextPage, isLoadingState, isFetchingMore, onListEndReached])
 
   const onHiddenRowPressed = useCallback((): void => {
     setHiddenNftsExpanded(!hiddenNftsExpanded)
@@ -205,13 +293,17 @@ export function NftsList({
       )
     }
 
-    // Show no-results when user has searched and the filtered list is empty (explicit check so we always hit this when filtering yields nothing)
-    if (search && filteredShownCount === 0) {
+    // Show no-results when user has searched and the filtered list is empty (explicit check so we always hit this when filtering yields nothing).
+    if (search && filteredShownCount === 0 && !isFetchingMore) {
       return (
-        <Flex centered p="$spacing12" width="100%" data-testid={noResultsTestId}>
-          <Text variant="body3" color="$neutral2">
-            {t('common.noResults')}
-          </Text>
+        <Flex py="$spacing40" width="100%">
+          <BaseCard.EmptyState
+            icon={<NoNfts size="$icon.64" color="$neutral3" />}
+            description={t('portfolio.noResults.search.title')}
+            buttonLabel={t('portfolio.noResults.search.clear')}
+            dataTestId={noResultsTestId}
+            onPress={clearSearch}
+          />
         </Flex>
       )
     }
@@ -229,48 +321,32 @@ export function NftsList({
     errorStateStyle,
     filteredShownCount,
     isErrorState,
+    isFetchingMore,
     isLoadingState,
     nfts.length,
     noResultsTestId,
     skeletonContent,
     refetch,
     search,
+    clearSearch,
     t,
   ])
 
-  // Virtual grid renders fresh on every virtualizer tick — intentionally outside useMemo.
   const nftListContent = (
     <>
-      <Flex position="relative" style={{ height: rowVirtualizer.getTotalSize() }}>
-        {virtualRows.map((virtualRow) => {
-          const startIndex = virtualRow.index * numColumns
-          const rowItems = gridItems.slice(startIndex, startIndex + numColumns)
-          return (
-            <Flex
-              key={virtualRow.key}
-              position="absolute"
-              top={0}
-              left={0}
-              width="100%"
-              gap="$spacing12"
-              height={virtualRow.size}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(${numColumns}, minmax(0, 1fr))`,
-                transform: `translateY(${virtualRow.start}px)`,
-                willChange: 'transform',
-                contain: 'strict',
-                contentVisibility: 'auto',
-              }}
-            >
-              {rowItems.map((item, i) => (
-                <Fragment key={keyExtractor(item)}>{renderNFTItem(item, startIndex + i)}</Fragment>
-              ))}
-            </Flex>
-          )
-        })}
+      <Flex position="relative">
+        <Flex style={{ height: rowVirtualizer.getTotalSize() }}>
+          {renderGridRows({
+            virtualizer: rowVirtualizer,
+            items: filteredShownNfts,
+            itemIndexOffset: 0,
+            numColumns,
+            renderNFTItem,
+          })}
+        </Flex>
+        <NftsListLoadingFooter show={Boolean(search) && hasNextPage} />
       </Flex>
-      {isFetchingMore && skeletonContent}
+      {isFetchingMore && !search && skeletonContent}
       {numHidden > 0 && (
         <Flex grow>
           {renderExpandoRow ? (
@@ -291,13 +367,22 @@ export function NftsList({
           {hiddenNftsExpanded && <ShowNFTModal />}
         </Flex>
       )}
+      {showHiddenGrid && (
+        <HiddenNftsGrid
+          items={filteredHiddenNfts}
+          itemIndexOffset={filteredShownNfts.length}
+          numColumns={numColumns}
+          renderNFTItem={renderNFTItem}
+        />
+      )}
     </>
   )
 
   return (
-    <Flex ref={containerRef} gap="$spacing24">
+    <Flex ref={containerRef}>
       {showHeader && (
         <NftListHeader
+          key={headerResetKey}
           isExternalWallet={isExternalWallet}
           SearchInputComponent={SearchInputComponent}
           searchInputTestId={searchInputTestId}
@@ -305,7 +390,7 @@ export function NftsList({
           onSearchValueChange={setSearch}
         />
       )}
-      {nonNftContent ?? nftListContent}
+      <Flex mt="$spacing24">{nonNftContent ?? nftListContent}</Flex>
     </Flex>
   )
 }

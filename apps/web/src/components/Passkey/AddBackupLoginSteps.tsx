@@ -1,4 +1,12 @@
 import type { UseMutationResult } from '@tanstack/react-query'
+import {
+  BackupMethodSummary,
+  DigitInputRow,
+  type DigitInputState,
+  IconBox,
+  OptionRow,
+  StepHeader,
+} from '@universe/embedded-wallet'
 import type { TFunction } from 'i18next'
 import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import { Button, Flex, Input, ModalCloseIcon, SpinningLoader, Text, TouchableArea } from 'ui/src'
@@ -13,14 +21,6 @@ import { Person } from 'ui/src/components/icons/Person'
 import { Shield } from 'ui/src/components/icons/Shield'
 import { ElementName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
-import {
-  BackupMethodSummary,
-  DigitInputRow,
-  type DigitInputState,
-  IconBox,
-  OptionRow,
-  StepHeader,
-} from '~/components/Passkey/BackupLoginComponents'
 import { PrivyWatermark } from '~/components/Passkey/PrivyWatermark'
 import { GetHelpButton } from '~/pages/ExtensionPasskeyAuthPopUp/views'
 
@@ -154,7 +154,7 @@ export function EmailEntryStep({
             variant={isValidEmail ? 'branded' : 'default'}
             size="large"
             onPress={handleSendCode}
-            isDisabled={!isValidEmail || isLoading}
+            disabled={!isValidEmail || isLoading}
           >
             {t('common.button.continue')}
           </Button>
@@ -307,6 +307,8 @@ export function PasscodeIntroStep({
   oauthProvider,
   onSetPasscode,
   t,
+  title,
+  description,
 }: {
   email: string
   handleClose: () => void
@@ -314,6 +316,9 @@ export function PasscodeIntroStep({
   oauthProvider: 'google' | 'apple' | null
   onSetPasscode: () => void
   t: TFunction
+  // Reconnect (rotation) overrides; default to the add-backup-login copy.
+  title?: string
+  description?: string
 }) {
   return (
     <Trace logImpression modal={ModalName.AddBackupLogin}>
@@ -326,10 +331,10 @@ export function PasscodeIntroStep({
         </IconBox>
         <Flex gap="$gap8" alignItems="center" maxWidth={360}>
           <Text variant="subheading1" textAlign="center">
-            {t('account.passkey.backupLogin.passcodeIntro.title')}
+            {title ?? t('account.passkey.backupLogin.passcodeIntro.title')}
           </Text>
           <Text variant="body2" textAlign="center" color="$neutral2">
-            {t('account.passkey.backupLogin.passcodeIntro.description')}
+            {description ?? t('account.passkey.backupLogin.passcodeIntro.description')}
           </Text>
         </Flex>
       </Flex>
@@ -364,6 +369,7 @@ export function PasscodeStep({
   handleClose,
   inputsLocked = false,
   isEncrypting,
+  modalName = ModalName.AddBackupLogin,
   passcodeError,
   setShowPasscode,
   showPasscode,
@@ -378,6 +384,7 @@ export function PasscodeStep({
   // Prevent digit edits after encryption succeeds while the WebAuthn prompt is pending.
   inputsLocked?: boolean
   isEncrypting: boolean
+  modalName?: (typeof ModalName)[keyof typeof ModalName]
   passcodeError: string | undefined
   setShowPasscode: Dispatch<SetStateAction<boolean>>
   showPasscode: boolean
@@ -386,7 +393,7 @@ export function PasscodeStep({
 }) {
   const inputsDisabled = isEncrypting || inputsLocked
   return (
-    <Trace logImpression modal={ModalName.AddBackupLogin}>
+    <Trace logImpression modal={modalName}>
       <StepHeader onBack={handleBack} onClose={handleClose} />
       <Flex gap="$gap16" alignItems="center" width="100%" px="$padding4">
         <IconBox>

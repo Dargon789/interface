@@ -4,14 +4,13 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text, useSporeColors } from 'ui/src'
 import { opacify } from 'ui/src/theme'
-import { BIPS_BASE, ZERO_ADDRESS } from 'uniswap/src/constants/misc'
-import { useGetPoolsByTokens } from 'uniswap/src/data/rest/getPools'
+import { BIPS_BASE } from 'uniswap/src/constants/misc'
+import { useGetPool } from 'uniswap/src/data/apiClients/dataApiService/pools/getPools'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
 import { SubscriptZeroPrice } from '~/components/SubscriptZeroPrice'
 import { useLiquidityBarData } from '~/features/Liquidity/charts/LiquidityChart'
-import { getTokenOrZeroAddress } from '~/features/Liquidity/utils/currency'
 import { MIN_DEPTH_BARS_PER_SIDE } from '~/pages/PoolDetails/components/ChartSection/DepthChart'
 import {
   getDisplayPair,
@@ -178,7 +177,6 @@ export function OrderBook({
   hooks,
   poolId,
   height,
-  onLoadingChange,
 }: {
   tokenA: Currency
   tokenB: Currency
@@ -189,7 +187,6 @@ export function OrderBook({
   hooks?: string
   poolId?: string
   height?: number
-  onLoadingChange?: (loading: boolean) => void
 }) {
   const { t } = useTranslation()
   const colors = useSporeColors()
@@ -198,17 +195,7 @@ export function OrderBook({
   const askColor = colors.statusCritical.val
   const bidColor = colors.statusSuccess.val
 
-  const { data: poolData } = useGetPoolsByTokens(
-    {
-      fee: feeTier,
-      chainId,
-      protocolVersions: [version],
-      token0: getTokenOrZeroAddress(tokenA),
-      token1: getTokenOrZeroAddress(tokenB),
-      hooks: hooks ?? ZERO_ADDRESS,
-    },
-    true,
-  )
+  const { data: poolData } = useGetPool({ chainId, poolId, protocolVersion: version }, Boolean(poolId))
 
   const sdkCurrencies = useMemo(() => ({ TOKEN0: tokenA, TOKEN1: tokenB }), [tokenA, tokenB])
 
@@ -220,10 +207,10 @@ export function OrderBook({
     version,
     hooks,
     poolId,
-    tickSpacing: poolData?.pools[0]?.tickSpacing,
+    tickSpacing: poolData?.pool?.tickSpacing,
   })
 
-  const { asks, bids, midPrice } = useMemo(() => {
+  const { asks, bids } = useMemo(() => {
     if (!tickData?.barData || activeTick === undefined) {
       return { asks: [], bids: [], midPrice: 0 }
     }
@@ -236,23 +223,12 @@ export function OrderBook({
     })
   }, [tickData, activeTick, tokenA.decimals, tokenB.decimals, isReversed])
 
-  useEffect(() => {
-    onLoadingChange?.(loading)
-    return () => onLoadingChange?.(false)
-  }, [loading, onLoadingChange])
-
   const { quote } = getDisplayPair({ tokenA, tokenB, isReversed })
   const quoteSymbol = quote.symbol ?? quote.name ?? t('common.tokenB')
 
   const feeTierLabel = `${feeTier / BIPS_BASE}%`
 
-  const spreadPct = useMemo(() => {
-    const bestAsk = asks.length > 0 ? asks[asks.length - 1] : null
-    const bestBid = bids.length > 0 ? bids[0] : null
-    if (!bestAsk || !bestBid || midPrice <= 0) return null
-    const spread = bestAsk.displayPrice - bestBid.displayPrice
-    return spread > 0 ? (spread / midPrice) * 100 : null
-  }, [asks, bids, midPrice])
+  const spreadPct = (2 * feeTier) / BIPS_BASE
 
   const maxAskAmount = useMemo(() => Math.max(...asks.map((r) => r.amount), 0), [asks])
   const maxBidAmount = useMemo(() => Math.max(...bids.map((r) => r.amount), 0), [bids])
@@ -262,7 +238,9 @@ export function OrderBook({
   const asksScrollRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    if (asks.length === 0) return
+    if (asks.length === 0) {
+      return
+    }
     requestAnimationFrame(() => {
       const asksContainer = asksScrollRef.current
       if (asksContainer) {
@@ -345,30 +323,26 @@ export function OrderBook({
         row
         px="$padding8"
         py="$padding8"
+        gap="$gap4"
         borderTopWidth="$spacing1"
         borderTopColor="$surface3"
         borderBottomWidth="$spacing1"
         borderBottomColor="$surface3"
-        justifyContent="space-between"
         alignItems="center"
         flexShrink={0}
       >
-        <Flex row gap="$gap4" alignItems="center">
-          <Text variant="body4" color="$neutral2">
-            {t('chart.type.depth.spread')}
-          </Text>
-          <Text variant="body4" color="$neutral1">
-            {spreadPct !== null ? `${spreadPct.toFixed(2)}%` : '—'}
-          </Text>
-        </Flex>
-        <Flex row gap="$gap4" alignItems="center">
-          <Text variant="body4" color="$neutral2">
-            {t('chart.type.depth.feeTier')}
-          </Text>
-          <Text variant="body4" color="$neutral1">
-            {feeTierLabel}
-          </Text>
-        </Flex>
+        <Text variant="body4" color="$neutral2">
+          {t('chart.type.depth.spread')}
+        </Text>
+        <Text variant="body4" color="$neutral1">
+          {`${spreadPct.toFixed(2)}%`}
+        </Text>
+        <Text variant="body4" color="$neutral2">
+          {`(${t('chart.type.depth.feeTier')}`}
+        </Text>
+        <Text variant="body4" color="$neutral1">
+          {`${feeTierLabel})`}
+        </Text>
       </Flex>
 
       {/* Bids (buy orders) — independently scrollable, top shows closest-to-mid by default */}

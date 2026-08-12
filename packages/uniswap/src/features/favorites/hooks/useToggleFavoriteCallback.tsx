@@ -1,13 +1,12 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { normalizeCurrencyIdForMapLookup, normalizeTokenAddressForCache } from 'uniswap/src/data/cache'
 import { useMultichainFavoritesRankings } from 'uniswap/src/features/favorites/hooks/useMultichainFavoritesRankings'
 import { selectFavoriteTokens } from 'uniswap/src/features/favorites/selectors'
 import { addFavoriteToken, removeFavoriteToken } from 'uniswap/src/features/favorites/slice'
 import { MobileEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { CurrencyId } from 'uniswap/src/types/currency'
+import { normalizeCurrencyIdForMapLookup, normalizeTokenAddressForCache } from 'uniswap/src/utils/currencyId'
 import { currencyIdToAddress, currencyIdToChain } from 'uniswap/src/utils/currencyId'
 
 /**
@@ -63,25 +62,20 @@ export function useToggleFavoriteCallback({
   isFavoriteToken: boolean
 }): () => void {
   const dispatch = useDispatch()
-  const isMultichainEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const favorites = useSelector(selectFavoriteTokens)
   const { canonicalByKey } = useMultichainFavoritesRankings()
 
   return useCallback(() => {
     if (isFavoriteToken) {
-      if (isMultichainEnabled) {
-        // Resolve via canonical map first, then address-only fallback, so USDC/USDT/WBTC on
-        // non-mainnet chains (different address per chain) correctly remove the stored canonical entry.
-        const storedId = resolveStoredFavoriteId({ id, favorites, canonicalByKey })
-        dispatch(removeFavoriteToken({ currencyId: storedId ?? normalizeCurrencyIdForMapLookup(id) }))
-      } else {
-        dispatch(removeFavoriteToken({ currencyId: normalizeCurrencyIdForMapLookup(id) }))
-      }
+      // Resolve via canonical map first, then address-only fallback, so USDC/USDT/WBTC on
+      // non-mainnet chains (different address per chain) correctly remove the stored canonical entry.
+      const storedId = resolveStoredFavoriteId({ id, favorites, canonicalByKey })
+      dispatch(removeFavoriteToken({ currencyId: storedId ?? normalizeCurrencyIdForMapLookup(id) }))
     } else {
       const normalizedId = normalizeCurrencyIdForMapLookup(id)
-      // When multichain is on, prefer the canonical currencyId so the same project across chains
-      // dedupes to a single favorite. Falls back to normalizedId if the token isn't in rankings yet.
-      const canonicalId = isMultichainEnabled ? (canonicalByKey.get(normalizedId) ?? normalizedId) : normalizedId
+      // Prefer the canonical currencyId so the same project across chains dedupes to a single favorite.
+      // Falls back to normalizedId if the token isn't in rankings yet.
+      const canonicalId = canonicalByKey.get(normalizedId) ?? normalizedId
       sendAnalyticsEvent(MobileEventName.FavoriteItem, {
         address: currencyIdToAddress(canonicalId),
         chain: currencyIdToChain(canonicalId) as number,
@@ -90,5 +84,5 @@ export function useToggleFavoriteCallback({
       })
       dispatch(addFavoriteToken({ currencyId: canonicalId }))
     }
-  }, [dispatch, id, isFavoriteToken, tokenName, isMultichainEnabled, favorites, canonicalByKey])
+  }, [dispatch, id, isFavoriteToken, tokenName, favorites, canonicalByKey])
 }

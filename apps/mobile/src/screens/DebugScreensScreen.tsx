@@ -1,4 +1,4 @@
-import { LegendList } from '@legendapp/list'
+import { LegendList } from '@legendapp/list/react-native'
 import React, { memo, useCallback, useMemo } from 'react'
 import { useAppStackNavigation } from 'src/app/navigation/types'
 import { ScreenWithHeader } from 'src/components/layout/screens/ScreenWithHeader'
@@ -12,7 +12,7 @@ interface DebugScreenItem {
   title: string
   description: string
   icon: JSX.Element
-  screen: MobileScreens.HashcashBenchmark | MobileScreens.SessionsDebug
+  screen: MobileScreens.HashcashBenchmark | MobileScreens.SessionsDebug | MobileScreens.UniversalListDebug
 }
 
 const ICON_SIZE = iconSizes.icon24
@@ -31,6 +31,13 @@ const DEBUG_SCREENS: DebugScreenItem[] = [
     description: 'Test session initialization flow',
     icon: <Wrench color="$neutral2" size={ICON_SIZE} />,
     screen: MobileScreens.SessionsDebug,
+  },
+  {
+    id: 'universal-list',
+    title: 'Universal List',
+    description: 'Legend List via UniversalList (native)',
+    icon: <Wrench color="$neutral2" size={ICON_SIZE} />,
+    screen: MobileScreens.UniversalListDebug,
   },
 ]
 

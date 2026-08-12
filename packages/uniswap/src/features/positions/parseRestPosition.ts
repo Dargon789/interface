@@ -1,3 +1,4 @@
+import { PlainMessage } from '@bufbuild/protobuf'
 import {
   PairPosition,
   PoolPosition,
@@ -31,7 +32,7 @@ function getSDKPoolFromPoolPosition({
   token1,
   protocolVersion,
 }: {
-  pool?: PoolPosition
+  pool?: PlainMessage<PoolPosition>
   token0?: Token
   token1?: Token
   protocolVersion: ProtocolVersion.V3
@@ -43,7 +44,7 @@ function getSDKPoolFromPoolPosition({
   protocolVersion,
   hooks,
 }: {
-  pool?: PoolPosition
+  pool?: PlainMessage<PoolPosition>
   token0: Maybe<Currency>
   token1: Maybe<Currency>
   protocolVersion: ProtocolVersion.V4
@@ -57,14 +58,14 @@ function getSDKPoolFromPoolPosition({
   hooks,
 }:
   | {
-      pool?: PoolPosition
+      pool?: PlainMessage<PoolPosition>
       token0?: Token
       token1?: Token
       protocolVersion: ProtocolVersion.V3
       hooks?: undefined
     }
   | {
-      pool?: PoolPosition
+      pool?: PlainMessage<PoolPosition>
       token0: Maybe<Currency>
       token1: Maybe<Currency>
       protocolVersion: ProtocolVersion.V4
@@ -214,7 +215,7 @@ export function getSDKPoolFromPoolInformation({
   }
 }
 
-function parseRestToken<T extends Currency>(token: RestToken | undefined): T | undefined {
+function parseRestToken<T extends Currency>(token: PlainMessage<RestToken> | undefined): T | undefined {
   if (!token) {
     return undefined
   }
@@ -231,7 +232,7 @@ function getPairFromRest({
   token0,
   token1,
 }: {
-  pair?: PairPosition | RestPair
+  pair?: PlainMessage<PairPosition> | PlainMessage<RestPair>
   token0: Token
   token1: Token
 }): Pair | undefined {
@@ -249,7 +250,7 @@ function getPairFromRest({
  * @param position REST position with unknown version / fields.
  * @returns PositionInfo with the available fields parsed.
  */
-export function parseRestPosition(position?: RestPosition): PositionInfo | undefined {
+export function parseRestPosition(position?: PlainMessage<RestPosition>): PositionInfo | undefined {
   try {
     const positionPayload = position?.position
     if (!position || !positionPayload?.case) {
@@ -279,6 +280,7 @@ export function parseRestPosition(position?: RestPosition): PositionInfo | undef
         totalSupply: CurrencyAmount.fromRawAmount(liquidityToken, v2PairPosition.totalSupply),
         liquidityAmount: CurrencyAmount.fromRawAmount(liquidityToken, v2PairPosition.liquidity),
         apr: v2PairPosition.apr,
+        totalValueUsd: position.valueUsd,
         v4hook: undefined,
         feeTier: undefined,
         owner: undefined,
@@ -326,12 +328,18 @@ export function parseRestPosition(position?: RestPosition): PositionInfo | undef
         token1UncollectedFees: v3Position.token1UncollectedFees,
         fee0Amount,
         fee1Amount,
+        uncollectedFeesUsd: position.uncollectedFeesUsd,
+        totalValueUsd: position.valueUsd,
         currency0Amount: CurrencyAmount.fromRawAmount(token0, v3Position.amount0),
         currency1Amount: CurrencyAmount.fromRawAmount(token1, v3Position.amount1),
         apr: v3Position.apr,
+        apr1d: v3Position.apr1d,
+        apr7d: v3Position.apr7d,
+        apr30d: v3Position.apr30d,
         v4hook: undefined,
         owner: v3Position.owner,
         isHidden: position.isHidden,
+        protocolFee: v3Position.protocolFee,
       }
     } else {
       const v4PositionPayload = positionPayload.value
@@ -363,13 +371,12 @@ export function parseRestPosition(position?: RestPosition): PositionInfo | undef
             tickUpper: Number(v4Position.tickUpper),
           })
         : undefined
-      const poolId = V4Pool.getPoolId(
-        token0,
-        token1,
-        Number(v4Position.feeTier),
-        Number(v4Position.tickSpacing),
-        sdkHook,
-      )
+      // Prefer the indexer-provided id: permissioned pool currencies are PA wrappers
+      // surfaced as their sec-tokens, so deriving the id from the returned currencies
+      // yields a pool that doesn't exist onchain (breaks price history lookups).
+      const poolId =
+        v4Position.poolId ||
+        V4Pool.getPoolId(token0, token1, Number(v4Position.feeTier), Number(v4Position.tickSpacing), sdkHook)
       const fee0Amount = CurrencyAmount.fromRawAmount(token0, v4Position.token0UncollectedFees)
       const fee1Amount = CurrencyAmount.fromRawAmount(token1, v4Position.token1UncollectedFees)
       return {
@@ -395,13 +402,22 @@ export function parseRestPosition(position?: RestPosition): PositionInfo | undef
         token1UncollectedFees: v4Position.token1UncollectedFees,
         fee0Amount,
         fee1Amount,
+        uncollectedFeesUsd: position.uncollectedFeesUsd,
+        totalValueUsd: position.valueUsd,
         liquidity: v4Position.liquidity,
         apr: v4Position.apr,
+        apr1d: v4Position.apr1d,
+        apr7d: v4Position.apr7d,
+        apr30d: v4Position.apr30d,
         owner: v4Position.owner,
         isHidden: position.isHidden,
         totalApr: v4Position.totalApr,
         unclaimedRewardsAmountUni: v4Position.unclaimedRewardsAmountUni,
         boostedApr: v4Position.boostedApr,
+        // Boolean() guards responses persisted by pre-0.0.121 clients, where the field is absent.
+        isPermissioned: Boolean(position.permissioned),
+        protocolFee: v4Position.protocolFee,
+        rewardBalances: v4Position.rewardBalances,
       }
     }
   } catch (e) {
@@ -411,7 +427,6 @@ export function parseRestPosition(position?: RestPosition): PositionInfo | undef
         function: 'parseRestPosition',
       },
       extra: {
-        // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
         ...position,
       },
     })

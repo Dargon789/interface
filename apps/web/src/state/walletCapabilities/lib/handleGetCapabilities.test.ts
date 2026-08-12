@@ -1,15 +1,16 @@
 import 'utilities/src/logger/mocks'
-import { getCapabilities as wagmi_getCapabilities } from '@wagmi/core/experimental'
+import { getCapabilities as wagmi_getCapabilities } from '@wagmi/core'
 import { getLogger } from 'utilities/src/logger/logger'
 import type { Mock } from 'vitest'
 import {
   handleGetCapabilities,
+  isAlternateGasFeesSupportedByChainId,
   isAtomicBatchingSupportedByChainId,
 } from '~/state/walletCapabilities/lib/handleGetCapabilities'
 import { GetCapabilitiesResult } from '~/state/walletCapabilities/lib/types'
 
 // Mock dependencies
-vi.mock('@wagmi/core/experimental', () => ({
+vi.mock('@wagmi/core', () => ({
   getCapabilities: vi.fn(),
 }))
 
@@ -82,6 +83,20 @@ describe('walletCapabilities', () => {
       expect(isAtomicBatchingSupportedByChainId(unsupportedCapabilities, 1)).toBe(false)
 
       expect(isAtomicBatchingSupportedByChainId(mockCapabilities, 2)).toBe(false)
+    })
+  })
+
+  describe('isAlternateGasFeesSupportedByChainId', () => {
+    it('returns expected support status', () => {
+      const supported: GetCapabilitiesResult = { '0x1': { alternateGasFees: { supported: true } } }
+      expect(isAlternateGasFeesSupportedByChainId(supported, 1)).toBe(true)
+
+      const unsupported: GetCapabilitiesResult = { '0x1': { alternateGasFees: { supported: false } } }
+      expect(isAlternateGasFeesSupportedByChainId(unsupported, 1)).toBe(false)
+
+      // missing capability / unknown chain
+      expect(isAlternateGasFeesSupportedByChainId({ '0x1': { atomic: { status: 'supported' } } }, 1)).toBe(false)
+      expect(isAlternateGasFeesSupportedByChainId(supported, 2)).toBe(false)
     })
   })
 })

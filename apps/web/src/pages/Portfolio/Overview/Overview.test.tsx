@@ -1,11 +1,12 @@
 import { FeatureFlags } from '@universe/gating'
-import type { PortfolioBalanceBreakdown } from 'uniswap/src/data/rest/getWalletBalances/getWalletBalances'
+import type { PortfolioBalanceBreakdown } from 'uniswap/src/data/apiClients/dataApiService/balances/getWalletBalances/getWalletBalances'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { PortfolioOverview } from '~/pages/Portfolio/Overview/Overview'
 import { render, screen } from '~/test-utils/render'
 
 const mockPortfolioPoolsBalancesEnabled = vi.hoisted(() => ({ value: true }))
+const mockEarnEnabled = vi.hoisted(() => ({ value: false }))
 const mockShowDemoView = vi.hoisted(() => ({ value: false }))
 const mockPortfolioBreakdown = vi.hoisted(
   (): {
@@ -16,14 +17,21 @@ const mockPortfolioBreakdown = vi.hoisted(
 vi.mock('@universe/gating', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@universe/gating')>()
 
+  const readFlag = (flag: FeatureFlags): boolean => {
+    if (flag === FeatureFlags.PortfolioPoolsBalances) {
+      return mockPortfolioPoolsBalancesEnabled.value
+    }
+    return flag === FeatureFlags.Earn ? mockEarnEnabled.value : false
+  }
   return {
     ...actual,
-    useFeatureFlag: (flag: FeatureFlags) =>
-      flag === FeatureFlags.PortfolioPoolsBalances ? mockPortfolioPoolsBalancesEnabled.value : false,
+    useFeatureFlag: readFlag,
+    // useWalletBalancesIncludeCategories reads the pools flag via the exposure-disabled variant.
+    useFeatureFlagWithExposureLoggingDisabled: readFlag,
   }
 })
 
-vi.mock('uniswap/src/data/rest/getPortfolioChart', () => ({
+vi.mock('uniswap/src/data/apiClients/dataApiService/balances/getPortfolioChart', () => ({
   getPortfolioHistoricalValueChartQuery: () => ({ queryKey: [ReactQueryCacheKey.GetPortfolioChart] }),
   useGetPortfolioHistoricalValueChartQuery: () => ({
     data: {
@@ -47,7 +55,7 @@ vi.mock('uniswap/src/features/chains/hooks/useEnabledChains', () => ({
 
 vi.mock('uniswap/src/features/dataApi/balances/balancesRest', () => ({
   usePortfolioTotalValue: () => ({ data: { balanceUSD: 110 } }),
-  usePortfolioBalanceBreakdown: () => ({ data: mockPortfolioBreakdown.value }),
+  usePortfolioBalanceBreakdown: () => ({ data: mockPortfolioBreakdown.value, requestedCategories: [] }),
 }))
 
 vi.mock('uniswap/src/features/portfolio/usePortfolioChartBalanceMismatch', () => ({
@@ -91,16 +99,19 @@ vi.mock('~/pages/Portfolio/Overview/PortfolioChart', () => ({
     showBalanceHeaderRow,
     tokensValue,
     poolsValue,
+    earnValue,
   }: {
     showBalanceHeaderRow?: boolean
     tokensValue?: { balanceUSD: number }
     poolsValue?: { balanceUSD: number }
+    earnValue?: { balanceUSD: number }
   }) => (
     <div
       data-testid={TestID.PortfolioTotalBalance}
       data-show-balance-header-row={String(showBalanceHeaderRow)}
       data-token-balance-usd={tokensValue?.balanceUSD}
       data-pool-balance-usd={poolsValue?.balanceUSD}
+      data-earn-balance-usd={earnValue?.balanceUSD}
     >
       Portfolio Chart
     </div>
@@ -111,13 +122,10 @@ vi.mock('~/pages/Portfolio/Overview/PortfolioPerformance', () => ({
   PortfolioPerformance: () => <div data-testid="portfolio-performance" />,
 }))
 
-vi.mock('~/pages/Portfolio/Overview/StatsTiles', () => ({
-  OverviewStatsTiles: () => <div data-testid="overview-stats-tiles" />,
-}))
-
 describe('PortfolioOverview', () => {
   beforeEach(() => {
     mockPortfolioPoolsBalancesEnabled.value = true
+    mockEarnEnabled.value = false
     mockShowDemoView.value = false
     mockPortfolioBreakdown.value = undefined
   })
@@ -149,16 +157,38 @@ describe('PortfolioOverview', () => {
     expect(screen.getByTestId(TestID.PortfolioTotalBalance)).toHaveAttribute('data-show-balance-header-row', 'false')
   })
 
+  it('enables the chart breakdown for Earn without exposing pool values', () => {
+    mockPortfolioPoolsBalancesEnabled.value = false
+    mockEarnEnabled.value = true
+    mockPortfolioBreakdown.value = {
+      total: { balanceUSD: 11627.95, percentChange: 1, absoluteChangeUSD: 100 },
+      tokens: { balanceUSD: 8368.94, percentChange: -6.09, absoluteChangeUSD: -510 },
+      pools: { balanceUSD: 7373.05, percentChange: 1.02, absoluteChangeUSD: 75 },
+      earn: { balanceUSD: 3259.01, percentChange: 2.2, absoluteChangeUSD: 70 },
+      failedChainIds: [],
+    }
+
+    render(<PortfolioOverview />)
+
+    const chart = screen.getByTestId(TestID.PortfolioTotalBalance)
+    expect(chart).toHaveAttribute('data-show-balance-header-row', 'true')
+    expect(chart).toHaveAttribute('data-earn-balance-usd', '3259.01')
+    expect(chart).not.toHaveAttribute('data-pool-balance-usd')
+  })
+
   it('passes token and pool breakdown values to the portfolio chart', () => {
     mockPortfolioBreakdown.value = {
       total: { balanceUSD: 15741.99, percentChange: 3.72, absoluteChangeUSD: 564.23 },
       tokens: { balanceUSD: 8368.94, percentChange: -6.09, absoluteChangeUSD: -510 },
       pools: { balanceUSD: 7373.05, percentChange: 1.02, absoluteChangeUSD: 75 },
+      failedChainIds: [],
+      earn: { balanceUSD: 3259.01, percentChange: 2.2, absoluteChangeUSD: 70 },
     }
 
     render(<PortfolioOverview />)
 
     expect(screen.getByTestId(TestID.PortfolioTotalBalance)).toHaveAttribute('data-token-balance-usd', '8368.94')
     expect(screen.getByTestId(TestID.PortfolioTotalBalance)).toHaveAttribute('data-pool-balance-usd', '7373.05')
+    expect(screen.getByTestId(TestID.PortfolioTotalBalance)).not.toHaveAttribute('data-earn-balance-usd')
   })
 })

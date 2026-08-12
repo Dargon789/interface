@@ -1,34 +1,39 @@
-/* oxlint-disable typescript/no-unnecessary-condition */
-/* oxlint-disable max-lines */
+/* oxlint-disable typescript/no-unnecessary-condition max-lines */
 
 import { ApolloError } from '@apollo/client'
 import { createColumnHelper, Row } from '@tanstack/react-table'
 import { TokenStats } from '@uniswap/client-explore/dist/uniswap/explore/v1/service_pb'
+import type { HookEntry } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/types_pb'
 import { Percent, Token } from '@uniswap/sdk-core'
 import { GraphQLApi } from '@universe/api'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { memo, ReactElement, useCallback, useEffect, useMemo } from 'react'
+import { memo, ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, styled, Text, useMedia } from 'ui/src'
+import { FeeDisplay } from 'uniswap/src/components/FeeDisplay/FeeDisplay'
 import { LearnMoreLink } from 'uniswap/src/components/text/LearnMoreLink'
 import { getNativeAddress } from 'uniswap/src/constants/addresses'
-import { BIPS_BASE } from 'uniswap/src/constants/misc'
+import { BIPS_BASE, ZERO_ADDRESS } from 'uniswap/src/constants/misc'
 import { UNI } from 'uniswap/src/constants/tokens'
-import { uniswapUrls } from 'uniswap/src/constants/urls'
+import { UniswapStaticUrls } from 'uniswap/src/constants/urls'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
+import { feeAmountToBps } from 'uniswap/src/features/fees/feeUnits'
+import { getFeeBreakdown } from 'uniswap/src/features/fees/getFeeBreakdown'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import type { FeeData } from 'uniswap/src/features/positions/types'
-import { ElementName } from 'uniswap/src/features/telemetry/constants'
+import { ElementName, InterfaceEventName } from 'uniswap/src/features/telemetry/constants'
+import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { shouldReverseForWaterfall } from 'uniswap/src/features/tokens/waterfallPriority'
+import { areEvmAddressesEqual } from 'uniswap/src/utils/addresses'
 import { buildCurrencyId } from 'uniswap/src/utils/currencyId'
+import { shortenAddress } from 'utilities/src/addresses'
 import { type FiatNumberType, NumberType } from 'utilities/src/format/types'
-import { supportedChainIdFromGQLChain } from '~/appGraphql/data/chainUtils'
-import { PoolSortFields, TablePool } from '~/appGraphql/data/pools/useTopPools'
-import { gqlToCurrency, OrderDirection, unwrapToken } from '~/appGraphql/data/util'
+import { useEvent } from 'utilities/src/react/hooks'
 import { CurrencyLogo } from '~/components/Logo/CurrencyLogo'
 import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
+import { Portal } from '~/components/Popups/Portal'
 import { Table } from '~/components/Table'
 import { Cell } from '~/components/Table/Cell'
 import { ClickableHeaderRow, HeaderArrow, HeaderSortText } from '~/components/Table/shared/SortableHeader'
@@ -36,12 +41,20 @@ import { EllipsisText, TableText } from '~/components/Table/shared/TableText'
 import { HeaderCell } from '~/components/Table/styled'
 import { MouseoverTooltip, TooltipSize } from '~/components/Tooltip'
 import { MAX_WIDTH_MEDIA_BREAKPOINT } from '~/constants/breakpoints'
+import { supportedChainIdFromGQLChain } from '~/data/chainUtils'
+import { PoolSortFields, TablePool } from '~/data/pools/useTopPools'
+import { gqlToCurrency, OrderDirection, unwrapToken } from '~/data/util'
 import { TABLE_PAGE_SIZE } from '~/features/Explore/state'
 import { useExploreTablesFilterStore } from '~/features/Explore/state/exploreTablesFilterStore'
 import { useTopPools } from '~/features/Explore/state/topPools/useTopPools'
+import { HookDetailsModal } from '~/features/Liquidity/HookDetailsModal'
+import { HookTooltip } from '~/features/Liquidity/HookTooltip'
 import { LPIncentiveFeeStatTooltip } from '~/features/Liquidity/LPIncentives/LPIncentiveFeeStatTooltip'
 import { isDynamicFeeTier } from '~/features/Liquidity/utils/feeTiers'
-import { useSimplePagination } from '~/hooks/useSimplePagination'
+import { getProtocolVersionFromLabel } from '~/features/Liquidity/utils/protocolVersion'
+import { getHookRegistryKey, useHookRegistryMap } from '~/hooks/useHookRegistryMap'
+import { scrollToExploreTokenSection } from '~/pages/Explore/categories/useExploreCategory'
+import { useSimplePagination } from '~/pages/Explore/hooks/useSimplePagination'
 import {
   PoolTableStoreContextProvider,
   usePoolTableStore,
@@ -65,6 +78,10 @@ const TableWrapper = styled(Flex, {
   maxWidth: MAX_WIDTH_MEDIA_BREAKPOINT,
 })
 
+// Taller than the default row: the Pool column stacks the pair name over its protocol/fee/hook line
+// (matches the two-line rows in the Explore tokens table).
+const ROW_HEIGHT = 64
+
 interface PoolTableValues {
   index: number
   poolDescription: ReactElement
@@ -75,11 +92,10 @@ interface PoolTableValues {
   volOverTvl?: number
   link: string
   linkState?: { entryPoint?: string }
-  protocolVersion?: string
-  feeTier?: FeeData
   rewardApr?: number
   token0CurrencyId?: string
   token1CurrencyId?: string
+  selected?: boolean
 }
 
 function isGqlPool(pool: TablePool | PoolStat): pool is TablePool & { hash: string } {
@@ -143,13 +159,156 @@ function formatVolume(
   return amount ? convertFiatAmountFormatted(amount, NumberType.FiatTokenStats) : '-'
 }
 
+// Hook name rendered as plain text: hovering shows the full name and address, clicking opens the
+// hook details dialog instead of following the row's link to the pool page.
+function HookNameText({ hookEntry, chainId }: { hookEntry: HookEntry; chainId: UniverseChainId }) {
+  const [showDetails, setShowDetails] = useState(false)
+
+  const handlePress = useEvent((e: { preventDefault: () => void; stopPropagation: () => void }) => {
+    // The whole row is a link to the pool page — keep this press from triggering it.
+    e.preventDefault()
+    e.stopPropagation()
+    setShowDetails(true)
+  })
+
+  return (
+    <>
+      {/* minWidth: 0 lands on the Popover's inline-block reference wrapper: as a flex item of the
+          details row its default min-width:auto floors it at the full nowrap name width, so squeezed
+          rows overflowed the cell and hard-clipped instead of letting the Text below ellipsize. */}
+      <MouseoverTooltip text={<HookTooltip hookEntry={hookEntry} />} placement="top" style={{ minWidth: 0 }}>
+        <Text
+          variant="body3"
+          color="$neutral2"
+          maxWidth={160}
+          minWidth={0}
+          flexShrink={1}
+          whiteSpace="nowrap"
+          overflow="hidden"
+          textOverflow="ellipsis"
+          cursor="pointer"
+          hoverStyle={{ color: '$neutral1' }}
+          onPress={handlePress}
+        >
+          {hookEntry.name || shortenAddress({ address: hookEntry.address })}
+        </Text>
+      </MouseoverTooltip>
+      {showDetails ? (
+        // Portal the dialog to the body: this cell lives inside the row's link to the pool page,
+        // and a dialog mounted inside an anchor would nest anchors and bubble clicks into it.
+        <Portal>
+          <HookDetailsModal hookEntry={hookEntry} chainId={chainId} isOpen onClose={() => setShowDetails(false)} />
+        </Portal>
+      ) : null}
+    </>
+  )
+}
+
+// Second line of the Pool column: protocol version · fee tier · hook name (v4 pools with a
+// registry-known hook). Unknown hooks render nothing extra — just protocol · fee tier.
+function PoolDetailsLine({
+  chainId,
+  protocolVersion,
+  feeTier,
+  hookAddress,
+  protocolFeePips,
+}: {
+  chainId: UniverseChainId
+  protocolVersion?: string
+  feeTier?: FeeData
+  hookAddress?: string
+  protocolFeePips?: number
+}) {
+  const { t } = useTranslation()
+  const { formatPercent } = useLocalizationContext()
+  const hookRegistry = useHookRegistryMap()
+  const isFeeDisplayEnabled = useFeatureFlag(FeatureFlags.V4ProtocolFeeDisplay)
+
+  const hookEntry =
+    hookAddress && !areEvmAddressesEqual(hookAddress, ZERO_ADDRESS)
+      ? hookRegistry?.get(getHookRegistryKey({ chainId, hookAddress }))
+      : undefined
+  const restProtocolVersion = getProtocolVersionFromLabel(protocolVersion)
+  // Flag on: render the cross-version FeeDisplay (LP headline + hover breakdown) in place of the
+  // plain % text. The protocol fee is backend-served or nothing — the FE never computes fees, so
+  // without a served value FeeDisplay drops the tooltip and the plain % headline stands alone. pips →
+  // bps is exact (÷100). Dynamic tiers keep the plain "Dynamic" label — their feeAmount is a sentinel,
+  // not a rate.
+  const feeBreakdown =
+    isFeeDisplayEnabled && feeTier && restProtocolVersion !== undefined && !isDynamicFeeTier(feeTier)
+      ? getFeeBreakdown({
+          feeAmount: feeTier.feeAmount,
+          protocolVersion: restProtocolVersion,
+          servedProtocolFeeBps: protocolFeePips !== undefined ? feeAmountToBps(protocolFeePips) : undefined,
+        })
+      : undefined
+
+  const feeTierLabel = feeTier
+    ? isDynamicFeeTier(feeTier)
+      ? t('common.dynamic')
+      : formatPercent(feeTier.feeAmount / BIPS_BASE, 4)
+    : undefined
+  const detailText = [protocolVersion, feeTierLabel].filter(Boolean).join(' · ')
+
+  if (!detailText && !hookEntry) {
+    return null
+  }
+
+  return (
+    <Flex row alignItems="center" gap="$gap4" minWidth={0} maxWidth="100%">
+      {feeBreakdown ? (
+        <>
+          {protocolVersion ? (
+            <Text variant="body3" color="$neutral2" numberOfLines={1} flexShrink={0}>
+              {protocolVersion}
+            </Text>
+          ) : null}
+          {protocolVersion ? (
+            <Text variant="body3" color="$neutral2" flexShrink={0}>
+              ·
+            </Text>
+          ) : null}
+          <FeeDisplay feeBreakdown={feeBreakdown}>
+            <Text variant="body3" color="$neutral2" numberOfLines={1} flexShrink={0}>
+              {feeTierLabel}
+            </Text>
+          </FeeDisplay>
+        </>
+      ) : detailText ? (
+        <Text variant="body3" color="$neutral2" numberOfLines={1} flexShrink={0}>
+          {detailText}
+        </Text>
+      ) : null}
+      {hookEntry ? (
+        <>
+          {detailText ? (
+            <Text variant="body3" color="$neutral2" flexShrink={0}>
+              ·
+            </Text>
+          ) : null}
+          <HookNameText hookEntry={hookEntry} chainId={chainId} />
+        </>
+      ) : null}
+    </Flex>
+  )
+}
+
 function PoolDescription({
   token0,
   token1,
+  chainId,
+  protocolVersion,
+  feeTier,
+  hookAddress,
+  protocolFeePips,
 }: {
   token0?: Token | TokenStats
   token1?: Token | TokenStats
   chainId: UniverseChainId
+  protocolVersion?: string
+  feeTier?: FeeData
+  hookAddress?: string
+  protocolFeePips?: number
 }) {
   const currency0 = token0 ? gqlToCurrency(token0) : undefined
   const currency1 = token1 ? gqlToCurrency(token1) : undefined
@@ -160,24 +319,47 @@ function PoolDescription({
   return (
     <Flex row gap="$gap8" alignItems="center" maxWidth="100%">
       <DoubleCurrencyLogo currencies={currencies} size={24} />
-      <EllipsisText>
-        {baseToken?.symbol}/{quoteToken?.symbol}
-      </EllipsisText>
+      <Flex flex={1} minWidth={0} gap="$spacing2">
+        <EllipsisText>
+          {baseToken?.symbol}/{quoteToken?.symbol}
+        </EllipsisText>
+        <PoolDetailsLine
+          chainId={chainId}
+          protocolVersion={protocolVersion}
+          feeTier={feeTier}
+          hookAddress={hookAddress}
+          protocolFeePips={protocolFeePips}
+        />
+      </Flex>
     </Flex>
   )
 }
+
+type PoolTableSurface = 'explore' | 'tdp' | 'add-liquidity-pool-browser' | 'positions-discovery'
 
 function PoolTableHeader({
   category,
   isCurrentSortMethod,
   direction,
+  surface,
 }: {
   category: PoolSortFields
   isCurrentSortMethod: boolean
   direction: OrderDirection
+  surface: PoolTableSurface
 }) {
   const { setSort } = usePoolTableStoreActions()
-  const handleSortCategory = useCallback(() => setSort(category), [setSort, category])
+  const handleSortCategory = useCallback(() => {
+    const newSortAscending = setSort(category)
+    sendAnalyticsEvent(InterfaceEventName.ExploreTableSorted, {
+      table_type: 'pools',
+      sort_method: category,
+      sort_direction: newSortAscending ? OrderDirection.Asc : OrderDirection.Desc,
+      surface,
+    })
+    // No-ops outside Explore (TDP, add-liquidity pool browser) — the section anchor only exists there.
+    scrollToExploreTokenSection()
+  }, [setSort, category, surface])
   const { t } = useTranslation()
 
   const HEADER_DESCRIPTIONS = {
@@ -189,7 +371,7 @@ function PoolTableHeader({
     [PoolSortFields.RewardApr]: (
       <>
         {t('pool.incentives.merklDocs')}
-        <LearnMoreLink textVariant="buttonLabel4" url={uniswapUrls.merklDocsUrl} />
+        <LearnMoreLink textVariant="buttonLabel4" url={UniswapStaticUrls.merklDocsUrl} />
       </>
     ),
   }
@@ -227,7 +409,15 @@ interface TopPoolTableProps {
   isError: boolean
   loadMore?: ({ onComplete }: { onComplete?: () => void }) => void
 }
-function ExploreTopPoolTableContent(): JSX.Element {
+function ExploreTopPoolTableContent({
+  staticSize,
+  pageSize,
+  surface,
+}: {
+  staticSize?: boolean
+  pageSize?: number
+  surface: PoolTableSurface
+}): JSX.Element {
   const chainId = useChainIdFromUrlParam()
   const { sortMethod, sortAscending } = usePoolTableStore((s) => ({
     sortMethod: s.sortMethod,
@@ -249,13 +439,29 @@ function ExploreTopPoolTableContent(): JSX.Element {
     protocol: selectedProtocol,
   })
 
-  return <TopPoolTable topPoolData={{ topPools, isLoading, isError, loadMore }} />
+  return (
+    <TopPoolTable
+      topPoolData={{ topPools, isLoading, isError, loadMore }}
+      staticSize={staticSize}
+      pageSize={pageSize}
+      surface={surface}
+    />
+  )
 }
 
-export const ExploreTopPoolTable = memo(function ExploreTopPoolTable() {
+export const ExploreTopPoolTable = memo(function ExploreTopPoolTable({
+  staticSize,
+  pageSize,
+  surface,
+}: {
+  // Render a fixed set of rows with no infinite scroll / internal scroll area (e.g. discovery surfaces).
+  staticSize?: boolean
+  pageSize?: number
+  surface: PoolTableSurface
+}) {
   return (
     <PoolTableStoreContextProvider>
-      <ExploreTopPoolTableContent />
+      <ExploreTopPoolTableContent staticSize={staticSize} pageSize={pageSize} surface={surface} />
     </PoolTableStoreContextProvider>
   )
 })
@@ -264,23 +470,27 @@ const TopPoolTable = memo(function TopPoolTable({
   topPoolData,
   pageSize = TABLE_PAGE_SIZE,
   staticSize = false,
-  forcePinning = false,
+  surface,
 }: {
   topPoolData: TopPoolTableProps
   pageSize?: number
   staticSize?: boolean
-  forcePinning?: boolean
+  surface: PoolTableSurface
 }) {
   const { topPools, isLoading, isError, loadMore: backendLoadMore } = topPoolData
 
-  // Client-side pagination fallback (for legacy mode when loadMore is undefined)
-  const { page, loadMore: clientLoadMore } = useSimplePagination()
+  // Client-side pagination fallback (for legacy mode when backend loadMore is undefined).
+  // useSimplePagination paces the reveal so the load-more indicator shows, and gates loadMore once
+  // all loaded rows are displayed.
+  const { page, loadMore: clientLoadMore } = useSimplePagination({ totalCount: topPools?.length, pageSize })
 
   // Use backend loadMore if available, otherwise fall back to client-side slicing
   const effectiveLoadMore = backendLoadMore ?? clientLoadMore
-  const displayedPools = backendLoadMore
-    ? topPools // Backend pagination: use all fetched pools
-    : topPools?.slice(0, page * pageSize) // Client-side: slice by page
+  const displayedPools = staticSize
+    ? topPools?.slice(0, pageSize) // Static: fixed number of rows, no pagination
+    : backendLoadMore
+      ? topPools // Backend pagination: use all fetched pools
+      : topPools?.slice(0, page * pageSize) // Client-side: slice by page
 
   return (
     <TableWrapper data-testid="top-pools-explore-table">
@@ -290,8 +500,7 @@ const TopPoolTable = memo(function TopPoolTable({
         error={isError}
         loadMore={staticSize ? undefined : effectiveLoadMore}
         maxWidth={1200}
-        forcePinning={forcePinning}
-        maxHeight={staticSize ? 1000 : undefined}
+        surface={surface}
       />
     </TableWrapper>
   )
@@ -305,9 +514,12 @@ export function PoolsTable({
   maxWidth,
   maxHeight,
   hiddenColumns,
-  forcePinning,
+  hideIndex,
   getLink,
   linkState,
+  selectedPoolId,
+  selectedPoolChainId,
+  surface,
 }: {
   pools?: TablePool[] | PoolStat[]
   loading: boolean
@@ -316,13 +528,20 @@ export function PoolsTable({
   maxWidth?: number
   maxHeight?: number
   hiddenColumns?: PoolSortFields[]
-  forcePinning?: boolean
+  hideIndex?: boolean
   getLink?: (pool: PoolLinkData) => string
   linkState?: { entryPoint?: string }
+  /** Where this table is mounted — attached to sort analytics so surfaces aren't conflated. */
+  surface: PoolTableSurface
+  // The pool currently selected in the URL (pool id/hash + its chain). The matching row renders
+  // with a selected highlight — used by the add-liquidity pool browser where the table stays
+  // visible after a pool is picked.
+  selectedPoolId?: string
+  selectedPoolChainId?: UniverseChainId
 }) {
   const { t } = useTranslation()
   const isLPIncentivesEnabled = useFeatureFlag(FeatureFlags.LpIncentives)
-  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
+  const isLPIncentivesTablesColumnEnabled = useFeatureFlag(FeatureFlags.LpIncentivesTablesColumn)
 
   const { formatPercent, formatNumberOrString, convertFiatAmountFormatted } = useLocalizationContext()
   const { sortMethod, sortAscending } = usePoolTableStore((s) => ({
@@ -340,18 +559,26 @@ export function PoolsTable({
         const chainId = supportedChainIdFromGQLChain(pool.token0?.chain as GraphQLApi.Chain) ?? defaultChainId
         const poolIdOrHash = getPoolIdOrHash(pool)
         const volumes = getPoolVolumes(pool)
+        // The row link is built from this same `poolIdOrHash`, so the URL route param matches it
+        // verbatim for the clicked pool — exact equality is correct (and avoids address-casing rules
+        // that don't apply to v4 pool-id hashes).
+        const selected =
+          selectedPoolId !== undefined && chainId === selectedPoolChainId && poolIdOrHash === selectedPoolId
 
         return {
           index: poolSortRank,
+          selected,
           poolDescription: (
             <PoolDescription
               token0={unwrapToken(chainId, pool.token0) as TokenStats | Token | undefined}
               token1={unwrapToken(chainId, pool.token1) as TokenStats | Token | undefined}
               chainId={chainId}
+              protocolVersion={pool.protocolVersion?.toLowerCase()}
+              feeTier={pool.feeTier ?? undefined}
+              hookAddress={pool.hookAddress}
+              protocolFeePips={pool.protocolFeePips}
             />
           ),
-          protocolVersion: pool.protocolVersion?.toLowerCase(),
-          feeTier: pool.feeTier,
           tvl: formatVolume(volumes.tvl, convertFiatAmountFormatted),
           volume24h: formatVolume(volumes.volume24h, convertFiatAmountFormatted),
           volume30d: formatVolume(volumes.volume30d, convertFiatAmountFormatted),
@@ -378,7 +605,16 @@ export function PoolsTable({
           },
         }
       }) ?? [],
-    [convertFiatAmountFormatted, defaultChainId, filterString, getLink, linkState, pools],
+    [
+      convertFiatAmountFormatted,
+      defaultChainId,
+      filterString,
+      getLink,
+      linkState,
+      pools,
+      selectedPoolId,
+      selectedPoolChainId,
+    ],
   )
 
   const showLoadingSkeleton = loading || !!error
@@ -386,7 +622,7 @@ export function PoolsTable({
   const columns = useMemo(() => {
     const columnHelper = createColumnHelper<PoolTableValues>()
     const filteredColumns = [
-      !media.lg
+      !media.lg && !hideIndex
         ? columnHelper.accessor((row) => row.index, {
             id: 'index',
             size: 60,
@@ -406,7 +642,7 @@ export function PoolsTable({
         : null,
       columnHelper.accessor((row) => row.poolDescription, {
         id: 'poolDescription',
-        size: media.lg ? 170 : 180,
+        size: media.lg ? 210 : 240,
         header: () => (
           <HeaderCell justifyContent="flex-start">
             <Text variant="body3" color="$neutral2">
@@ -420,42 +656,6 @@ export function PoolsTable({
           </Cell>
         ),
       }),
-      columnHelper.accessor((row) => row.protocolVersion, {
-        id: 'protocolVersion',
-        size: 80,
-        header: () => (
-          <HeaderCell justifyContent="flex-end">
-            <Text variant="body3" color="$neutral2">
-              {t('common.protocol')}
-            </Text>
-          </HeaderCell>
-        ),
-        cell: (protocolVersion) => (
-          <Cell justifyContent="flex-end" loading={showLoadingSkeleton}>
-            <TableText>{protocolVersion.getValue?.() ?? '-'}</TableText>
-          </Cell>
-        ),
-      }),
-      columnHelper.accessor((row) => row.feeTier, {
-        id: 'feeTier',
-        size: 100,
-        header: () => (
-          <HeaderCell>
-            <Text variant="body3" color="$neutral2">
-              {t('fee.tier')}
-            </Text>
-          </HeaderCell>
-        ),
-        cell: (feeTier) => (
-          <Cell loading={showLoadingSkeleton}>
-            <TableText>
-              {feeTier.getValue?.()
-                ? `${isDynamicFeeTier(feeTier.getValue()!) ? t('common.dynamic') : formatPercent(feeTier.getValue()!.feeAmount / BIPS_BASE, 4)}`
-                : '-'}
-            </TableText>
-          </Cell>
-        ),
-      }),
       !hiddenColumns?.includes(PoolSortFields.TVL)
         ? columnHelper.accessor((row) => row.tvl, {
             id: 'tvl',
@@ -466,6 +666,7 @@ export function PoolsTable({
                   category={PoolSortFields.TVL}
                   isCurrentSortMethod={sortMethod === PoolSortFields.TVL}
                   direction={orderDirection}
+                  surface={surface}
                 />
               </HeaderCell>
             ),
@@ -479,13 +680,14 @@ export function PoolsTable({
       !hiddenColumns?.includes(PoolSortFields.Apr)
         ? columnHelper.accessor((row) => row.apr, {
             id: 'apr',
-            size: 120,
+            size: 110,
             header: () => (
               <HeaderCell>
                 <PoolTableHeader
                   category={PoolSortFields.Apr}
                   isCurrentSortMethod={sortMethod === PoolSortFields.Apr}
                   direction={orderDirection}
+                  surface={surface}
                 />
               </HeaderCell>
             ),
@@ -496,7 +698,7 @@ export function PoolsTable({
             ),
           })
         : null,
-      !hiddenColumns?.includes(PoolSortFields.RewardApr) && isLPIncentivesEnabled
+      !hiddenColumns?.includes(PoolSortFields.RewardApr) && isLPIncentivesEnabled && isLPIncentivesTablesColumnEnabled
         ? columnHelper.accessor((row) => row.rewardApr, {
             id: PoolSortFields.RewardApr,
             size: 120,
@@ -506,6 +708,7 @@ export function PoolsTable({
                   category={PoolSortFields.RewardApr}
                   isCurrentSortMethod={sortMethod === PoolSortFields.RewardApr}
                   direction={orderDirection}
+                  surface={surface}
                 />
               </HeaderCell>
             ),
@@ -532,13 +735,14 @@ export function PoolsTable({
       !hiddenColumns?.includes(PoolSortFields.Volume24h)
         ? columnHelper.accessor((row) => row.volume24h, {
             id: 'volume24h',
-            size: 120,
+            size: 110,
             header: () => (
               <HeaderCell>
                 <PoolTableHeader
                   category={PoolSortFields.Volume24h}
                   isCurrentSortMethod={sortMethod === PoolSortFields.Volume24h}
                   direction={orderDirection}
+                  surface={surface}
                 />
               </HeaderCell>
             ),
@@ -554,13 +758,14 @@ export function PoolsTable({
       !hiddenColumns?.includes(PoolSortFields.Volume30D)
         ? columnHelper.accessor((row) => row.volume30d, {
             id: 'volume30Day',
-            size: 120,
+            size: 110,
             header: () => (
               <HeaderCell>
                 <PoolTableHeader
                   category={PoolSortFields.Volume30D}
                   isCurrentSortMethod={sortMethod === PoolSortFields.Volume30D}
                   direction={orderDirection}
+                  surface={surface}
                 />
               </HeaderCell>
             ),
@@ -581,6 +786,7 @@ export function PoolsTable({
                   category={PoolSortFields.VolOverTvl}
                   isCurrentSortMethod={sortMethod === PoolSortFields.VolOverTvl}
                   direction={orderDirection}
+                  surface={surface}
                 />
               </HeaderCell>
             ),
@@ -602,13 +808,16 @@ export function PoolsTable({
   }, [
     media.lg,
     hiddenColumns,
+    hideIndex,
     isLPIncentivesEnabled,
+    isLPIncentivesTablesColumnEnabled,
     showLoadingSkeleton,
     t,
     sortMethod,
     orderDirection,
     formatNumberOrString,
     formatPercent,
+    surface,
   ])
 
   return (
@@ -617,12 +826,12 @@ export function PoolsTable({
       data={poolTableValues}
       loading={loading}
       error={error}
-      v2={multichainTokenUxEnabled}
+      rowHeight={ROW_HEIGHT}
+      compactRowHeight={ROW_HEIGHT}
       loadMore={loadMore}
       maxWidth={maxWidth}
       maxHeight={maxHeight}
       defaultPinnedColumns={['index', 'poolDescription']}
-      forcePinning={forcePinning}
     />
   )
 }

@@ -1,4 +1,5 @@
-import { Flex, Input, Text } from 'ui/src'
+import { Flex, Text } from 'ui/src'
+import { GasFieldTextInput } from 'uniswap/src/features/gas/components/NetworkCostEditor/GasFieldTextInput'
 import {
   GasFieldTooltip,
   type GasTooltipKey,
@@ -35,16 +36,16 @@ export function GasFieldInput({
   })
 
   return (
-    <Flex gap="$spacing4">
+    <Flex gap="$spacing8">
       <Flex row alignItems="center" justifyContent="space-between">
         <Flex row alignItems="center" gap="$spacing4">
-          <Text variant="body3" color="$neutral2">
+          <Text variant="body3" color="$neutral1">
             {label}
           </Text>
           <GasFieldTooltip tooltipKey={tooltipKey} />
         </Flex>
         {hint && (
-          <Text variant="body4" color="$neutral3">
+          <Text variant="body3" color="$neutral3">
             {hint}
           </Text>
         )}
@@ -52,28 +53,17 @@ export function GasFieldInput({
       <Flex
         row
         alignItems="center"
-        backgroundColor={error ? '$statusCritical2' : '$surface2'}
+        backgroundColor={error ? '$statusCritical2' : '$transparent'}
         borderColor={error ? '$statusCritical' : '$surface3'}
         borderRadius="$rounded12"
         borderWidth="$spacing1"
         px="$spacing12"
         py="$spacing8"
       >
-        <Input
-          flex={1}
+        <GasFieldTextInput
           accessibilityLabel={label}
-          aria-label={label}
           autoFocus={autoFocus}
-          backgroundColor="$transparent"
-          borderWidth={0}
-          color="$neutral1"
-          fontFamily="$subHeading"
-          fontSize="$large"
-          height="auto"
           keyboardType="decimal-pad"
-          outlineColor="$transparent"
-          p="$none"
-          placeholderTextColor="$neutral3"
           value={value}
           onChangeText={handleChangeText}
         />

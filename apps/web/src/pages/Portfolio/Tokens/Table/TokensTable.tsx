@@ -1,7 +1,6 @@
-import { NetworkStatus } from '@apollo/client'
 import { SharedEventName } from '@uniswap/analytics-events'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { isMobileWeb } from '@universe/environment'
+import { startTransition, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollSync } from 'react-scroll-sync'
 import { Flex } from 'ui/src'
@@ -10,9 +9,10 @@ import { ElementName, SectionName } from 'uniswap/src/features/telemetry/constan
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
+import { useSimplePagination } from '~/pages/Explore/hooks/useSimplePagination'
 import { TokenData } from '~/pages/Portfolio/Tokens/hooks/useTransformTokenTableData'
-import { TokenColumns } from '~/pages/Portfolio/Tokens/Table/columns/useTokenColumns'
 import {
+  PortfolioTokenSortMethod,
   PortfolioTokenTableSortStoreContextProvider,
   usePortfolioTokenTableSortStore,
 } from '~/pages/Portfolio/Tokens/Table/portfolioTokenTableSortStore'
@@ -21,14 +21,61 @@ import { TokensTableInner } from '~/pages/Portfolio/Tokens/Table/TokensTableInne
 import { flattenTokenDataToSingleChainRows } from '~/pages/Portfolio/Tokens/Table/tokenTableRowUtils'
 
 const TOKENS_TABLE_MAX_HEIGHT = 700
+const HIDDEN_TABLE_MAX_HEIGHT = isMobileWeb ? 350 : TOKENS_TABLE_MAX_HEIGHT
+const HIDDEN_PAGE_SIZE = 20
 
 interface TokensTableProps {
   visible: TokenData[]
   hidden: TokenData[]
   loading: boolean
   refetching?: boolean
-  networkStatus: NetworkStatus
   error?: Error | undefined
+}
+
+// The Hidden Tokens table has extra pagination and resizing logic due to mWeb performance constraints
+function HiddenTokensTable({
+  hidden,
+  loading,
+  error,
+  sortMethod,
+  sortAscending,
+}: {
+  hidden: TokenData[]
+  loading: boolean
+  error?: Error | undefined
+  sortMethod: PortfolioTokenSortMethod
+  sortAscending: boolean
+}) {
+  const sortedHiddenTokens = useMemo(() => {
+    const flattened = flattenTokenDataToSingleChainRows(hidden)
+    return sortPortfolioTokenData(flattened, { sortMethod, sortAscending })
+  }, [hidden, sortMethod, sortAscending])
+
+  const { page, loadMore } = useSimplePagination({
+    totalCount: sortedHiddenTokens.length,
+    pageSize: HIDDEN_PAGE_SIZE,
+  })
+
+  const displayedHiddenTokens = useMemo(() => {
+    if (!isMobileWeb) {
+      return sortedHiddenTokens
+    }
+    return sortedHiddenTokens.slice(0, page * HIDDEN_PAGE_SIZE)
+  }, [sortedHiddenTokens, page])
+
+  return (
+    <TokensTableInner
+      showHiddenTokensBanner
+      tokenData={displayedHiddenTokens}
+      hideHeader
+      loading={loading}
+      error={error}
+      maxHeight={HIDDEN_TABLE_MAX_HEIGHT}
+      showUnrealizedPnlPercent
+      virtualized
+      loadMore={isMobileWeb ? loadMore : undefined}
+    />
+  )
 }
 
 function TokensTableContent({ visible, hidden, loading, refetching, error }: TokensTableProps) {
@@ -36,46 +83,20 @@ function TokensTableContent({ visible, hidden, loading, refetching, error }: Tok
   const [isOpen, setIsOpen] = useState(false)
   const tableLoading = loading && !refetching
   const trace = useTrace()
-  const isProfitLossEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
 
   const { sortMethod, sortAscending } = usePortfolioTokenTableSortStore((s) => ({
     sortMethod: s.sortMethod,
     sortAscending: s.sortAscending,
   }))
 
-  // Collapse hidden tokens when sort changes so we don't re-render 100+ hidden rows.
-  // We detect the change during render (not in an effect) so React restarts the
-  // render with isOpen=false before the hidden table ever mounts.
-  const prevSortRef = useRef({ sortMethod, sortAscending })
-  if (prevSortRef.current.sortMethod !== sortMethod || prevSortRef.current.sortAscending !== sortAscending) {
-    prevSortRef.current = { sortMethod, sortAscending }
-    if (isOpen) {
-      setIsOpen(false)
-    }
-  }
-
   const sortedVisible = useMemo(
     () => sortPortfolioTokenData(visible, { sortMethod, sortAscending }),
     [visible, sortMethod, sortAscending],
   )
 
-  const hiddenColumns = useMemo(() => {
-    if (isProfitLossEnabled) {
-      return undefined
-    }
-    return [TokenColumns.AvgCost, TokenColumns.UnrealizedPnl]
-  }, [isProfitLossEnabled])
-
-  const flattenedHiddenTokens = useMemo(() => flattenTokenDataToSingleChainRows(hidden), [hidden])
-
-  const sortedHiddenTokens = useMemo(
-    () => sortPortfolioTokenData(flattenedHiddenTokens, { sortMethod, sortAscending }),
-    [flattenedHiddenTokens, sortMethod, sortAscending],
-  )
-
   const handleToggleHiddenTokens = useCallback(() => {
     const newIsOpen = !isOpen
-    setIsOpen(newIsOpen)
+    startTransition(() => setIsOpen(newIsOpen))
     sendAnalyticsEvent(SharedEventName.ELEMENT_CLICKED, {
       element: ElementName.PortfolioHiddenTokensExpandoRow,
       section: SectionName.PortfolioTokensTab,
@@ -95,11 +116,10 @@ function TokensTableContent({ visible, hidden, loading, refetching, error }: Tok
           tokenData={sortedVisible}
           loading={tableLoading}
           error={error}
-          hiddenColumns={hiddenColumns}
           maxHeight={TOKENS_TABLE_MAX_HEIGHT}
           showUnrealizedPnlPercent
         />
-        {sortedHiddenTokens.length > 0 && (
+        {hidden.length > 0 && (
           <>
             <InlineExpandoRow
               isExpanded={isOpen}
@@ -107,16 +127,15 @@ function TokensTableContent({ visible, hidden, loading, refetching, error }: Tok
               onPress={handleToggleHiddenTokens}
               testID={TestID.ShowHiddenTokens}
             />
+            {/* Keyed on sort so a sort change remounts the table with correct order*/}
             {isOpen && (
-              <TokensTableInner
-                showHiddenTokensBanner
-                tokenData={sortedHiddenTokens}
-                hideHeader
+              <HiddenTokensTable
+                key={`${sortMethod}-${sortAscending}`}
+                hidden={hidden}
                 loading={tableLoading}
                 error={error}
-                hiddenColumns={hiddenColumns}
-                maxHeight={TOKENS_TABLE_MAX_HEIGHT}
-                showUnrealizedPnlPercent
+                sortMethod={sortMethod}
+                sortAscending={sortAscending}
               />
             )}
           </>

@@ -6,13 +6,12 @@ import ContextMenu from 'react-native-context-menu-view'
 import { useDispatch } from 'react-redux'
 import { useEagerExternalProfileNavigation } from 'src/app/navigation/hooks'
 import RemoveButton from 'src/components/explore/RemoveButton'
-import { Flex, TouchableArea, useIsDarkMode, useShadowPropsShort, useSporeColors } from 'ui/src'
+import { Flex, TouchableArea, useIsDarkMode, useShadowPropsShort } from 'ui/src'
 import { borderRadii, iconSizes } from 'ui/src/theme'
 import { DisplayNameText } from 'uniswap/src/components/accounts/DisplayNameText'
 import { AccountIcon } from 'uniswap/src/features/accounts/AccountIcon'
 import { DisplayNameType } from 'uniswap/src/features/accounts/types'
 import { removeWatchedAddress } from 'uniswap/src/features/favorites/slice'
-import { noop } from 'utilities/src/react/noop'
 import { useDisplayName } from 'wallet/src/features/wallet/hooks'
 
 export type FavoriteWalletCardProps = {
@@ -24,7 +23,6 @@ export type FavoriteWalletCardProps = {
 function FavoriteWalletCard({ address, isEditing, setIsEditing, ...rest }: FavoriteWalletCardProps): JSX.Element {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const colors = useSporeColors()
   const isDarkMode = useIsDarkMode()
 
   const { preload, navigate } = useEagerExternalProfileNavigation()
@@ -49,10 +47,56 @@ function FavoriteWalletCard({ address, isEditing, setIsEditing, ...rest }: Favor
 
   const shadowProps = useShadowPropsShort()
 
+  const card = (
+    <TouchableArea
+      overflow={isIOS ? 'hidden' : 'visible'}
+      activeOpacity={isEditing ? 1 : undefined}
+      borderRadius="$rounded16"
+      disabled={isEditing}
+      m="$spacing4"
+      testID="favorite-wallet-card"
+      onPress={(): void => {
+        navigate(address)
+      }}
+      onPressIn={async (): Promise<void> => {
+        await preload(address)
+      }}
+      {...shadowProps}
+    >
+      <Flex
+        row
+        gap="$spacing4"
+        justifyContent="space-between"
+        p="$spacing12"
+        backgroundColor={isDarkMode ? '$surface2' : '$surface1'}
+        borderColor={isDarkMode ? '$transparent' : '$surface3'}
+        borderWidth="$spacing1"
+        borderRadius="$rounded16"
+      >
+        <Flex row shrink alignItems="center" gap="$spacing8" {...(isEditing && { paddingRight: '$spacing24' })}>
+          {icon}
+          <DisplayNameText
+            displayName={displayName}
+            textProps={{
+              adjustsFontSizeToFit: displayName?.type === DisplayNameType.Address,
+              variant: 'body1',
+              numberOfLines: 1,
+            }}
+          />
+        </Flex>
+        <RemoveButton visible={isEditing} onPress={onRemove} />
+      </Flex>
+    </TouchableArea>
+  )
+
+  // Unmount ContextMenu while editing — see FavoriteTokenCard for New Arch rationale.
+  if (isEditing) {
+    return card
+  }
+
   return (
     <ContextMenu
       actions={menuActions}
-      disabled={isEditing}
       style={{ borderRadius: borderRadii.rounded16 }}
       onPress={(e): void => {
         // Emitted index based on order of menu action array
@@ -67,40 +111,7 @@ function FavoriteWalletCard({ address, isEditing, setIsEditing, ...rest }: Favor
       }}
       {...rest}
     >
-      <TouchableArea
-        overflow={isIOS ? 'hidden' : 'visible'}
-        activeOpacity={isEditing ? 1 : undefined}
-        backgroundColor={isDarkMode ? '$surface2' : '$surface1'}
-        borderColor={colors.surface3.val}
-        borderRadius="$rounded16"
-        borderWidth={isDarkMode ? '$none' : '$spacing1'}
-        disabled={isEditing}
-        m="$spacing4"
-        testID="favorite-wallet-card"
-        onLongPress={noop}
-        onPress={(): void => {
-          navigate(address)
-        }}
-        onPressIn={async (): Promise<void> => {
-          await preload(address)
-        }}
-        {...shadowProps}
-      >
-        <Flex row gap="$spacing4" justifyContent="space-between" p="$spacing12">
-          <Flex row shrink alignItems="center" gap="$spacing8" {...(isEditing && { paddingRight: '$spacing24' })}>
-            {icon}
-            <DisplayNameText
-              displayName={displayName}
-              textProps={{
-                adjustsFontSizeToFit: displayName?.type === DisplayNameType.Address,
-                variant: 'body1',
-                numberOfLines: 1,
-              }}
-            />
-          </Flex>
-          <RemoveButton visible={isEditing} onPress={onRemove} />
-        </Flex>
-      </TouchableArea>
+      {card}
     </ContextMenu>
   )
 }

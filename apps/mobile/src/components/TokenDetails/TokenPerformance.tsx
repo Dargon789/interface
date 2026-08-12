@@ -1,10 +1,9 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { memo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTokenDetailsContext } from 'src/components/TokenDetails/TokenDetailsContext'
 import { Flex, Separator } from 'ui/src'
 import { TokenProfitLoss } from 'uniswap/src/components/TokenProfitLoss/TokenProfitLoss'
-import { useGetWalletTokenProfitLossQuery } from 'uniswap/src/data/rest/getWalletTokenProfitLoss'
+import { useGetWalletTokenProfitLossQuery } from 'uniswap/src/data/apiClients/dataApiService/performance/getWalletTokenProfitLoss'
 import { DEFAULT_NATIVE_ADDRESS } from 'uniswap/src/features/chains/evm/rpc'
 import { isStablecoinAddress } from 'uniswap/src/features/chains/utils'
 import { useRestPortfolioValueModifier } from 'uniswap/src/features/dataApi/balances/balancesRest'
@@ -15,8 +14,6 @@ import { useActiveAddresses } from 'wallet/src/features/accounts/store/hooks'
 
 export const TokenPerformance = memo(function TokenPerformance(): JSX.Element | null {
   const { t } = useTranslation()
-  const isProfitLossEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
-  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const { address, chainId } = useTokenDetailsContext()
   const { evmAddress, svmAddress } = useActiveAddresses()
   const modifier = useRestPortfolioValueModifier(evmAddress ?? svmAddress)
@@ -31,9 +28,9 @@ export const TokenPerformance = memo(function TokenPerformance(): JSX.Element | 
       chainId,
       tokenAddress,
       modifier,
-      multichain: multichainTokenUxEnabled || undefined,
+      multichain: true,
     },
-    enabled: isProfitLossEnabled && !isStablecoin,
+    enabled: !isStablecoin,
   })
 
   const profitLoss = data?.profitLoss
@@ -54,7 +51,7 @@ export const TokenPerformance = memo(function TokenPerformance(): JSX.Element | 
     })
   }, [profitLoss, tokenAddress, chainId])
 
-  if (!isProfitLossEnabled || !profitLoss || isStablecoin || isError) {
+  if (!profitLoss || isStablecoin || isError) {
     return null
   }
 
@@ -62,6 +59,7 @@ export const TokenPerformance = memo(function TokenPerformance(): JSX.Element | 
     <Flex gap="$spacing24" px="$spacing16">
       <TokenProfitLoss
         title={t('pnl.title.allTime')}
+        titleColor="$neutral1"
         averageCost={profitLoss.averageCostUsd}
         unrealizedReturn={profitLoss.unrealizedReturnUsd}
         unrealizedReturnPercent={profitLoss.unrealizedReturnPercent}

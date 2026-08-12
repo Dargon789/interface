@@ -2,6 +2,8 @@ import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { Flex, useMedia } from 'ui/src'
+import { useNetworkSelectorOptions } from 'uniswap/src/components/network/NetworkFilterV2/useNetworkSelectorOptions'
+import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { usePortfolioData } from 'uniswap/src/features/dataApi/balances/balancesRest'
 import { DataApiOutageBanner } from 'uniswap/src/features/dataApi/outage/DataApiOutageBanner'
@@ -16,6 +18,7 @@ import { HEADER_TRANSITION } from '~/components/StickyCollapsibleHeader/constant
 import { useActiveAddresses } from '~/features/accounts/store/hooks'
 import { useAppHeaderHeight } from '~/hooks/useAppHeaderHeight'
 import { useDataApiOutageModal } from '~/hooks/useDataApiOutageModal'
+import { useScrollCompact } from '~/hooks/useScrollCompact'
 import { usePortfolioRoutes } from '~/pages/Portfolio/Header/hooks/usePortfolioRoutes'
 import { PortfolioAddressDisplay } from '~/pages/Portfolio/Header/PortfolioAddressDisplay/PortfolioAddressDisplay'
 import { PortfolioMoreMenu } from '~/pages/Portfolio/Header/PortfolioMoreMenu'
@@ -69,22 +72,32 @@ function getOutageState({
 }
 
 interface PortfolioHeaderProps {
-  isCompact: boolean
+  enableScrollCompact?: boolean
+  isCompact?: boolean
 }
 
-export function PortfolioHeader({ isCompact }: PortfolioHeaderProps) {
+export function PortfolioHeader({ enableScrollCompact = false, isCompact: isCompactProp }: PortfolioHeaderProps) {
+  const scrollCompact = useScrollCompact({})
+  const isCompact = isCompactProp ?? (enableScrollCompact && scrollCompact)
   const { t } = useTranslation()
   const navigate = useNavigate()
   const media = useMedia()
   const { tab, chainId: currentChainId, externalAddress, isExternalWallet } = usePortfolioRoutes()
   const activeAddresses = useActiveAddresses()
   const showDemoView = useShowDemoView()
-  const isPnLEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
   const headerHeight = useAppHeaderHeight()
   const buttonSize = media.md || isCompact ? 'small' : 'medium'
 
   const hasConnectedAddresses = Boolean(activeAddresses.evmAddress || activeAddresses.svmAddress)
   const showShareButton = !showDemoView && (isExternalWallet || hasConnectedAddresses)
+
+  const isNetworkFilterV2Enabled = useFeatureFlag(FeatureFlags.NetworkFilterV2)
+  const { chains: enabledChains } = useEnabledChains()
+  const tieredNetworkOptions = useNetworkSelectorOptions({
+    addresses: activeAddresses,
+    chainIds: enabledChains,
+    enabled: isNetworkFilterV2Enabled,
+  })
 
   const { error: portfolioError, dataUpdatedAt: portfolioDataUpdatedAt } = usePortfolioData({
     evmAddress: activeAddresses.evmAddress,
@@ -141,19 +154,21 @@ export function PortfolioHeader({ isCompact }: PortfolioHeaderProps) {
           <PortfolioAddressDisplay isCompact={isCompact} />
 
           <Flex row gap="$spacing8" alignItems="center">
-            {!showDemoView && isPnLEnabled && <PortfolioMoreMenu size={buttonSize} transition={HEADER_TRANSITION} />}
+            {!showDemoView && <PortfolioMoreMenu size={buttonSize} transition={HEADER_TRANSITION} />}
             {showShareButton && (
               <SharePortfolioButton size={buttonSize} showLabel={!media.sm} transition={HEADER_TRANSITION} />
             )}
             <NetworkFilter
               showMultichainOption
-              showDisplayName={!media.sm}
+              showDisplayName={!media.md}
               position="right"
               onPress={onNetworkPress}
               currentChainId={currentChainId}
               size={buttonSize}
               tracePage={getPageNameFromTab(tab)}
               transition={HEADER_TRANSITION}
+              showSearch={isNetworkFilterV2Enabled}
+              tieredOptions={isNetworkFilterV2Enabled ? tieredNetworkOptions : undefined}
             />
           </Flex>
         </Flex>

@@ -19,9 +19,6 @@ import {
   type PrepareAddAuthenticatorResponse,
   type ReportDecryptionResultResponse,
   type SetupRecoveryResponse,
-  type SignMessageResponse,
-  type SignTransactionResponse,
-  type SignTypedDataResponse,
   type StartAuthenticatedSessionResponse,
   type WalletSignInResponse,
 } from '@uniswap/client-privy-embedded-wallet/dist/uniswap/privy-embedded-wallet/v1/service_pb'
@@ -260,6 +257,7 @@ export function createEmbeddedWalletApiClient({
     params: {
       blindedElement: string
       authMethodId: string
+      rotate?: boolean
     },
     accessToken: string,
   ): Promise<OprfEvaluateResponse> {
@@ -278,11 +276,14 @@ export function createEmbeddedWalletApiClient({
   }
 
   async function fetchSetupRecovery(params: {
-    credential: string
+    credential?: string
     authMethodId: string
     authMethodType?: string
     encryptedKeyId?: string
     authMethodIdentifier?: string
+    authKeySignature?: string
+    recoveryAuthSignature?: string
+    signingPayload?: string
   }): Promise<SetupRecoveryResponse> {
     return await rpcClient.setupRecovery(params)
   }
@@ -296,12 +297,18 @@ export function createEmbeddedWalletApiClient({
     return await rpcClient.executeRecovery(params)
   }
 
-  const fetchReportDecryptionResult = (params: {
-    success: boolean
-    authMethodId: string
-    newPasskeyPublicKey?: string
-    encryptionKey?: string
-  }): Promise<ReportDecryptionResultResponse> => rpcClient.reportDecryptionResult(params)
+  const fetchReportDecryptionResult = (
+    params: {
+      success: boolean
+      authMethodId: string
+      newPasskeyPublicKey?: string
+      encryptionKey?: string
+    },
+    accessToken: string,
+  ): Promise<ReportDecryptionResultResponse> =>
+    rpcClient.reportDecryptionResult(params, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
 
   const fetchExportSeedPhraseWithRecovery = (params: {
     authMethodId: string
@@ -310,8 +317,13 @@ export function createEmbeddedWalletApiClient({
     recoveryAuthSignature: string
   }): Promise<ExportSeedPhraseResponse> => rpcClient.exportSeedPhraseWithRecovery(params)
 
-  async function fetchGetRecoveryConfig(params: { authMethodId: string }): Promise<GetRecoveryConfigResponse> {
-    return await rpcClient.getRecoveryConfig(params)
+  async function fetchGetRecoveryConfig(
+    params: { authMethodId: string },
+    accessToken: string,
+  ): Promise<GetRecoveryConfigResponse> {
+    return await rpcClient.getRecoveryConfig(params, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
   }
 
   async function fetchDeleteRecovery({ credential }: { credential: string }): Promise<DeleteRecoveryResponse> {

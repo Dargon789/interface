@@ -11,6 +11,22 @@ describe('env', () => {
     }))
   }
 
+  // Mock the chrome module so extension-context branches can be exercised.
+  // Pass `null` to simulate the injected-script case (no chrome.runtime).
+  const mockChromeRuntime = (runtimeId: string | null): void => {
+    vi.doMock('../chrome', () => ({
+      getChromeRuntime: () => (runtimeId === null ? undefined : { id: runtimeId }),
+    }))
+  }
+
+  // The four trusted extension IDs (kept in sync with extensionId.ts).
+  const TRUSTED_IDS = {
+    local: 'ceofpnbcmdjbibjjdniemjemmgaibeih',
+    dev: 'afhngfaoadjjlhbgopehflaabbgfbcmn',
+    beta: 'foilfbjokdonehdajefeadkclfpmhdga',
+    prod: 'nnpmfplkfogfpmcngplhnbdnnilmcdcg',
+  }
+
   beforeEach(() => {
     vi.resetModules()
     process.env = { ...originalEnv }
@@ -18,6 +34,7 @@ describe('env', () => {
 
   afterEach(() => {
     process.env = originalEnv
+    vi.unstubAllGlobals()
   })
 
   describe('isTestEnv', () => {
@@ -136,6 +153,134 @@ describe('env', () => {
       }
 
       expect(result).toBe(true)
+    })
+  })
+
+  describe('server runtime (mission-control / dev-portal)', () => {
+    // These SSR servers are neither the web app nor the extension. They deploy with
+    // NODE_ENV=production in every stack and carry their deployment identity in
+    // ENVIRONMENT, so after the test-env check the helpers resolve purely from
+    // getConfig().environment — no platform flag involved and no throwing fallback
+    // (config always derives an environment, from NODE_ENV when ENVIRONMENT is unset).
+    const clearTestMarkers = (): string | undefined => {
+      const originalVitestId = process.env.VITEST_WORKER_ID
+      delete process.env.VITEST_WORKER_ID
+      delete process.env.JEST_WORKER_ID
+      return originalVitestId
+    }
+
+    it.each([
+      { environment: 'development', expected: { dev: true, beta: false, prod: false } },
+      { environment: 'staging', expected: { dev: false, beta: true, prod: false } },
+      { environment: 'production', expected: { dev: false, beta: false, prod: true } },
+    ])('maps ENVIRONMENT=$environment to exactly one of dev/beta/prod', async ({ environment, expected }) => {
+      process.env.ENVIRONMENT = environment
+      process.env.NODE_ENV = 'production'
+      const originalVitestId = clearTestMarkers()
+
+      mockPlatform() // neither web nor extension — resolution comes from ENVIRONMENT alone
+
+      const { isDevEnv, isBetaEnv, isProdEnv } = await import('./env.web')
+      try {
+        expect({ dev: isDevEnv(), beta: isBetaEnv(), prod: isProdEnv() }).toEqual(expected)
+      } finally {
+        if (originalVitestId) {
+          process.env.VITEST_WORKER_ID = originalVitestId
+        }
+      }
+    })
+
+    it('keys off ENVIRONMENT, not NODE_ENV (regression: dev deploy runs with NODE_ENV=production)', async () => {
+      process.env.ENVIRONMENT = 'development'
+      process.env.NODE_ENV = 'production'
+      const originalVitestId = clearTestMarkers()
+
+      mockPlatform()
+
+      const { isDevEnv } = await import('./env.web')
+      try {
+        expect(isDevEnv()).toBe(true)
+      } finally {
+        if (originalVitestId) {
+          process.env.VITEST_WORKER_ID = originalVitestId
+        }
+      }
+    })
+  })
+
+  describe('extension build-env detection', () => {
+    // Without these markers cleared, isTestEnv() short-circuits the extension branches.
+    const clearTestMarkers = (): string | undefined => {
+      const originalVitestId = process.env.VITEST_WORKER_ID
+      delete process.env.VITEST_WORKER_ID
+      delete process.env.JEST_WORKER_ID
+      return originalVitestId
+    }
+
+    it('reports beta for the trusted beta extension ID', async () => {
+      const originalVitestId = clearTestMarkers()
+      mockPlatform({ isExtensionApp: true })
+      mockChromeRuntime(TRUSTED_IDS.beta)
+
+      const { isBetaEnv, isProdEnv, isDevEnv } = await import('./env.web')
+      const result = { beta: isBetaEnv(), prod: isProdEnv(), dev: isDevEnv() }
+
+      if (originalVitestId) {
+        process.env.VITEST_WORKER_ID = originalVitestId
+      }
+      expect(result).toEqual({ beta: true, prod: false, dev: false })
+    })
+
+    it('falls back to BUILD_ENV=beta for an untrusted (unpacked) ID', async () => {
+      process.env.BUILD_ENV = 'beta'
+      // Real production-style unpacked builds run with __DEV__ disabled.
+      vi.stubGlobal('__DEV__', false)
+      const originalVitestId = clearTestMarkers()
+      mockPlatform({ isExtensionApp: true })
+      mockChromeRuntime('some-random-unpacked-id')
+
+      const { isBetaEnv, isProdEnv, isDevEnv } = await import('./env.web')
+      const result = { beta: isBetaEnv(), prod: isProdEnv(), dev: isDevEnv() }
+
+      if (originalVitestId) {
+        process.env.VITEST_WORKER_ID = originalVitestId
+      }
+      delete process.env.BUILD_ENV
+      // Previously every helper returned false here; now the build channel is honored.
+      expect(result).toEqual({ beta: true, prod: false, dev: false })
+    })
+
+    it('defaults an untrusted ID to prod when BUILD_ENV is unset', async () => {
+      delete process.env.BUILD_ENV
+      vi.stubGlobal('__DEV__', false)
+      const originalVitestId = clearTestMarkers()
+      mockPlatform({ isExtensionApp: true })
+      mockChromeRuntime('some-random-unpacked-id')
+
+      const { isProdEnv, isBetaEnv } = await import('./env.web')
+      const result = { prod: isProdEnv(), beta: isBetaEnv() }
+
+      if (originalVitestId) {
+        process.env.VITEST_WORKER_ID = originalVitestId
+      }
+      expect(result).toEqual({ prod: true, beta: false })
+    })
+
+    it('preserves the injected-script defaults when chrome.runtime is unavailable', async () => {
+      process.env.BUILD_ENV = 'beta'
+      const originalVitestId = clearTestMarkers()
+      mockPlatform({ isExtensionApp: true })
+      mockChromeRuntime(null)
+
+      const { isBetaEnv, isProdEnv } = await import('./env.web')
+      // BUILD_ENV must NOT leak into the injected-script path: beta stays false, prod stays true.
+      const result = { beta: isBetaEnv(), prod: isProdEnv() }
+
+      if (originalVitestId) {
+        process.env.VITEST_WORKER_ID = originalVitestId
+      }
+      delete process.env.BUILD_ENV
+      expect(result).toEqual({ beta: false, prod: true })
     })
   })
 

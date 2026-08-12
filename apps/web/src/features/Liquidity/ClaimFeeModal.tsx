@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { ClaimFeesRequest } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
 import { type Currency, CurrencyAmount } from '@uniswap/sdk-core'
+import { useGetPasskeyAuthStatus } from '@universe/embedded-wallet'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { type Dispatch, type SetStateAction, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,16 +14,16 @@ import { GetHelpHeader } from 'uniswap/src/components/dialog/GetHelpHeader'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { PollingInterval } from 'uniswap/src/constants/misc'
 import { nativeOnChain } from 'uniswap/src/constants/tokens'
-import { uniswapUrls } from 'uniswap/src/constants/urls'
+import { UniswapHelpUrls } from 'uniswap/src/constants/urls'
 import { liquidityQueries } from 'uniswap/src/data/apiClients/liquidityService/liquidityQueries'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { useGetPasskeyAuthStatus } from 'uniswap/src/features/passkey/hooks/useGetPasskeyAuthStatus'
 import type { PositionInfo } from 'uniswap/src/features/positions/types'
+import { getIsPermissioned } from 'uniswap/src/features/positions/utils'
 import { InterfaceEventName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
 import {
   type CollectFeesTxAndGasInfo,
   isValidLiquidityTxContext,
@@ -68,6 +69,7 @@ function getClaimLpFeesRequest({
     walletAddress: address,
     chainId: currency0.chainId,
     tokenId: positionInfo.tokenId,
+    permissioned: getIsPermissioned(positionInfo),
     simulateTransaction: true,
     collectAsWeth: positionInfo.version !== ProtocolVersion.V4 ? !unwrapNativeCurrency : undefined,
     protocol: getProtocols(positionInfo.version),
@@ -90,15 +92,14 @@ function UnwrapUnderCard({
     <Flex
       row
       backgroundColor="$surface2"
-      borderBottomLeftRadius="$rounded12"
-      borderBottomRightRadius="$rounded12"
+      borderRadius="$rounded12"
       justifyContent="space-between"
       alignItems="center"
-      py="$padding8"
+      py="$padding12"
       px="$padding16"
     >
-      <Text variant="body3" color="$neutral2">
-        {t('pool.collectAs', { nativeWrappedSymbol: nativeCurrency?.symbol })}
+      <Text variant="body2" color="$neutral2">
+        {t('pool.collectAs', { nativeWrappedSymbol: nativeCurrency?.symbol ?? t('common.token') })}
       </Text>
       <Switch
         id="collect-as-weth"
@@ -107,6 +108,34 @@ function UnwrapUnderCard({
         onCheckedChange={() => setUnwrapNativeCurrency((unwrapNativeCurrency) => !unwrapNativeCurrency)}
         variant="default"
       />
+    </Flex>
+  )
+}
+
+function FeeTokenRow({
+  currencyInfo,
+  symbol,
+  formattedAmount,
+  fiatAmount,
+}: {
+  currencyInfo: ReturnType<typeof useCurrencyInfo>
+  symbol?: string
+  formattedAmount: string
+  fiatAmount?: string
+}) {
+  return (
+    <Flex row alignItems="center" justifyContent="space-between" gap="$gap16">
+      <Flex gap="$gap4" fill>
+        <Text variant="heading3" color="$neutral1">
+          {formattedAmount} {symbol}
+        </Text>
+        {fiatAmount && (
+          <Text variant="body2" color="$neutral2">
+            {fiatAmount}
+          </Text>
+        )}
+      </Flex>
+      <CurrencyLogo currencyInfo={currencyInfo} size={iconSizes.icon36} />
     </Flex>
   )
 }
@@ -265,58 +294,37 @@ export function ClaimFeeModal() {
     <Modal name={ModalName.ClaimFee} onClose={closeModal} isDismissible>
       <Flex gap="$gap16">
         <GetHelpHeader
-          link={uniswapUrls.helpRequestUrl}
+          link={UniswapHelpUrls.requestUrl}
           title={t('pool.collectFees')}
           closeModal={closeModal}
           closeDataTestId="ClaimFeeModal-close-icon"
         />
         {fee0Amount && fee1Amount && (
-          <Flex gap="$gap4">
-            <Flex
-              backgroundColor="$surface2"
-              borderTopLeftRadius="$rounded12"
-              borderTopRightRadius="$rounded12"
-              borderBottomLeftRadius={canUnwrap ? '$rounded0' : '$rounded12'}
-              borderBottomRightRadius={canUnwrap ? '$rounded0' : '$rounded12'}
-              p="$padding16"
-              gap="$gap12"
-            >
-              <Flex row alignItems="center" justifyContent="space-between">
-                <Flex row gap="$gap8" alignItems="center">
-                  <CurrencyLogo currencyInfo={currencyInfo0} size={iconSizes.icon24} />
-                  <Text variant="body1" color="neutral1">
-                    {currency0?.symbol}
-                  </Text>
-                </Flex>
-                <Flex row gap="$gap8" alignItems="center">
-                  <Text variant="body1" color="$neutral1">
-                    {formatCurrencyAmount({ value: fee0Amount })}
-                  </Text>
-                  {fee0AmountUsd && (
-                    <Text variant="body1" color="$neutral2">
-                      ({convertFiatAmountFormatted(fee0AmountUsd.toExact(), NumberType.FiatTokenPrice)})
-                    </Text>
-                  )}
-                </Flex>
-              </Flex>
-              <Flex row alignItems="center" justifyContent="space-between">
-                <Flex row gap="$gap8" alignItems="center">
-                  <CurrencyLogo currencyInfo={currencyInfo1} size={iconSizes.icon24} />
-                  <Text variant="body1" color="neutral1">
-                    {currency1?.symbol}
-                  </Text>
-                </Flex>
-                <Flex row gap="$gap8" alignItems="center">
-                  <Text variant="body1" color="$neutral1">
-                    {formatCurrencyAmount({ value: fee1Amount })}
-                  </Text>
-                  {fee1AmountUsd && (
-                    <Text variant="body1" color="$neutral2">
-                      ({convertFiatAmountFormatted(fee1AmountUsd.toExact(), NumberType.FiatTokenPrice)})
-                    </Text>
-                  )}
-                </Flex>
-              </Flex>
+          <Flex gap="$gap16">
+            <Flex gap="$gap12">
+              <FeeTokenRow
+                currencyInfo={currencyInfo0}
+                symbol={currency0?.symbol}
+                formattedAmount={formatCurrencyAmount({ value: fee0Amount })}
+                fiatAmount={
+                  fee0AmountUsd
+                    ? convertFiatAmountFormatted(fee0AmountUsd.toExact(), NumberType.FiatTokenPrice)
+                    : undefined
+                }
+              />
+              <Text variant="heading3" color="$neutral3">
+                +
+              </Text>
+              <FeeTokenRow
+                currencyInfo={currencyInfo1}
+                symbol={currency1?.symbol}
+                formattedAmount={formatCurrencyAmount({ value: fee1Amount })}
+                fiatAmount={
+                  fee1AmountUsd
+                    ? convertFiatAmountFormatted(fee1AmountUsd.toExact(), NumberType.FiatTokenPrice)
+                    : undefined
+                }
+              />
             </Flex>
             {canUnwrap && (
               <UnwrapUnderCard
@@ -332,7 +340,7 @@ export function ClaimFeeModal() {
           <Button
             data-testid={TestID.ClaimFees}
             key="LoaderButton-animation-ClaimFeeModal-button"
-            isDisabled={!data?.claim || Boolean(currentTransactionStep)}
+            disabled={!data?.claim || Boolean(currentTransactionStep)}
             loading={calldataLoading || Boolean(currentTransactionStep)}
             size="large"
             variant="branded"

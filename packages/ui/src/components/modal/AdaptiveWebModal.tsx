@@ -23,7 +23,15 @@ import { useShadowPropsShort } from 'ui/src/theme/shadows'
 
 export const ADAPTIVE_MODAL_ANIMATION_DURATION = 200
 
-/** Provides the effective z-index of the current modal/sheet layer so descendants (e.g. context menus) can render above it. When the modal uses the bottom-sheet adapt branch (`Adapt when="md"`), uses Tamagui's ParentSheetContext.zIndex + 1 (same formula as Sheet); otherwise the dialog's z-index. */
+/**
+ * Provides the effective z-index of the current modal/sheet/overlay layer so descendants stack above it.
+ * Consumed by `Tooltip.Content`, `AdaptiveWebPopoverContent`, `AdaptiveWebModal`,
+ * `WebModalWithBottomAttachment`, and standalone `WebBottomSheet` — each renders one layer above
+ * (via {@link stackingLayerAbove}) and re-provides the bumped value to its own descendants.
+ *
+ * Set explicitly by the dapp-request queue at `zIndexes.overlay` so any modal nested inside it
+ * (e.g. `NetworkCostEditorModal`) automatically stacks above without per-call-site z-index plumbing.
+ */
 export const EffectiveModalOrSheetZIndexContext = createContext<number | undefined>(undefined)
 
 /** One layer above a host (modal, popover, overlay), with a minimum floor for the stacking scale. */
@@ -46,14 +54,18 @@ export function useEffectiveModalOrSheetZIndex({
 }): number | undefined {
   const media = useMedia()
   const parentSheet = useContext(ParentSheetContext)
+  const parentContextZ = useContext(EffectiveModalOrSheetZIndexContext)
   return useMemo((): number | undefined => {
     if (adaptToSheet && !isTopAligned && media.md) {
+      // Prefer Tamagui's nested-sheet stacking when we're inside a parent sheet; otherwise fall back to
+      // the React-managed modal/overlay context so sheets opened from inside an overlay (extension dapp
+      // request, etc.) still stack above their host.
       // oxlint-disable-next-line typescript/no-unnecessary-condition -- biome-parity: oxlint is stricter here
-      return (parentSheet.zIndex ?? 0) + 1 // Tamagui Sheet uses parent zIndex + 1 for the sheet layer
+      const parentHostZ = parentSheet.zIndex ?? parentContextZ
+      return stackingLayerAbove(parentHostZ, zIndexes.modal)
     }
-    const dialogZ = zIndex ?? zIndexes.modal
-    return typeof dialogZ === 'number' ? dialogZ : undefined
-  }, [adaptToSheet, isTopAligned, media.md, zIndex, parentSheet.zIndex])
+    return zIndex ?? stackingLayerAbove(parentContextZ, zIndexes.modal)
+  }, [adaptToSheet, isTopAligned, media.md, zIndex, parentSheet.zIndex, parentContextZ])
 }
 
 export function ModalCloseIcon(props: CloseIconProps): JSX.Element {
@@ -95,10 +107,13 @@ export function WebBottomSheet({
   hideHandlebar,
   snapPointsMode = 'fit',
   snapPoints,
+  disableRemoveScroll = false,
   ...rest
 }: ModalProps): JSX.Element | null {
   const isTouchDevice = useIsTouchDevice()
   const [isHandlePressed, setHandlePressed] = useState(false)
+  const parentContextZ = useContext(EffectiveModalOrSheetZIndexContext)
+  const effectiveZIndex = rest.zIndex ?? stackingLayerAbove(parentContextZ, zIndexes.modal)
 
   // TODO(INFRA-644): Remove this workaround once Tamagui sheet bug is fixed
   // Force a new key to remount the Sheet on touch devices on sheet close
@@ -159,7 +174,7 @@ export function WebBottomSheet({
   }
 
   return (
-    <RemoveScroll enabled={isOpen}>
+    <RemoveScroll enabled={isOpen && !disableRemoveScroll}>
       <Sheet
         key={touchDeviceSheetKey}
         dismissOnSnapToBottom
@@ -171,7 +186,7 @@ export function WebBottomSheet({
         snapPointsMode={snapPointsMode}
         // Must be spread because setting snapPoints to undefined still changes behavior
         {...(snapPoints && { snapPoints })}
-        zIndex={rest.zIndex ?? zIndexes.modal}
+        zIndex={effectiveZIndex}
         onOpenChange={handleClose}
       >
         <Sheet.Frame
@@ -211,7 +226,7 @@ export function WebBottomSheet({
             {/* Self-provide the depth context so floating descendants (tooltips, popovers) auto-stack
                 above the sheet even when WebBottomSheet is used standalone (i.e. not via AdaptiveWebModal,
                 which already wraps Adapt.Contents in its own Provider that shadows this one). */}
-            <EffectiveModalOrSheetZIndexContext.Provider value={rest.zIndex ?? zIndexes.modal}>
+            <EffectiveModalOrSheetZIndexContext.Provider value={effectiveZIndex}>
               {children}
             </EffectiveModalOrSheetZIndexContext.Provider>
           </Flex>
@@ -253,6 +268,7 @@ type ModalProps = GetProps<typeof View> &
     overlayOpacity?: number
     borderColor?: string
     zIndex?: number
+    disableRemoveScroll?: boolean // skips Tamagui's built-in RemoveScroll for self-locking callers
   }>
 
 /**
@@ -278,6 +294,7 @@ export function AdaptiveWebModal({
   overlayOpacity,
   snapPointsMode,
   snapPoints,
+  disableRemoveScroll = false,
   ...rest
 }: ModalProps): JSX.Element {
   const filteredRest = Object.fromEntries(Object.entries(rest).filter(([_, v]) => v !== undefined)) as typeof rest // Filter out undefined properties from rest
@@ -303,32 +320,35 @@ export function AdaptiveWebModal({
   )
 
   return (
-    <Dialog modal open={isOpen} onOpenChange={handleClose}>
+    <Dialog modal open={isOpen} disableRemoveScroll={disableRemoveScroll} onOpenChange={handleClose}>
       <VisuallyHidden>
         <Dialog.Title />
       </VisuallyHidden>
-      {adaptToSheet && !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
-        <Adapt when="md">
-          <WebBottomSheet
-            isOpen={isOpen}
-            gap={gap ?? '$spacing4'}
-            px={px ?? p ?? '$spacing24'}
-            py={py ?? p ?? '$spacing16'}
-            style={style}
-            hideHandlebar={hideHandlebar}
-            snapPointsMode={snapPointsMode}
-            snapPoints={snapPoints}
-            onClose={onClose}
-            {...filteredRest}
-          >
-            <EffectiveModalOrSheetZIndexContext.Provider value={effectiveZIndex}>
-              <Adapt.Contents />
-            </EffectiveModalOrSheetZIndexContext.Provider>
-          </WebBottomSheet>
-        </Adapt>
-      )}
+      {adaptToSheet &&
+        !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
+          <Adapt when="md">
+            <WebBottomSheet
+              isOpen={isOpen}
+              gap={gap ?? '$spacing4'}
+              px={px ?? p ?? '$spacing24'}
+              py={py ?? p ?? '$spacing16'}
+              style={style}
+              hideHandlebar={hideHandlebar}
+              snapPointsMode={snapPointsMode}
+              snapPoints={snapPoints}
+              zIndex={effectiveZIndex}
+              disableRemoveScroll={disableRemoveScroll}
+              onClose={onClose}
+              {...filteredRest}
+            >
+              <EffectiveModalOrSheetZIndexContext.Provider value={effectiveZIndex}>
+                <Adapt.Contents />
+              </EffectiveModalOrSheetZIndexContext.Provider>
+            </WebBottomSheet>
+          </Adapt>
+        )}
 
-      <Dialog.Portal zIndex={zIndex ?? zIndexes.modal}>
+      <Dialog.Portal zIndex={effectiveZIndex}>
         <Overlay key="overlay" {...(overlayOpacity !== undefined && { opacity: overlayOpacity })} />
         <Flex
           grow
@@ -391,6 +411,7 @@ export function WebModalWithBottomAttachment({
   overlayOpacity,
   snapPointsMode,
   snapPoints,
+  disableRemoveScroll = false,
   ...rest
 }: ModalProps & { bottomAttachment?: ReactNode }): JSX.Element {
   const shadowProps = useShadowPropsShort()
@@ -410,29 +431,32 @@ export function WebModalWithBottomAttachment({
   const effectiveZIndex = useEffectiveModalOrSheetZIndex({ adaptToSheet, isTopAligned, zIndex })
 
   return (
-    <Dialog modal open={isOpen} onOpenChange={handleClose}>
+    <Dialog modal open={isOpen} disableRemoveScroll={disableRemoveScroll} onOpenChange={handleClose}>
       <VisuallyHidden>
         <Dialog.Title />
       </VisuallyHidden>
-      {adaptToSheet && !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
-        <Adapt when="md">
-          <WebBottomSheet
-            isOpen={isOpen}
-            style={style}
-            hideHandlebar={hideHandlebar}
-            snapPointsMode={snapPointsMode}
-            snapPoints={snapPoints}
-            onClose={onClose}
-            {...filteredRest}
-          >
-            <EffectiveModalOrSheetZIndexContext.Provider value={effectiveZIndex}>
-              <Adapt.Contents />
-            </EffectiveModalOrSheetZIndexContext.Provider>
-          </WebBottomSheet>
-        </Adapt>
-      )}
+      {adaptToSheet &&
+        !isTopAligned && ( // Tamagui Sheets always animate in from the bottom, so we cannot use Sheets on top aligned modals
+          <Adapt when="md">
+            <WebBottomSheet
+              isOpen={isOpen}
+              style={style}
+              hideHandlebar={hideHandlebar}
+              snapPointsMode={snapPointsMode}
+              snapPoints={snapPoints}
+              zIndex={effectiveZIndex}
+              disableRemoveScroll={disableRemoveScroll}
+              onClose={onClose}
+              {...filteredRest}
+            >
+              <EffectiveModalOrSheetZIndexContext.Provider value={effectiveZIndex}>
+                <Adapt.Contents />
+              </EffectiveModalOrSheetZIndexContext.Provider>
+            </WebBottomSheet>
+          </Adapt>
+        )}
 
-      <Dialog.Portal zIndex={zIndex ?? zIndexes.modal}>
+      <Dialog.Portal zIndex={effectiveZIndex}>
         <Overlay key="overlay" {...(overlayOpacity !== undefined && { opacity: overlayOpacity })} />
 
         <Dialog.Content

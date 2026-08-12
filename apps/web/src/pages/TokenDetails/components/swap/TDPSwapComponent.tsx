@@ -10,16 +10,19 @@ import { isUniverseChainId, toGraphQLChain } from 'uniswap/src/features/chains/u
 import { useCurrencyInfo } from 'uniswap/src/features/tokens/useCurrencyInfo'
 import { TokenWarningCard } from 'uniswap/src/features/tokens/warnings/TokenWarningCard'
 import TokenWarningModal from 'uniswap/src/features/tokens/warnings/TokenWarningModal'
+import { useIsTokenGeoRestricted } from 'uniswap/src/features/transactions/swap/hooks/useGeoRestrictionMode'
 import { areAddressesEqual } from 'uniswap/src/utils/addresses'
 import { areCurrenciesEqual, currencyId } from 'uniswap/src/utils/currencyId'
 import { useEvent } from 'utilities/src/react/hooks'
-import { getTokenDetailsURL } from '~/appGraphql/data/util'
+import { VerifyIdentityModal } from '~/components/PermissionedPool/VerifyIdentityModal'
 import { POPUP_MEDIUM_DISMISS_MS } from '~/components/Popups/constants'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
-import type { CurrencyState } from '~/features/Swap/state/swap/tradeCurrencyStateTypes'
+import { getTokenDetailsURL } from '~/data/util'
+import type { CurrencyState } from '~/features/Swap/state/types'
 import { useCurrency } from '~/hooks/Tokens'
 import { Swap } from '~/pages/Swap'
 import { useTDPStore } from '~/pages/TokenDetails/context/useTDPStore'
+import { useTDPPermissionedState } from '~/pages/TokenDetails/hooks/useTDPPermissionedState'
 import { useTDPSwapCurrency } from '~/pages/TokenDetails/hooks/useTDPSwapCurrency'
 import { useUserPreservedCurrencies } from '~/pages/TokenDetails/hooks/useUserPreservedCurrencies'
 import { popupRegistry } from '~/state/popups/registry'
@@ -47,6 +50,17 @@ export function TDPSwapComponent() {
   )
 
   const currencyInfo = useCurrencyInfo(currencyId(currency))
+
+  const tokenAddress = currency.isNative ? undefined : currency.address
+  const tokenChainId = currency.chainId
+  const {
+    isBlocked: isPermissionedBlocked,
+    kycUrl: permissionedRegistrationUrl,
+    issuer: permissionedIssuer,
+  } = useTDPPermissionedState({
+    tokenAddress,
+    chainId: tokenChainId,
+  })
 
   const { inputCurrency, outputCurrency } = useSwapInitialCurrencies(swapCurrency)
 
@@ -142,6 +156,9 @@ export function TDPSwapComponent() {
   const [showWarningModal, setShowWarningModal] = useState(false)
   const closeWarningModal = useCallback(() => setShowWarningModal(false), [])
 
+  // Geo-restriction has its own card + CTA; suppress the generic blocked-token card here.
+  const isGeoRestricted = useIsTokenGeoRestricted(currency)
+
   const onTokenWarningReportSuccess = useEvent(() => {
     popupRegistry.addPopup(
       { type: PopupType.Success, message: t('common.reported') },
@@ -158,6 +175,7 @@ export function TDPSwapComponent() {
         <UniswapContext.Provider value={uniswapContextOverride}>
           <Swap
             syncTabToUrl={false}
+            hideChart={true}
             initialInputChainId={swapCurrency.chainId}
             initialInputCurrency={initialInputCurrency}
             initialOutputCurrency={initialOutputCurrency}
@@ -167,7 +185,7 @@ export function TDPSwapComponent() {
           />
         </UniswapContext.Provider>
       </div>
-      <TokenWarningCard currencyInfo={currencyInfo} onPress={() => setShowWarningModal(true)} />
+      {!isGeoRestricted && <TokenWarningCard currencyInfo={currencyInfo} onPress={() => setShowWarningModal(true)} />}
       {currencyInfo && (
         // Intentionally duplicative with the TokenWarningModal in the swap component; this one only displays when user clicks "i" Info button on the TokenWarningCard
         <TokenWarningModal
@@ -177,6 +195,16 @@ export function TDPSwapComponent() {
           closeModalOnly={closeWarningModal}
           onReportSuccess={onTokenWarningReportSuccess}
           onAcknowledge={closeWarningModal}
+        />
+      )}
+      {isPermissionedBlocked && permissionedRegistrationUrl && (
+        <VerifyIdentityModal
+          tokenSymbol={currency.symbol ?? ''}
+          registrationUrl={permissionedRegistrationUrl}
+          // Pass the raw issuer (no `?? ''` fallback): an empty issuer must reach the modal's
+          // missing-config guard so it renders the "verification temporarily unavailable" copy
+          // instead of interpolating a blank provider name (matches the LP/swap guard).
+          issuer={permissionedIssuer}
         />
       )}
     </Flex>

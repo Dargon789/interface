@@ -2,10 +2,9 @@
 
 import { createColumnHelper } from '@tanstack/react-table'
 import { GraphQLApi } from '@universe/api'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flex, styled, Text, useMedia, View } from 'ui/src'
+import { Flex, styled, Text, TouchableTextLink, type TouchableTextLinkProps, useMedia, View } from 'ui/src'
 import { WRAPPED_NATIVE_CURRENCY } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useAppFiatCurrency } from 'uniswap/src/features/fiatCurrency/hooks'
@@ -17,13 +16,6 @@ import { ExplorerDataType, getExplorerLink } from 'uniswap/src/utils/linking'
 import { shortenAddress } from 'utilities/src/addresses'
 import { TOKEN_AMOUNT_DISPLAY_FLOOR } from 'utilities/src/format/localeBasedFormats'
 import { NumberType } from 'utilities/src/format/types'
-import { supportedChainIdFromGQLChain } from '~/appGraphql/data/chainUtils'
-import {
-  getPoolTableTransactionTypeTranslation,
-  PoolTableTransaction,
-  PoolTableTransactionType,
-  usePoolTransactions,
-} from '~/appGraphql/data/pools/usePoolTransactions'
 import { Table } from '~/components/Table'
 import { Cell } from '~/components/Table/Cell'
 import { Filter } from '~/components/Table/Filter'
@@ -31,6 +23,13 @@ import { TableText } from '~/components/Table/shared/TableText'
 import { TimestampCell } from '~/components/Table/shared/TimestampCell'
 import { FilterHeaderRow } from '~/components/Table/styled'
 import { NATIVE_CHAIN_ID } from '~/constants/tokens'
+import { supportedChainIdFromGQLChain } from '~/data/chainUtils'
+import {
+  getPoolTableTransactionTypeTranslation,
+  PoolTableTransaction,
+  PoolTableTransactionType,
+  usePoolTransactions,
+} from '~/features/Explore/state/transactions/usePoolTransactions'
 import { formatPriceWithSubscript } from '~/pages/PoolDetails/components/formatPriceWithSubscript'
 import { ExternalLink } from '~/theme/components/Links'
 import { useChainIdFromUrlParam } from '~/utils/params/chainParams'
@@ -93,7 +92,6 @@ export function PoolDetailsTransactionsTable({
   protocolVersion?: GraphQLApi.ProtocolVersion
 }) {
   const { t } = useTranslation()
-  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const chainId = useChainIdFromUrlParam() ?? UniverseChainId.Mainnet
   const activeLocalCurrency = useAppFiatCurrency()
   const { convertFiatAmountFormatted, formatNumberOrString } = useLocalizationContext()
@@ -146,28 +144,33 @@ export function PoolDetailsTransactionsTable({
       }),
       columnHelper.accessor(
         (row) => {
-          let color, text
+          let color: '$statusSuccess' | '$statusCritical'
+          let text: string
           if (row.type === PoolTableTransactionType.BUY) {
             color = '$statusSuccess'
-            text = (
-              <span>
-                {t('common.buy.label')}
-                &nbsp;{token0?.symbol}
-              </span>
-            )
+            text = `${t('common.buy.label')} ${token0?.symbol}`
           } else if (row.type === PoolTableTransactionType.SELL) {
             color = '$statusCritical'
-            text = (
-              <span>
-                {t('common.sell.label')}
-                &nbsp;{token0?.symbol}
-              </span>
-            )
+            text = `${t('common.sell.label')} ${token0?.symbol}`
           } else {
             color = row.type === PoolTableTransactionType.ADD ? '$statusSuccess' : '$statusCritical'
             text = row.type === PoolTableTransactionType.ADD ? t('common.add.label') : t('common.remove.label')
           }
-          return <TableText color={color}>{text}</TableText>
+          return (
+            <TouchableTextLink
+              noUnderline
+              onlyUseText
+              color={color}
+              link={getExplorerLink({
+                chainId,
+                data: row.transaction,
+                type: ExplorerDataType.TRANSACTION,
+              })}
+              variant={'body2' as TouchableTextLinkProps['variant']}
+            >
+              {text}
+            </TouchableTextLink>
+          )
         },
         {
           id: 'swap-type',
@@ -311,7 +314,6 @@ export function PoolDetailsTransactionsTable({
         data={transactions}
         loading={loading}
         error={error}
-        v2={multichainTokenUxEnabled}
         loadMore={loadMore}
         maxHeight={600}
         defaultPinnedColumns={['timestamp', 'swap-type']}

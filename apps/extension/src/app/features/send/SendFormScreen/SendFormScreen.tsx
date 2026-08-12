@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { RecipientPanel } from 'src/app/features/send/SendFormScreen/RecipientPanel'
-import { ReviewButton } from 'src/app/features/send/SendFormScreen/ReviewButton'
+import { SendBlockingWarnings } from 'src/app/features/send/SendFormScreen/SendBlockingWarnings'
 import { Flex, Separator, useSporeColors } from 'ui/src'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { selectHasDismissedLowNetworkTokenWarning } from 'uniswap/src/features/behaviorHistory/selectors'
@@ -14,11 +14,9 @@ import {
   TransactionScreen,
   useTransactionModalContext,
 } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
 import { useUSDTokenUpdater } from 'uniswap/src/features/transactions/hooks/useUSDTokenUpdater'
-import { BlockedAddressWarning } from 'uniswap/src/features/transactions/modals/BlockedAddressWarning'
 import { LowNativeBalanceModal } from 'uniswap/src/features/transactions/modals/LowNativeBalanceModal'
-import { useIsBlocked } from 'uniswap/src/features/trm/hooks'
 import { CurrencyField } from 'uniswap/src/types/currency'
 import { createTransactionId } from 'uniswap/src/utils/createTransactionId'
 import { isSafeNumber } from 'utilities/src/primitives/integer'
@@ -30,7 +28,6 @@ import { SendAmountInput } from 'wallet/src/features/transactions/send/SendAmoun
 import { SendReviewDetails } from 'wallet/src/features/transactions/send/SendReviewDetails'
 import { TokenSelectorPanel } from 'wallet/src/features/transactions/send/TokenSelectorPanel'
 import { isAmountGreaterThanZero } from 'wallet/src/features/transactions/utils'
-import { useIsBlockedActiveAddress } from 'wallet/src/features/trm/hooks'
 
 export function SendFormScreen(): JSX.Element {
   const colors = useSporeColors()
@@ -50,7 +47,6 @@ export function SendFormScreen(): JSX.Element {
     warnings,
     gasFee,
     showRecipientSelector,
-    recipient,
     updateSendForm,
     onSelectCurrency,
     isMax,
@@ -100,13 +96,6 @@ export function SendFormScreen(): JSX.Element {
     })
   }, [exactAmountToken, exactAmountFiat, currencyInInfo?.currency])
 
-  // blocked addresses
-  const { isBlocked: isActiveBlocked, isBlockedLoading: isActiveBlockedLoading } = useIsBlockedActiveAddress()
-  const { isBlocked: isRecipientBlocked, isBlockedLoading: isRecipientBlockedLoading } = useIsBlocked(recipient)
-  const isSubjectBlocked = isActiveBlocked || isRecipientBlocked
-  const isSubjectBlockedLoading = isActiveBlockedLoading || isRecipientBlockedLoading
-  const isButtonBlocked = !hasValueGreaterThanZero || isSubjectBlocked || isSubjectBlockedLoading
-
   const goToReview = useCallback(() => {
     const txId = createTransactionId()
     updateSendForm({ txId })
@@ -124,14 +113,16 @@ export function SendFormScreen(): JSX.Element {
 
   const onSetExactAmount = useCallback(
     (amount: string) => {
-      // Omit parsing errors by checking if amount exceeds Number range limit
-      if (!isSafeNumber(amount)) {
+      // Block growing a number past the Number range limit to omit parsing errors, but always allow
+      // shrinking it. Otherwise a value that already exceeds the limit (e.g. after switching
+      // fiat/crypto or tapping Max) becomes impossible to edit or even delete.
+      if (!isSafeNumber(amount) && amount.length > exactValue.length) {
         return
       }
 
       updateSendForm(isFiatInput ? { exactAmountFiat: amount } : { exactAmountToken: amount })
     },
-    [isFiatInput, updateSendForm],
+    [exactValue.length, isFiatInput, updateSendForm],
   )
 
   const onSetMax = useCallback(
@@ -222,18 +213,7 @@ export function SendFormScreen(): JSX.Element {
         </Flex>
         {!showRecipientSelector && (
           <>
-            {isSubjectBlocked && (
-              <BlockedAddressWarning
-                row
-                alignItems="center"
-                backgroundColor="$surface2"
-                borderRadius="$rounded16"
-                isRecipientBlocked={isRecipientBlocked}
-                px="$spacing16"
-                py="$spacing12"
-              />
-            )}
-            <ReviewButton disabled={isButtonBlocked} onPress={onPressReview} />
+            <SendBlockingWarnings hasValueGreaterThanZero={hasValueGreaterThanZero} onPressReview={onPressReview} />
             {!warnings.insufficientGasFundsWarning && <GasFeeRow chainId={chainId} gasFee={gasFee} />}
             <InsufficientNativeTokenWarning flow="send" gasFee={gasFee} warnings={warnings.warnings} />
           </>

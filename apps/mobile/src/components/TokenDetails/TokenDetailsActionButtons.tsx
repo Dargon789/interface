@@ -137,101 +137,26 @@ function useActionButtonState(actionMenuOptions: MenuOptionItem[]): ActionButton
   }
 }
 
-/** Single contextual CTA (Swap/Buy/Get) with an overflow action menu */
-export function TokenDetailsSwapButtons({
-  ctaButton,
-  userHasBalance,
-  actionMenuOptions,
-  onPressDisabled,
-}: {
-  ctaButton: {
-    title: string
-    icon?: GeneratedIcon
-    onPress: () => void
-  }
-  userHasBalance: boolean
-  actionMenuOptions: MenuOptionItem[]
-  onPressDisabled?: () => void
-}): JSX.Element {
-  const {
-    tokenColor,
-    disabled,
-    validTokenColor,
-    lightTokenColor,
-    actionsWithIcons,
-    actionMenuOpen,
-    closeActionMenu,
-    toggleActionMenu,
-  } = useActionButtonState(actionMenuOptions)
-
-  return (
-    <Flex
-      row
-      backgroundColor="$surface1"
-      borderTopColor="$surface3"
-      borderTopWidth={1}
-      gap="$spacing8"
-      p="$spacing16"
-      pt="$spacing12"
-    >
-      <Flex fill row gap="$spacing12">
-        <CTAButton
-          disabled={disabled}
-          element={ElementName.Swap}
-          icon={ctaButton.icon}
-          testID={TestID.TokenDetailsSwapButton}
-          title={ctaButton.title}
-          tokenColor={tokenColor}
-          onPress={ctaButton.onPress}
-          onPressDisabled={onPressDisabled}
-        />
-        {userHasBalance && !disabled && (
-          <ContextMenu
-            isPlacementAbove
-            closeMenu={closeActionMenu}
-            isOpen={actionMenuOpen}
-            menuItems={actionsWithIcons}
-            offsetY={20}
-            triggerMode={ContextMenuTriggerMode.Primary}
-            onPressAny={(e) => {
-              sendAnalyticsEvent(MobileEventName.TokenDetailsContextMenuAction, {
-                action: e.name,
-              })
-            }}
-          >
-            <Trace logPress element={ElementName.TDPActionMenuButton} section={SectionName.TokenDetails}>
-              <IconButton
-                emphasis="primary"
-                variant="branded"
-                backgroundColor={lightTokenColor}
-                borderColor="$transparent"
-                icon={actionMenuOpen ? <X color={validTokenColor} /> : <GridView color={validTokenColor} />}
-                size="large"
-                testID={TestID.TokenDetailsActionButton}
-                onPress={toggleActionMenu}
-              />
-            </Trace>
-          </ContextMenu>
-        )}
-      </Flex>
-    </Flex>
-  )
-}
-
 /** Dedicated Buy and Sell CTAs with a secondary action menu */
 export function TokenDetailsBuySellButtons({
   userHasBalance,
   actionMenuOptions,
+  hideActionMenu,
   buyButtonTitle,
   buyButtonIcon,
+  buyButtonDisabled,
+  isTradeBlocked,
   onPressDisabled,
   onPressBuy,
   onPressSell,
 }: {
   userHasBalance: boolean
   actionMenuOptions: MenuOptionItem[]
+  hideActionMenu?: boolean
   buyButtonTitle?: string
   buyButtonIcon?: GeneratedIcon
+  buyButtonDisabled?: boolean
+  isTradeBlocked?: boolean
   onPressDisabled?: () => void
   onPressBuy: () => void
   onPressSell: () => void
@@ -247,6 +172,10 @@ export function TokenDetailsBuySellButtons({
     closeActionMenu,
     toggleActionMenu,
   } = useActionButtonState(actionMenuOptions)
+
+  // Geo-restricted RWAs collapse to a single disabled Buy CTA; holders keep the action menu
+  // (Send/Receive) but the Sell button is hidden since trading is unavailable.
+  const showSellButton = userHasBalance && !isTradeBlocked
 
   const buyLabel = buyButtonTitle ?? t('common.button.buy')
   const sellLabel = t('common.button.sell')
@@ -275,7 +204,7 @@ export function TokenDetailsBuySellButtons({
     minFontSize: CTA_MIN_LABEL_FONT_SIZE,
   })
 
-  const labelsReady = userHasBalance ? buySized && sellSized : buySized
+  const labelsReady = showSellButton ? buySized && sellSized : buySized
 
   const handleBuyLayout = useCallback(
     (event: LayoutChangeEvent) => {
@@ -302,8 +231,8 @@ export function TokenDetailsBuySellButtons({
   )
 
   const sharedLabelFontSize = useMemo(() => {
-    return userHasBalance ? Math.min(buyLabelFontSize, sellLabelFontSize) : buyLabelFontSize
-  }, [buyLabelFontSize, sellLabelFontSize, userHasBalance])
+    return showSellButton ? Math.min(buyLabelFontSize, sellLabelFontSize) : buyLabelFontSize
+  }, [buyLabelFontSize, sellLabelFontSize, showSellButton])
 
   return (
     <Flex
@@ -317,7 +246,7 @@ export function TokenDetailsBuySellButtons({
     >
       <Flex fill row gap="$spacing12">
         <CTAButton
-          disabled={disabled}
+          disabled={disabled || buyButtonDisabled}
           element={ElementName.Buy}
           icon={buyButtonIcon}
           testID={TestID.TokenDetailsBuyButton}
@@ -330,7 +259,7 @@ export function TokenDetailsBuySellButtons({
           onPress={onPressBuy}
           onPressDisabled={onPressDisabled}
         />
-        {userHasBalance && (
+        {showSellButton && (
           <CTAButton
             disabled={disabled}
             element={ElementName.Sell}
@@ -344,9 +273,11 @@ export function TokenDetailsBuySellButtons({
             onPressDisabled={onPressDisabled}
           />
         )}
-        {/* buyButtonTitle is only set when hasTokenBalance is false (see useMultichainBuyVariant),
-            so this condition and userHasBalance are mutually exclusive in practice. */}
-        {!buyButtonTitle && !disabled && (
+        {/* Alternate buy titles normally appear only in no-balance states (see useMultichainBuyVariant).
+            The geo-blocked override sets a title even for holders, who still need Send/Receive from the
+            menu — so a balance keeps it visible. hideActionMenu suppresses it entirely for a
+            non-allowlisted permissioned token (Receive would revert on-chain). */}
+        {(!buyButtonTitle || userHasBalance) && !disabled && !hideActionMenu && (
           <ContextMenu
             isPlacementAbove
             closeMenu={closeActionMenu}

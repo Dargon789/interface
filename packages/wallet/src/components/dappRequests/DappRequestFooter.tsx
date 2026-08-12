@@ -1,5 +1,5 @@
 import { type TransactionRequest } from '@ethersproject/providers'
-import type { GasFeeResult } from '@universe/api'
+import type { GasFeeResult, TradingApi } from '@universe/api'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { Flex } from 'ui/src'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -7,6 +7,7 @@ import type { GasFeeOverrides } from 'uniswap/src/features/gas/types'
 import { DappNetworkCostRow } from 'wallet/src/components/dappRequests/DappNetworkCostRow'
 import { DappWalletLineItem } from 'wallet/src/components/dappRequests/DappWalletLineItem'
 import { TransactionWarningBanner } from 'wallet/src/components/dappRequests/TransactionWarningBanner'
+import { UnverifiedSiteBanner } from 'wallet/src/components/dappRequests/UnverifiedSiteBanner'
 import type { TransactionRiskLevel } from 'wallet/src/features/dappRequests/types'
 import {
   isGasBearingMethod,
@@ -17,6 +18,8 @@ interface DappRequestFooterProps {
   chainId: UniverseChainId
   account: string
   riskLevel: TransactionRiskLevel
+  /** Show the inline unverified-site alert (approvals from Blockaid-unverified sites) */
+  showUnverifiedSiteWarning?: boolean
   confirmedRisk?: boolean
   onConfirmRisk?: (confirmed: boolean) => void
   gasFee?: GasFeeResult
@@ -33,6 +36,7 @@ interface DappRequestFooterProps {
    *  GasFeeOverrides flag is on. Undefined => no overrides applied. */
   gasOverrides?: GasFeeOverrides
   onChangeGasOverrides?: (overrides: GasFeeOverrides | undefined) => void
+  sponsorMetadata?: TradingApi.SponsorMetadata
 }
 
 /**
@@ -43,6 +47,7 @@ export function DappRequestFooter({
   chainId,
   account,
   riskLevel,
+  showUnverifiedSiteWarning = false,
   confirmedRisk,
   onConfirmRisk,
   gasFee,
@@ -51,9 +56,13 @@ export function DappRequestFooter({
   tx,
   gasOverrides,
   onChangeGasOverrides,
+  sponsorMetadata,
 }: DappRequestFooterProps): JSX.Element {
   const isGasFeeOverridesEnabled = useFeatureFlag(FeatureFlags.GasFeeOverrides)
-  const showOverrideRow = isGasFeeOverridesEnabled && isGasBearingMethod(requestMethod) && Boolean(gasFee)
+  // Sponsored userOps have no editable gas — the paymaster pays — so force the
+  // sponsor row even when GasFeeOverrides is on.
+  const showOverrideRow =
+    !sponsorMetadata && isGasFeeOverridesEnabled && isGasBearingMethod(requestMethod) && Boolean(gasFee)
 
   return (
     <>
@@ -72,13 +81,14 @@ export function DappRequestFooter({
           onChangeGasOverrides={onChangeGasOverrides}
         />
       ) : (
-        gasFee && (
+        (gasFee || sponsorMetadata) && (
           <NetworkFeeFooter
             chainId={chainId}
             gasFee={gasFee}
-            showNetworkLogo={!!gasFee.value}
+            showNetworkLogo={!!gasFee?.value}
             requestMethod={requestMethod}
             showSmartWalletActivation={showSmartWalletActivation}
+            sponsorMetadata={sponsorMetadata}
           />
         )
       )}
@@ -87,6 +97,8 @@ export function DappRequestFooter({
       <Flex px="$spacing8" mb="$spacing4">
         <DappWalletLineItem activeAccountAddress={account} />
       </Flex>
+
+      {showUnverifiedSiteWarning && <UnverifiedSiteBanner />}
     </>
   )
 }

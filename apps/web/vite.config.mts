@@ -5,10 +5,10 @@ import path from 'path'
 import process from 'process'
 import { fileURLToPath } from 'url'
 import { cloudflare } from '@cloudflare/vite-plugin'
+import tailwindcss from '@tailwindcss/vite'
 import { tamaguiPlugin } from '@tamagui/vite-plugin'
 import react from '@vitejs/plugin-react'
-import { config as dotenvConfig } from 'dotenv'
-import { defineConfig, loadEnv, type ViteDevServer } from 'vite'
+import { defineConfig, type ViteDevServer } from 'vite'
 import bundlesize from 'vite-plugin-bundlesize'
 import commonjs from 'vite-plugin-commonjs'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
@@ -16,11 +16,12 @@ import svgr from 'vite-plugin-svgr'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { createEntryGatewayProxies } from './vite/entry-gateway-proxy'
 import { generateAssetsIgnorePlugin } from './vite/generateAssetsIgnorePlugin.js'
+import { resolveEnvConfigs } from './vite/resolveEnvConfigs'
 import { cspMetaTagPlugin } from './vite/vite.plugins.js'
 
-// process.env.APP_ID is sourced from apps/web/.env for browser-side substitution
-// (via envDefines below) and from this assignment for the Node-side Tamagui static
-// extractor — Vite's loadEnv() returns an env object without mutating process.env.
+// process.env.APP_ID is injected into the browser bundle via envDefines below and set
+// here for the Node-side Tamagui static extractor — resolveEnvConfigs() returns an env
+// object and only mutates process.env for the keys it resolves, not APP_ID.
 process.env.APP_ID = 'web'
 
 // Get current file directory (ESM equivalent of __dirname)
@@ -31,10 +32,10 @@ const ENABLE_REACT_COMPILER = process.env.ENABLE_REACT_COMPILER === 'true'
 const ReactCompilerConfig = {
   target: '18', // '17' | '18' | '19'
 }
-const DEPLOY_TARGET = process.env.DEPLOY_TARGET || 'cloudflare'
-const VITE_DISABLE_SOURCEMAP = process.env.VITE_DISABLE_SOURCEMAP === 'true'
-const DEBUG_PROXY = process.env.VITE_DEBUG_PROXY === 'true'
-const ENABLE_PROXY = process.env.VITE_ENABLE_ENTRY_GATEWAY_PROXY === 'true'
+const DEPLOY_TARGET = process.env.DEPLOY_TARGET
+const DISABLE_SOURCEMAP = (process.env.DISABLE_SOURCEMAP ?? process.env.VITE_DISABLE_SOURCEMAP) === 'true'
+const DEBUG_PROXY = (process.env.DEBUG_PROXY ?? process.env.VITE_DEBUG_PROXY) === 'true'
+const ENABLE_PROXY = (process.env.ENABLE_ENTRY_GATEWAY_PROXY ?? process.env.VITE_ENABLE_ENTRY_GATEWAY_PROXY) === 'true'
 
 const DEFAULT_PORT = 3000
 
@@ -120,8 +121,18 @@ const portWarningPlugin = (isProduction: boolean) =>
         },
       }
 
-// Get git commit hash
-const commitHash = execSync('git rev-parse HEAD').toString().trim()
+// Containerized builds have no .git — prefer the env var.
+function resolveCommitHash(): string {
+  if (process.env.GIT_COMMIT_HASH) {
+    return process.env.GIT_COMMIT_HASH
+  }
+  try {
+    return execSync('git rev-parse HEAD').toString().trim()
+  } catch {
+    return ''
+  }
+}
+const commitHash = resolveCommitHash()
 
 // Compute next dev version from latest non-RC web/* git tag
 function getNextDevVersion(): string {
@@ -143,65 +154,44 @@ function getNextDevVersion(): string {
   }
 }
 
-export default defineConfig(({ mode, isPreview }) => {
-  let env = loadEnv(mode, __dirname, '')
+export default defineConfig(({ mode, command, isPreview }) => {
+  // Unified config: resolve .env + overrides via the shared utility (the same
+  // code the Playwright test runner uses, so the build and runner configs stay identical).
+  const env = resolveEnvConfigs({
+    rootDir: __dirname,
+    isE2eTest: process.env.IS_E2E_TEST === 'true',
+    onOverride: (key) => console.log(`ENV_OVERRIDE: ${key}`),
+    overrideProcessEnv: true,
+  })
 
-  // Load root .env.defaults.local as a base layer (app-level env files take precedence)
-  const rootEnvDefaultsLocalPath = path.resolve(__dirname, '../../.env.defaults.local')
-  if (fs.existsSync(rootEnvDefaultsLocalPath)) {
-    try {
-      const result = dotenvConfig({ path: rootEnvDefaultsLocalPath })
-      if (result.parsed) {
-        // Only set values that aren't already defined (lowest priority)
-        for (const [key, value] of Object.entries(result.parsed)) {
-          if (!(key in env)) {
-            env[key] = value
-          }
-        }
-      }
-    } catch (error) {
-      console.warn(
-        `Warning: Failed to read ${rootEnvDefaultsLocalPath}:`,
-        error instanceof Error ? error.message : String(error),
-      )
-    }
-  }
-
-  // Force load .env.[mode] files since NX ignores them
-  const modeEnvPath = path.resolve(__dirname, `.env.${mode}`)
-  if (fs.existsSync(modeEnvPath)) {
-    try {
-      const result = dotenvConfig({ path: modeEnvPath })
-      if (result.parsed) {
-        // Override base values with mode-specific values
-        Object.assign(env, result.parsed)
-      }
-      if (result.error) {
-        console.warn(`Warning: Failed to parse ${modeEnvPath}:`, result.error.message)
-      }
-    } catch (error) {
-      console.warn(`Warning: Failed to read ${modeEnvPath}:`, error instanceof Error ? error.message : String(error))
-    }
-  }
-
-  // Env vars that should be overridable from Vercel/CI (process.env takes precedence over .env files)
-  const VERCEL_OVERRIDABLE_ENV_VARS = [
-    'UNISWAP_GATEWAY_DNS',
-    'API_BASE_URL_V2_OVERRIDE',
-    'ENTRY_GATEWAY_API_URL_OVERRIDE',
-  ]
-  for (const key of VERCEL_OVERRIDABLE_ENV_VARS) {
-    if (process.env[key]) {
-      env[key] = process.env[key]
-    }
-  }
+  // Stop the Cloudflare plugin's bundled Wrangler from auto-loading .env / .env.local
+  // (and emitting "Using vars defined in ..." logs). The .env values are forwarded
+  // to the Worker below via the plugin's `config` customizer.
+  process.env.CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV = 'false'
 
   // Log environment loading for CI verification
-  console.log(`ENV_LOADED: mode=${mode} REACT_APP_AWS_API_ENDPOINT=${env.REACT_APP_AWS_API_ENDPOINT}`)
+  console.log(`ENV_LOADED: mode=${mode} AWS_API_ENDPOINT=${env.AWS_API_ENDPOINT ?? env.REACT_APP_AWS_API_ENDPOINT}`)
 
   const isProduction = mode === 'production'
   const isStaging = mode === 'staging'
   const isVercelDeploy = DEPLOY_TARGET === 'vercel'
+  const isCloudflareDeploy = DEPLOY_TARGET === 'cloudflare'
+  const isEcsDeploy = DEPLOY_TARGET === 'ecs'
+  const isIpfsDeploy = DEPLOY_TARGET === 'ipfs'
+  if (isIpfsDeploy) {
+    // IPFS gateways have no same-origin BFF: hit the entry gateway and statsig proxy directly (both allow cross-origin).
+    env.ENABLE_ENTRY_GATEWAY_PROXY = 'false'
+    env.STATSIG_PROXY_URL_OVERRIDE = 'https://gating.interface.gateway.uniswap.org/v1/statsig-proxy'
+  }
+  const isOptimizedBuild = isProduction || isEcsDeploy
+  const isMinifiedBuild = isOptimizedBuild && !isVercelDeploy
+  // CF plugin runs for cloudflare deploys and local dev. Skipped during `vite preview` —
+  // preview only serves static assets, doesn't need worker bindings, and the plugin's
+  // getWorkerConfigs enumerates every env in wrangler-vite-worker.jsonc and chokes when
+  // one env's build dir is missing (e.g. after switching between build:production and
+  // build:staging). See INFRA-1874.
+  // Also determines `build.outDir`: the plugin owns the build/ output split.
+  const useCloudflarePlugin = (isCloudflareDeploy || mode === 'development') && !isPreview
   const root = path.resolve(__dirname)
 
   // External package aliases only
@@ -237,14 +227,18 @@ export default defineConfig(({ mode, isPreview }) => {
     'process.env.NODE_ENV': JSON.stringify(mode),
     'process.env.ENVIRONMENT': JSON.stringify(mode),
     'process.env.EXPO_OS': JSON.stringify('web'),
-    'process.env.REACT_APP_GIT_COMMIT_HASH': JSON.stringify(commitHash),
+    'process.env.GIT_COMMIT_HASH': JSON.stringify(commitHash),
     // Enable Tamagui's global z-index stacking to fix modal stacking issues
     'process.env.TAMAGUI_STACK_Z_INDEX_GLOBAL': JSON.stringify('true'),
     // So getConfig().isVercelEnvironment is true in the client on Vercel; enables direct staging WS URL to match EGW
     ...(isVercelDeploy ? { 'process.env.VERCEL': JSON.stringify(process.env.VERCEL ?? '0') } : {}),
     ...envDefines,
     // Fallback: compute next version from git tags when not set by CI
-    ...(!env.REACT_APP_VERSION_TAG ? { 'process.env.REACT_APP_VERSION_TAG': JSON.stringify(getNextDevVersion()) } : {}),
+    ...(!env.VERSION && !env.REACT_APP_VERSION_TAG
+      ? {
+          'process.env.VERSION': JSON.stringify(process.env.VERSION || getNextDevVersion() || commitHash),
+        }
+      : {}),
   }
 
   const cacheDir = path.resolve(__dirname, 'node_modules/.vite')
@@ -252,6 +246,9 @@ export default defineConfig(({ mode, isPreview }) => {
 
   return {
     root,
+
+    // IPFS path gateways serve the app under /ipfs/<cid>/; relative base keeps asset URLs inside the CID.
+    base: isIpfsDeploy ? './' : isEcsDeploy ? process.env.ASSET_BASE_URL || '/' : '/',
 
     define: defines,
 
@@ -337,6 +334,16 @@ export default defineConfig(({ mode, isPreview }) => {
       },
       portWarningPlugin(isProduction),
       reactPlugin(),
+      // Tailwind v4 — compiles @import "tailwindcss" + @universe/tailwind tokens.
+      // Placed before the Tamagui extractor so CSS is resolved before extraction.
+      // Client environment only: CSS is generated exclusively for the browser bundle, and
+      // Tailwind's scan/generate transforms must stay out of the Cloudflare Worker
+      // environments (app*), where their module-graph work can invalidate worker modules
+      // while requests are in flight.
+      ...tailwindcss().map((plugin) => ({
+        ...plugin,
+        applyToEnvironment: (environment: { name: string }) => environment.name === 'client',
+      })),
       isProduction || isStaging
         ? tamaguiPlugin({
             config: '../../packages/ui/src/tamagui.config.ts',
@@ -346,10 +353,12 @@ export default defineConfig(({ mode, isPreview }) => {
           })
         : undefined,
       tsconfigPaths({
+        // No `projects` restriction — functions/tsconfig.json must be auto-discovered
+        // for the functions/* alias to resolve.
         // ignores tsconfig files in Nx generator template directories
         skip: (dir) => dir.includes('files'),
       }),
-      env.REACT_APP_SKIP_CSP ? undefined : cspMetaTagPlugin(mode),
+      env.SKIP_CSP ? undefined : cspMetaTagPlugin(mode, env),
       svgr({
         svgrOptions: {
           icon: false,
@@ -396,16 +405,39 @@ export default defineConfig(({ mode, isPreview }) => {
       },
       nodePolyfills({
         globals: {
-          process: true,
+          // In dev, `true` injects a per-module `import ... as process` shim that shadows
+          // `process`, so rolldown/oxc's scope-aware define skips the `process.env.*`
+          // replacements above (empty shim env -> config boot crash). `'dev'` instead sets
+          // `globalThis.process` via the dep optimizer, keeping defines working; build
+          // keeps the module shim (`true`) so prod output is unchanged.
+          process: command === 'serve' ? 'dev' : true,
         },
         include: ['path', 'buffer'],
       }),
+      // nodePolyfills (above) injects its shim imports into every environment via a global esbuild
+      // banner, so non-client optimizers must know them up front to avoid a mid-run reload.
+      {
+        name: 'pre-bundle-node-polyfill-shims-in-worker-environments',
+        configEnvironment(name: string) {
+          return name === 'client'
+            ? null
+            : {
+                optimizeDeps: {
+                  include: [
+                    'vite-plugin-node-polyfills/shims/buffer',
+                    'vite-plugin-node-polyfills/shims/global',
+                    'vite-plugin-node-polyfills/shims/process',
+                  ],
+                },
+              }
+        },
+      },
       commonjs({
         dynamic: {
           loose: false,
         },
       }),
-      isProduction || VITE_DISABLE_SOURCEMAP
+      isOptimizedBuild || DISABLE_SOURCEMAP
         ? undefined
         : bundlesize({
             limits: [
@@ -413,7 +445,7 @@ export default defineConfig(({ mode, isPreview }) => {
               { name: '**/*', limit: Infinity, mode: 'uncompressed' },
             ],
           }),
-      generateAssetsIgnorePlugin(isProduction && !isVercelDeploy && !VITE_DISABLE_SOURCEMAP, __dirname),
+      generateAssetsIgnorePlugin(isMinifiedBuild && !DISABLE_SOURCEMAP, __dirname),
       {
         name: 'copy-twist-config',
         writeBundle() {
@@ -444,14 +476,17 @@ export default defineConfig(({ mode, isPreview }) => {
           }
         },
       },
-      // Skip the Cloudflare plugin during `vite preview` — preview only serves
-      // static assets, doesn't need worker bindings, and the plugin's
-      // getWorkerConfigs enumerates every env in wrangler-vite-worker.jsonc and
-      // chokes when one env's build dir is missing (e.g. after switching between
-      // build:production and build:staging). See INFRA-1874.
-      (DEPLOY_TARGET === 'cloudflare' || mode === 'development') && !isPreview
+      useCloudflarePlugin
         ? cloudflare({
             configPath: './wrangler-vite-worker.jsonc',
+            // Forward .env values to the Worker as vars (the dotenv auto-loader is
+            // disabled above). Return only the `vars` patch — the plugin uses defu() to
+            // merge, which concatenates arrays. Returning the full workerConfig would
+            // duplicate fields like compatibility_flags and crash the Workers runtime at
+            // startup. Skip empty strings so any wrangler-defined defaults are preserved.
+            config: () => ({
+              vars: Object.fromEntries(Object.entries(env).filter(([, value]) => value !== '')),
+            }),
             // Workaround for cloudflare plugin bug: explicitly set environment name based on CLOUDFLARE_ENV
             viteEnvironment:
               process.env.CLOUDFLARE_ENV === 'production'
@@ -486,6 +521,7 @@ export default defineConfig(({ mode, isPreview }) => {
         'jsbi',
         'ethers',
         '@visx/responsive',
+        'use-resize-observer',
       ],
       // Libraries that shouldn't be pre-bundled
       exclude: [
@@ -524,14 +560,17 @@ export default defineConfig(({ mode, isPreview }) => {
           secure: true,
           rewrite: (path) => path.replace(/^\/config/, '/v1/statsig-proxy'),
         },
-        ...(ENABLE_PROXY ? createEntryGatewayProxies({ getLogger }) : {}),
+        ...(ENABLE_PROXY ? createEntryGatewayProxies({ getLogger, env }) : {}),
       },
     },
 
     build: {
-      outDir: 'build',
-      sourcemap: VITE_DISABLE_SOURCEMAP ? false : isProduction && !isVercelDeploy ? 'hidden' : true,
-      minify: isProduction && !isVercelDeploy ? 'esbuild' : undefined,
+      // With the CF plugin, it owns the build/ output split (emits build/client itself).
+      // Without it, ECS and IPFS emit straight to build/client (ECS: read by ecs-entry.ts,
+      // synced to S3; IPFS: pinned by the deploy workflow); Vercel reads build/ directly.
+      outDir: !useCloudflarePlugin && (isEcsDeploy || isIpfsDeploy) ? 'build/client' : 'build',
+      sourcemap: DISABLE_SOURCEMAP ? false : isMinifiedBuild ? 'hidden' : true,
+      minify: isMinifiedBuild ? 'esbuild' : undefined,
       rollupOptions: {
         external: [/\.stories\.[tj]sx?$/, /\.mdx$/, /expo-clipboard\/build\/ClipboardPasteButton\.js/],
         output: {
@@ -543,6 +582,8 @@ export default defineConfig(({ mode, isPreview }) => {
       },
       // Increase the warning limit for larger chunks
       chunkSizeWarningLimit: 800,
+      // Log-only gzip sizing; size enforcement lives in check-bundle-size.ts
+      reportCompressedSize: false,
       commonjsOptions: {
         include: [/node_modules/],
       },

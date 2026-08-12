@@ -102,14 +102,17 @@ describe(LogoWithTxStatus, () => {
         TransactionType.Approve,
         TransactionType.NFTApprove,
         TransactionType.Send,
+        TransactionType.Deposit,
         TransactionType.ToucanBid,
         TransactionType.OnRampPurchase,
         TransactionType.OnRampTransfer,
         TransactionType.OffRampSale,
         TransactionType.Receive,
+        TransactionType.Withdraw,
         TransactionType.NFTMint,
         TransactionType.ClaimUni,
         TransactionType.LPIncentivesClaimRewards,
+        TransactionType.UniswapXCancel,
         TransactionType.Unknown,
       ]
       const transactionWithoutIcons = Object.values(TransactionType).filter(
@@ -130,6 +133,18 @@ describe(LogoWithTxStatus, () => {
           expect(queryByTestId('status-icon')).toBeTruthy()
         })
       }
+
+      it('shows icon for vault Withdraw', () => {
+        const { queryByTestId } = render(
+          <LogoWithTxStatus
+            {...currencyLogoProps({ chainId: UniverseChainId.Mainnet })}
+            isVaultTransaction
+            txType={TransactionType.Withdraw}
+          />,
+        )
+
+        expect(queryByTestId('status-icon')).toBeTruthy()
+      })
 
       for (const assetType of nftAssetTypesWithIcons) {
         it(`shows icon for NFTTrade if asset type ${assetType}`, () => {

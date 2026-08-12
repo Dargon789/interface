@@ -1,13 +1,10 @@
-import { useApolloClient } from '@apollo/client'
 import { useHeaderHeight } from '@react-navigation/elements'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { EmbeddedWalletApiClient, exportSeedPhrase, PasskeyImportConfirm } from '@universe/embedded-wallet'
 import React, { useEffect, useState } from 'react'
 import { OnboardingStackParamList } from 'src/app/navigation/types'
 import { OnboardingScreen } from 'src/features/onboarding/OnboardingScreen'
-import { PasskeyImportConfirm } from 'uniswap/src/components/passkey/PasskeyImportConfirm'
-import { EmbeddedWalletApiClient } from 'uniswap/src/data/rest/embeddedWallet/requests'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
-import { exportSeedPhrase } from 'uniswap/src/features/passkey/utils'
 import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import { ImportType } from 'uniswap/src/types/onboarding'
 import { OnboardingScreens } from 'uniswap/src/types/screens/mobile'
@@ -24,8 +21,7 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, OnboardingScreens.
 
 export function PasskeyImportScreen({ navigation, route: { params } }: Props): JSX.Element {
   const { generateImportedAccounts, selectImportedAccounts } = useOnboardingContext()
-  const apolloClient = useApolloClient()
-  const { gqlChains } = useEnabledChains()
+  const { chains: chainIds } = useEnabledChains()
   const headerHeight = useHeaderHeight()
   const [walletInfo, setWalletInfo] = useState<{ walletId: string; walletAddress: string } | null>(null)
   const [isImporting, setIsImporting] = useState(false)
@@ -80,8 +76,7 @@ export function PasskeyImportScreen({ navigation, route: { params } }: Props): J
       try {
         importableAddresses = await resolveImportableAddresses({
           addresses: generatedAccounts.map((acc) => acc.address),
-          apolloClient,
-          gqlChains,
+          chainIds,
           requiredAddress: walletInfo.walletAddress,
         })
       } catch (resolveError) {

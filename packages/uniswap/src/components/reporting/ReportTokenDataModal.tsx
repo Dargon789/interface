@@ -1,6 +1,5 @@
 import { Currency } from '@uniswap/sdk-core'
 import { isProdEnv } from '@universe/environment'
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { atom } from 'jotai'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,7 +7,7 @@ import { useDispatch } from 'react-redux'
 import { ChartBarCrossed } from 'ui/src/components/icons/ChartBarCrossed'
 import type { BaseModalProps } from 'uniswap/src/components/modals/ModalProps'
 import { ReportModal, ReportOption } from 'uniswap/src/components/reporting/ReportModal'
-import { DataServiceApiClient } from 'uniswap/src/data/apiClients/dataApi/DataApiClient'
+import { dataApiServiceClientV1 } from 'uniswap/src/data/apiClients/dataApiService/clients/DataApiClient'
 import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
@@ -40,7 +39,6 @@ export function ReportTokenDataModal({
 }: ReportTokenDataModalProps & BaseModalProps): JSX.Element {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const isPnLEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
   const walletAddress = useActiveAddress(Platform.EVM)
 
   const submitReport = useEvent(
@@ -69,21 +67,23 @@ export function ReportTokenDataModal({
 
       // Submit data report to Zerion via backend proxy
       if (checkedItems.has(TokenDataReportOption.Performance) && isProdEnv() && walletAddress && !currency.isNative) {
-        DataServiceApiClient.submitDataReport({
-          reportType: 'token',
-          tag: 'pnl',
-          details: reportTexts.get(TokenDataReportOption.Performance),
-          walletAddress,
-          chainId: currency.chainId,
-          tokenAddress: currency.address,
-          ...(shouldReportMultichainAsset && { multichain: true }),
-        }).catch((error: unknown) => {
-          logger.warn('ReportTokenDataModal', 'submitReport', 'Failed to submit data report to backend', {
-            error: error instanceof Error ? error.message : String(error),
+        dataApiServiceClientV1
+          .submitDataReport({
+            reportType: 'token',
+            tag: 'pnl',
+            details: reportTexts.get(TokenDataReportOption.Performance),
+            walletAddress,
             chainId: currency.chainId,
-            address: currency.address,
+            tokenAddress: currency.address,
+            ...(shouldReportMultichainAsset && { multichain: true }),
           })
-        })
+          .catch((error: unknown) => {
+            logger.warn('ReportTokenDataModal', 'submitReport', 'Failed to submit data report to backend', {
+              error: error instanceof Error ? error.message : String(error),
+              chainId: currency.chainId,
+              address: currency.address,
+            })
+          })
       }
 
       // Close the modal and register success
@@ -120,23 +120,19 @@ export function ReportTokenDataModal({
         subtitle: t('reporting.token.data.options.tokenDetails.subtitle'),
         value: TokenDataReportOption.TokenDetails,
       },
-      ...(isPnLEnabled
-        ? [
-            {
-              title: t('reporting.token.data.options.performance.title'),
-              subtitle: t('reporting.token.data.options.performance.subtitle'),
-              value: TokenDataReportOption.Performance,
-              additionalTextInput: true,
-            },
-          ]
-        : []),
+      {
+        title: t('reporting.token.data.options.performance.title'),
+        subtitle: t('reporting.token.data.options.performance.subtitle'),
+        value: TokenDataReportOption.Performance,
+        additionalTextInput: true,
+      },
       {
         title: t('reporting.token.options.other.title'),
         value: TokenDataReportOption.Other,
         additionalTextInput: true,
       },
     ],
-    [t, isPnLEnabled],
+    [t],
   )
 
   return (

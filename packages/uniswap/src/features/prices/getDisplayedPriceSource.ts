@@ -8,6 +8,8 @@ import { getTokenPriceSource } from '@universe/prices'
  */
 export type PriceSourceTag =
   | 'aurora_ws'
+  | 'realtime_ws'
+  | 'pool_ws'
   | 'aurora_rest_fallback'
   | 'tapi_quote'
   | 'legacy_subgraph'

@@ -40,7 +40,7 @@ vi.mock('uniswap/src/features/platforms/utils/chains', () => ({
   chainIdToPlatform: vi.fn(),
 }))
 
-vi.mock('uniswap/src/features/passkey/ShowGetStartedContext', () => ({
+vi.mock('uniswap/src/contexts/ShowGetStartedContext', () => ({
   useShowGetStarted: vi.fn().mockReturnValue(false),
 }))
 
@@ -86,6 +86,21 @@ vi.mock('uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/
   useIsSwapButtonDisabled: vi.fn(),
 }))
 
+vi.mock('uniswap/src/features/transactions/swap/hooks/useGeoRestrictionAcknowledgment', () => ({
+  useNeedsGeoAcknowledgment: vi.fn(() => false),
+}))
+
+vi.mock('uniswap/src/features/transactions/swap/hooks/useGeoRestrictionMode', () => ({
+  useGeoRestrictionMode: vi.fn(() => 'default'),
+}))
+
+vi.mock(
+  'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useIsBlockedByPermissionedPool',
+  () => ({
+    useIsBlockedByPermissionedPool: vi.fn(),
+  }),
+)
+
 vi.mock(
   'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useIsBlockingWithCustomMessage',
   () => ({
@@ -120,18 +135,20 @@ vi.mock('utilities/src/react/hooks', () => ({
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useColorsFromTokenColor } from 'ui/src'
 import { nativeOnChain } from 'uniswap/src/constants/tokens'
+import { useShowGetStarted } from 'uniswap/src/contexts/ShowGetStartedContext'
 import { useActiveAccount, useConnectionStatus } from 'uniswap/src/features/accounts/store/hooks'
-import { useShowGetStarted } from 'uniswap/src/features/passkey/ShowGetStartedContext'
 import { chainIdToPlatform, isSVMChain } from 'uniswap/src/features/platforms/utils/chains'
 import { useIsShowingWebFORNudge, useIsWebFORNudgeEnabled } from 'uniswap/src/features/providers/webForNudgeProvider'
 import { useTransactionModalContext } from 'uniswap/src/features/transactions/components/TransactionModal/TransactionModalContext'
 import { useIsAmountSelectionInvalid } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useIsAmountSelectionInvalid'
+import { useIsBlockedByPermissionedPool } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useIsBlockedByPermissionedPool'
 import { useIsBlockingWithCustomMessage } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useIsBlockingWithCustomMessage'
 import { useIsMissingPlatformWallet } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useIsMissingPlatformWallet'
 import { useIsSwapButtonDisabled } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useIsSwapButtonDisabled'
 import { useIsTokenSelectionInvalid } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useIsTokenSelectionInvalid'
 import { useIsTradeIndicative } from 'uniswap/src/features/transactions/swap/components/SwapFormButton/hooks/useIsTradeIndicative'
 import { useSwapFormWarningStoreActions } from 'uniswap/src/features/transactions/swap/form/stores/swapFormWarningStore/useSwapFormWarningStore'
+import { useGeoRestrictionMode } from 'uniswap/src/features/transactions/swap/hooks/useGeoRestrictionMode'
 import { useParsedSwapWarnings } from 'uniswap/src/features/transactions/swap/hooks/useSwapWarnings/useSwapWarnings'
 import { getActionText } from 'uniswap/src/features/transactions/swap/review/SwapReviewScreen/SwapReviewFooter/SubmitSwapButton'
 import { usePrepareSwap } from 'uniswap/src/features/transactions/swap/services/hooks/usePrepareSwap'
@@ -165,10 +182,12 @@ describe('swap form button hooks', () => {
   const mockUseIsTokenSelectionInvalid = useIsTokenSelectionInvalid as Mock
   const mockUseIsTradeIndicative = useIsTradeIndicative as Mock
   const mockUseParsedSwapWarnings = useParsedSwapWarnings as Mock
+  const mockUseGeoRestrictionMode = useGeoRestrictionMode as Mock
   const mockGetActionText = getActionText as Mock
   const mockUseSwapFormStore = useSwapFormStore as Mock
   const mockUseSwapFormStoreDerivedSwapInfo = useSwapFormStoreDerivedSwapInfo as Mock
   const mockUseIsBlockingWithCustomMessage = useIsBlockingWithCustomMessage as Mock
+  const mockUseIsBlockedByPermissionedPool = useIsBlockedByPermissionedPool as Mock
   const mockUseColorsFromTokenColor = useColorsFromTokenColor as Mock
   const mockUseSwapFormWarningStoreActions = useSwapFormWarningStoreActions as Mock
   const mockUsePrepareSwap = usePrepareSwap as Mock
@@ -284,6 +303,7 @@ describe('swap form button hooks', () => {
     setRedirectCallback(false)
     mockUseIsAmountSelectionInvalid.mockReturnValue(false)
     mockUseIsSwapButtonDisabled.mockReturnValue(false)
+    mockUseIsBlockedByPermissionedPool.mockReturnValue(false)
     mockUseIsTokenSelectionInvalid.mockReturnValue(false)
     mockUseIsTradeIndicative.mockReturnValue(false)
     setWarnings()
@@ -291,6 +311,7 @@ describe('swap form button hooks', () => {
 
     setSubmitting(false)
     setDerivedSwapInfo()
+    mockUseGeoRestrictionMode.mockReturnValue('default')
     mockUseIsBlockingWithCustomMessage.mockReturnValue(false)
     mockUseColorsFromTokenColor.mockReturnValue({
       validTokenColor: '$token',
@@ -423,16 +444,23 @@ describe('swap form button hooks', () => {
         expect(result.current).toBe('common.getStarted')
       })
 
-      it('prioritizes web FOR nudge over indicative', () => {
+      it('prioritizes indicative over web FOR nudge', () => {
         setWebForNudge({ enabled: true })
         mockUseIsTradeIndicative.mockReturnValue(true)
         const { result } = renderHook(() => useSwapFormButtonText())
-        expect(result.current).toBe('empty.swap.button.text')
+        expect(result.current).toBe('swap.finalizingQuote')
       })
 
-      it('prioritizes web FOR nudge over disconnected', () => {
+      it('prioritizes disconnected over web FOR nudge', () => {
         setWebForNudge({ enabled: true })
         setConnection({ isDisconnected: true })
+        const { result } = renderHook(() => useSwapFormButtonText())
+        expect(result.current).toBe('common.connectWallet.button')
+      })
+
+      it('shows web FOR nudge when connected and not indicative', () => {
+        setWebForNudge({ enabled: true })
+        setConnection({ isDisconnected: false })
         const { result } = renderHook(() => useSwapFormButtonText())
         expect(result.current).toBe('empty.swap.button.text')
       })
@@ -533,6 +561,16 @@ describe('swap form button hooks', () => {
       const { result } = renderHook(() => useSwapFormButtonColors())
       expect(result.current.backgroundColor).toBe('$tokenLight')
       expect(result.current.emphasis).toBe('secondary')
+    })
+
+    it('uses neutral blocked styling for a geo-restricted token, even without an active account', () => {
+      mockUseGeoRestrictionMode.mockReturnValue('restricted')
+      mockUseIsSwapButtonDisabled.mockReturnValue(true)
+      setActiveAccount(false)
+      const { result } = renderHook(() => useSwapFormButtonColors())
+      expect(result.current.variant).toBe('default')
+      expect(result.current.emphasis).toBe('secondary')
+      expect(result.current.buttonTextColor).toBeUndefined()
     })
 
     it('handles missing token colors', () => {

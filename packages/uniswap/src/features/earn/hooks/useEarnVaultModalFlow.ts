@@ -1,3 +1,4 @@
+import { TradingApi } from '@universe/api'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { DEFAULT_WITHDRAW_CHAIN_ID } from 'uniswap/src/features/earn/constants'
@@ -8,6 +9,7 @@ export type { EarnVaultTab }
 
 export enum EarnVaultView {
   Vault = 'vault',
+  HowItWorks = 'how-it-works',
   NeedToken = 'need-token',
   DepositAmount = 'deposit-amount',
   DepositReview = 'deposit-review',
@@ -15,13 +17,49 @@ export enum EarnVaultView {
   WithdrawReview = 'withdraw-review',
 }
 
+// `amount` is the user's local fiat (not USD) so back-nav from review restores the exact entry
+// without FX round-tripping; review views convert to USD internally. DepositReview also carries
+// source chain + per-chain currencyId because the modal-level selection isn't visible to it.
 export type EarnVaultFlow =
   | { view: EarnVaultView.Vault }
+  | { view: EarnVaultView.HowItWorks }
   | { view: EarnVaultView.NeedToken }
-  | { view: EarnVaultView.DepositAmount; amount: string }
-  | { view: EarnVaultView.DepositReview; amount: string }
-  | { view: EarnVaultView.WithdrawAmount; amount: string; chainId: UniverseChainId; position: EarnPositionInfo }
-  | { view: EarnVaultView.WithdrawReview; amount: string; chainId: UniverseChainId; position: EarnPositionInfo }
+  | {
+      view: EarnVaultView.DepositAmount
+      amount: string
+      // Carried back from review so a "Max" selection isn't lost on back-nav — otherwise the
+      // restored fiat amount (rounded up by display formatting) re-reads as "insufficient".
+      isMax?: boolean
+    }
+  | {
+      view: EarnVaultView.DepositReview
+      amount: string
+      sourceChainId: UniverseChainId
+      sourceCurrencyId: string
+      isMax?: boolean
+      /**
+       * Exact token-unit amount, set when the user picked "Max". Review quotes this directly
+       * instead of round-tripping the rounded fiat display amount through spot prices (which
+       * can exceed the wallet balance).
+       */
+      tokenAmount?: string
+    }
+  | {
+      view: EarnVaultView.WithdrawAmount
+      amount: string
+      chainId: UniverseChainId
+      // Carried back from review so a "Max" (MAX_SHARES) selection isn't lost on back-nav — otherwise the
+      // restored max amount re-runs the over-balance check and reads as "insufficient".
+      withdrawMode?: TradingApi.EarnWithdrawMode
+      position: EarnPositionInfo
+    }
+  | {
+      view: EarnVaultView.WithdrawReview
+      amount: string
+      chainId: UniverseChainId
+      withdrawMode: TradingApi.EarnWithdrawMode
+      position: EarnPositionInfo
+    }
 
 export type EarnVaultModalInitialView = Extract<
   EarnVaultView,
@@ -33,6 +71,7 @@ interface UseEarnVaultModalFlowParams {
   initialPosition?: EarnPositionInfo
   initialView: EarnVaultModalInitialView
   isOpen: boolean
+  shouldShowHowItWorks: boolean
   vaultId: string | undefined
 }
 
@@ -42,11 +81,22 @@ interface UseEarnVaultModalFlowResult {
   setSelectedTab: (tab: EarnVaultTab) => void
   reset: () => void
   startDeposit: () => void
+  continueDeposit: () => void
   startNeedToken: () => void
-  submitDepositAmount: (amount: string) => void
+  submitDepositAmount: (params: {
+    amount: string
+    sourceChainId: UniverseChainId
+    sourceCurrencyId: string
+    isMax?: boolean
+    tokenAmount?: string
+  }) => void
   backToDepositAmount: () => void
   startWithdraw: (position: EarnPositionInfo) => void
-  submitWithdrawAmount: (params: { amount: string; chainId: UniverseChainId }) => void
+  submitWithdrawAmount: (params: {
+    amount: string
+    chainId: UniverseChainId
+    withdrawMode: TradingApi.EarnWithdrawMode
+  }) => void
   backToWithdrawAmount: () => void
   backToVault: () => void
 }
@@ -58,6 +108,7 @@ export function useEarnVaultModalFlow({
   initialPosition,
   initialView,
   isOpen,
+  shouldShowHowItWorks,
   vaultId,
 }: UseEarnVaultModalFlowParams): UseEarnVaultModalFlowResult {
   const previousHasPositionRef = useRef(hasPosition)
@@ -68,12 +119,16 @@ export function useEarnVaultModalFlow({
   }>({ initialView, isOpen: false, vaultId: undefined })
 
   const [selectedTab, setSelectedTab] = useState<EarnVaultTab>(hasPosition ? 'balance' : 'details')
-  const [flow, setFlow] = useState<EarnVaultFlow>({ view: EarnVaultView.Vault })
+  const [flow, setFlow] = useState<EarnVaultFlow>({
+    view: EarnVaultView.Vault,
+  })
 
   const getInitialFlow = useCallback((): EarnVaultFlow => {
     switch (initialView) {
       case EarnVaultView.DepositAmount:
-        return { view: EarnVaultView.DepositAmount, amount: '' }
+        return shouldShowHowItWorks
+          ? { view: EarnVaultView.HowItWorks }
+          : { view: EarnVaultView.DepositAmount, amount: '' }
       case EarnVaultView.WithdrawAmount: {
         if (!initialPosition) {
           logger.warn(
@@ -96,7 +151,7 @@ export function useEarnVaultModalFlow({
     }
 
     return assertNever(initialView)
-  }, [initialPosition, initialView])
+  }, [initialPosition, initialView, shouldShowHowItWorks])
 
   const reset = useCallback(() => {
     setSelectedTab(hasPosition ? 'balance' : 'details')
@@ -128,6 +183,12 @@ export function useEarnVaultModalFlow({
   }, [flow.view, hasPosition])
 
   const startDeposit = useCallback(() => {
+    setFlow(
+      shouldShowHowItWorks ? { view: EarnVaultView.HowItWorks } : { view: EarnVaultView.DepositAmount, amount: '' },
+    )
+  }, [shouldShowHowItWorks])
+
+  const continueDeposit = useCallback(() => {
     setFlow({ view: EarnVaultView.DepositAmount, amount: '' })
   }, [])
 
@@ -135,35 +196,61 @@ export function useEarnVaultModalFlow({
     setFlow({ view: EarnVaultView.NeedToken })
   }, [])
 
-  const submitDepositAmount = useCallback((amount: string) => {
-    setFlow({ view: EarnVaultView.DepositReview, amount })
-  }, [])
+  const submitDepositAmount = useCallback(
+    (params: {
+      amount: string
+      sourceChainId: UniverseChainId
+      sourceCurrencyId: string
+      isMax?: boolean
+      tokenAmount?: string
+    }) => {
+      setFlow({
+        view: EarnVaultView.DepositReview,
+        amount: params.amount,
+        sourceChainId: params.sourceChainId,
+        sourceCurrencyId: params.sourceCurrencyId,
+        isMax: params.isMax,
+        tokenAmount: params.tokenAmount,
+      })
+    },
+    [],
+  )
 
   const backToDepositAmount = useCallback(() => {
-    setFlow((current) => ({
-      view: EarnVaultView.DepositAmount,
-      amount: current.view === EarnVaultView.DepositReview ? current.amount : '',
-    }))
+    setFlow((current) =>
+      current.view === EarnVaultView.DepositReview
+        ? { view: EarnVaultView.DepositAmount, amount: current.amount, isMax: current.isMax }
+        : { view: EarnVaultView.DepositAmount, amount: '' },
+    )
   }, [])
 
   const startWithdraw = useCallback((position: EarnPositionInfo) => {
-    setFlow({ view: EarnVaultView.WithdrawAmount, amount: '', chainId: DEFAULT_WITHDRAW_CHAIN_ID, position })
-  }, [])
-
-  const submitWithdrawAmount = useCallback((params: { amount: string; chainId: UniverseChainId }) => {
-    setFlow((current) => {
-      if (current.view !== EarnVaultView.WithdrawAmount) {
-        return current
-      }
-
-      return {
-        view: EarnVaultView.WithdrawReview,
-        amount: params.amount,
-        chainId: params.chainId,
-        position: current.position,
-      }
+    setFlow({
+      view: EarnVaultView.WithdrawAmount,
+      amount: '',
+      chainId: DEFAULT_WITHDRAW_CHAIN_ID,
+      position,
     })
   }, [])
+
+  const submitWithdrawAmount = useCallback(
+    (params: { amount: string; chainId: UniverseChainId; withdrawMode: TradingApi.EarnWithdrawMode }) => {
+      setFlow((current) => {
+        if (current.view !== EarnVaultView.WithdrawAmount) {
+          return current
+        }
+
+        return {
+          view: EarnVaultView.WithdrawReview,
+          amount: params.amount,
+          chainId: params.chainId,
+          withdrawMode: params.withdrawMode,
+          position: current.position,
+        }
+      })
+    },
+    [],
+  )
 
   const backToWithdrawAmount = useCallback(() => {
     setFlow((current) => {
@@ -175,6 +262,7 @@ export function useEarnVaultModalFlow({
         view: EarnVaultView.WithdrawAmount,
         amount: current.amount,
         chainId: current.chainId,
+        withdrawMode: current.withdrawMode,
         position: current.position,
       }
     })
@@ -190,6 +278,7 @@ export function useEarnVaultModalFlow({
     setSelectedTab,
     reset,
     startDeposit,
+    continueDeposit,
     startNeedToken,
     submitDepositAmount,
     backToDepositAmount,

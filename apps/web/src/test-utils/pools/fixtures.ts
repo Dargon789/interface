@@ -1,11 +1,10 @@
-import { BigNumber } from '@ethersproject/bignumber'
 import { Currency, WETH9 } from '@uniswap/sdk-core'
 import { FeeAmount, Pool, Position } from '@uniswap/v3-sdk'
 import { GraphQLApi } from '@universe/api'
 import { DEFAULT_TICK_SPACING } from 'uniswap/src/constants/pools'
 import { USDC_MAINNET } from 'uniswap/src/constants/tokens'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { PoolData } from '~/appGraphql/data/pools/usePoolData'
+import type { PoolData } from '~/data/pools/usePoolData'
 import type { PoolStat } from '~/types/explore'
 
 export const validParams = { poolAddress: '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', chainName: 'ethereum' }
@@ -87,19 +86,19 @@ const position = new Position({
   tickUpper: 202560,
 })
 const details = {
-  nonce: BigNumber.from('0'),
-  tokenId: BigNumber.from('0'),
+  nonce: 0n,
+  tokenId: 0n,
   operator: '0x0',
   token0: USDC_MAINNET.address,
   token1: WETH9[UniverseChainId.Mainnet].address,
   fee: FeeAmount.MEDIUM,
   tickLower: -100,
   tickUpper: 100,
-  liquidity: BigNumber.from('9000'),
-  feeGrowthInside0LastX128: BigNumber.from('0'),
-  feeGrowthInside1LastX128: BigNumber.from('0'),
-  tokensOwed0: BigNumber.from('0'),
-  tokensOwed1: BigNumber.from('0'),
+  liquidity: 9000n,
+  feeGrowthInside0LastX128: 0n,
+  feeGrowthInside1LastX128: 0n,
+  tokensOwed0: 0n,
+  tokensOwed1: 0n,
 }
 export const useMultiChainPositionsReturnValue = {
   positions: [

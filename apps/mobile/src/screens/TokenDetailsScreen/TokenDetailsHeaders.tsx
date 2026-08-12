@@ -1,4 +1,3 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import React, { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FadeIn } from 'react-native-reanimated'
@@ -9,16 +8,15 @@ import { TokenDetailsFavoriteButton } from 'src/components/TokenDetails/TokenDet
 import { useTokenDetailsCurrentChainBalance } from 'src/components/TokenDetails/useTokenDetailsCurrentChainBalance'
 import { Flex, Text } from 'ui/src'
 import { Ellipsis } from 'ui/src/components/icons'
+import { Lock } from 'ui/src/components/icons/Lock'
 import { AnimatedFlex } from 'ui/src/components/layout/AnimatedFlex'
 import { iconSizes, spacing } from 'ui/src/theme'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { ContextMenu } from 'uniswap/src/components/menus/ContextMenu'
 import { ContextMenuTriggerMode } from 'uniswap/src/components/menus/types'
-import {
-  useTokenBasicInfoPartsFragment,
-  useTokenBasicProjectPartsFragment,
-} from 'uniswap/src/data/graphql/uniswap-data-api/fragments'
+import { useTokenBasicInfoPartsFragment, useTokenBasicProjectPartsFragment } from 'uniswap/src/data/graphql/fragments'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
+import { useTokenMetadata } from 'uniswap/src/features/dataApi/tokenDetails/useTokenDetailsData'
 import { isMultichainProjectTokens } from 'uniswap/src/features/dataApi/tokenProjects/utils/isMultichainProjectTokens'
 import { TokenList } from 'uniswap/src/features/dataApi/types'
 import {
@@ -33,17 +31,21 @@ import { useBooleanState } from 'utilities/src/react/useBooleanState'
 export const HeaderTitleElement = memo(function HeaderTitleElement(): JSX.Element {
   const { t } = useTranslation()
 
-  const { currencyId } = useTokenDetailsContext()
+  const { currencyId, isPermissioned, isAllowlisted } = useTokenDetailsContext()
 
-  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const token = useTokenBasicInfoPartsFragment({ currencyId }).data
   const project = useTokenBasicProjectPartsFragment({ currencyId }).data.project
-  const isMultichainToken = multichainTokenUxEnabled && isMultichainProjectTokens(project?.tokens)
+  const isMultichainToken = isMultichainProjectTokens(project?.tokens)
+  const metadata = useTokenMetadata(currencyId, {
+    legacyToken: { name: token.name, symbol: token.symbol, project: { logoUrl: project?.logoUrl } },
+  })
 
-  const logo = project?.logoUrl ?? undefined
-  const symbol = token.symbol
-  const name = token.name
+  const logo = metadata.logoUrl ?? undefined
+  const symbol = metadata.symbol
+  const name = metadata.name
   const chain = token.chain
+  // Mirror the top-of-page ticker lock in the sticky header: allowlisted-only.
+  const showPermissionedLock = isPermissioned && isAllowlisted
 
   return (
     <Flex alignItems="center" justifyContent="space-between" ml="$spacing32">
@@ -59,12 +61,18 @@ export const HeaderTitleElement = memo(function HeaderTitleElement(): JSX.Elemen
         <Text color="$neutral2" numberOfLines={1} variant="buttonLabel3">
           {symbol ?? t('token.error.unknown')}
         </Text>
+        {showPermissionedLock && <Lock color="$neutral2" size="$icon.16" flexShrink={0} />}
       </Flex>
     </Flex>
   )
 })
 
-const EXCLUDED_ACTIONS = [TokenMenuActionType.Swap, TokenMenuActionType.Send, TokenMenuActionType.Receive]
+const EXCLUDED_ACTIONS = [
+  TokenMenuActionType.Swap,
+  TokenMenuActionType.Send,
+  TokenMenuActionType.Receive,
+  TokenMenuActionType.ViewDetails,
+]
 
 export const HeaderRightElement = memo(function HeaderRightElement(): JSX.Element {
   const {
@@ -76,9 +84,8 @@ export const HeaderRightElement = memo(function HeaderRightElement(): JSX.Elemen
   } = useTokenDetailsContext()
   const currentChainBalance = useTokenDetailsCurrentChainBalance()
 
-  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const project = useTokenBasicProjectPartsFragment({ currencyId }).data.project
-  const isMultichainToken = multichainTokenUxEnabled && (project?.tokens?.length ?? 0) > 1
+  const isMultichainToken = (project?.tokens?.length ?? 0) > 1
 
   const openReportTokenModal = useEvent(() => {
     setTimeout(() => {

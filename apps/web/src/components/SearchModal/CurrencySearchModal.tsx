@@ -1,7 +1,7 @@
 import { Currency } from '@uniswap/sdk-core'
 import { memo } from 'react'
 import { Modal } from 'uniswap/src/components/modals/Modal'
-import { TOKEN_SELECTOR_WEB_MAX_WIDTH } from 'uniswap/src/components/TokenSelector/TokenSelector'
+import { useTokenSelectorWebModalDimensions } from 'uniswap/src/components/TokenSelector/TokenSelector'
 import { TokenSelectorFlow, TokenSelectorVariation } from 'uniswap/src/components/TokenSelector/types'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
@@ -19,6 +19,12 @@ interface CurrencySearchModalProps {
   otherSelectedCurrency?: Currency | null
   showCurrencyAmount?: boolean
   currencyField?: CurrencyField
+  /**
+   * Parent-controlled initial network filter. Pass a chain to pin the selector's default network,
+   * `null` to default to All Networks, or omit (`undefined`) to fall back to the default
+   * account/multichain resolution.
+   */
+  chainId?: UniverseChainId | null
   chainIds?: UniverseChainId[]
   variation?: TokenSelectorVariation
   flow?: TokenSelectorFlow
@@ -31,18 +37,21 @@ export const CurrencySearchModal = memo(function CurrencySearchModal({
   onCurrencySelect,
   currencyField = CurrencyField.INPUT,
   switchNetworkAction,
+  chainId,
   chainIds,
   variation,
   flow,
   swapTab,
 }: CurrencySearchModalProps) {
+  const { maxWidth, maxHeight } = useTokenSelectorWebModalDimensions()
+
   return (
     <Modal
       isModalOpen={isOpen}
       onClose={onDismiss}
-      maxHeight={700}
+      maxHeight={maxHeight}
       height="100vh"
-      maxWidth={TOKEN_SELECTOR_WEB_MAX_WIDTH}
+      maxWidth={maxWidth}
       padding={0}
       flex={1}
       name={ModalName.CurrencySearch}
@@ -52,6 +61,7 @@ export const CurrencySearchModal = memo(function CurrencySearchModal({
         onCurrencySelect={onCurrencySelect}
         switchNetworkAction={switchNetworkAction}
         onDismiss={onDismiss}
+        chainId={chainId}
         chainIds={chainIds}
         variation={variation}
         flow={flow}

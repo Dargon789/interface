@@ -7,12 +7,12 @@ import JSBI from 'jsbi'
 import ms from 'ms'
 import { useEffect, useMemo, useState } from 'react'
 import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
-import { useGetPoolsByTokens } from 'uniswap/src/data/rest/getPools'
+import { useGetPool, useGetPoolsByTokens } from 'uniswap/src/data/apiClients/dataApiService/pools/getPools'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { AddressStringFormat, normalizeAddress } from 'uniswap/src/utils/addresses'
 import { logger } from 'utilities/src/logger/logger'
-import { TickData, Ticks } from '~/appGraphql/data/AllV3TicksQuery'
+import { TickData, Ticks } from '~/data/AllV3TicksQuery'
 import { computeSurroundingTicks, TickProcessed } from '~/features/Liquidity/utils/computeSurroundingTicks'
 import { getTokenOrZeroAddress } from '~/features/Liquidity/utils/currency'
 import { poolEnabledProtocolVersion } from '~/features/Liquidity/utils/protocolVersion'
@@ -20,6 +20,11 @@ import { useMultichainContext } from '~/state/multichain/useMultichainContext'
 import { PositionField } from '~/types/position'
 
 const PRICE_FIXED_DIGITS = 8
+
+// `Pool.tick_spacing` is a non-optional proto3 scalar, so an absent value arrives as 0.
+export function normalizeTickSpacing(tickSpacing?: number): number | undefined {
+  return tickSpacing ? tickSpacing : undefined
+}
 
 function getActiveTick({
   tickCurrent,
@@ -107,7 +112,7 @@ export function useAllPoolTicks({
 } {
   const [skipNumber, setSkipNumber] = useState(0)
 
-  const [tickData, setTickData] = useState<Ticks>([])
+  const [pagesBySkip, setPagesBySkip] = useState<Record<number, Ticks>>({})
 
   const poolId = useMemo(() => {
     if (precalculatedPoolId) {
@@ -142,14 +147,20 @@ export function useAllPoolTicks({
 
   useEffect(() => {
     if (ticks?.length) {
-      // oxlint-disable-next-line no-shadow
-      setTickData((tickData) => [...tickData, ...ticks])
+      setPagesBySkip((prev) => (prev[skipNumber] === ticks ? prev : { ...prev, [skipNumber]: ticks }))
       if (ticks.length === MAX_TICK_FETCH_VALUE) {
         // oxlint-disable-next-line no-shadow
         setSkipNumber((skipNumber) => skipNumber + MAX_TICK_FETCH_VALUE)
       }
     }
-  }, [ticks])
+  }, [ticks, skipNumber])
+
+  const tickData = useMemo<Ticks>(() => {
+    const sortedSkips = Object.keys(pagesBySkip)
+      .map(Number)
+      .sort((a, b) => a - b)
+    return sortedSkips.flatMap((s) => pagesBySkip[s])
+  }, [pagesBySkip])
 
   return {
     isLoading: isLoading || ticks?.length === MAX_TICK_FETCH_VALUE,
@@ -183,6 +194,7 @@ export function usePoolActiveLiquidity({
   activeTick?: number
   liquidity?: JSBI
   sqrtPriceX96?: JSBI
+  tickSpacing?: number
   data?: TickProcessed[]
 } {
   const multichainContext = useMultichainContext()
@@ -190,24 +202,40 @@ export function usePoolActiveLiquidity({
   const poolsQueryEnabled = Boolean(
     poolEnabledProtocolVersion(version) && sdkCurrencies.TOKEN0 && sdkCurrencies.TOKEN1 && !skip,
   )
-  const { data: poolData, isLoading: poolIsLoading } = useGetPoolsByTokens(
+  // Prefer the pool-id keyed read; a fee-filtered list lookup misses pools whose live fee differs
+  // from the static fee tier. Only the create flow lacks a poolId, so it keeps the list fallback.
+  const { data: singlePoolData, isLoading: singlePoolIsLoading } = useGetPool(
+    {
+      chainId: chainId ?? defaultChainId,
+      poolId,
+      protocolVersion: version,
+    },
+    poolsQueryEnabled && Boolean(poolId),
+  )
+
+  const { data: poolListData, isLoading: poolListIsLoading } = useGetPoolsByTokens(
     {
       fee: feeAmount,
+      tickSpacing,
       chainId: chainId ?? defaultChainId,
       protocolVersions: [version],
       token0: getTokenOrZeroAddress(sdkCurrencies.TOKEN0),
       token1: getTokenOrZeroAddress(sdkCurrencies.TOKEN1),
       hooks: hooks ?? ZERO_ADDRESS,
     },
-    poolsQueryEnabled,
+    poolsQueryEnabled && !poolId,
   )
 
+  const poolIsLoading = poolId ? singlePoolIsLoading : poolListIsLoading
+
   const pool = useMemo(() => {
-    return poolData?.pools.find((p) => p.poolId === poolId) || poolData?.pools[0] || undefined
-  }, [poolData, poolId])
+    return poolId ? singlePoolData?.pool : poolListData?.pools[0]
+  }, [poolId, singlePoolData, poolListData])
 
   const tickSpacingWithFallback =
-    tickSpacing ?? pool?.tickSpacing ?? (feeAmount ? TICK_SPACINGS[feeAmount as FeeAmount] : undefined)
+    normalizeTickSpacing(tickSpacing) ??
+    normalizeTickSpacing(pool?.tickSpacing) ??
+    (feeAmount ? TICK_SPACINGS[feeAmount as FeeAmount] : undefined)
 
   const liquidity = pool?.liquidity
   const sqrtPriceX96 = pool?.sqrtPriceX96
@@ -243,6 +271,7 @@ export function usePoolActiveLiquidity({
         isLoading: isLoading || poolIsLoading,
         error,
         activeTick,
+        tickSpacing: tickSpacingWithFallback,
         data: undefined,
       }
     }
@@ -263,6 +292,7 @@ export function usePoolActiveLiquidity({
         isLoading,
         error,
         activeTick,
+        tickSpacing: tickSpacingWithFallback,
         data: undefined,
       }
     }
@@ -285,6 +315,7 @@ export function usePoolActiveLiquidity({
         isLoading,
         error,
         activeTick,
+        tickSpacing: tickSpacingWithFallback,
         data: undefined,
       }
     }
@@ -326,6 +357,7 @@ export function usePoolActiveLiquidity({
       activeTick,
       liquidity: JSBI.BigInt(liquidity ?? 0),
       sqrtPriceX96: JSBI.BigInt(sqrtPriceX96 ?? 0),
+      tickSpacing: tickSpacingWithFallback,
       data: ticksProcessed,
     }
   }, [
@@ -339,6 +371,7 @@ export function usePoolActiveLiquidity({
     currentTick,
     liquidity,
     sqrtPriceX96,
+    tickSpacingWithFallback,
     poolIsLoading,
   ])
 }

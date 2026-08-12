@@ -18,6 +18,7 @@ export enum FiatCurrency {
   RussianRuble = 'RUB',
   SingaporeDollar = 'SGD',
   SouthKoreanWon = 'KRW',
+  SwedishKrona = 'SEK',
   TurkishLira = 'TRY',
   UkrainianHryvnia = 'UAH',
   UnitedStatesDollar = 'USD',
@@ -25,6 +26,7 @@ export enum FiatCurrency {
 }
 
 export const DEFAULT_LOCAL_CURRENCY: FiatCurrency = FiatCurrency.UnitedStatesDollar
+export const SOURCE_CURRENCY: FiatCurrency = FiatCurrency.UnitedStatesDollar
 
 export const ORDERED_CURRENCIES: FiatCurrency[] = [
   FiatCurrency.UnitedStatesDollar,
@@ -47,6 +49,7 @@ export const ORDERED_CURRENCIES: FiatCurrency[] = [
   FiatCurrency.PakistaniRupee,
   FiatCurrency.RussianRuble,
   FiatCurrency.SingaporeDollar,
+  FiatCurrency.SwedishKrona,
   FiatCurrency.TurkishLira,
   FiatCurrency.UkrainianHryvnia,
   FiatCurrency.VietnameseDong,

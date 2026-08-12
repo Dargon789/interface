@@ -2,26 +2,38 @@ import { MockedProvider } from '@apollo/client/testing'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { queries } from '@testing-library/dom'
 import { RenderHookOptions, RenderOptions, render, renderHook } from '@testing-library/react'
+import { SharedQueryClient } from '@universe/api'
+import { ComplianceClientProvider, type ComplianceV2Client } from '@universe/compliance'
+import { PriceServiceProvider } from '@universe/prices'
+import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
 import { ComponentType, PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { HelmetProvider } from 'react-helmet-async/lib/index'
 import { Provider } from 'react-redux'
 import { BrowserRouter } from 'react-router'
 import { ReactRouterUrlProvider } from 'uniswap/src/contexts/UrlContext'
 import { MismatchContextProvider } from 'uniswap/src/features/smartWallet/mismatch/MismatchContext'
-import { AssetActivityProvider } from '~/appGraphql/data/apollo/AssetActivityProvider'
-import { TokenBalancesProvider } from '~/appGraphql/data/apollo/TokenBalancesProvider'
+import { WebUniswapProvider } from '~/app/WebUniswapContext'
 import { TestWeb3Provider } from '~/components/Web3Provider/TestWeb3Provider'
 import { WebAccountsStoreProvider } from '~/features/accounts/store/provider'
 import { WebAccountsStoreUpdater } from '~/features/accounts/store/updater'
+import { TransactionWatcherProvider } from '~/features/transactions/TransactionWatcherProvider'
 import { ConnectWalletMutationProvider } from '~/features/wallet/connection/hooks/useConnectWalletMutation'
 import { ExternalWalletProvider } from '~/features/wallet/providers/ExternalWalletProvider'
 import { BlockNumberContext } from '~/lib/hooks/useBlockNumber'
-import { WebUniswapProvider } from '~/pages/App/WebUniswapContext'
 import store from '~/state'
 import { ThemeProvider } from '~/theme'
 import { TamaguiProvider } from '~/theme/tamaguiProvider'
 
 const queryClient = new QueryClient()
+
+// Mirrors the ComplianceClientProvider mounted at the web root (index.tsx) so components that read
+// useIsFeatureGated / useTokenComplianceStatus (e.g. the swap token selector) render in tests. The stub
+// fails open (nothing gated) and makes no network calls.
+const complianceClientStub = {
+  gatedFeatures: async () => ({ features: [] }),
+  featureGatedTokens: async () => ({ tokens: [] }),
+  setTokenAcknowledgement: async () => ({}),
+} as unknown as ComplianceV2Client
 
 const BLOCK_NUMBER_CONTEXT = { fastForward: () => {}, block: 1234, mainnetBlock: 1234 }
 function MockedBlockNumberProvider({ children }: PropsWithChildren) {
@@ -46,22 +58,24 @@ function MockedMismatchProvider({ children }: PropsWithChildren) {
 
 function CommonTestProviders({ children }: PropsWithChildren) {
   return (
-    <MockedProvider showWarnings={false}>
-      <AssetActivityProvider>
-        <TokenBalancesProvider>
+    <ComplianceClientProvider client={complianceClientStub}>
+      <MockedProvider showWarnings={false}>
+        <TransactionWatcherProvider>
           <ReactRouterUrlProvider>
             <MockedBlockNumberProvider>
               <ThemeProvider>
                 <TamaguiProvider>
-                  <WebAccountsStoreUpdater />
-                  <MockedMismatchProvider>{children}</MockedMismatchProvider>
+                  <PriceServiceProvider queryClient={SharedQueryClient}>
+                    <WebAccountsStoreUpdater />
+                    <MockedMismatchProvider>{children}</MockedMismatchProvider>
+                  </PriceServiceProvider>
                 </TamaguiProvider>
               </ThemeProvider>
             </MockedBlockNumberProvider>
           </ReactRouterUrlProvider>
-        </TokenBalancesProvider>
-      </AssetActivityProvider>
-    </MockedProvider>
+        </TransactionWatcherProvider>
+      </MockedProvider>
+    </ComplianceClientProvider>
   )
 }
 
@@ -74,22 +88,24 @@ function BaseWrapper({
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
           <BrowserRouter>
-            <TestWeb3Provider>
-              <ConnectWalletMutationProvider>
-                <WebAccountsStoreProvider>
-                  <ExternalWalletProvider>
-                    {/* TODO: figure out how to properly mock `WebUniswapProvider` so that we can include it in all tests */}
-                    {includeUniswapContext ? (
-                      <WebUniswapProvider>
+            <NuqsTestingAdapter>
+              <TestWeb3Provider>
+                <ConnectWalletMutationProvider>
+                  <WebAccountsStoreProvider>
+                    <ExternalWalletProvider>
+                      {/* TODO: figure out how to properly mock `WebUniswapProvider` so that we can include it in all tests */}
+                      {includeUniswapContext ? (
+                        <WebUniswapProvider>
+                          <CommonTestProviders>{children}</CommonTestProviders>
+                        </WebUniswapProvider>
+                      ) : (
                         <CommonTestProviders>{children}</CommonTestProviders>
-                      </WebUniswapProvider>
-                    ) : (
-                      <CommonTestProviders>{children}</CommonTestProviders>
-                    )}
-                  </ExternalWalletProvider>
-                </WebAccountsStoreProvider>
-              </ConnectWalletMutationProvider>
-            </TestWeb3Provider>
+                      )}
+                    </ExternalWalletProvider>
+                  </WebAccountsStoreProvider>
+                </ConnectWalletMutationProvider>
+              </TestWeb3Provider>
+            </NuqsTestingAdapter>
           </BrowserRouter>
         </QueryClientProvider>
       </Provider>

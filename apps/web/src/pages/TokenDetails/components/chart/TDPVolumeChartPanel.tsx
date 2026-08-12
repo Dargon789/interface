@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { TimePeriod } from '~/appGraphql/data/util'
 import { ChartSkeleton } from '~/components/Charts/LoadingState'
 import { ChartType, DataQuality } from '~/components/Charts/utils'
 import { VolumeChart } from '~/components/Charts/VolumeChart'
+import { TimePeriod } from '~/data/util'
 import { EXPLORE_CHART_HEIGHT_PX } from '~/features/Explore/constants'
 import { useTDPVolumeChartData, type TDPChartQueryVariables } from '~/pages/TokenDetails/components/chart/hooks'
 
@@ -15,7 +15,7 @@ interface TDPVolumeChartPanelProps {
 export function TDPVolumeChartPanel({ variables, tokenColor, timePeriod }: TDPVolumeChartPanelProps): JSX.Element {
   const { t } = useTranslation()
 
-  const volumeQuery = useTDPVolumeChartData(variables, false)
+  const volumeQuery = useTDPVolumeChartData({ variables, skip: false })
 
   if (volumeQuery.dataQuality === DataQuality.INVALID) {
     return (

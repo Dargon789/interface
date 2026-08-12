@@ -7,6 +7,7 @@ import { TransactionDetails } from 'uniswap/src/features/transactions/types/tran
 import { NATIVE_ANALYTICS_ADDRESS_VALUE } from 'uniswap/src/utils/currencyId'
 
 export enum TokenReportOption {
+  CantSellOrTransfer = 'cant_sell_or_transfer',
   Spam = 'spam',
   Imposter = 'imposter',
   HiddenFees = 'hidden_fees',
@@ -31,6 +32,8 @@ export enum PoolDataReportOption {
 }
 
 export enum PortfolioDataReportOption {
+  Tokens = 'tokens',
+  Pools = 'pools',
   Performance = 'performance',
   Other = 'other',
 }
@@ -62,6 +65,7 @@ export function submitTokenIssueReport({
     chain_id: chainId,
     is_marked_spam: isMarkedSpam,
     is_multichain_asset: isMultichainAsset,
+    cant_sell_or_transfer: reportOptions.includes(TokenReportOption.CantSellOrTransfer),
     spam_token: reportOptions.includes(TokenReportOption.Spam),
     imposter_token: reportOptions.includes(TokenReportOption.Imposter),
     hidden_fees: reportOptions.includes(TokenReportOption.HiddenFees),
@@ -227,6 +231,10 @@ export function submitPortfolioDataReport({
   sendAnalyticsEvent(UniswapEventName.DataReportSubmitted, {
     type: 'portfolio',
     wallet_address: walletAddress,
+    tokens: reportOptions.includes(PortfolioDataReportOption.Tokens),
+    tokens_text: reportTexts.get(PortfolioDataReportOption.Tokens),
+    pools: reportOptions.includes(PortfolioDataReportOption.Pools),
+    pools_text: reportTexts.get(PortfolioDataReportOption.Pools),
     performance: reportOptions.includes(PortfolioDataReportOption.Performance),
     performance_text: reportTexts.get(PortfolioDataReportOption.Performance),
     something_else: reportOptions.includes(PortfolioDataReportOption.Other),

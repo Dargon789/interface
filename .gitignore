@@ -12,6 +12,7 @@ test-results/
 # utility script output
 scripts/dist
 tools/uniswap-nx/dist
+scripts/tamagui-migration/*.json
 
 # build output
 .next/
@@ -35,8 +36,11 @@ yarn-error.log*
 # local env files
 .env
 .env.local
+/.env.defaults
 .env.defaults.local
-.env.tmp
+.env.override
+.env.new
+.env.new.override
 
 # turbo
 .turbo
@@ -101,6 +105,8 @@ CLAUDE.local.md
 
 # argent — skills-lock.json carries per-user absolute paths; the .agents/skills/ tree itself is committed (editor-side .claude/skills/argent-* are symlinks into it)
 skills-lock.json
+# Literal "~" dir created when a tool fails to expand $HOME (e.g. argent mcp-calls.log)
+/~/
 
 # lefthook
 .lefthook/

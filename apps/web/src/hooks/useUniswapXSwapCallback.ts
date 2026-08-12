@@ -17,8 +17,8 @@ import { getValidAddress } from 'uniswap/src/utils/addresses'
 import { getCurrencyAddressForAnalytics } from 'uniswap/src/utils/currencyId'
 import { logger } from 'utilities/src/logger/logger'
 import { useTrace } from 'utilities/src/telemetry/trace/TraceContext'
-import { useTotalBalancesUsdForAnalytics } from '~/appGraphql/data/apollo/useTotalBalancesUsdForAnalytics'
 import { getConfig } from '~/config'
+import { useTotalBalancesUsdForAnalytics } from '~/features/balances/useTotalBalancesUsdForAnalytics'
 import { useAccount } from '~/hooks/useAccount'
 import { useEthersWeb3Provider } from '~/hooks/useEthersProvider'
 import { formatSwapSignedAnalyticsEventProperties } from '~/lib/utils/analytics'
@@ -250,7 +250,6 @@ export function useUniswapXSwapCallback({
       const resultTime = Math.floor(Date.now() / 1000)
       if (deadline < resultTime) {
         sendAnalyticsEvent(InterfaceEventName.UniswapXSignatureDeadlineExpired, {
-          // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
           ...formatSwapSignedAnalyticsEventProperties({
             trade,
             allowedSlippage,
@@ -265,7 +264,6 @@ export function useUniswapXSwapCallback({
         throw new SignatureExpiredError()
       }
       sendAnalyticsEvent(SwapEventName.SwapSigned, {
-        // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
         ...formatSwapSignedAnalyticsEventProperties({
           trade,
           allowedSlippage,
@@ -314,7 +312,6 @@ export function useUniswapXSwapCallback({
       // check for status code and perform this type narrowing.
       if (isErrorResponse(res, responseBody)) {
         sendAnalyticsEvent(InterfaceEventName.UniswapXOrderPostError, {
-          // oxlint-disable-next-line typescript/no-misused-spread -- biome-parity: oxlint is stricter here
           ...formatSwapSignedAnalyticsEventProperties({
             trade,
             allowedSlippage,

@@ -1,7 +1,12 @@
 import { type ApolloClient, type NormalizedCacheObject } from '@apollo/client'
 import { TradeType } from '@uniswap/sdk-core'
 import { SharedQueryClient } from '@universe/api'
-import { Experiments, getExperimentValue, PrivateRpcProperties } from '@universe/gating'
+import {
+  DEFAULT_CALLDATA_HINTS_ENABLED,
+  DEFAULT_FLASHBOTS_ENABLED,
+  FLASHBOTS_DEFAULT_REFUND_PERCENT,
+} from '@universe/chains'
+import { FeatureFlags, getFeatureFlag } from '@universe/gating'
 import { BigNumber } from 'ethers'
 import { call, put, select, takeEvery } from 'typed-redux-saga'
 import { type UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -9,14 +14,10 @@ import { getChainLabel } from 'uniswap/src/features/chains/utils'
 import { findLocalGasStrategy, getGasPrice } from 'uniswap/src/features/gas/utils'
 import { setNotificationStatus } from 'uniswap/src/features/notifications/slice/slice'
 import { refetchQueries } from 'uniswap/src/features/portfolio/portfolioUpdates/refetchQueriesSaga'
-import {
-  DEFAULT_CALLDATA_HINTS_ENABLED,
-  DEFAULT_FLASHBOTS_ENABLED,
-  FLASHBOTS_DEFAULT_REFUND_PERCENT,
-} from 'uniswap/src/features/providers/FlashbotsCommon'
 import { MobileAppsFlyerEvents, SwapEventName, WalletEventName } from 'uniswap/src/features/telemetry/constants'
 import { sendAnalyticsEvent, sendAppsFlyerEvent } from 'uniswap/src/features/telemetry/send'
-import { selectSwapTransactionsCount } from 'uniswap/src/features/transactions/selectors'
+import { getCancelTxFinalizationUpdates } from 'uniswap/src/features/transactions/cancel/getCancelTxFinalizationUpdates'
+import { selectSwapTransactionsCount, selectTransactions } from 'uniswap/src/features/transactions/selectors'
 import { transactionActions } from 'uniswap/src/features/transactions/slice'
 import { getRouteAnalyticsData, tradeRoutingToFillType } from 'uniswap/src/features/transactions/swap/analytics'
 import { activePlanStore } from 'uniswap/src/features/transactions/swap/review/stores/activePlan/activePlanStore'
@@ -37,7 +38,6 @@ import { getDiff, getOptionalTransactionProperty, getPercentageError } from 'wal
 import { selectActiveAccountAddress } from 'wallet/src/features/wallet/selectors'
 
 export function* finalizeTransaction({
-  apolloClient,
   transaction,
 }: {
   apolloClient: ApolloClient<NormalizedCacheObject>
@@ -51,7 +51,6 @@ export function* finalizeTransaction({
   const activeAddress = yield* select(selectActiveAccountAddress)
   yield* refetchQueries({
     transaction,
-    apolloClient,
     activeAddress,
   })
 
@@ -107,6 +106,13 @@ export function logTransactionEvent(actionData: ReturnType<typeof transactionAct
     const isOnChainTransaction = 'options' in payload
     const includesDelegation = isOnChainTransaction ? payload.options.includesDelegation : undefined
     const isSmartWalletTransaction = isOnChainTransaction ? payload.options.isSmartWalletTransaction : undefined
+    const userSubmissionTimestampMs = isOnChainTransaction ? payload.options.userSubmissionTimestampMs : undefined
+    // Submission-to-inclusion latency (epoch ms). For 4337 userOps the completion event fires on bundler
+    // success, before the on-chain receipt lands, so `confirmedTime` is usually absent — fall back to
+    // finalization time as the inclusion timestamp. Null unless we know when the user submitted.
+    const inclusionTimestampMs = confirmedTime ?? Date.now()
+    const timeToInclusionMs =
+      userSubmissionTimestampMs !== undefined ? inclusionTimestampMs - userSubmissionTimestampMs : undefined
 
     const { quoteId, gasUseEstimate, inputCurrencyId, outputCurrencyId, transactedUSDValue } = typeInfo
 
@@ -132,6 +138,9 @@ export function logTransactionEvent(actionData: ReturnType<typeof transactionAct
       routing: tradeRoutingToFillType({ routing: payload.routing, indicative: false }),
       id: payload.id,
       hash: payload.hash,
+      // For 4337 swaps the bundler returns a UserOp hash; the wallet controls the bundler so this is reliable here.
+      user_op_hash: payload.userOpHash,
+      time_to_inclusion_ms: timeToInclusionMs,
       transactionOriginType,
       address: from,
       chain_id: chainId,
@@ -146,6 +155,14 @@ export function logTransactionEvent(actionData: ReturnType<typeof transactionAct
       submitViaPrivateRpc: isUniswapX(payload) ? false : payload.options.submitViaPrivateRpc,
       transactedUSDValue,
       swap_start_timestamp: typeInfo.swapStartTimestamp,
+      // Execution-time gas sponsorship captured at submit (see isGasSponsoredExecution)
+      is_sponsored: typeInfo.isSponsored,
+      sponsorship_campaign_id: typeInfo.sponsorshipCampaignId,
+      // RWA analytics captured at submit (see getRwaSwapAnalyticsProperties)
+      market_closed: typeInfo.marketClosed,
+      price_warning: typeInfo.priceWarning,
+      token_in_stocks: typeInfo.tokenInStocks,
+      token_out_stocks: typeInfo.tokenOutStocks,
       // Chained action analytics fields
       plan_id: typeInfo.planId,
       step_index: typeInfo.stepIndex,
@@ -245,23 +262,9 @@ function logSend(typeInfo: SendTokenTransactionInfo, chainId: UniverseChainId): 
 }
 
 export function logTransactionTimeout(transaction: TransactionDetails): void {
-  const flashbotsEnabled = getExperimentValue({
-    experiment: Experiments.PrivateRpc,
-    param: PrivateRpcProperties.FlashbotsEnabled,
-    defaultValue: DEFAULT_FLASHBOTS_ENABLED,
-  })
-
-  const flashbotsRefundPercent = getExperimentValue({
-    experiment: Experiments.PrivateRpc,
-    param: PrivateRpcProperties.RefundPercent,
-    defaultValue: FLASHBOTS_DEFAULT_REFUND_PERCENT,
-  })
-
-  const calldataHintsEnabled = getExperimentValue({
-    experiment: Experiments.PrivateRpc,
-    param: PrivateRpcProperties.CalldataHintsEnabled,
-    defaultValue: DEFAULT_CALLDATA_HINTS_ENABLED,
-  })
+  const flashbotsEnabled = DEFAULT_FLASHBOTS_ENABLED
+  const flashbotsRefundPercent = FLASHBOTS_DEFAULT_REFUND_PERCENT
+  const calldataHintsEnabled = DEFAULT_CALLDATA_HINTS_ENABLED
 
   sendAnalyticsEvent(WalletEventName.PendingTransactionTimeout, {
     use_flashbots: flashbotsEnabled,
@@ -286,7 +289,7 @@ export function logTransactionTimeout(transaction: TransactionDetails): void {
 function maybeLogGasEstimateAccuracy(transaction: TransactionDetails): void {
   const { gasEstimate } = transaction.typeInfo
   const currentTimeMs = Date.now()
-  const transactionGasLimit = getOptionalTransactionProperty(transaction, (options) => options.request.gasLimit)
+  const transactionGasLimit = getOptionalTransactionProperty(transaction, (options) => options.request?.gasLimit)
   const userSubmissionTimestampMs = getOptionalTransactionProperty(
     transaction,
     (options) => options.userSubmissionTimestampMs,
@@ -370,7 +373,36 @@ function logSwapSuccess(
   })
 }
 
+/**
+ * Flips UniswapX orders when their tracked cancel tx finalizes (pure core in
+ * getCancelTxFinalizationUpdates). Covers every `finalizeTransaction` dispatch site.
+ */
+export function* handleCancelTxFinalized(
+  actionData: ReturnType<typeof transactionActions.finalizeTransaction>,
+): Generator<unknown> {
+  const { payload } = actionData
+  if (payload.typeInfo.type !== TransactionType.UniswapXCancel) {
+    return
+  }
+  if (!getFeatureFlag(FeatureFlags.LimitCancelTimeout)) {
+    return
+  }
+
+  const transactionsState = yield* select(selectTransactions)
+  const updates = getCancelTxFinalizationUpdates({
+    transaction: payload,
+    transactionsState,
+    nowMs: Date.now(),
+  })
+  for (const update of updates) {
+    yield* put(update)
+  }
+}
+
 export function* watchTransactionEvents(): Generator<unknown> {
   // Watch for finalized transactions to send analytics events
   yield* takeEvery(transactionActions.finalizeTransaction.type, logTransactionEvent)
+
+  // Watch for finalized cancel txs to flip their linked UniswapX orders
+  yield* takeEvery(transactionActions.finalizeTransaction.type, handleCancelTxFinalized)
 }

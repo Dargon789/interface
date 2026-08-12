@@ -1,30 +1,33 @@
+import { isMobileWeb } from '@universe/environment'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { atom, useAtom } from 'jotai'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatedPager, Flex, useMedia, WebBottomSheet } from 'ui/src'
+import { HeightAnimator } from 'ui/src/animations/components/HeightAnimator'
 import { INTERFACE_NAV_HEIGHT } from 'ui/src/theme'
 import { Modal } from 'uniswap/src/components/modals/Modal'
 import { ModalName } from 'uniswap/src/features/telemetry/constants'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { ChooseUnitagModal } from '~/components/NavBar/DownloadApp/Modal/ChooseUnitag'
+import { Page } from '~/components/NavBar/DownloadApp/Modal/constants'
 import { DownloadAppsModal } from '~/components/NavBar/DownloadApp/Modal/DownloadApps'
+import { EmbeddedWalletOnboardingFlow } from '~/components/NavBar/DownloadApp/Modal/EmbeddedWalletOnboarding/EmbeddedWalletOnboardingFlow'
+import {
+  logEmbeddedWalletOnboardingExposure,
+  useIsEmbeddedWalletOnboardingNewFlow,
+} from '~/components/NavBar/DownloadApp/Modal/EmbeddedWalletOnboarding/useEmbeddedWalletOnboardingExperiment'
 import { KeyManagementModal } from '~/components/NavBar/DownloadApp/Modal/KeyManagement'
 import { PasskeyGenerationModal } from '~/components/NavBar/DownloadApp/Modal/PasskeyGeneration'
+import { useAndroidKeyboardViewportFix } from '~/hooks/useAndroidKeyboardViewportFix'
 import { useIOSBodyScrollLock } from '~/hooks/useIOSBodyScrollLock'
 import { useModalState } from '~/hooks/useModalState'
 import { useAppSelector } from '~/state/hooks'
-
-export enum Page {
-  DownloadApp = 0,
-  ChooseUnitag = 1,
-  KeyManagement = 2,
-  PasskeyGeneration = 3,
-}
 
 export const downloadAppModalPageAtom = atom<Page>(Page.DownloadApp)
 
 export function GetTheAppModal() {
   const isEmbeddedWalletEnabled = useFeatureFlag(FeatureFlags.EmbeddedWallet)
+  const isNewOnboardingFlow = useIsEmbeddedWalletOnboardingNewFlow()
   const initialInnerPage = useAppSelector((state) => {
     const modal = state.application.openModal
     return modal?.name === ModalName.GetTheApp ? modal.initialState?.initialInnerPage : undefined
@@ -34,6 +37,9 @@ export function GetTheAppModal() {
 
   const [page, setPage] = useAtom(downloadAppModalPageAtom)
   const { isOpen, closeModal } = useModalState(ModalName.GetTheApp)
+  // Keep this fixed bottom sheet on-screen when the Android soft keyboard opens (unitag step). No-op on
+  // iOS/desktop; on Android resizes-content also drives useIOSBodyScrollLock's keyboardHeight to ~0.
+  useAndroidKeyboardViewportFix(isOpen)
 
   // Read `initialPage` through a ref inside the 500ms timeout so the post-close reset uses
   // the recomputed value (after Redux clears `openModal` and `showMobileDownload` flips
@@ -53,31 +59,47 @@ export function GetTheAppModal() {
     setPage(initialPage)
   }, [initialPage, setPage])
 
+  const isEnteringCreateWalletFlow = isOpen && isEmbeddedWalletEnabled && !showMobileDownload
+  const showNewOnboardingFlow = isEnteringCreateWalletFlow && isNewOnboardingFlow
+
+  // Log experiment exposure when the user actually opens the create-wallet flow (not on page load),
+  // so both arms are counted at the same entry point.
+  useEffect(() => {
+    if (isEnteringCreateWalletFlow) {
+      logEmbeddedWalletOnboardingExposure()
+    }
+  }, [isEnteringCreateWalletFlow])
+
   const media = useMedia()
   const isSheet = media.md
-  const isDismissible = !isEmbeddedWalletEnabled || showMobileDownload
+  const isDismissible = !(isEmbeddedWalletEnabled && !isMobileWeb) || showMobileDownload
 
   const keyboardHeight = useIOSBodyScrollLock(isOpen)
 
   const content = (
     <Flex data-testid={TestID.DownloadUniswapModal} position="relative" userSelect="none" width="100%">
-      {/* The Page enum value corresponds to the modal page's index */}
-      <AnimatedPager currentIndex={page}>
-        <DownloadAppsModal onClose={close} initialInnerPage={showMobileDownload ? 'mobile' : undefined} />
-        <ChooseUnitagModal
-          setUnitag={setUnitag}
-          goBack={isEmbeddedWalletEnabled ? undefined : () => setPage(Page.DownloadApp)}
-          onClose={close}
-          setPage={setPage}
-        />
-        <KeyManagementModal goBack={() => setPage(Page.ChooseUnitag)} onClose={close} setPage={setPage} />
-        <PasskeyGenerationModal
-          unitag={unitag}
-          goBack={() => setPage(Page.KeyManagement)}
-          onClose={close}
-          setPage={setPage}
-        />
-      </AnimatedPager>
+      {showNewOnboardingFlow && <EmbeddedWalletOnboardingFlow onClose={close} />}
+      {!showNewOnboardingFlow && (
+        <HeightAnimator animation="quickLong">
+          {/* The Page enum value corresponds to the modal page's index */}
+          <AnimatedPager animation="quickLong" currentIndex={page}>
+            <DownloadAppsModal onClose={close} initialInnerPage={showMobileDownload ? 'mobile' : undefined} />
+            <ChooseUnitagModal
+              setUnitag={setUnitag}
+              goBack={isEmbeddedWalletEnabled ? undefined : () => setPage(Page.DownloadApp)}
+              onClose={close}
+              setPage={setPage}
+            />
+            <KeyManagementModal goBack={() => setPage(Page.ChooseUnitag)} onClose={close} setPage={setPage} />
+            <PasskeyGenerationModal
+              unitag={unitag}
+              goBack={() => setPage(Page.KeyManagement)}
+              onClose={close}
+              setPage={setPage}
+            />
+          </AnimatedPager>
+        </HeightAnimator>
+      )}
     </Flex>
   )
 
@@ -89,7 +111,8 @@ export function GetTheAppModal() {
         isOpen={isOpen}
         onClose={isDismissible ? close : undefined}
         maxHeight={`calc(100dvh - ${INTERFACE_NAV_HEIGHT}px)`}
-        p={0}
+        px="$spacing24"
+        pb="$spacing24"
       >
         <Flex pb={keyboardHeight ? `${keyboardHeight}px` : undefined}>{content}</Flex>
       </WebBottomSheet>

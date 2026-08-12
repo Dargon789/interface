@@ -1,5 +1,6 @@
 import { META_TAG_FETCH_TIMEOUT_MS } from 'functions/constants'
 import { Data } from 'functions/utils/cache'
+import getAuction from 'functions/utils/getAuction'
 import getPool from 'functions/utils/getPool'
 import getPosition from 'functions/utils/getPosition'
 import { getRequest } from 'functions/utils/getRequest'
@@ -10,6 +11,12 @@ import { withTimeout } from 'uniswap/src/utils/polling'
 import { paths } from '~/pages/paths'
 import { MetaTagInjectorInput } from '~/shared-cloud/metatags'
 
+// Shared links often carry trailing slashes (e.g. /launches/); normalize so they match their canonical path.
+function stripTrailingSlash(pathname: string): string {
+  const stripped = pathname.replace(/\/+$/, '')
+  return stripped === '' ? '/' : stripped
+}
+
 function doesMatchPath(path: string): boolean {
   const regexPaths = paths.map((p) => '^' + p.replace(/:[^/]+/g, '[^/]+').replace(/\*/g, '.*') + '$')
   // These come from a constant we define (paths.ts), so we don't need to worry about them being malicious.
@@ -17,7 +24,9 @@ function doesMatchPath(path: string): boolean {
   return regexPaths.some((regex) => new RegExp(regex).test(path))
 }
 
-function parseExplorePath(pathname: string): { type: 'token' | 'pool'; networkName: string; address: string } | null {
+function parseExplorePath(
+  pathname: string,
+): { type: 'token' | 'pool' | 'auction'; networkName: string; address: string } | null {
   const tokenMatch = pathname.match(/^\/explore\/tokens\/([^/]+)\/([^/]+)$/)
   if (tokenMatch) {
     return {
@@ -32,6 +41,14 @@ function parseExplorePath(pathname: string): { type: 'token' | 'pool'; networkNa
       type: 'pool',
       networkName: poolMatch[1],
       address: poolMatch[2],
+    }
+  }
+  const auctionMatch = pathname.match(/^\/explore\/auctions\/([^/]+)\/([^/]+)$/)
+  if (auctionMatch) {
+    return {
+      type: 'auction',
+      networkName: auctionMatch[1],
+      address: auctionMatch[2],
     }
   }
   return null
@@ -49,6 +66,10 @@ function parsePositionPath(
     }
   }
   return null
+}
+
+function defaultImageUri(origin: string): string {
+  return origin + '/images/1200x630_Rich_Link_Preview_Image.png'
 }
 
 // oxlint-disable-next-line max-params
@@ -92,29 +113,34 @@ async function fetchExploreData({
   origin,
   requestUrl,
 }: {
-  type: 'token' | 'pool'
+  type: 'token' | 'pool' | 'auction'
   networkName: string
   address: string
   origin: string
   requestUrl: string
 }): Promise<MetaTagInjectorInput | null> {
-  const cacheUrl = `${origin}/${type}s/${networkName}/${address}`
+  const cachePath = type === 'auction' ? 'auctions' : `${type}s`
+  const cacheUrl = `${origin}/${cachePath}/${networkName}/${address}`
 
   const validateDataToken = (data: Data): data is NonNullable<Awaited<ReturnType<typeof getToken>>> =>
     Boolean(data.tokenData?.symbol && data.name)
 
   const validateDataPool = (data: Data): data is NonNullable<Awaited<ReturnType<typeof getPool>>> => Boolean(data.title)
+  const validateDataAuction = (data: Data): data is NonNullable<Awaited<ReturnType<typeof getAuction>>> =>
+    Boolean(data.auctionData?.tokenSymbol && data.name)
 
   const data = await getRequest({
     url: cacheUrl,
     getData: () =>
       type === 'token'
         ? getToken({ networkName, tokenAddress: address, url: cacheUrl })
-        : getPool({ networkName, poolAddress: address, url: cacheUrl }),
-    validateData: type === 'token' ? validateDataToken : validateDataPool,
+        : type === 'pool'
+          ? getPool({ networkName, poolAddress: address, url: cacheUrl })
+          : getAuction({ chainName: networkName, auctionAddress: address, url: cacheUrl }),
+    validateData: type === 'token' ? validateDataToken : type === 'pool' ? validateDataPool : validateDataAuction,
   })
 
-  return data ? { title: data.title, image: data.image, url: requestUrl } : null
+  return data ? { title: data.title, image: data.image, url: requestUrl, description: data.description } : null
 }
 
 async function fetchPositionData({
@@ -143,8 +169,12 @@ async function fetchPositionData({
 
 export async function metaTagInjectionMiddleware(c: Context, next: Next): Promise<Response> {
   const requestURL = new URL(c.req.url)
+  const pathname = stripTrailingSlash(requestURL.pathname)
+  // Single og:url per page: trailing-slash variants must not split share counts / preview caches.
+  const canonicalUrl = requestURL.origin + pathname
 
-  if (!doesMatchPath(requestURL.pathname)) {
+  // Also check the raw pathname: wildcard entries like /vote/* only match /vote/ before normalization.
+  if (!doesMatchPath(pathname) && !doesMatchPath(requestURL.pathname)) {
     await next()
     return c.res
   }
@@ -162,8 +192,8 @@ export async function metaTagInjectionMiddleware(c: Context, next: Next): Promis
     const clonedResponse = originalResponse.clone()
     const html = await clonedResponse.text()
 
-    const exploreData = parseExplorePath(requestURL.pathname)
-    const positionData = parsePositionPath(requestURL.pathname)
+    const exploreData = parseExplorePath(pathname)
+    const positionData = parsePositionPath(pathname)
     let data: MetaTagInjectorInput
 
     if (exploreData) {
@@ -174,7 +204,7 @@ export async function metaTagInjectionMiddleware(c: Context, next: Next): Promis
           networkName: exploreData.networkName,
           address: exploreData.address,
           origin,
-          requestUrl: c.req.url,
+          requestUrl: canonicalUrl,
         }),
         { timeoutMs: META_TAG_FETCH_TIMEOUT_MS, errorMsg: 'fetchExploreData timeout' },
       ).catch(() => null)
@@ -192,7 +222,7 @@ export async function metaTagInjectionMiddleware(c: Context, next: Next): Promis
           chainName: positionData.chainName,
           identifier: positionData.identifier,
           origin,
-          requestUrl: c.req.url,
+          requestUrl: canonicalUrl,
         }),
         { timeoutMs: META_TAG_FETCH_TIMEOUT_MS, errorMsg: 'fetchPositionData timeout' },
       ).catch(() => null)
@@ -202,12 +232,19 @@ export async function metaTagInjectionMiddleware(c: Context, next: Next): Promis
       }
 
       data = positionMeta
+    } else if (pathname === '/launches') {
+      // English on purpose (like the default card below): crawlers read OG tags once per URL and don't reliably send Accept-Language.
+      data = {
+        title: 'Token launches on Uniswap',
+        image: defaultImageUri(requestURL.origin),
+        url: canonicalUrl,
+        description: 'Discover and trade new token launches across launchpads, all in one place.',
+      }
     } else {
-      const imageUri = requestURL.origin + '/images/1200x630_Rich_Link_Preview_Image.png'
       data = {
         title: 'Uniswap Interface',
-        image: imageUri,
-        url: c.req.url,
+        image: defaultImageUri(requestURL.origin),
+        url: canonicalUrl,
         description:
           'Swap crypto on Ethereum, Base, Arbitrum, Polygon, Unichain and more. The DeFi platform trusted by millions.',
       }

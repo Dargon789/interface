@@ -7,6 +7,7 @@ import { ClientDetails, PermitInfo } from 'src/components/Requests/RequestModal/
 import {
   isBatchedTransactionRequest,
   isTransactionRequest,
+  isUserOpRequest,
   WalletConnectSigningRequest,
 } from 'src/features/walletConnect/walletConnectSlice'
 import { Flex, Text } from 'ui/src'
@@ -25,7 +26,13 @@ import { DappSendCallsScanningContent } from 'wallet/src/components/dappRequests
 import { DappSignTypedDataContent } from 'wallet/src/components/dappRequests/DappSignTypedDataContent'
 import { DappTransactionScanningContent } from 'wallet/src/components/dappRequests/DappTransactionScanningContent'
 import { WarningBox } from 'wallet/src/components/WarningBox/WarningBox'
-import { TransactionRiskLevel } from 'wallet/src/features/dappRequests/types'
+import { useBlockaidVerification } from 'wallet/src/features/dappRequests/hooks/useBlockaidVerification'
+import { type DappVerificationStatus, TransactionRiskLevel } from 'wallet/src/features/dappRequests/types'
+import {
+  applyFirstPartyOverride,
+  isFirstPartyDapp,
+  mergeVerificationStatuses,
+} from 'wallet/src/features/dappRequests/verification'
 
 const isPotentiallyUnsafe = (request: WalletConnectSigningRequest): boolean => request.type !== EthMethod.PersonalSign
 
@@ -84,12 +91,23 @@ export function WalletConnectRequestModalContent({
   const permitInfo = getPermitInfo(request)
   const nativeCurrency = getChainInfo(chainId).nativeCurrency
 
-  const { animatedFooterHeight } = useBottomSheetInternal()
+  const { verificationStatus: blockaidStatus, isLoading: isVerificationLoading } = useBlockaidVerification(
+    request.dappRequestInfo.url,
+  )
+  // Merge WC Verify + Blockaid; only apply the first-party override against the WC Verify
+  // trusted origin — never the dapp-supplied metadata URL. Undefined while loading so the
+  // badge/alert don't flash an intermediate state.
+  const verificationStatus: DappVerificationStatus | undefined = isVerificationLoading
+    ? undefined
+    : applyFirstPartyOverride(mergeVerificationStatuses(request.verifyStatus, blockaidStatus), request.trustedOriginUrl)
+  const isFirstParty = isFirstPartyDapp(request.trustedOriginUrl)
+
+  const { animatedLayoutState } = useBottomSheetInternal()
 
   const netInfo = useNetInfo()
 
   const bottomSpacerStyle = useAnimatedStyle(() => ({
-    height: animatedFooterHeight.value,
+    height: animatedLayoutState.value.footerHeight,
   }))
 
   // If link mode is supported, we can sign messages through universal links on device
@@ -98,13 +116,19 @@ export function WalletConnectRequestModalContent({
   return (
     <>
       <Flex px="$spacing24" mb="$spacing24">
-        <ClientDetails permitInfo={permitInfo} request={request} />
+        <ClientDetails
+          permitInfo={permitInfo}
+          request={request}
+          verificationStatus={verificationStatus}
+          isFirstParty={isFirstParty}
+        />
       </Flex>
 
       <Flex px="$spacing16">
         <ScanningContent
           request={request}
           chainId={chainId}
+          siteVerificationStatus={verificationStatus}
           gasFee={gasFee}
           showSmartWalletActivation={showSmartWalletActivation}
           confirmedRisk={confirmedRisk}
@@ -217,6 +241,7 @@ function WarningSection({
 function ScanningContent({
   request,
   chainId,
+  siteVerificationStatus,
   gasFee,
   showSmartWalletActivation,
   confirmedRisk,
@@ -227,6 +252,7 @@ function ScanningContent({
 }: {
   request: WalletConnectSigningRequest
   chainId: number
+  siteVerificationStatus?: DappVerificationStatus
   gasFee: GasFeeResult
   showSmartWalletActivation?: boolean
   confirmedRisk: boolean
@@ -243,6 +269,7 @@ function ScanningContent({
           chainId={chainId}
           account={request.account}
           dappUrl={request.dappRequestInfo.url}
+          siteVerificationStatus={siteVerificationStatus}
           gasFee={gasFee}
           requestMethod={request.type}
           showSmartWalletActivation={showSmartWalletActivation}
@@ -289,12 +316,14 @@ function ScanningContent({
           chainId={chainId}
           account={request.account}
           dappUrl={request.dappRequestInfo.url}
+          siteVerificationStatus={siteVerificationStatus}
           gasFee={gasFee}
           requestMethod={request.type}
           showSmartWalletActivation={showSmartWalletActivation}
           confirmedRisk={confirmedRisk}
           tx={isBatchedTransactionRequest(request) ? { ...request.encodedTransaction, chainId } : undefined}
           gasOverrides={gasOverrides}
+          sponsorMetadata={isUserOpRequest(request) && request.gasSponsored ? request.sponsorMetadata : undefined}
           onConfirmRisk={onConfirmRisk}
           onChangeGasOverrides={onChangeGasOverrides}
           onRiskLevelChange={onRiskLevelChange}

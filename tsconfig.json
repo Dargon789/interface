@@ -99,6 +99,18 @@
     },
     {
       "path": "./packages/cryptography"
+    },
+    {
+      "path": "./packages/compliance"
+    },
+    {
+      "path": "./packages/tailwind"
+    },
+    {
+      "path": "./packages/experiments"
+    },
+    {
+      "path": "packages/embedded-wallet"
     }
   ]
 }

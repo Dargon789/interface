@@ -1,6 +1,7 @@
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { Currency, CurrencyAmount, Price, Token } from '@uniswap/sdk-core'
-import { useMemo } from 'react'
+import { useGetPasskeyAuthStatus } from '@universe/embedded-wallet'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex, Separator, Text } from 'ui/src'
 import { InfoCircleFilled } from 'ui/src/components/icons/InfoCircleFilled'
@@ -12,16 +13,17 @@ import { NetworkLogo } from 'uniswap/src/components/CurrencyLogo/NetworkLogo'
 import { TokenLogo } from 'uniswap/src/components/CurrencyLogo/TokenLogo'
 import { GetHelpHeader } from 'uniswap/src/components/dialog/GetHelpHeader'
 import { Modal } from 'uniswap/src/components/modals/Modal'
+import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useAppFiatCurrencyInfo } from 'uniswap/src/features/fiatCurrency/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { useGetPasskeyAuthStatus } from 'uniswap/src/features/passkey/hooks/useGetPasskeyAuthStatus'
 import { ModalNameType } from 'uniswap/src/features/telemetry/constants'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
 import { TransactionStep } from 'uniswap/src/features/transactions/steps/types'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { NumberType } from 'utilities/src/format/types'
 import { DetailLineItem } from '~/components/DetailLineItem'
 import { ErrorCallout } from '~/components/ErrorCallout'
+import { LPGeoRestrictionBanner } from '~/components/GeoRestriction/LPGeoRestrictionBanner'
 import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
 import { MouseoverTooltip } from '~/components/Tooltip'
 import { BaseQuoteFiatAmount } from '~/features/Liquidity/BaseQuoteFiatAmount'
@@ -30,14 +32,18 @@ import {
   WrappedLiquidityPositionRangeChart,
 } from '~/features/Liquidity/charts/LiquidityPositionRangeChart/LiquidityPositionRangeChart'
 import { PoolOutOfSyncError } from '~/features/Liquidity/Create/PoolOutOfSyncError'
+import { useSelectedFeeBreakdown } from '~/features/Liquidity/hooks/useSelectedFeeBreakdown'
 import { LiquidityPositionInfoBadges } from '~/features/Liquidity/LiquidityPositionInfoBadges'
 import { LowLPSlippageWarning } from '~/features/Liquidity/LowLPSlippageWarning'
+import { PartialMigrationWarning } from '~/features/Liquidity/PartialMigrationWarning'
+import { useLPGeoRestriction } from '~/features/Liquidity/useLPGeoRestriction'
 import { getBaseAndQuoteCurrencies } from '~/features/Liquidity/utils/currency'
 import { getTickToPrice, getV4TickToPrice } from '~/features/Liquidity/utils/getTickToPrice'
 import { getTicksAtLimit } from '~/features/Liquidity/utils/priceRangeInfo'
 import { useCurrencyInfo } from '~/hooks/Tokens'
 import { useAccount } from '~/hooks/useAccount'
 import { useCreateLiquidityContext } from '~/pages/CreatePosition/CreateLiquidityContextProvider'
+import { CurrencyAmountMap } from '~/types/liquidity'
 import { PositionField } from '~/types/position'
 
 export interface ReviewModalProps {
@@ -46,9 +52,10 @@ export interface ReviewModalProps {
   depositText?: string
   confirmButtonText: string
   formattedAmounts?: { [field in PositionField]?: string }
-  currencyAmounts?: { [field in PositionField]?: Maybe<CurrencyAmount<Currency>> }
-  currencyAmountsUSDValue?: { [field in PositionField]?: Maybe<CurrencyAmount<Currency>> }
-  refundedAmounts?: { [field in PositionField]?: Maybe<CurrencyAmount<Currency>> }
+  currencyAmounts?: CurrencyAmountMap
+  currencyAmountsUSDValue?: CurrencyAmountMap
+  feeAmounts?: CurrencyAmountMap
+  refundedAmounts?: CurrencyAmountMap
   isDisabled?: boolean
   gasFeeEstimateUSD?: Maybe<CurrencyAmount<Currency>>
   transactionError: string | boolean
@@ -72,23 +79,29 @@ function TokenInfo({
   const { formatCurrencyAmount } = useLocalizationContext()
   const { decimalSeparator } = useAppFiatCurrencyInfo()
 
+  const displayAmount = formattedAmount
+    ? replaceSeparators({
+        value: formattedAmount,
+        decimalSeparator: '.',
+        decimalOverride: decimalSeparator,
+      })
+    : formatCurrencyAmount({ value: currencyAmount, type: NumberType.TokenTx })
+
   return (
     currencyAmount &&
     currencyAmount.greaterThan(0) && (
-      <Flex row justifyContent="space-between">
-        <Flex gap="$gap4">
-          <Flex row gap="$gap8">
-            <Text variant="body1">
-              {formattedAmount
-                ? replaceSeparators({
-                    value: formattedAmount,
-                    decimalSeparator: '.',
-                    decimalOverride: decimalSeparator,
-                  })
-                : formatCurrencyAmount({ value: currencyAmount, type: NumberType.TokenTx })}
-            </Text>
-            <Text variant="body1">{currencyAmount.currency.symbol}</Text>
-          </Flex>
+      <Flex row justifyContent="space-between" gap="$gap8">
+        <Flex gap="$gap4" flex={1} minWidth={0}>
+          <MouseoverTooltip text={`${displayAmount} ${currencyAmount.currency.symbol}`} placement="top">
+            <Flex row gap="$gap8" minWidth={0}>
+              <Text variant="body1" numberOfLines={1} ellipsizeMode="tail">
+                {displayAmount}
+              </Text>
+              <Text variant="body1" flexShrink={0}>
+                {currencyAmount.currency.symbol}
+              </Text>
+            </Flex>
+          </MouseoverTooltip>
           <Text variant="body3" color="$neutral2">
             {formatCurrencyAmount({ value: currencyUSDAmount, type: NumberType.FiatTokenPrice })}
           </Text>
@@ -114,6 +127,7 @@ export function ReviewModal({
   formattedAmounts,
   currencyAmounts,
   currencyAmountsUSDValue,
+  feeAmounts,
   refundedAmounts,
   isDisabled,
   gasFeeEstimateUSD,
@@ -129,6 +143,7 @@ export function ReviewModal({
     protocolVersion,
     creatingPoolOrPair,
     positionState: { fee, hook },
+    protocolFee,
     currentTransactionStep,
     price,
     poolOrPair,
@@ -142,6 +157,26 @@ export function ReviewModal({
   const token0CurrencyInfo = useCurrencyInfo(token0)
   const token1CurrencyInfo = useCurrencyInfo(token1)
   const chainId = token0?.chainId
+
+  // The signing-surface half of the gate, for both callers (create and migrate). Read here rather
+  // than threaded in from the form step on purpose: the form gate fails open while the compliance
+  // answer is in flight, so a user can press Continue and open this modal before the verdict lands.
+  // Re-reading inside the modal is what catches that window — a restriction resolving now kills the
+  // confirm under the user instead of leaving a live signable transaction.
+  const { isGeoRestricted, restrictedTokenSymbol, unavailableLabel } = useLPGeoRestriction({ token0, token1 })
+
+  // Guards both callers' submit handlers (`handleCreate`, migration's `handleConfirm`) at the
+  // boundary, so neither can dispatch a liquidity saga while the block is up.
+  const handleConfirm = useCallback(() => {
+    if (isGeoRestricted) {
+      return
+    }
+    onConfirm()
+  }, [isGeoRestricted, onConfirm])
+
+  // Breakdown for the fee badge below the pair header, from the context's served protocol fee (existing
+  // pool) or the curve (not-yet-created vanilla v4). Shared with the select step and edit summary.
+  const feeBreakdown = useSelectedFeeBreakdown({ protocolVersion, fee, servedProtocolFee: protocolFee, hook })
 
   const { formatNumberOrString, formatCurrencyAmount } = useLocalizationContext()
 
@@ -239,7 +274,14 @@ export function ReviewModal({
                   <Text variant="heading3">{currencyAmounts?.TOKEN1?.currency.symbol}</Text>
                 </Flex>
                 <Flex row gap={2} alignItems="center">
-                  <LiquidityPositionInfoBadges size="small" version={protocolVersion} v4hook={hook} feeTier={fee} />
+                  <LiquidityPositionInfoBadges
+                    size="small"
+                    version={protocolVersion}
+                    v4hook={hook}
+                    chainId={chainId as UniverseChainId | undefined}
+                    feeTier={fee}
+                    feeBreakdown={feeBreakdown}
+                  />
                 </Flex>
               </Flex>
               <DoubleCurrencyLogo
@@ -320,8 +362,22 @@ export function ReviewModal({
             <LowLPSlippageWarning
               isNativePool={Boolean(currencies.sdk.TOKEN0?.isNative || currencies.sdk.TOKEN1?.isNative)}
             />
-            <ErrorCallout errorMessage={transactionError} onPress={refetch} />
-            <PoolOutOfSyncError />
+            <PartialMigrationWarning
+              currencyAmounts={currencyAmounts}
+              currencyAmountsUSDValue={currencyAmountsUSDValue}
+              feeAmounts={feeAmounts}
+              refundedAmounts={refundedAmounts}
+              refundedAmountsUSDValue={{ TOKEN0: refundedToken0USD, TOKEN1: refundedToken1USD }}
+            />
+            {/* Owns the message when up: a dead confirm with no stated reason is the failure mode. */}
+            {isGeoRestricted ? (
+              <LPGeoRestrictionBanner tokenSymbol={restrictedTokenSymbol} />
+            ) : (
+              <>
+                <ErrorCallout errorMessage={transactionError} onPress={refetch} />
+                <PoolOutOfSyncError />
+              </>
+            )}
           </Flex>
         </Flex>
         {currentTransactionStep && steps.length > 1 ? (
@@ -360,12 +416,16 @@ export function ReviewModal({
               <Button
                 size="large"
                 variant="branded"
-                onPress={onConfirm}
-                isDisabled={isDisabled}
+                onPress={handleConfirm}
+                disabled={isDisabled || isGeoRestricted}
                 fill={false}
-                icon={needsPasskeySignin ? <Passkey size="$icon.24" color="$white" /> : undefined}
+                icon={needsPasskeySignin && !isGeoRestricted ? <Passkey size="$icon.24" color="$white" /> : undefined}
               >
-                {isSignedInWithPasskey && isSessionAuthenticated ? t('position.create.confirm') : confirmButtonText}
+                {isGeoRestricted
+                  ? unavailableLabel
+                  : isSignedInWithPasskey && isSessionAuthenticated
+                    ? t('position.create.confirm')
+                    : confirmButtonText}
               </Button>
             )}
           </>

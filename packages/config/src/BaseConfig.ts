@@ -1,7 +1,8 @@
 // oxlint-disable eslint-js/no-restricted-syntax -- allow process.env access here
 import { AppId } from '@universe/config/src/AppId'
 import { boolIfDefined, boolFromOne, boolFromString, optionalString } from '@universe/config/src/commonSchemas'
-import { Environment, NodeEnv } from '@universe/config/src/Environment'
+import type { EnvFieldRules } from '@universe/config/src/envFieldRules'
+import { Environment, NodeEnv, normalizeEnvironmentWireValue } from '@universe/config/src/Environment'
 import { z } from 'zod'
 
 /**
@@ -12,6 +13,10 @@ import { z } from 'zod'
  * dynamic access like process.env[key] does not work in production builds.
  */
 export const BaseConfigValues = {
+  // Config metadata
+  // Version of the config schema the .env was emitted for; 0 = unversioned legacy config
+  configSchemaVersion: process.env.CONFIG_SCHEMA_VERSION,
+
   // App metadata
   appId: process.env.APP_ID,
   // Note, for mobile, this is empty in this package's getConfig() result but
@@ -29,6 +34,12 @@ export const BaseConfigValues = {
   isUnitTest: process.env.JEST_WORKER_ID ?? process.env.VITEST_WORKER_ID,
   isE2ETest: process.env.IS_E2E_TEST,
   isVercelEnvironment: process.env.VERCEL,
+  // Build-time channel for the extension (dev/beta/prod). Used to resolve the env of
+  // unpacked builds whose runtime extension ID matches none of the trusted IDs.
+  buildEnv: process.env.BUILD_ENV,
+  // When true, a Beta build points its APIs at prod instead of staging. Set at build time
+  // (e.g. by the on-demand beta workflow); unset/false keeps the default beta → staging in urls.ts.
+  isBetaUsingProdApi: process.env.BETA_USES_PROD_API,
 
   // API Keys
   alchemyApiKey: process.env.ALCHEMY_API_KEY ?? process.env.REACT_APP_ALCHEMY_API_KEY,
@@ -43,15 +54,17 @@ export const BaseConfigValues = {
   walletConnectProjectId: process.env.WALLETCONNECT_PROJECT_ID ?? process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID,
   walletConnectProjectIdBeta: process.env.WALLETCONNECT_PROJECT_ID_BETA,
   walletConnectProjectIdDev: process.env.WALLETCONNECT_PROJECT_ID_DEV,
+  walletConnectRelayUrlOverride: process.env.WC_RELAY_URL_OVERRIDE,
 
   // External Service URLs
   blockaidProxyUrl: process.env.BLOCKAID_PROXY_URL ?? process.env.REACT_APP_BLOCKAID_PROXY_URL,
   jupiterProxyUrl: process.env.JUPITER_PROXY_URL ?? process.env.REACT_APP_JUPITER_PROXY_URL,
   quicknodeEndpointName: process.env.QUICKNODE_ENDPOINT_NAME ?? process.env.REACT_APP_QUICKNODE_ENDPOINT_NAME,
   quicknodeEndpointToken: process.env.QUICKNODE_ENDPOINT_TOKEN ?? process.env.REACT_APP_QUICKNODE_ENDPOINT_TOKEN,
+  quicknodeSolanaRpcUrl: process.env.QUICKNODE_SOLANA_RPC_URL ?? process.env.REACT_APP_QUICKNODE_SOLANA_RPC_URL,
 
   // Feature Flags
-  enableEntryGatewayProxy: process.env.VITE_ENABLE_ENTRY_GATEWAY_PROXY ?? process.env.ENABLE_ENTRY_GATEWAY_PROXY,
+  enableEntryGatewayProxy: process.env.ENABLE_ENTRY_GATEWAY_PROXY ?? process.env.VITE_ENABLE_ENTRY_GATEWAY_PROXY,
   enableSessionService: process.env.ENABLE_SESSION_SERVICE,
   enableSessionUpgradeAuto:
     process.env.ENABLE_SESSION_UPGRADE_AUTO ?? process.env.REACT_APP_ENABLE_SESSION_UPGRADE_AUTO,
@@ -69,12 +82,23 @@ export const BaseConfigValues = {
   scantasticApiUrlOverride: process.env.SCANTASTIC_API_URL_OVERRIDE,
   statsigProxyUrlOverride: process.env.STATSIG_PROXY_URL_OVERRIDE,
   tradingApiUrlOverride: process.env.TRADING_API_URL_OVERRIDE ?? process.env.REACT_APP_TRADING_API_URL_OVERRIDE,
-  tradingApiWebTestEnv: process.env.REACT_APP_TRADING_API_TEST_ENV,
+  tradingApiWebTestEnv: process.env.TRADING_API_TEST_ENV ?? process.env.REACT_APP_TRADING_API_TEST_ENV,
   uniswapNotifApiBaseUrlOverride: process.env.UNISWAP_NOTIF_API_BASE_URL_OVERRIDE,
 }
 
-/** Zod schema defining the shape and validation for base config fields */
+/**
+ * Zod schema defining the shape and validation for base config fields.
+ * Env-scoped field rules for these fields live in `BaseEnvFieldRules`
+ * below and are enforced by `parseConfig`, not by this schema itself.
+ */
 export const BaseConfigSchema = z.object({
+  // Config metadata
+  configSchemaVersion: z.coerce
+    .number()
+    .int()
+    .default(0)
+    .describe('Version of the config schema the .env was emitted for; 0 = unversioned legacy config'),
+
   // App metadata
   appId: z.enum(AppId).describe('Identifies which app this config is for'),
   appVersion: optionalString.describe('App version tag'),
@@ -82,12 +106,13 @@ export const BaseConfigSchema = z.object({
   // Environment
   nodeEnv: z.enum(NodeEnv).default(NodeEnv.Development).describe('Node process runtime mode, defaults to development'),
   environment: z
-    .enum(Environment)
-    .default(Environment.Development)
-    .describe('Backend deployment environment, defaults to development'),
+    .preprocess(normalizeEnvironmentWireValue, z.enum(Environment))
+    .describe('Backend deployment environment; accepts deployer short forms dev/prod'),
   isUnitTest: boolIfDefined.describe('Is the app running in a unit test (Jest or Vitest)'),
   isE2ETest: boolFromString.describe('Is the app running in E2E test mode'),
   isVercelEnvironment: boolFromOne.describe('Is the app deployed on Vercel'),
+  buildEnv: optionalString.describe('Build-time channel for the extension (dev/beta/prod)'),
+  isBetaUsingProdApi: boolFromString.describe('For Beta builds, point APIs at prod instead of staging'),
 
   // API Keys
   alchemyApiKey: optionalString.describe('API key for Alchemy'),
@@ -102,12 +127,18 @@ export const BaseConfigSchema = z.object({
   walletConnectProjectId: optionalString.describe('Project ID for WalletConnect'),
   walletConnectProjectIdBeta: optionalString.describe('Project ID for WalletConnect (beta)'),
   walletConnectProjectIdDev: optionalString.describe('Project ID for WalletConnect (dev)'),
+  walletConnectRelayUrlOverride: optionalString.describe(
+    'E2E-only WalletConnect relay URL override (local hermetic relay)',
+  ),
 
   // External Service URLs
   blockaidProxyUrl: optionalString.describe('URL for Blockaid proxy'),
   jupiterProxyUrl: optionalString.describe('URL for Jupiter proxy'),
   quicknodeEndpointName: optionalString.describe('QuickNode endpoint name'),
   quicknodeEndpointToken: optionalString.describe('QuickNode endpoint token'),
+  quicknodeSolanaRpcUrl: optionalString.describe(
+    'Dedicated QuickNode RPC URL for Solana; overrides the built-in default until UniRPC routes Solana',
+  ),
 
   // Feature Flags
   enableEntryGatewayProxy: boolFromString.describe('Is the entry gateway proxy enabled'),
@@ -132,3 +163,27 @@ export const BaseConfigSchema = z.object({
 
 /** Type inferred from BaseConfigSchema */
 export type BaseConfig = z.infer<typeof BaseConfigSchema>
+
+/**
+ * Env-scoped field rules for the base config fields. `parseConfig` merges
+ * these with any app-provided rules (field lists unioned per environment) and
+ * enforces the result on the merged schema.
+ */
+export const BaseEnvFieldRules: EnvFieldRules<BaseConfig> = {
+  [Environment.Production]: {
+    forbidden: [
+      'amplitudeProxyUrlOverride',
+      'apiBaseUrlOverride',
+      'apiBaseUrlV2Override',
+      'entryGatewayApiUrlOverride',
+      'forApiUrlOverride',
+      'graphqlUrlOverride',
+      'liquidityServiceUrlOverride',
+      'scantasticApiUrlOverride',
+      'statsigProxyUrlOverride',
+      'tradingApiUrlOverride',
+      'tradingApiWebTestEnv',
+      'uniswapNotifApiBaseUrlOverride',
+    ],
+  },
+}

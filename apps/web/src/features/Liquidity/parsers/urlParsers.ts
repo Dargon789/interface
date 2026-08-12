@@ -5,13 +5,13 @@ import { Platform } from 'uniswap/src/features/platforms/types/Platform'
 import type { FeeData } from 'uniswap/src/features/positions/types'
 import { getValidAddress } from 'uniswap/src/utils/addresses'
 import { z } from 'zod'
+import { assume0xAddress } from '~/chains'
 import { PositionFlowStep, PriceRangeState, RangeAmountInputPriceMode } from '~/features/Liquidity/Create/types'
 import { checkIsNative } from '~/hooks/Tokens'
 import { DepositState } from '~/types/liquidity'
 import { PositionField } from '~/types/position'
 import { getChainIdFromChainUrlParam, getChainUrlParam } from '~/utils/params/chainParams'
 import { parseCurrencyFromURLParameter } from '~/utils/params/currencyParams'
-import { assume0xAddress } from '~/utils/wagmi'
 
 const priceRangeStateSchema: z.ZodSchema<Partial<PriceRangeState>> = z
   .object({
@@ -38,11 +38,11 @@ const feeDataSchema: z.ZodSchema<FeeData | undefined> = z.object({
   isDynamic: z.boolean(),
 })
 
-export const parseAsFeeData = parseAsJson(feeDataSchema.parse)
+export const parseAsFeeData = parseAsJson((v) => feeDataSchema.parse(v))
 
-export const parseAsPriceRangeState = parseAsJson(priceRangeStateSchema.parse).withDefault({})
+export const parseAsPriceRangeState = parseAsJson((v) => priceRangeStateSchema.parse(v)).withDefault({})
 
-export const parseAsDepositState = parseAsJson(depositStateSchema.parse).withDefault({})
+export const parseAsDepositState = parseAsJson((v) => depositStateSchema.parse(v)).withDefault({})
 
 export const parseAsCurrencyAddress = createParser({
   parse: (query: string) => {
@@ -117,6 +117,14 @@ export const parseAsPositionFlowStep = createParser({
     return null
   },
   serialize: (value: PositionFlowStep) => value.toString(),
+})
+
+// Step uses push history so each step is its own browser-history entry, and is kept in the URL
+// even at the default value so the flow step can be read back reliably.
+export const parseAsStep = parseAsPositionFlowStep.withOptions({
+  history: 'push',
+  clearOnDefault: false,
+  shallow: false,
 })
 
 export const parseAsHookAddress = createParser({

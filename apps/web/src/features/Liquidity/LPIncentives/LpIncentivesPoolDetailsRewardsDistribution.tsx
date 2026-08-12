@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { Flex, Text } from 'ui/src'
 import { useCurrentLanguage } from 'uniswap/src/features/language/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { useUSDCPrice } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
+import { useUSDCPrice } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
 import { NumberType } from 'utilities/src/format/types'
 import { LP_INCENTIVES_REWARD_TOKEN } from '~/features/Liquidity/LPIncentives/constants'
 
@@ -163,15 +163,7 @@ export const LpIncentivesPoolDetailsRewardsDistribution = ({
   })
 
   return (
-    <Flex
-      mb={24}
-      mt={-24}
-      $xl={{ my: 0 }}
-      padding="$spacing20"
-      borderRadius="$spacing20"
-      backgroundColor="$surface2"
-      width="100%"
-    >
+    <Flex padding="$spacing20" borderRadius="$spacing20" backgroundColor="$surface2" width="100%">
       <Flex flex={1} gap="$gap8" minWidth={180} $md={{ minWidth: 150 }}>
         <Text color="$neutral2" variant="body2">
           {t('pool.incentives.rewardsDistribution')}

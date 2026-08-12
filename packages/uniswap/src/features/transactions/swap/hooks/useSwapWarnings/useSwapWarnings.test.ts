@@ -112,13 +112,25 @@ const { formatPercent } = mockLocalizedFormatter(Locale.EnglishUnitedStates)
 
 describe(getSwapWarnings, () => {
   it('catches incomplete form errors', async () => {
-    const warnings = getSwapWarnings({ t: i18n.t, formatPercent, derivedSwapInfo: swapState, offline: false })
+    const warnings = getSwapWarnings({
+      t: i18n.t,
+      formatPercent,
+      derivedSwapInfo: swapState,
+      offline: false,
+      geoRestrictionMode: 'default',
+    })
     expect(warnings.length).toBe(1)
     expect(warnings[0]?.type).toEqual(WarningLabel.FormIncomplete)
   })
 
   it('catches blocked token errors', async () => {
-    const warnings = getSwapWarnings({ t: i18n.t, formatPercent, derivedSwapInfo: blockedTokenState, offline: false })
+    const warnings = getSwapWarnings({
+      t: i18n.t,
+      formatPercent,
+      derivedSwapInfo: blockedTokenState,
+      offline: false,
+      geoRestrictionMode: 'default',
+    })
     expect(warnings.map((w) => w.type)).toContain(WarningLabel.BlockedToken)
   })
 
@@ -128,6 +140,7 @@ describe(getSwapWarnings, () => {
       formatPercent,
       derivedSwapInfo: insufficientBalanceState,
       offline: false,
+      geoRestrictionMode: 'default',
     })
     expect(warnings.length).toBe(1)
     expect(warnings[0]?.type).toEqual(WarningLabel.InsufficientFunds)
@@ -147,22 +160,188 @@ describe(getSwapWarnings, () => {
       formatPercent,
       derivedSwapInfo: incompleteAndInsufficientBalanceState,
       offline: false,
+      geoRestrictionMode: 'default',
     })
     expect(warnings.length).toBe(2)
   })
 
   it('catches errors returned by the trading api', () => {
-    const warnings = getSwapWarnings({ t: i18n.t, formatPercent, derivedSwapInfo: tradeErrorState, offline: false })
+    const warnings = getSwapWarnings({
+      t: i18n.t,
+      formatPercent,
+      derivedSwapInfo: tradeErrorState,
+      offline: false,
+      geoRestrictionMode: 'default',
+    })
     expect(warnings.find((warning) => warning.type === WarningLabel.SwapRouterError)).toBeTruthy()
   })
 
   it('errors if there is no internet', () => {
-    const warnings = getSwapWarnings({ t: i18n.t, formatPercent, derivedSwapInfo: tradeErrorState, offline: true })
+    const warnings = getSwapWarnings({
+      t: i18n.t,
+      formatPercent,
+      derivedSwapInfo: tradeErrorState,
+      offline: true,
+      geoRestrictionMode: 'default',
+    })
     expect(warnings.find((warning) => warning.type === WarningLabel.NetworkError)).toBeTruthy()
   })
 
   it('does not return a network error when offline is false', () => {
-    const warnings = getSwapWarnings({ t: i18n.t, formatPercent, derivedSwapInfo: tradeErrorState, offline: false })
+    const warnings = getSwapWarnings({
+      t: i18n.t,
+      formatPercent,
+      derivedSwapInfo: tradeErrorState,
+      offline: false,
+      geoRestrictionMode: 'default',
+    })
     expect(warnings.find((warning) => warning.type === WarningLabel.NetworkError)).toBeFalsy()
+  })
+
+  it('adds a geo restriction warning when mode is restricted', () => {
+    const warnings = getSwapWarnings({
+      t: i18n.t,
+      formatPercent,
+      derivedSwapInfo: swapState,
+      offline: false,
+      geoRestrictionMode: 'restricted',
+    })
+    expect(warnings.map((w) => w.type)).toContain(WarningLabel.GeoRestricted)
+  })
+
+  it('labels the geo restriction CTA with the restricted token symbol when available', () => {
+    const warnings = getSwapWarnings({
+      t: i18n.t,
+      formatPercent,
+      derivedSwapInfo: swapState,
+      offline: false,
+      geoRestrictionMode: 'restricted',
+      geoRestrictedTokenSymbol: 'OUSG',
+    })
+    const geoWarning = warnings.find((w) => w.type === WarningLabel.GeoRestricted)
+    expect(geoWarning?.buttonText).toBe(i18n.t('swap.geoRestriction.button', { tokenSymbol: 'OUSG' }))
+  })
+
+  it('falls back to the generic geo restriction CTA when no token symbol is available', () => {
+    const warnings = getSwapWarnings({
+      t: i18n.t,
+      formatPercent,
+      derivedSwapInfo: swapState,
+      offline: false,
+      geoRestrictionMode: 'restricted',
+    })
+    const geoWarning = warnings.find((w) => w.type === WarningLabel.GeoRestricted)
+    expect(geoWarning?.buttonText).toBe(i18n.t('common.notAvailableInRegion.error'))
+  })
+
+  it('does not add a geo restriction warning when mode is unrestricted', () => {
+    const warnings = getSwapWarnings({
+      t: i18n.t,
+      formatPercent,
+      derivedSwapInfo: swapState,
+      offline: false,
+      geoRestrictionMode: 'unrestricted',
+    })
+    expect(warnings.map((w) => w.type)).not.toContain(WarningLabel.GeoRestricted)
+  })
+
+  describe('permissioned-pool integration', () => {
+    it('inserts a PermissionedPool blocking warning when isPermissioned=true and isAllowlisted=false', () => {
+      const warnings = getSwapWarnings({
+        t: i18n.t,
+        formatPercent,
+        derivedSwapInfo: swapState,
+        offline: false,
+        geoRestrictionMode: 'unrestricted',
+        isPermissioned: true,
+        isAllowlisted: false,
+      })
+
+      expect(warnings.find((w) => w.type === WarningLabel.PermissionedPool)).toBeTruthy()
+    })
+
+    it('does not insert a PermissionedPool warning when token is not permissioned', () => {
+      const warnings = getSwapWarnings({
+        t: i18n.t,
+        formatPercent,
+        derivedSwapInfo: swapState,
+        offline: false,
+        geoRestrictionMode: 'unrestricted',
+        isPermissioned: false,
+        isAllowlisted: false,
+      })
+
+      expect(warnings.find((w) => w.type === WarningLabel.PermissionedPool)).toBeFalsy()
+    })
+
+    it('does not insert a PermissionedPool warning when wallet is allowlisted', () => {
+      const warnings = getSwapWarnings({
+        t: i18n.t,
+        formatPercent,
+        derivedSwapInfo: swapState,
+        offline: false,
+        geoRestrictionMode: 'unrestricted',
+        isPermissioned: true,
+        isAllowlisted: true,
+      })
+
+      expect(warnings.find((w) => w.type === WarningLabel.PermissionedPool)).toBeFalsy()
+    })
+
+    it('defaults to no PermissionedPool warning when the flags are omitted (back-compat)', () => {
+      const warnings = getSwapWarnings({
+        t: i18n.t,
+        formatPercent,
+        derivedSwapInfo: swapState,
+        offline: false,
+        geoRestrictionMode: 'unrestricted',
+      })
+
+      expect(warnings.find((w) => w.type === WarningLabel.PermissionedPool)).toBeFalsy()
+    })
+
+    it('orders the PermissionedPool warning before form-incomplete (swapState is form-incomplete by construction)', () => {
+      const warnings = getSwapWarnings({
+        t: i18n.t,
+        formatPercent,
+        derivedSwapInfo: swapState,
+        offline: false,
+        geoRestrictionMode: 'unrestricted',
+        isPermissioned: true,
+        isAllowlisted: false,
+      })
+
+      const labels = warnings.map((w) => w.type)
+      const permissionedIdx = labels.indexOf(WarningLabel.PermissionedPool)
+      const formIncompleteIdx = labels.indexOf(WarningLabel.FormIncomplete)
+
+      // Both warnings must be present. If the test fixture stops being form-incomplete a
+      // future maintainer should pick a different fixture rather than silently skipping
+      // the ordering check.
+      expect(permissionedIdx).toBeGreaterThanOrEqual(0)
+      expect(formIncompleteIdx).toBeGreaterThanOrEqual(0)
+      expect(permissionedIdx).toBeLessThan(formIncompleteIdx)
+    })
+
+    it('orders the NetworkError warning before PermissionedPool when offline (network warning is pushed first)', () => {
+      const warnings = getSwapWarnings({
+        t: i18n.t,
+        formatPercent,
+        derivedSwapInfo: swapState,
+        offline: true,
+        geoRestrictionMode: 'unrestricted',
+        isPermissioned: true,
+        isAllowlisted: false,
+      })
+
+      const labels = warnings.map((w) => w.type)
+      const networkIdx = labels.indexOf(WarningLabel.NetworkError)
+      const permissionedIdx = labels.indexOf(WarningLabel.PermissionedPool)
+
+      // NetworkError is pushed first (line 50 of useSwapWarnings.tsx); permissioned is
+      // pushed after the token-blocked check. Both present; order is network → permissioned.
+      expect(networkIdx).toBe(0)
+      expect(permissionedIdx).toBeGreaterThan(networkIdx)
+    })
   })
 })

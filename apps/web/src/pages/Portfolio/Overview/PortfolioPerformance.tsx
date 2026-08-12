@@ -1,4 +1,3 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Text } from 'ui/src'
@@ -9,7 +8,7 @@ import {
   ProfitLossPeriod,
 } from 'uniswap/src/components/WalletProfitLoss/utils'
 import { WalletProfitLoss } from 'uniswap/src/components/WalletProfitLoss/WalletProfitLoss'
-import { useGetWalletProfitLossQuery } from 'uniswap/src/data/rest/getWalletProfitLoss'
+import { useGetWalletProfitLossQuery } from 'uniswap/src/data/apiClients/dataApiService/performance/getWalletProfitLoss'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { useRestPortfolioValueModifier } from 'uniswap/src/features/dataApi/balances/balancesRest'
 import { UniswapEventName } from 'uniswap/src/features/telemetry/constants'
@@ -21,7 +20,6 @@ import { useShowDemoView } from '~/pages/Portfolio/hooks/useShowDemoView'
 
 export const PortfolioPerformance = memo(function PortfolioPerformance() {
   const { t } = useTranslation()
-  const isProfitLossEnabled = useFeatureFlag(FeatureFlags.ProfitLoss)
   const isDemoView = useShowDemoView()
   const { chainId } = usePortfolioRoutes()
   const { evmAddress, svmAddress } = usePortfolioAddresses()
@@ -43,7 +41,7 @@ export const PortfolioPerformance = memo(function PortfolioPerformance() {
       since,
       modifier,
     },
-    enabled: isProfitLossEnabled && !isDemoView,
+    enabled: !isDemoView,
   })
 
   const handlePeriodSelect = useCallback((period: ProfitLossPeriod) => {
@@ -67,7 +65,7 @@ export const PortfolioPerformance = memo(function PortfolioPerformance() {
     })
   }, [profitLoss, selectedPeriod])
 
-  if (!isProfitLossEnabled || isDemoView || isError || isTestnetModeEnabled || (data && !profitLoss)) {
+  if (isDemoView || isError || isTestnetModeEnabled || (data && !profitLoss)) {
     return null
   }
 
@@ -104,6 +102,7 @@ export const PortfolioPerformance = memo(function PortfolioPerformance() {
         isLoading={isPending}
         disclaimer={showDisclaimer ? t('pnl.noSolana') : undefined}
         periodSelector={periodSelector}
+        evmAddress={evmAddress}
       />
     </Flex>
   )

@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next'
 import { Flex, styled, Text, useMedia } from 'ui/src'
 import { ArrowDownArrowUp } from 'ui/src/components/icons/ArrowDownArrowUp'
 import { InfoCircleFilled } from 'ui/src/components/icons/InfoCircleFilled'
+import AnimatedNumber from 'uniswap/src/components/AnimatedNumber/AnimatedNumber'
 import { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { useGetRangeDisplay } from 'uniswap/src/features/positions/hooks/useGetRangeDisplay'
 import { PriceOrdering } from 'uniswap/src/features/positions/types'
 import { MouseoverTooltip, TooltipSize } from '~/components/Tooltip'
 import { CHART_WIDTH } from '~/features/Liquidity/charts/LiquidityPositionRangeChart/LiquidityPositionRangeChart'
-import { useGetRangeDisplay } from '~/features/Liquidity/hooks/useGetRangeDisplay/useGetRangeDisplay'
 import { TextLoader } from '~/features/Liquidity/Loader'
 import { LPIncentiveFeeStatTooltip } from '~/features/Liquidity/LPIncentives/LPIncentiveFeeStatTooltip'
 import { LPIncentiveRewardsBadge } from '~/features/Liquidity/LPIncentives/LPIncentiveRewardsBadge'
@@ -26,6 +27,9 @@ interface LiquidityPositionFeeStatsProps extends LiquidityPositionMinMaxRangePro
   totalApr?: number
   feeApr?: string
   apr?: number
+  apr1d?: number
+  apr7d?: number
+  apr30d?: number
   lpIncentiveRewardApr?: number
   hasRewards?: boolean
 }
@@ -95,6 +99,9 @@ export function LiquidityPositionFeeStats({
   tickSpacing,
   version,
   apr,
+  apr1d,
+  apr7d,
+  apr30d,
   currency0Info,
   currency1Info,
   cardHovered,
@@ -122,7 +129,7 @@ export function LiquidityPositionFeeStats({
         <WrapChildrenForMediaSize>
           <FeeStat>
             {formattedUsdValue ? (
-              <PrimaryText>{formattedUsdValue}</PrimaryText>
+              <AnimatedNumber value={formattedUsdValue} textVariant="$body2" />
             ) : (
               <MouseoverTooltip text={t('position.valueUnavailable')} placement="top">
                 <PrimaryText>-</PrimaryText>
@@ -143,7 +150,7 @@ export function LiquidityPositionFeeStats({
                 </MouseoverTooltip>
               </Flex>
             ) : (
-              <PrimaryText>{earningsOrFees}</PrimaryText>
+              <AnimatedNumber value={earningsOrFees ?? '-'} textVariant="$body2" />
             )}
             <SecondaryText variant="body3" color="$neutral2">
               {hasRewards ? t('pool.earnings') : t('common.fees')}
@@ -155,11 +162,21 @@ export function LiquidityPositionFeeStats({
             currency0Info={currency0Info}
             currency1Info={currency1Info}
             poolApr={apr}
+            apr1d={apr1d}
+            apr7d={apr7d}
+            apr30d={apr30d}
             lpIncentiveRewardApr={lpIncentiveRewardApr}
             totalApr={totalApr}
           />
         ) : (
-          <APRFeeStat apr={apr} />
+          <APRFeeStat
+            apr={apr}
+            apr1d={apr1d}
+            apr7d={apr7d}
+            apr30d={apr30d}
+            currency0Info={currency0Info}
+            currency1Info={currency1Info}
+          />
         )}
       </Flex>
       <Flex $md={{ display: 'none' }}>
@@ -260,16 +277,60 @@ export function MinMaxRange({
   )
 }
 
-function APRFeeStat({ apr }: { apr?: number }) {
+function APRFeeStat({
+  apr,
+  apr1d,
+  apr7d,
+  apr30d,
+  currency0Info,
+  currency1Info,
+}: {
+  apr?: number
+  apr1d?: number
+  apr7d?: number
+  apr30d?: number
+  currency0Info: Maybe<CurrencyInfo>
+  currency1Info: Maybe<CurrencyInfo>
+}) {
   const { formatPercent } = useLocalizationContext()
   const { t } = useTranslation()
+  const hasTimeframeAprs = apr1d !== undefined || apr7d !== undefined || apr30d !== undefined
+
+  const content = (
+    <>
+      <AnimatedNumber value={apr ? formatPercent(apr) : '-'} numericValue={apr} textVariant="$body2" />
+      <Flex row gap="$gap4" alignItems="center">
+        <SecondaryText variant="body3" color="$neutral2">
+          {t('pool.apr.24h')}
+        </SecondaryText>
+        {hasTimeframeAprs && <InfoCircleFilled color="$neutral2" size="$icon.12" />}
+      </Flex>
+    </>
+  )
+
+  if (!hasTimeframeAprs) {
+    return <FeeStat>{content}</FeeStat>
+  }
 
   return (
     <FeeStat>
-      <PrimaryText>{apr ? formatPercent(apr) : '-'}</PrimaryText>
-      <SecondaryText variant="body3" color="$neutral2">
-        {t('pool.apr')}
-      </SecondaryText>
+      <MouseoverTooltip
+        padding={0}
+        text={
+          <LPIncentiveFeeStatTooltip
+            currency0Info={currency0Info}
+            currency1Info={currency1Info}
+            poolApr={apr}
+            apr1d={apr1d}
+            apr7d={apr7d}
+            apr30d={apr30d}
+          />
+        }
+        size={TooltipSize.Small}
+        placement="top"
+      >
+        <>{content}</>
+      </MouseoverTooltip>
     </FeeStat>
   )
 }
@@ -279,12 +340,18 @@ function LPIncentiveFeeStat({
   currency1Info,
   lpIncentiveRewardApr,
   poolApr,
+  apr1d,
+  apr7d,
+  apr30d,
   totalApr,
 }: {
   currency0Info: Maybe<CurrencyInfo>
   currency1Info: Maybe<CurrencyInfo>
   lpIncentiveRewardApr: number
   poolApr?: number
+  apr1d?: number
+  apr7d?: number
+  apr30d?: number
   totalApr?: number
 }) {
   const { formatPercent } = useLocalizationContext()
@@ -299,6 +366,9 @@ function LPIncentiveFeeStat({
             currency0Info={currency0Info}
             currency1Info={currency1Info}
             poolApr={poolApr}
+            apr1d={apr1d}
+            apr7d={apr7d}
+            apr30d={apr30d}
             lpIncentiveRewardApr={lpIncentiveRewardApr}
             totalApr={totalApr}
           />
@@ -308,9 +378,11 @@ function LPIncentiveFeeStat({
       >
         <>
           <Flex row gap="$spacing6" alignItems="center">
-            <Text variant="body2" color="$neutral1">
-              {poolApr ? formatPercent(poolApr) : '-'}
-            </Text>
+            <AnimatedNumber
+              value={poolApr ? formatPercent(poolApr) : '-'}
+              numericValue={poolApr}
+              textVariant="$body2"
+            />
             <LPIncentiveRewardsBadge formattedRewardApr={formatPercent(lpIncentiveRewardApr)} />
           </Flex>
           <SecondaryText variant="body3" color="$neutral2">

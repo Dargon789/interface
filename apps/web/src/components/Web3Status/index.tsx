@@ -1,6 +1,7 @@
+import { useEmbeddedWalletState } from '@universe/embedded-wallet'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
-import { atom, useAtom } from 'jotai'
-import { forwardRef, RefObject, useCallback, useEffect, useRef } from 'react'
+import { useAtom } from 'jotai'
+import { forwardRef, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, Button, ButtonProps, Flex, Popover, Text } from 'ui/src'
 import { Unitag } from 'ui/src/components/icons/Unitag'
@@ -10,7 +11,6 @@ import { ElementName, InterfaceEventName, ModalName } from 'uniswap/src/features
 import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
-import { PrefetchBalancesWrapper } from '~/appGraphql/data/apollo/AdaptiveTokenBalancesProvider'
 import { AccountDrawer as PortfolioDrawer } from '~/components/AccountDrawer'
 import { usePendingActivity } from '~/components/AccountDrawer/MiniPortfolio/Activity/hooks'
 import { useAccountDrawer } from '~/components/AccountDrawer/MiniPortfolio/hooks'
@@ -19,10 +19,10 @@ import { StatusIcon } from '~/components/StatusIcon'
 import { RecentlyConnectedModal } from '~/components/Web3Status/RecentlyConnectedModal'
 import { useAccountIdentifier } from '~/components/Web3Status/useAccountIdentifier'
 import { useShowPendingAfterDelay } from '~/components/Web3Status/useShowPendingAfterDelay'
+import { Web3StatusRef } from '~/components/Web3Status/web3StatusRef'
 import { useHasInjectedWallets } from '~/features/wallet/connection/hooks/useOrderedWalletConnectors'
 import { useModalState } from '~/hooks/useModalState'
 import { deprecatedStyled } from '~/lib/deprecated-styled'
-import { useEmbeddedWalletState } from '~/state/embeddedWallet/store'
 import { isIFramed } from '~/utils/isIFramed'
 
 const TextStyled = deprecatedStyled.span<{ marginRight?: number }>`
@@ -92,8 +92,6 @@ const ExistingUserCTAButton = forwardRef<HTMLDivElement, { onPress: () => void }
     </Button>
   )
 })
-
-export const Web3StatusRef = atom<RefObject<HTMLElement | null> | undefined>(undefined)
 
 function Web3StatusInner() {
   const { t } = useTranslation()
@@ -195,7 +193,7 @@ function Web3StatusInner() {
 export function Web3Status() {
   const { isOpen: recentlyConnectedModalIsOpen } = useModalState(ModalName.RecentlyConnectedModal)
   return (
-    <PrefetchBalancesWrapper>
+    <>
       <Popover
         placement="bottom"
         stayInFrame
@@ -211,6 +209,6 @@ export function Web3Status() {
       <Portal>
         <PortfolioDrawer />
       </Portal>
-    </PrefetchBalancesWrapper>
+    </>
   )
 }

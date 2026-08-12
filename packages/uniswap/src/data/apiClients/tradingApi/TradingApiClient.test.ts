@@ -8,11 +8,15 @@ vi.mock('@universe/gating', async (importOriginal) => {
   }
 })
 
+vi.mock('uniswap/src/data/apiClients/tradingApi/getIsPermissionedTokenFromCache', () => ({
+  getIsPermissionedTokenFromCache: vi.fn(),
+}))
+
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
-import { TradingApi } from '@universe/api'
-import { TRADING_API_PATHS } from '@universe/api/src/clients/trading/createTradingApiClient'
+import { TRADING_API_PATHS, TradingApi } from '@universe/api'
+import { EXPERIMENTS_HEADER_NAME, getExperimentsClient } from '@universe/experiments'
 import {
   EthAsErc20UniswapXProperties,
   FeatureFlags,
@@ -20,9 +24,11 @@ import {
   getFeatureFlag,
   Layers,
 } from '@universe/gating'
+import { getIsPermissionedTokenFromCache } from 'uniswap/src/data/apiClients/tradingApi/getIsPermissionedTokenFromCache'
 import {
   checkWalletDelegation,
   getFeatureFlaggedHeaders,
+  TradingApiClient,
   TradingApiHeaders,
 } from 'uniswap/src/data/apiClients/tradingApi/TradingApiClient'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
@@ -513,13 +519,17 @@ describe('getFeatureFlaggedHeaders', () => {
 
     it(`Endpoint: ${path} should use UniversalRouterVersion 2.1.1 when UseUniversalRouterVersion211 flag is enabled`, async () => {
       mockGetFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.UseUniversalRouterVersion211)
-      const headers = await getFeatureFlaggedHeaders(path, toTradingApiSupportedChainId(UniverseChainId.Mainnet))
+      const headers = await getFeatureFlaggedHeaders(path, {
+        chainId: toTradingApiSupportedChainId(UniverseChainId.Mainnet),
+      })
       expect(headers).toHaveProperty(TradingApiHeaders.UniversalRouterVersion, TradingApi.UniversalRouterVersion._2_1_1)
     })
 
     it(`Endpoint: ${path} should fall back to UniversalRouterVersion 2.0 on ZkSync even when flag is enabled`, async () => {
       mockGetFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.UseUniversalRouterVersion211)
-      const headers = await getFeatureFlaggedHeaders(path, toTradingApiSupportedChainId(UniverseChainId.Zksync))
+      const headers = await getFeatureFlaggedHeaders(path, {
+        chainId: toTradingApiSupportedChainId(UniverseChainId.Zksync),
+      })
       expect(headers).toHaveProperty(TradingApiHeaders.UniversalRouterVersion, TradingApi.UniversalRouterVersion._2_0)
     })
 
@@ -573,6 +583,206 @@ describe('getFeatureFlaggedHeaders', () => {
           break
       }
     })
+
+    it(`Endpoint: ${path} should/should not include RequestSwapSteps header when feature flag is enabled`, async () => {
+      mockGetFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.RequestSwapSteps)
+      const headers = await getFeatureFlaggedHeaders(path)
+      switch (path) {
+        case TRADING_API_PATHS.quote:
+          expect(headers).toHaveProperty(TradingApiHeaders.RequestSwapSteps, 'true')
+          break
+        default:
+          expect(headers).not.toHaveProperty(TradingApiHeaders.RequestSwapSteps)
+          break
+      }
+    })
+  })
+})
+
+/**
+ * On web the session lives in an HttpOnly cookie, so every trading API request
+ * must run with credentials: 'include' for the backend to see the session.
+ * Guards against regressing to a fetch client that drops the cookie.
+ */
+describe('TradingApiClient web session credentials', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('sends credentials: include on fetchQuote so the session cookie reaches the backend', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({ routing: TradingApi.Routing.CLASSIC, quote: {} }),
+    })
+
+    await TradingApiClient.fetchQuote({
+      type: TradingApi.TradeType.EXACT_INPUT,
+      amount: '1000000000000000000',
+      tokenInChainId: 1 as TradingApi.ChainId,
+      tokenOutChainId: 1 as TradingApi.ChainId,
+      tokenIn: '0x1234567890abcdef1234567890abcdef12345678',
+      tokenOut: '0xabcdef1234567890abcdef1234567890abcdef12',
+      swapper: '0x9876543210fedcba9876543210fedcba98765432',
+    })
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/quote'),
+      expect.objectContaining({ credentials: 'include' }),
+    )
+  })
+})
+
+/**
+ * Smoke tests for the x-experiments wiring on TradingFetchClient:
+ * the active set rides out as `x-experiments` (FE→BE) and echoed experiments
+ * are absorbed off the response (BE→FE) — without throwing on a response
+ * that has no headers at all (the shape most mocks in this file use).
+ */
+describe('TradingApiClient x-experiments wiring', () => {
+  const quoteRequest = {
+    type: TradingApi.TradeType.EXACT_INPUT,
+    amount: '1000000000000000000',
+    tokenInChainId: 1 as TradingApi.ChainId,
+    tokenOutChainId: 1 as TradingApi.ChainId,
+    tokenIn: '0x1234567890abcdef1234567890abcdef12345678',
+    tokenOut: '0xabcdef1234567890abcdef1234567890abcdef12',
+    swapper: '0x9876543210fedcba9876543210fedcba98765432',
+  }
+
+  const mockQuoteResponse = (headers?: Headers): Partial<Response> => ({
+    ok: true,
+    status: 200,
+    json: vi.fn().mockResolvedValue({ routing: TradingApi.Routing.CLASSIC, quote: {} }),
+    ...(headers ? { headers } : {}),
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getExperimentsClient().clear()
+  })
+
+  afterEach(() => {
+    getExperimentsClient().clear()
+  })
+
+  it('sends the active experiments set as x-experiments on fetchQuote', async () => {
+    mockFetch.mockResolvedValue(mockQuoteResponse())
+    getExperimentsClient().set('smoke-test-exp', { groupName: 'treatment', value: { enabled: true } })
+
+    await TradingApiClient.fetchQuote(quoteRequest)
+
+    const quoteCall = mockFetch.mock.calls.find(([url]) => String(url).includes('/quote'))
+    expect(quoteCall).toBeDefined()
+    const sentHeaders = new Headers((quoteCall?.[1] as RequestInit).headers)
+    expect(sentHeaders.get(EXPERIMENTS_HEADER_NAME)).toBe(
+      JSON.stringify({ 'smoke-test-exp': { groupName: 'treatment', value: { enabled: true } } }),
+    )
+  })
+
+  it('sends no x-experiments header when the active set is empty', async () => {
+    mockFetch.mockResolvedValue(mockQuoteResponse())
+
+    await TradingApiClient.fetchQuote(quoteRequest)
+
+    const quoteCall = mockFetch.mock.calls.find(([url]) => String(url).includes('/quote'))
+    const sentHeaders = new Headers((quoteCall?.[1] as RequestInit).headers)
+    expect(sentHeaders.get(EXPERIMENTS_HEADER_NAME)).toBeNull()
+  })
+
+  it('absorbs experiments echoed by the backend on the response', async () => {
+    const echoed = { 'backend-exp': { groupName: 'control', value: { ratio: 2 } } }
+    mockFetch.mockResolvedValue(mockQuoteResponse(new Headers({ [EXPERIMENTS_HEADER_NAME]: JSON.stringify(echoed) })))
+
+    await TradingApiClient.fetchQuote(quoteRequest)
+
+    expect(getExperimentsClient().snapshot()).toEqual(echoed)
+  })
+
+  it('tolerates a response without headers — absorbs nothing and does not throw', async () => {
+    mockFetch.mockResolvedValue(mockQuoteResponse())
+
+    await expect(TradingApiClient.fetchQuote(quoteRequest)).resolves.toBeDefined()
+
+    expect(getExperimentsClient().snapshot()).toEqual({})
+  })
+})
+
+describe('getFeatureFlaggedHeaders permissioned Universal Router 2.2.0 override', () => {
+  const mockGetFeatureFlag = getFeatureFlag as MockedFunction<typeof getFeatureFlag>
+  const mockGetExperimentValueFromLayer = getExperimentValueFromLayer as MockedFunction<
+    typeof getExperimentValueFromLayer
+  >
+  const mockGetIsPermissionedTokenFromCache = getIsPermissionedTokenFromCache as MockedFunction<
+    typeof getIsPermissionedTokenFromCache
+  >
+  const mainnetChainId = toTradingApiSupportedChainId(UniverseChainId.Mainnet)
+  const PERMISSIONED_VERSION = '2.2.0'
+  const tokenAddresses = ['0xbf56488c857a881ae7e3bed27cf99c10a7ab7e50']
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetFeatureFlag.mockReturnValue(false)
+    mockGetExperimentValueFromLayer.mockReturnValue(false)
+    mockGetIsPermissionedTokenFromCache.mockReturnValue(false)
+  })
+
+  it('uses 2.2.0 for a quote when a request token is permissioned', async () => {
+    mockGetIsPermissionedTokenFromCache.mockReturnValue(true)
+
+    const headers = await getFeatureFlaggedHeaders(TRADING_API_PATHS.quote, {
+      chainId: mainnetChainId,
+      permissionCheckTokenAddresses: tokenAddresses,
+    })
+
+    expect(headers).toHaveProperty(TradingApiHeaders.UniversalRouterVersion, PERMISSIONED_VERSION)
+    expect(mockGetIsPermissionedTokenFromCache).toHaveBeenCalledWith(
+      expect.objectContaining({ tokenAddresses, chainId: UniverseChainId.Mainnet }),
+    )
+  })
+
+  it('uses 2.2.0 for a swap when isPermissionedToken is true', async () => {
+    const headers = await getFeatureFlaggedHeaders(TRADING_API_PATHS.swap5792, {
+      chainId: mainnetChainId,
+      isPermissionedToken: true,
+    })
+
+    expect(headers).toHaveProperty(TradingApiHeaders.UniversalRouterVersion, PERMISSIONED_VERSION)
+    // Swap requests pre-resolve permissioned status, so the cache resolver is never consulted.
+    expect(mockGetIsPermissionedTokenFromCache).not.toHaveBeenCalled()
+  })
+
+  it('uses 2.2.0 for a permissioned token even when the 2.1.1 flag is enabled', async () => {
+    mockGetFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.UseUniversalRouterVersion211)
+
+    const headers = await getFeatureFlaggedHeaders(TRADING_API_PATHS.swap5792, {
+      chainId: mainnetChainId,
+      isPermissionedToken: true,
+    })
+
+    expect(headers).toHaveProperty(TradingApiHeaders.UniversalRouterVersion, PERMISSIONED_VERSION)
+  })
+
+  it('keeps the existing version selection when no token is permissioned', async () => {
+    const headers = await getFeatureFlaggedHeaders(TRADING_API_PATHS.quote, {
+      chainId: mainnetChainId,
+      permissionCheckTokenAddresses: tokenAddresses,
+    })
+
+    expect(headers).toHaveProperty(TradingApiHeaders.UniversalRouterVersion, TradingApi.UniversalRouterVersion._2_0)
+    expect(mockGetIsPermissionedTokenFromCache).toHaveBeenCalled()
+  })
+
+  it('uses the existing 2.1.1 selection for a non-permissioned quote when the 2.1.1 flag is enabled', async () => {
+    mockGetFeatureFlag.mockImplementation((flag) => flag === FeatureFlags.UseUniversalRouterVersion211)
+
+    const headers = await getFeatureFlaggedHeaders(TRADING_API_PATHS.quote, {
+      chainId: mainnetChainId,
+      permissionCheckTokenAddresses: tokenAddresses,
+    })
+
+    // Load-bearing version assertion: a regression that fired the override here would yield 2.2.0.
+    expect(headers).toHaveProperty(TradingApiHeaders.UniversalRouterVersion, TradingApi.UniversalRouterVersion._2_1_1)
   })
 })
 

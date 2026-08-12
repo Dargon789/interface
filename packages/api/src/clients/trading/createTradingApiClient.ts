@@ -4,6 +4,8 @@ import type {
   ApprovalRequest,
   ApprovalResponse,
   ChainId,
+  CheckApproval4337Request,
+  CheckApproval4337Response,
   CreateSwap5792Request,
   CreateSwap5792Response,
   CreateSwap7702Request,
@@ -12,6 +14,8 @@ import type {
   CreateSwapResponse,
   Encode4337Request,
   Encode4337Response,
+  Swap4337Request,
+  Swap4337Response,
   Encode7702ResponseBody,
   GetOrdersResponse,
   GetSwappableTokensResponse,
@@ -27,6 +31,8 @@ import type {
 } from '@universe/api/src/clients/trading/__generated__'
 import { CreatePlanRequest, PlanResponse, RoutingPreference } from '@universe/api/src/clients/trading/__generated__'
 import type {
+  CheckPermissionsRequest,
+  CheckPermissionsResponse,
   DiscriminatedQuoteResponse,
   ExistingPlanRequest,
   SwappableTokensParams,
@@ -34,14 +40,16 @@ import type {
 } from '@universe/api/src/clients/trading/tradeTypes'
 import { logger } from 'utilities/src/logger/logger'
 
-// TODO(app-infra), de-duplicate with uniswapUrls.tradingApiPaths when other consumers are migrated to use TradingApiClient
 export const TRADING_API_PATHS = {
   approval: 'check_approval',
+  approval4337: 'check_approval_4337',
+  checkPermissions: 'permissions',
   order: 'order',
   orders: 'orders',
   quote: 'quote',
   plan: 'plan',
   swap: 'swap',
+  swap4337: 'swap_4337',
   swap5792: 'swap_5792',
   swap7702: 'swap_7702',
   swappableTokens: 'swappable_tokens',
@@ -53,11 +61,66 @@ export const TRADING_API_PATHS = {
   },
 }
 
+export type TradingApiPaths = typeof TRADING_API_PATHS
+
+/** Prefixes each trading API path (e.g. with the '/v1' version prefix). */
+export function getVersionedTradingApiPaths(apiPathPrefix: string): TradingApiPaths {
+  const addPrefix = <T extends Record<string, string | Record<string, string>>>(paths: T): T =>
+    Object.fromEntries(
+      Object.entries(paths).map(([key, value]) =>
+        typeof value === 'string' ? [key, `${apiPathPrefix}/${value}`] : [key, addPrefix(value)],
+      ),
+      // Object.fromEntries widens to a generic record; the structure is unchanged so reassert T.
+    ) as T
+  return addPrefix(TRADING_API_PATHS)
+}
+
+/** Trading API paths under the default v1 prefix. */
+export const V1_TRADING_API_PATHS = getVersionedTradingApiPaths('/v1')
+
+/**
+ * Per-request context the header builder uses to resolve request-specific headers (currently
+ * the permissioned-pool Universal Router version). The actual policy lives in the injected
+ * `getFeatureFlagHeaders` implementation; this client only forwards the values it has on hand.
+ */
+export interface GetFeatureFlagHeadersOptions {
+  /** Chain the request targets; some headers (e.g. Universal Router version) are chain-aware. */
+  chainId?: ChainId
+  /**
+   * Underlying token addresses involved in the request. Quote requests carry these directly,
+   * so the header builder can resolve permissioned status from them.
+   */
+  permissionCheckTokenAddresses?: (string | undefined)[]
+  /**
+   * Pre-resolved permissioned-token status. Swap requests pass this rather than addresses
+   * because their embedded quote references v4-adapter addresses, not the underlying tokens.
+   */
+  isPermissionedToken?: boolean
+}
+
+/**
+ * A swap request augmented with the non-wire `isPermissionedToken` flag. The flag is read by
+ * the fetcher to resolve headers and stripped from the request body before it is sent.
+ */
+export type WithSwapPermissionContext<T> = T & Pick<GetFeatureFlagHeadersOptions, 'isPermissionedToken'>
+
+/**
+ * Splits a swap request into the non-wire `isPermissionedToken` flag (used only to resolve the
+ * Universal Router version header) and the `body` that is actually sent. Centralizing the strip
+ * here keeps every swap fetcher from independently remembering to exclude the flag from the body.
+ */
+function splitSwapPermissionContext<T extends object>(
+  params: WithSwapPermissionContext<T>,
+): { isPermissionedToken: boolean | undefined; body: Omit<WithSwapPermissionContext<T>, 'isPermissionedToken'> } {
+  const { isPermissionedToken, ...body } = params
+  return { isPermissionedToken, body }
+}
+
 export interface TradingClientContext {
   fetchClient: FetchClient
   getFeatureFlagHeaders: (
     tradingApiPath: (typeof TRADING_API_PATHS)[keyof typeof TRADING_API_PATHS],
-    chainId?: ChainId,
+    options?: GetFeatureFlagHeadersOptions,
   ) => HeadersInit | Promise<HeadersInit>
   getApiPathPrefix: () => string
 }
@@ -65,15 +128,20 @@ export interface TradingClientContext {
 export interface TradingApiClient {
   fetchQuote: (params: QuoteRequest & { isUSDQuote?: boolean }) => Promise<DiscriminatedQuoteResponse>
   fetchIndicativeQuote: (params: IndicativeQuoteRequest) => Promise<DiscriminatedQuoteResponse>
-  fetchSwap: (params: CreateSwapRequest) => Promise<CreateSwapResponse>
-  fetchSwap5792: (params: CreateSwap5792Request) => Promise<CreateSwap5792Response>
-  fetchSwap7702: (params: CreateSwap7702Request) => Promise<CreateSwap7702Response>
+  fetchSwap: (params: WithSwapPermissionContext<CreateSwapRequest>) => Promise<CreateSwapResponse>
+  fetchSwap4337: (params: WithSwapPermissionContext<Swap4337Request>) => Promise<Swap4337Response>
+  fetchSwap5792: (params: WithSwapPermissionContext<CreateSwap5792Request>) => Promise<CreateSwap5792Response>
+  fetchSwap7702: (params: WithSwapPermissionContext<CreateSwap7702Request>) => Promise<CreateSwap7702Response>
   fetchSwaps: (params: {
     txHashes?: TransactionHash[]
     userOpHashes?: string[]
     chainId: ChainId
+    // When provided, the endpoint decorates matching sponsored swaps with `sponsorship` metadata.
+    swapper?: string
   }) => Promise<GetSwapsResponse>
   fetchCheckApproval: (params: ApprovalRequest) => Promise<ApprovalResponse>
+  fetchCheckApproval4337: (params: CheckApproval4337Request) => Promise<CheckApproval4337Response>
+  fetchCheckPermissions: (params: CheckPermissionsRequest) => Promise<CheckPermissionsResponse>
   submitOrder: (params: OrderRequest) => Promise<OrderResponse>
   fetchOrders: (params: { orderIds: string[] }) => Promise<GetOrdersResponse>
   fetchOrdersWithoutIds: (params: {
@@ -115,7 +183,10 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.quote),
     method: 'post',
     transformRequest: async ({ params }) => ({
-      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.quote, params.tokenInChainId),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.quote, {
+        chainId: params.tokenInChainId,
+        permissionCheckTokenAddresses: [params.tokenIn, params.tokenOut],
+      }),
     }),
     on404: (params: QuoteRequest & { isUSDQuote?: boolean }) => {
       logger.warn('TradingApiClient', 'fetchQuote', 'Quote 404', {
@@ -138,31 +209,68 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     })
   }
 
-  const fetchSwap = createFetcher<CreateSwapRequest, CreateSwapResponse>({
+  const fetchSwap = createFetcher<WithSwapPermissionContext<CreateSwapRequest>, CreateSwapResponse>({
     client,
     url: getApiPath(TRADING_API_PATHS.swap),
     method: 'post',
-    transformRequest: async ({ params }) => ({
-      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swap, params.quote.chainId),
-    }),
+    transformRequest: async ({ params }) => {
+      const { isPermissionedToken, body } = splitSwapPermissionContext(params)
+      return {
+        headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swap, {
+          chainId: body.quote.chainId,
+          isPermissionedToken,
+        }),
+        params: body,
+      }
+    },
   })
 
-  const fetchSwap5792 = createFetcher<CreateSwap5792Request, CreateSwap5792Response>({
+  const fetchSwap4337 = createFetcher<WithSwapPermissionContext<Swap4337Request>, Swap4337Response>({
+    client,
+    url: getApiPath(TRADING_API_PATHS.swap4337),
+    method: 'post',
+    transformRequest: async ({ params }) => {
+      const { isPermissionedToken, body } = splitSwapPermissionContext(params)
+      return {
+        headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swap4337, {
+          chainId: body.quote.chainId,
+          isPermissionedToken,
+        }),
+        params: body,
+      }
+    },
+  })
+
+  const fetchSwap5792 = createFetcher<WithSwapPermissionContext<CreateSwap5792Request>, CreateSwap5792Response>({
     client,
     url: getApiPath(TRADING_API_PATHS.swap5792),
     method: 'post',
-    transformRequest: async ({ params }) => ({
-      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swap5792, params.quote.chainId),
-    }),
+    transformRequest: async ({ params }) => {
+      const { isPermissionedToken, body } = splitSwapPermissionContext(params)
+      return {
+        headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swap5792, {
+          chainId: 'chainId' in body.quote ? body.quote.chainId : undefined,
+          isPermissionedToken,
+        }),
+        params: body,
+      }
+    },
   })
 
-  const fetchSwap7702 = createFetcher<CreateSwap7702Request, CreateSwap7702Response>({
+  const fetchSwap7702 = createFetcher<WithSwapPermissionContext<CreateSwap7702Request>, CreateSwap7702Response>({
     client,
     url: getApiPath(TRADING_API_PATHS.swap7702),
     method: 'post',
-    transformRequest: async ({ params }) => ({
-      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swap7702, params.quote.chainId),
-    }),
+    transformRequest: async ({ params }) => {
+      const { isPermissionedToken, body } = splitSwapPermissionContext(params)
+      return {
+        headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swap7702, {
+          chainId: body.quote.chainId,
+          isPermissionedToken,
+        }),
+        params: body,
+      }
+    },
   })
 
   const fetchCheckApproval = createFetcher<ApprovalRequest, ApprovalResponse>({
@@ -170,7 +278,25 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.approval),
     method: 'post',
     transformRequest: async ({ params }) => ({
-      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.approval, params.chainId),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.approval, { chainId: params.chainId }),
+    }),
+  })
+
+  const fetchCheckApproval4337 = createFetcher<CheckApproval4337Request, CheckApproval4337Response>({
+    client,
+    url: getApiPath(TRADING_API_PATHS.approval4337),
+    method: 'post',
+    transformRequest: async ({ params }) => ({
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.approval4337, { chainId: params.chainId }),
+    }),
+  })
+
+  const fetchCheckPermissions = createFetcher<CheckPermissionsRequest, CheckPermissionsResponse>({
+    client,
+    url: getApiPath(TRADING_API_PATHS.checkPermissions),
+    method: 'post',
+    transformRequest: async ({ params }) => ({
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.checkPermissions, { chainId: params.chainId }),
     }),
   })
 
@@ -230,6 +356,7 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
       txHashes?: TransactionHash[]
       userOpHashes?: string[]
       chainId: ChainId
+      swapper?: string
     },
     GetSwapsResponse
   >({
@@ -237,10 +364,11 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     url: getApiPath(TRADING_API_PATHS.swaps),
     method: 'get',
     transformRequest: async ({ params }) => ({
-      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swaps, params.chainId),
+      headers: await getFeatureFlagHeaders(TRADING_API_PATHS.swaps, { chainId: params.chainId }),
       params: {
         ...(params.txHashes ? { txHashes: params.txHashes.join(',') } : {}),
         ...(params.userOpHashes ? { userOpHashes: params.userOpHashes.join(',') } : {}),
+        ...(params.swapper ? { swapper: params.swapper } : {}),
         chainId: params.chainId,
       },
     }),
@@ -335,10 +463,13 @@ export function createTradingApiClient(ctx: TradingClientContext): TradingApiCli
     fetchQuote,
     fetchIndicativeQuote,
     fetchSwap,
+    fetchSwap4337,
     fetchSwap5792,
     fetchSwap7702,
     fetchSwaps,
     fetchCheckApproval,
+    fetchCheckApproval4337,
+    fetchCheckPermissions,
     submitOrder,
     fetchOrders,
     fetchOrdersWithoutIds,

@@ -1,4 +1,17 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import {
+  authenticateWithPasskeyForWalletSignin,
+  EmailCodeStep,
+  EmailEntryStep,
+  EnterPinStep,
+  exportSeedPhraseWithRecovery,
+  NoWalletFoundStep,
+  OAuthLoadingStep,
+  RecoveringStep,
+  RecoveryLoginStep,
+  RecoveryStep,
+  useRecoveryFlow,
+} from '@universe/embedded-wallet'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { OnboardingStackParamList } from 'src/app/navigation/types'
@@ -6,16 +19,7 @@ import { OnboardingScreen } from 'src/features/onboarding/OnboardingScreen'
 import { getPrivyConfig } from 'src/features/passkey/PrivyProviderWrapper'
 import { useRecoveryPrivyAuth } from 'src/features/passkey/useRecoveryPrivyAuth'
 import { Flex, Text, TouchableArea } from 'ui/src'
-import { EmailCodeStep } from 'uniswap/src/components/passkey/recovery/steps/EmailCodeStep'
-import { EmailEntryStep } from 'uniswap/src/components/passkey/recovery/steps/EmailEntryStep'
-import { EnterPinStep } from 'uniswap/src/components/passkey/recovery/steps/EnterPinStep'
-import { OAuthLoadingStep } from 'uniswap/src/components/passkey/recovery/steps/OAuthLoadingStep'
-import { RecoveringStep } from 'uniswap/src/components/passkey/recovery/steps/RecoveringStep'
-import { RecoveryLoginStep } from 'uniswap/src/components/passkey/recovery/steps/RecoveryLoginStep'
-import { uniswapUrls } from 'uniswap/src/constants/urls'
-import { authenticateWithPasskeyForWalletSignin } from 'uniswap/src/features/passkey/embeddedWallet'
-import { exportSeedPhraseWithRecovery } from 'uniswap/src/features/passkey/hpkeExport'
-import { RecoveryStep, useRecoveryFlow } from 'uniswap/src/features/passkey/useRecoveryFlow'
+import { UniswapHelpUrls } from 'uniswap/src/constants/urls'
 import { ImportType } from 'uniswap/src/types/onboarding'
 import { OnboardingScreens } from 'uniswap/src/types/screens/mobile'
 import { openUri } from 'uniswap/src/utils/linking'
@@ -42,11 +46,21 @@ export function RecoveryFlowScreen({ navigation, route: { params } }: Props): JS
   const privyAppId = getPrivyConfig().appId
 
   const onPinDecryptSuccess = useEvent(
-    async ({ authPrivateKey, authMethodId }: { authPrivateKey: Uint8Array; authMethodId: string; email: string }) => {
+    async ({
+      authPrivateKey,
+      authMethodId,
+      accessToken,
+    }: {
+      authPrivateKey: Uint8Array
+      authMethodId: string
+      email: string
+      accessToken: string
+    }) => {
       try {
         const mnemonic = await exportSeedPhraseWithRecovery({
           authPrivateKey,
           authMethodId,
+          accessToken,
           generateAuthorizationSignature: privy.generateAuthorizationSignature,
         })
         const importedAddress = await Keyring.importMnemonic(mnemonic)
@@ -173,6 +187,9 @@ export function RecoveryFlowScreen({ navigation, route: { params } }: Props): JS
           />
         )}
         {flow.step === RecoveryStep.Recovering && <RecoveringStep t={t} />}
+        {flow.step === RecoveryStep.NoWalletFound && (
+          <NoWalletFoundStep t={t} handleClose={() => navigation.goBack()} />
+        )}
       </Flex>
     </OnboardingScreen>
   )
@@ -183,7 +200,7 @@ function HelpLink({ t }: { t: ReturnType<typeof useTranslation>['t'] }): JSX.Ele
     <TouchableArea
       hitSlop={16}
       onPress={() => {
-        void openUri({ uri: uniswapUrls.helpArticleUrls.passkeysInfo })
+        void openUri({ uri: UniswapHelpUrls.articles.passkeysInfo })
       }}
     >
       <Text color="$neutral2" variant="buttonLabel2">

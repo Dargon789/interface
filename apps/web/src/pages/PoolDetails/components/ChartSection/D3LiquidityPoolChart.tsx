@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Flex, Shine, Text } from 'ui/src'
 import { ZERO_ADDRESS } from 'uniswap/src/constants/misc'
-import { useGetPoolsByTokens } from 'uniswap/src/data/rest/getPools'
+import { useGetPool } from 'uniswap/src/data/apiClients/dataApiService/pools/getPools'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { ChartHeader } from '~/components/Charts/ChartHeader'
 import { ChartSkeleton } from '~/components/Charts/LoadingState'
@@ -16,9 +16,9 @@ import { HorizontalLiquidityChartStoreProvider } from '~/features/Liquidity/char
 import { useHorizontalLiquidityChartSelector } from '~/features/Liquidity/charts/D3HorizontalLiquidityChart/useHorizontalLiquidityChartStore'
 import { useDensityChartData } from '~/features/Liquidity/charts/LiquidityRangeInput/hooks'
 import { ChartEntry } from '~/features/Liquidity/charts/LiquidityRangeInput/types'
-import { useAllPoolTicks } from '~/features/Liquidity/hooks/usePoolTickData'
-import { getTokenOrZeroAddress } from '~/features/Liquidity/utils/currency'
+import { normalizeTickSpacing, useAllPoolTicks } from '~/features/Liquidity/hooks/usePoolTickData'
 import { useColor } from '~/hooks/useColor'
+import { unwrappedToken } from '~/utils/unwrappedToken'
 
 const PDP_CHART_HEIGHT_PX = 356
 
@@ -231,20 +231,13 @@ function useD3LiquidityPoolChartData({
 }) {
   const resolvedHooks = hooks ?? ZERO_ADDRESS
 
-  const { data: poolData, isLoading: poolDataLoading } = useGetPoolsByTokens(
-    {
-      fee: feeTier,
-      chainId,
-      protocolVersions: [version],
-      token0: getTokenOrZeroAddress(tokenA),
-      token1: getTokenOrZeroAddress(tokenB),
-      hooks: resolvedHooks,
-    },
-    true,
+  const { data: poolData, isLoading: poolDataLoading } = useGetPool(
+    { chainId, poolId, protocolVersion: version },
+    Boolean(poolId),
   )
 
-  const tickSpacing = poolData?.pools[0]?.tickSpacing
-  const currentTick = poolData?.pools[0]?.tick
+  const tickSpacing = normalizeTickSpacing(poolData?.pool?.tickSpacing)
+  const currentTick = poolData?.pool?.tick
 
   const sdkCurrencies = useMemo(() => ({ TOKEN0: tokenA, TOKEN1: tokenB }), [tokenA, tokenB])
 
@@ -318,8 +311,10 @@ export function D3LiquidityPoolChart({
 
   const { t } = useTranslation()
   const [baseCurrency, quoteCurrency] = isReversed ? [tokenB, tokenA] : [tokenA, tokenB]
-  const baseDescriptor = baseCurrency.symbol ?? baseCurrency.name ?? t('common.tokenA')
-  const quoteDescriptor = quoteCurrency.symbol ?? quoteCurrency.name ?? t('common.tokenB')
+  const baseDisplay = unwrappedToken(baseCurrency)
+  const quoteDisplay = unwrappedToken(quoteCurrency)
+  const baseDescriptor = baseDisplay.symbol ?? baseDisplay.name ?? t('common.tokenA')
+  const quoteDescriptor = quoteDisplay.symbol ?? quoteDisplay.name ?? t('common.tokenB')
 
   const { visualCurrentTick, visualActiveTick } = computeVisualTicks({ currentTick, tickSpacing, isReversed })
   const activeTickEntry = useMemo(

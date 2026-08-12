@@ -1,4 +1,3 @@
-import { TradingApi } from '@universe/api'
 import { buildAuthObject, getSdkError } from '@walletconnect/utils'
 import { providers } from 'ethers'
 import { wcWeb3Wallet } from 'src/features/walletConnect/walletConnectClient'
@@ -17,17 +16,12 @@ import { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { EthMethod, EthSignMethod } from 'uniswap/src/features/dappRequests/types'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
-import { Platform } from 'uniswap/src/features/platforms/types/Platform'
-import { getEnabledChainIdsSaga } from 'uniswap/src/features/settings/saga'
-import { addTransaction } from 'uniswap/src/features/transactions/slice'
 import {
   TransactionOriginType,
-  TransactionStatus,
   TransactionType,
   TransactionTypeInfo,
 } from 'uniswap/src/features/transactions/types/transactionDetails'
 import { DappRequestInfo, DappRequestType, UwULinkMethod, WalletConnectEvent } from 'uniswap/src/types/walletConnect'
-import { createTransactionId } from 'uniswap/src/utils/createTransactionId'
 import { createSaga } from 'uniswap/src/utils/saga'
 import { logger } from 'utilities/src/logger/logger'
 import { addWalletCallTransaction } from 'wallet/src/features/batchedTransactions/slice'
@@ -36,10 +30,10 @@ import {
   ExecuteTransactionParams,
   executeTransaction,
 } from 'wallet/src/features/transactions/executeTransaction/executeTransactionSaga'
-import {
-  ExecuteUserOpParams,
-  executeUserOpSaga,
-} from 'wallet/src/features/transactions/executeTransaction/executeUserOpSaga'
+import type { ExecuteUserOpParams } from 'wallet/src/features/transactions/executeTransaction/services/TransactionService/transactionService'
+import { createTransactionSagaDependencies } from 'wallet/src/features/transactions/factories/createTransactionSagaDependencies'
+import { createTransactionServices } from 'wallet/src/features/transactions/factories/createTransactionServices'
+import { DelegationType } from 'wallet/src/features/transactions/types/transactionSagaDependencies'
 import { Account } from 'wallet/src/features/wallet/accounts/types'
 import { getSignerManager } from 'wallet/src/features/wallet/context'
 import { signMessage, signTypedDataMessage } from 'wallet/src/features/wallet/signing/signing'
@@ -71,7 +65,6 @@ type SignTransactionParams = {
 
 function* signWcRequest(params: SignMessageParams | SignTransactionParams) {
   const { sessionId, requestInternalId, account, method, chainId } = params
-  const { defaultChainId } = yield* getEnabledChainIdsSaga(Platform.EVM)
   try {
     const signerManager = yield* call(getSignerManager)
     let result: string | SendCallsResult = ''
@@ -84,10 +77,18 @@ function* signWcRequest(params: SignMessageParams | SignTransactionParams) {
         signAsString: method === EthMethod.PersonalSign,
       })
     } else if (method === EthMethod.SignTypedData || method === EthMethod.SignTypedDataV4) {
-      result = yield* call(signTypedDataMessage, { message: params.message, account, signerManager })
+      result = yield* call(signTypedDataMessage, {
+        message: params.message,
+        account,
+        signerManager,
+        expectedChainId: chainId,
+      })
     } else if (method === EthMethod.EthSendTransaction && params.request.type === UwULinkMethod.Erc20Send) {
+      // The session chain, not params.transaction.chainId. Deriving the expected chain from the
+      // dapp's own value made the service-level assert compare it against itself, and the
+      // defaultChainId fallback could silently pick Mainnet for a chainless request.
       const txParams: ExecuteTransactionParams = {
-        chainId: params.transaction.chainId || defaultChainId,
+        chainId,
         account,
         options: {
           request: params.transaction,
@@ -105,7 +106,7 @@ function* signWcRequest(params: SignMessageParams | SignTransactionParams) {
       result = transactionHash
     } else if (method === EthMethod.EthSendTransaction) {
       const txParams: ExecuteTransactionParams = {
-        chainId: params.transaction.chainId || defaultChainId,
+        chainId,
         account,
         options: {
           request: params.transaction,
@@ -137,29 +138,27 @@ function* signWcRequest(params: SignMessageParams | SignTransactionParams) {
           icon: params.dappRequestInfo.icon ?? undefined,
         },
       }
+      // TransactionService.executeUserOp registers the pending tx, submits the userOp, persists the
+      // userOpHash, and finalizes on failure — no manual addTransaction needed. addWalletCallTransaction
+      // stays below: it tracks the EIP-5792 batchId → userOpHash mapping, which is dapp-specific.
+      const { transactionService } = yield* call(createTransactionServices, createTransactionSagaDependencies(), {
+        account,
+        chainId: params.request.chainId,
+        submitViaPrivateRpc: false,
+        delegationType: DelegationType.Auto,
+        includeUserOpServices: true,
+      })
+
       const userOpParams: ExecuteUserOpParams = {
         userOp: params.request.unsignedUserOperation,
         account,
         chainId: params.request.chainId,
         typeInfo,
+        transactionOriginType: TransactionOriginType.External,
+        requestUniswapGasSponsorship: false,
+        options: { userSubmissionTimestampMs: Date.now(), isSmartWalletTransaction: true },
       }
-      const { userOpHash } = yield* call(executeUserOpSaga, userOpParams)
-
-      const txId = createTransactionId()
-      yield* put(
-        addTransaction({
-          routing: TradingApi.Routing.CLASSIC,
-          id: txId,
-          chainId: params.request.chainId,
-          typeInfo,
-          from: account.address,
-          addedTime: Date.now(),
-          status: TransactionStatus.Pending,
-          userOpHash,
-          options: { request: {} },
-          transactionOriginType: TransactionOriginType.External,
-        }),
-      )
+      const { userOpHash } = yield* call([transactionService, transactionService.executeUserOp], userOpParams)
 
       result = { id: params.request.id }
 

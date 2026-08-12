@@ -1,21 +1,86 @@
-import { FeatureFlags, useFeatureFlag } from '@universe/gating'
+import type { TFunction } from 'i18next'
 import { ReactNode, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flex, FlexProps, Text } from 'ui/src'
+import { Flex, FlexProps, styled, Text } from 'ui/src'
+import AnimatedNumber from 'uniswap/src/components/AnimatedNumber/AnimatedNumber'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { useTokenMarketStats } from 'uniswap/src/features/dataApi/tokenDetails/useTokenDetailsData'
-import { useTokenSpotPrice } from 'uniswap/src/features/dataApi/tokenDetails/useTokenSpotPriceWrapper'
+import { useIsV2TokensEnabled } from 'uniswap/src/features/dataApi/tokenDetails/useIsV2TokensEnabled'
+import {
+  resolveSpotPriceOverride,
+  type TokenMarketStats,
+  useTokenMarketStats,
+  useTokenSpotPrice,
+} from 'uniswap/src/features/dataApi/tokenDetails/useTokenDetailsData'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { currencyId } from 'uniswap/src/utils/currencyId'
 import { FiatNumberType, NumberType } from 'utilities/src/format/types'
-import { TokenQueryData } from '~/appGraphql/data/Token'
 import { getHeaderDescription, TokenSortMethod } from '~/components/Tokens/constants'
+import { LoadingBubble } from '~/components/Tokens/loading'
 import { MouseoverTooltip } from '~/components/Tooltip'
+import { TokenQueryData } from '~/data/Token'
 import { useTDPEffectiveCurrency } from '~/pages/TokenDetails/hooks/useTDPEffectiveCurrency'
+import { useTDPPreferProjectMarketData } from '~/pages/TokenDetails/hooks/useTDPPreferProjectMarketData'
 import { useTDPStatsMarketSource } from '~/pages/TokenDetails/hooks/useTDPStatsMarketSource'
 
 const STATS_GAP = '$gap20'
+
+function getVolumeDescription({
+  t,
+  isProjectVolume,
+  chainId,
+}: {
+  t: TFunction
+  isProjectVolume: boolean
+  chainId: UniverseChainId
+}): string {
+  if (isProjectVolume) {
+    return t('stats.volume.1d.description.coingecko')
+  }
+  if (chainId === UniverseChainId.Tempo) {
+    return t('stats.volume.1d.description.tempo')
+  }
+  return t('stats.volume.1d.description')
+}
+
+/**
+ * GraphQL-only fallback for the "filtered chain has no aggregatable data" edge case (see
+ * useTokenMarketStats' hasAggregated heuristic). Bypassed when V2 is enabled so REST-sourced
+ * stats are authoritative instead of being shadowed by this raw GraphQL read.
+ */
+function getGraphqlStatFallback<T>({
+  isV2TokensEnabled,
+  v2Value,
+  showAggregatedStats,
+  aggregatedValue,
+  filteredValue,
+}: {
+  isV2TokensEnabled: boolean
+  v2Value: T
+  showAggregatedStats: boolean
+  aggregatedValue: T
+  filteredValue: T
+}): T {
+  if (isV2TokensEnabled) {
+    return v2Value
+  }
+  return showAggregatedStats ? aggregatedValue : filteredValue
+}
+
+// V2 omits marketCap/FDV; TokenWeb only has data on the Robinhood fallback or the RWA carve-out.
+function getProjectValuations({
+  stats,
+  tokenQueryData,
+}: {
+  stats: TokenMarketStats
+  tokenQueryData: TokenQueryData | undefined
+}): { marketCap: number | undefined; fdv: number | undefined } {
+  const projectMarket = tokenQueryData?.project?.markets?.[0]
+  return {
+    marketCap: stats.marketCap ?? projectMarket?.marketCap?.value,
+    fdv: stats.fdv ?? projectMarket?.fullyDilutedValuation?.value,
+  }
+}
 
 export const StatWrapper = ({
   tableRow = false,
@@ -47,6 +112,42 @@ const TokenStatsSection = ({ children }: { children: ReactNode }) => (
   </Flex>
 )
 
+const StatsLoadingContainer = styled(Flex, {
+  row: true,
+  flexWrap: 'wrap',
+  rowGap: '$spacing24',
+  width: '100%',
+})
+
+function LoadingStatTile() {
+  return (
+    <StatWrapper>
+      <LoadingBubble height={16} width={80} containerProps={{ mb: '$spacing4' }} />
+      <LoadingBubble height={32} width={116} skeletonProps={{ borderRadius: '$rounded8' }} />
+    </StatWrapper>
+  )
+}
+
+// Loading state for the stats section, reused by the full-page TDP skeleton so the placeholder is
+// identical in both. It lives here next to StatWrapper/StatsWrapper (which it reuses for dimensional
+// parity) and is built on the cycle-safe LoadingBubble primitive, so the section owns its own loading
+// UI without a Skeleton <-> StatsSection import cycle.
+export function LoadingStats() {
+  return (
+    <StatsWrapper data-testid="token-details-stats-loading">
+      <LoadingBubble height={32} width={120} skeletonProps={{ borderRadius: '$rounded8' }} />
+      <StatsLoadingContainer>
+        <LoadingStatTile />
+        <LoadingStatTile />
+        <LoadingStatTile />
+        <LoadingStatTile />
+        <LoadingStatTile />
+        <LoadingStatTile />
+      </StatsLoadingContainer>
+    </StatsWrapper>
+  )
+}
+
 type NumericStat = number | undefined | null
 
 function Stat({
@@ -63,57 +164,86 @@ function Stat({
   numberType?: FiatNumberType
 }) {
   const { convertFiatAmountFormatted } = useLocalizationContext()
+  const formattedValue = convertFiatAmountFormatted(value, numberType)
 
   return (
     <StatWrapper tableRow data-cy={`${testID}`} data-testid={`${testID}`}>
       <Text variant="body3" color="$neutral2" tag="td">
         <MouseoverTooltip disabled={!description} text={description}>
-          {title}
+          {/* Wrap in a colored Text: MouseoverTooltip re-wraps string children in its own uncolored Text, which would otherwise default the label to $neutral1. */}
+          <Text variant="body3" color="$neutral2">
+            {title}
+          </Text>
         </MouseoverTooltip>
       </Text>
-      <Text
-        tag="td"
-        mt="$spacing8"
-        fontSize={28}
-        color="$neutral1"
-        fontWeight="$book"
-        $platform-web={{
-          overflowWrap: 'break-word',
-        }}
-      >
-        {convertFiatAmountFormatted(value, numberType)}
-      </Text>
+      <Flex tag="td" mt="$spacing8" data-testid={`${testID}-value`} $platform-web={{ overflowWrap: 'break-word' }}>
+        <AnimatedNumber numericValue={value ?? undefined} textVariant="$heading3" value={formattedValue} />
+      </Flex>
     </StatWrapper>
   )
 }
 
 type StatsSectionProps = {
   tokenQueryData: TokenQueryData | undefined
+  /** The heavy market query is still in flight. Renders the loading skeleton instead of the empty state. */
+  isLoading?: boolean
 }
 
-export function StatsSection({ tokenQueryData }: StatsSectionProps) {
+export function StatsSection({ tokenQueryData, isLoading = false }: StatsSectionProps) {
   const { t } = useTranslation()
-  const multichainTokenUxEnabled = useFeatureFlag(FeatureFlags.MultichainTokenUx)
   const effectiveCurrency = useTDPEffectiveCurrency()
+  const isV2TokensEnabled = useIsV2TokensEnabled()
 
-  const { showAggregatedStats, filteredDeploymentMarket, networkFilterName, marketStatsInput } =
-    useTDPStatsMarketSource(tokenQueryData)
+  const {
+    showAggregatedStats,
+    isMultichainAggregateView,
+    filteredDeploymentMarket,
+    networkFilterName,
+    marketStatsInput,
+  } = useTDPStatsMarketSource(tokenQueryData)
 
   const currencyIdValue = useMemo(() => currencyId(effectiveCurrency), [effectiveCurrency])
-  const spotPrice = useTokenSpotPrice(currencyIdValue)
+  const preferProjectMarketData = useTDPPreferProjectMarketData()
+  const spotPrice = useTokenSpotPrice(currencyIdValue, {
+    preferProjectMarketData,
+    isMultichainAggregateView,
+  })
+  // Shares its decision logic with the chart header's currentPriceOverride so both surfaces always agree.
+  const currentPriceOverride = resolveSpotPriceOverride({
+    isV2TokensEnabled,
+    isMultichainAggregateView,
+    preferProjectMarketData,
+    spotPrice,
+  })
 
   const stats = useTokenMarketStats(currencyIdValue, {
     aggregatedData: marketStatsInput,
-    currentPriceOverride: spotPrice,
+    currentPriceOverride,
+    preferProjectMarketData,
+    isMultichainAggregateView,
   })
 
-  const volume =
-    (showAggregatedStats ? tokenQueryData?.market?.volume24H?.value : filteredDeploymentMarket?.volume24H?.value) ??
-    stats.volume
-  const tvl = showAggregatedStats
-    ? tokenQueryData?.market?.totalValueLocked?.value
-    : filteredDeploymentMarket?.totalValueLocked?.value
-  const { marketCap, fdv, high52w, low52w } = stats
+  const tokenMarketVolume = getGraphqlStatFallback({
+    isV2TokensEnabled,
+    v2Value: undefined,
+    showAggregatedStats,
+    aggregatedValue: tokenQueryData?.market?.volume24H?.value,
+    filteredValue: filteredDeploymentMarket?.volume24H?.value,
+  })
+  const volume = preferProjectMarketData ? (stats.volume ?? tokenMarketVolume) : (tokenMarketVolume ?? stats.volume)
+  // Guard against the second fallback below: `volume` can drop to the Uniswap value even when `stats.volumeSource` is 'project'.
+  const isProjectVolume = stats.volumeSource === 'project' && volume === stats.volume
+  // TVL is never available from CoinGecko project-market data, so REST/V2 is never authoritative
+  // for it when preferProjectMarketData is true (see stats.tvl's source in computeTokenMarketStats).
+  const tvl = getGraphqlStatFallback({
+    isV2TokensEnabled: isV2TokensEnabled && !preferProjectMarketData,
+    v2Value: stats.tvl,
+    showAggregatedStats,
+    aggregatedValue: tokenQueryData?.market?.totalValueLocked?.value,
+    filteredValue: filteredDeploymentMarket?.totalValueLocked?.value,
+  })
+  const { marketCap, fdv } = getProjectValuations({ stats, tokenQueryData })
+  const { high52w, low52w } = stats
 
   const hasStats = tvl || fdv || marketCap || volume || high52w || low52w
 
@@ -126,12 +256,12 @@ export function StatsSection({ tokenQueryData }: StatsSectionProps) {
             testID={TestID.TokenDetailsStatsTvl}
             value={tvl}
             description={
-              multichainTokenUxEnabled && networkFilterName
+              networkFilterName
                 ? t('stats.tvl.description.network', {
-                    symbol: effectiveCurrency.symbol,
+                    symbol: effectiveCurrency.symbol ?? t('common.token'),
                     network: networkFilterName,
                   })
-                : t('stats.tvl.description', { symbol: effectiveCurrency.symbol })
+                : t('stats.tvl.description', { symbol: effectiveCurrency.symbol ?? t('common.token') })
             }
             title={t('common.totalValueLocked')}
           />
@@ -150,11 +280,11 @@ export function StatsSection({ tokenQueryData }: StatsSectionProps) {
           <Stat
             testID={TestID.TokenDetailsStatsVolume24h}
             value={volume}
-            description={
-              effectiveCurrency.chainId === UniverseChainId.Tempo
-                ? t('stats.volume.1d.description.tempo')
-                : t('stats.volume.1d.description')
-            }
+            description={getVolumeDescription({
+              t,
+              isProjectVolume,
+              chainId: effectiveCurrency.chainId,
+            })}
             title={t('stats.volume.1d')}
           />
           <Stat
@@ -172,6 +302,9 @@ export function StatsSection({ tokenQueryData }: StatsSectionProps) {
         </TokenStatsSection>
       </StatsWrapper>
     )
+  }
+  if (isLoading) {
+    return <LoadingStats />
   }
   return (
     <Text color="$neutral3" pt="$spacing40" data-cy="token-details-no-stats-data">

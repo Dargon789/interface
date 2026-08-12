@@ -11,10 +11,10 @@ import { computeSimulationResult } from '~/features/Toucan/Auction/ActivityTimel
 import { fromQ96ToDecimalWithTokenDecimals } from '~/features/Toucan/Auction/BidDistributionChart/utils/q96'
 import { AUCTION_CHART_HEIGHT, useAuctionChart } from '~/features/Toucan/Auction/hooks/useAuctionChart'
 import { useAuctionStore } from '~/features/Toucan/Auction/store/useAuctionStore'
-import { blockToTimestamp } from '~/features/Toucan/Auction/utils/blockToTimestamp'
 import { formatCompactFromRaw } from '~/features/Toucan/Auction/utils/fixedPointFdv'
 import { formatShortDateTime } from '~/features/Toucan/Auction/utils/formatting'
 import { TooltipContainer } from '~/features/Toucan/Shared/TooltipContainer'
+import { blockToTimestamp } from '~/utils/blockToTimestamp'
 
 interface PriceCurvePoint {
   time: UTCTimestamp
@@ -381,7 +381,6 @@ export function SimulationChart({ maxTokenPrice, expectedFinalPrice, budget, tok
   const outbidSeriesRef = useRef<ISeriesApi<'Area'> | null>(null)
   const thresholdSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
 
-  /* oxlint-disable react-hooks/exhaustive-deps -- colors excluded: initial values used at creation, separate effect handles theme updates via applyOptions */
   // Create series and subscribe to crosshair — only when chart instance changes
   useEffect(() => {
     if (!chart) {
@@ -458,8 +457,8 @@ export function SimulationChart({ maxTokenPrice, expectedFinalPrice, budget, tok
       outbidSeriesRef.current = null
       thresholdSeriesRef.current = null
     }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- colors excluded: initial values used at creation, separate effect handles theme updates via applyOptions
   }, [chart])
-  /* oxlint-enable react-hooks/exhaustive-deps */
 
   // Update series colors on theme change without tearing down series
   useEffect(() => {

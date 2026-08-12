@@ -99,68 +99,113 @@ public class DataQueries {
     }
   }
 
-  public static func fetchWalletsTokensData(addresses: [String], chains: [String], maxLength: Int = 25) async throws -> [TokenResponse] {
-    let gqlChains = chains.map { GraphQLEnum(MobileSchema.Chain(rawValue: $0)!) }
+  public static func fetchActiveAccountTokensData(address: String?, maxLength: Int = 25) async throws -> [TokenResponse] {
+    guard let address = address else {
+      return []
+    }
+
+    let chains = UniswapUserDefaults.readChains().chains
+    let chainNamesById = Dictionary(chains.map { ($0.chainId, $0.name) }, uniquingKeysWith: { first, _ in first })
+    guard !chainNamesById.isEmpty else {
+      return []
+    }
+
+    var request = URLRequest(url: URL(string: "\(UniswapGateway.dataApiUrl)/data.v1.DataApiService/GetPortfolio")!)
+    request.httpMethod = "POST"
+    for (name, value) in UniswapGateway.authHeaders {
+      request.setValue(value, forHTTPHeaderField: name)
+    }
+    request.setValue("1", forHTTPHeaderField: "Connect-Protocol-Version")
+    request.setValue("uniswap-ios", forHTTPHeaderField: "x-request-source")
+
+    let body: [String: Any] = [
+      "walletAccount": ["platformAddresses": [["platform": "EVM", "address": address]]],
+      "chainIds": Array(chainNamesById.keys),
+      "multichain": false,
+    ]
+    request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
     return try await withCheckedThrowingContinuation { continuation in
-      Network.shared.apollo.fetch(query: MobileSchema.MultiplePortfolioBalancesQuery(ownerAddresses: addresses, valueModifiers: GraphQLNullable.null, chains: gqlChains)){ result in
-        switch result {
-        case .success(let graphQLResult):
-          // Takes all the signer accounts and sums up the balances of the tokens, then sorts them by descending order, ignoring spam
-          var tokens: [TokenResponse: Double] = [:]
-          let portfolios = graphQLResult.data?.portfolios
-          portfolios?.forEach {
-            $0?.tokenBalances?.forEach { tokenBalance in
-              let value = tokenBalance?.denominatedValue?.value
-              let token = tokenBalance?.token
-              let tokenResponse = TokenResponse(chain: token?.chain.rawValue ?? "", address: token?.address, symbol: token?.symbol ?? "", name: token?.name ?? "")
-              let isSpam = token?.project?.isSpam ?? false
-              if (!isSpam) {
-                tokens[tokenResponse] = (tokens[tokenResponse] ?? 0) + (value ?? 0)
-              }
-            }
-          }
-          let tokenResponses = tokens.keys.sorted { tokens[$0]! > tokens[$1]!}
-          continuation.resume(returning: Array(tokenResponses.prefix(maxLength)))
-        case .failure(let error):
+      let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+          continuation.resume(throwing: error)
+          return
+        }
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode),
+              let data = data else {
+          continuation.resume(throwing: URLError(.badServerResponse))
+          return
+        }
+        do {
+          let response = try JSONDecoder().decode(GetPortfolioResponse.self, from: data)
+          let ranked = (response.portfolio?.balances ?? [])
+            .filter { !isSpam($0.token?.metadata?.spamCode) }
+            .sorted { ($0.valueUsd ?? 0) > ($1.valueUsd ?? 0) }
+            .compactMap { tokenResponse(from: $0, chainNamesById: chainNamesById) }
+          continuation.resume(returning: Array(ranked.prefix(maxLength)))
+        } catch {
           continuation.resume(throwing: error)
         }
       }
+      task.resume()
     }
   }
 
+  private static func isSpam(_ spamCode: String?) -> Bool {
+    return spamCode == "SPAM_CODE_SPAM" || spamCode == "SPAM_CODE_SPAM_URL"
+  }
+
+  private static func tokenResponse(from balance: PortfolioBalance, chainNamesById: [Int: String]) -> TokenResponse? {
+    guard let token = balance.token, let chainId = token.chainId, let chain = chainNamesById[chainId] else {
+      return nil
+    }
+    return TokenResponse(chain: chain, address: token.address, symbol: token.symbol ?? "", name: token.name ?? "")
+  }
+  
   public static func fetchCurrencyConversion(toCurrency: String) async throws -> CurrencyConversionResponse {
+    let usdResponse = CurrencyConversionResponse(convertedAmount: ConvertedAmount(currency: fiatCurrencyIntByCode["USD"] ?? 0, value: 1.0))
+
+    // If USD, don't convert
+    if (toCurrency == "USD") {
+      return usdResponse
+    }
+
+    var request = URLRequest(url: URL(string: "\(UniswapGateway.dataApiUrl)/data.v2.DataApiService/ConvertFiat")!)
+    request.httpMethod = "POST"
+    for (name, value) in UniswapGateway.authHeaders {
+      request.setValue(value, forHTTPHeaderField: name)
+    }
+    request.setValue("1", forHTTPHeaderField: "Connect-Protocol-Version")
+    request.setValue("uniswap-ios", forHTTPHeaderField: "x-request-source")
+
+    let body: [String: Any] = [
+      "fromAmount": [ "currency": fiatCurrencyIntByCode["USD"], "value": 1 ],
+      "toCurrency": fiatCurrencyIntByCode[toCurrency] ?? fiatCurrencyIntByCode["USD"]
+    ]
+    request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
     return try await withCheckedThrowingContinuation { continuation in
-      let usdResponse = CurrencyConversionResponse(conversionRate: 1, currency: WidgetConstants.currencyUsd)
-
-      // Assuming all server currency amounts are in USD
-      if (toCurrency == WidgetConstants.currencyUsd) {
-        return continuation.resume(returning: usdResponse)
-      }
-
-      Network.shared.apollo.fetch(
-        query: MobileSchema.ConvertQuery(
-          fromCurrency: GraphQLEnum(MobileSchema.Currency.usd),
-          toCurrency: GraphQLEnum(rawValue: toCurrency)
-        )
-      ) { result in
-        switch result {
-        case .success(let graphQLResult):
-          let conversionRate = graphQLResult.data?.convert?.value
-          let currency = graphQLResult.data?.convert?.currency?.rawValue
-
-          continuation.resume(
-            returning: conversionRate == nil || currency == nil ? usdResponse :
-              CurrencyConversionResponse(
-                conversionRate: conversionRate!,
-                currency: currency!
-              )
-          )
-        case .failure:
-          continuation.resume(returning: usdResponse)
+      let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+          continuation.resume(throwing: error)
+          return
+        }
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode),
+              let data = data else {
+          continuation.resume(throwing: URLError(.badServerResponse))
+          return
+        }
+        do {
+          let response = try JSONDecoder().decode(CurrencyConversionResponse.self, from: data)
+          continuation.resume(returning: response)
+        } catch {
+          continuation.resume(throwing: error)
         }
       }
+      task.resume()
     }
   }
 }
+
 
 

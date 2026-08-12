@@ -1,19 +1,22 @@
 import { useQuery } from '@tanstack/react-query'
 import { GetClearingPriceHistoryRequest } from '@uniswap/client-data-api/dist/data/v1/auction_pb'
 import { useMemo } from 'react'
-import { auctionQueries } from 'uniswap/src/data/rest/auctions/auctionQueries'
+import { auctionQueries } from 'uniswap/src/data/apiClients/dataApiService/auctions/auctionQueries'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 import { NumberType } from 'utilities/src/format/types'
 import { fromQ96ToDecimalWithTokenDecimals } from '~/features/Toucan/Auction/BidDistributionChart/utils/q96'
 import { computeCurrentValuationFiatFormatted } from '~/features/Toucan/Auction/hooks/computeCurrentValuationFiat'
+import { StatsBannerData } from '~/features/Toucan/Auction/hooks/statsBannerData.types'
 import {
   computeHourlyChangePercent,
   formatAsBidToken,
   formatValuationAsBidToken,
 } from '~/features/Toucan/Auction/hooks/statsBannerFormatters'
 import { useBidTokenInfo } from '~/features/Toucan/Auction/hooks/useBidTokenInfo'
+import { useCommittedVolumeBreakdown } from '~/features/Toucan/Auction/hooks/useCommittedVolumeBreakdown'
 import { useCurrencyRaisedFormatted } from '~/features/Toucan/Auction/hooks/useCurrencyRaisedFormatted'
-import { AuctionProgressState, BidTokenInfo } from '~/features/Toucan/Auction/store/types'
+import { useIsLowVolumeHighFdv } from '~/features/Toucan/Auction/hooks/useIsLowVolumeHighFdv'
+import { AuctionProgressState } from '~/features/Toucan/Auction/store/types'
 import { useAuctionStore } from '~/features/Toucan/Auction/store/useAuctionStore'
 import { getClearingPrice } from '~/features/Toucan/Auction/utils/clearingPrice'
 import {
@@ -21,6 +24,7 @@ import {
   formatCompactFromRaw,
   formatTokenAmountWithSymbol,
 } from '~/features/Toucan/Auction/utils/fixedPointFdv'
+import { getAuctionTokenDecimals } from '~/features/Toucan/Auction/utils/tokenMetadata'
 import {
   buildContractInputForAddress,
   buildTokenMarketPriceKey,
@@ -49,72 +53,26 @@ function shouldFetchClearingPriceHistory({
   )
 }
 
-interface StatsBannerData {
-  // Current clearing price
-  clearingPriceDecimal: number // Raw decimal value for SubscriptZeroPrice component
-  clearingPriceFormatted: string // e.g., "1.25 ETH"
-  clearingPriceFiatFormatted: string // e.g., "$2,750" (in user's selected fiat currency)
-  clearingPriceFiatValue: number | null // Numeric fiat value for SubscriptZeroPrice (in user's currency)
-  changePercent: number | null // null if no change (clearing === floor)
-  isPositiveChange: boolean
-  changeLabel: 'aboveFloor' | 'pastHour' // which label to show next to the change %
-  bidTokenSymbol: string | null // e.g., "ETH"
-  bidTokenInfo: BidTokenInfo | undefined // Full bid token info for formatting
-
-  // Current valuation (totalSupply * clearingPrice)
-  currentValuationFormatted: string // e.g., "224.5k ETH"
-  currentValuationFiatFormatted: string // e.g., "$494.9M" (in user's selected fiat currency)
-
-  // Bids concentration (from concentration band)
-  concentrationStartDecimal: number | null // Raw decimal value for SubscriptZeroPrice
-  concentrationEndDecimal: number | null // Raw decimal value for SubscriptZeroPrice
-  concentrationFiatRangeFormatted: string | null // e.g., "$0.0463 – $0.0563" (fiat price range)
-  concentrationStartFiatValue: number | null // Numeric fiat value for SubscriptZeroPrice (in user's currency)
-  concentrationEndFiatValue: number | null // Numeric fiat value for SubscriptZeroPrice (in user's currency)
-
-  // Total committed volume (totalBidVolume from auction details)
-  totalBidVolumeFormatted: string | null // e.g., "12.4k ETH"
-  totalBidVolumeFiatFormatted: string | null // e.g., "$27.3M" (in user's selected fiat currency)
-
-  // Currency raised at clearing price (from checkpoint data) - for tooltip
-  currencyRaisedFormatted: string | null // e.g., "12.4k ETH"
-
-  // Required currency to graduate (requiredCurrencyRaised from auction details) - for tooltip
-  requiredCurrencyFormatted: string | null // e.g., "10k ETH"
-
-  // Loading state
-  isLoading: boolean
-  hasData: boolean
-
-  // Auction state
-  isAuctionEnded: boolean
-  isAuctionNotStarted: boolean
-}
-
-/**
- * Hook that computes all data needed for the AuctionStatsBanner.
- *
- * This hook:
- * - Gets clearing price, floor price, and total supply from auction store
- * - Calculates change % between clearing and floor price
- * - Computes current valuation (totalSupply * clearingPrice)
- * - Gets concentration band data
- * - Formats all values for display (both in bid tokens and fiat)
- *
- * Note: Fiat values show "--" when priceFiat is unavailable (e.g., testnets)
- */
+// Note: Fiat values show "--" when priceFiat is unavailable (e.g., testnets)
 export function useStatsBannerData(): StatsBannerData {
   const { convertFiatAmount, convertFiatAmountFormatted, formatNumberOrString } = useLocalizationContext()
 
   // Get auction data from store
-  const { auctionDetails, concentrationBand, auctionProgressState, checkpointData, onchainCheckpoint } =
-    useAuctionStore((state) => ({
-      auctionDetails: state.auctionDetails,
-      concentrationBand: state.concentrationBand,
-      auctionProgressState: state.progress.state,
-      checkpointData: state.checkpointData,
-      onchainCheckpoint: state.onchainCheckpoint,
-    }))
+  const {
+    auctionDetails,
+    concentrationBand,
+    auctionProgressState,
+    checkpointData,
+    onchainCheckpoint,
+    bidDistributionData,
+  } = useAuctionStore((state) => ({
+    auctionDetails: state.auctionDetails,
+    concentrationBand: state.concentrationBand,
+    auctionProgressState: state.progress.state,
+    checkpointData: state.checkpointData,
+    onchainCheckpoint: state.onchainCheckpoint,
+    bidDistributionData: state.bidDistributionData,
+  }))
 
   // Get bid token info
   const { bidTokenInfo, loading: bidTokenLoading } = useBidTokenInfo({
@@ -123,7 +81,6 @@ export function useStatsBannerData(): StatsBannerData {
   })
   const auctionChainId = auctionDetails?.chainId
   const bidTokenAddress = auctionDetails?.currency
-  const auctionTokenAddress = auctionDetails?.tokenAddress
 
   const bidTokenContracts = useMemo(() => {
     if (!auctionChainId || !bidTokenAddress) {
@@ -141,21 +98,6 @@ export function useStatsBannerData(): StatsBannerData {
 
   const { priceMap: bidTokenMarketPriceMap } = useTokenMarketPrices(bidTokenContracts)
 
-  const auctionTokenContracts = useMemo(() => {
-    if (!auctionChainId || !auctionTokenAddress) {
-      return []
-    }
-
-    return [
-      buildContractInputForAddress({
-        chainId: auctionChainId,
-        address: auctionTokenAddress,
-      }),
-    ]
-  }, [auctionChainId, auctionTokenAddress])
-
-  const { priceMap: auctionTokenMarketPriceMap } = useTokenMarketPrices(auctionTokenContracts)
-
   // Use the same market price source as top auctions table/chips for committed volume consistency.
   const bidTokenMarketPriceUsd = useMemo(() => {
     if (!auctionChainId || !bidTokenAddress) {
@@ -169,18 +111,6 @@ export function useStatsBannerData(): StatsBannerData {
     return bidTokenMarketPriceMap[key]
   }, [auctionChainId, bidTokenAddress, bidTokenMarketPriceMap])
 
-  const auctionTokenMarketPriceUsd = useMemo(() => {
-    if (!auctionChainId || !auctionTokenAddress) {
-      return undefined
-    }
-
-    const key = buildTokenMarketPriceKey({
-      chainId: auctionChainId,
-      address: auctionTokenAddress,
-    })
-    return auctionTokenMarketPriceMap[key]
-  }, [auctionChainId, auctionTokenAddress, auctionTokenMarketPriceMap])
-
   // Extract auction parameters
   // Use on-chain clearing price during active auction for display consistency with isInRange
   // Use simulated clearing price when auction has ended (preserves final state)
@@ -189,7 +119,7 @@ export function useStatsBannerData(): StatsBannerData {
   const clearingPrice = getClearingPrice(effectiveCheckpoint, auctionDetails)
   const floorPrice = auctionDetails?.floorPrice ?? '0'
   const totalSupply = auctionDetails?.tokenTotalSupply ?? '0'
-  const auctionTokenDecimals = auctionDetails?.token?.currency.decimals ?? 18
+  const auctionTokenDecimals = getAuctionTokenDecimals(auctionDetails?.token)
 
   const parseQ96ToDecimal = useMemo(
     () => (q96Value: string) =>
@@ -296,7 +226,7 @@ export function useStatsBannerData(): StatsBannerData {
 
   // Calculate and format current valuation (totalSupply * clearingPrice)
   const currentValuationFormatted = useMemo(() => {
-    if (!bidTokenInfo || !totalSupply || totalSupply === '0') {
+    if (!bidTokenInfo || !totalSupply || totalSupply === '0' || auctionTokenDecimals === undefined) {
       return '--'
     }
     return formatValuationAsBidToken({
@@ -308,9 +238,8 @@ export function useStatsBannerData(): StatsBannerData {
   }, [auctionTokenDecimals, bidTokenInfo, clearingPrice, totalSupply])
 
   // Format current valuation in user's selected fiat currency (no "USD" suffix)
-  // For completed auctions, this should represent FDV at launch using launch-time clearing
-  // price and launch-time bid-token USD price from auction details.
-  // Fall back to auction token market price, then current bid token price.
+  // Completed auctions show FDV at launch on the launch valuation basis, consistent with the
+  // bid-token line above (LP-821) — see computeCurrentValuationUsd.
   // Returns "--" when required price data is unavailable.
   const currentValuationFiatFormatted = useMemo(
     () =>
@@ -321,7 +250,6 @@ export function useStatsBannerData(): StatsBannerData {
         clearingPriceQ96: clearingPrice,
         launchBidTokenPriceUsdRaw: auctionDetails?.currencyPriceUsd,
         bidTokenInfo,
-        auctionTokenMarketPriceUsd,
         bidTokenMarketPriceUsd,
         convertFiatAmountFormatted,
       }),
@@ -329,7 +257,6 @@ export function useStatsBannerData(): StatsBannerData {
       auctionDetails?.currencyPriceUsd,
       auctionProgressState,
       auctionTokenDecimals,
-      auctionTokenMarketPriceUsd,
       bidTokenInfo,
       bidTokenMarketPriceUsd,
       clearingPrice,
@@ -441,8 +368,29 @@ export function useStatsBannerData(): StatsBannerData {
     return `${formatted} ${bidTokenInfo.symbol}`
   }, [auctionDetails?.requiredCurrencyRaised, bidTokenInfo])
 
+  const committedVolumeBreakdown = useCommittedVolumeBreakdown({
+    bidDistributionData,
+    clearingPriceQ96: clearingPrice,
+    checkpoint: effectiveCheckpoint,
+    auctionDetails,
+    bidTokenInfo,
+    bidTokenMarketPriceUsd,
+    convertFiatAmountFormatted,
+  })
+
+  const isLowVolumeHighFdv = useIsLowVolumeHighFdv({
+    auctionDetails,
+    effectiveCheckpoint,
+    totalSupply,
+    auctionProgressState,
+    auctionTokenDecimals,
+    clearingPriceQ96: clearingPrice,
+    bidTokenInfo,
+    bidTokenMarketPriceUsd,
+  })
+
   // Determine loading state
-  const isLoading = bidTokenLoading || !auctionDetails
+  const isLoading = bidTokenLoading || !auctionDetails || auctionTokenDecimals === undefined
   const hasData = !isLoading && bidTokenInfo !== undefined
   const isAuctionEnded = auctionProgressState === AuctionProgressState.ENDED
   const isAuctionNotStarted = auctionProgressState === AuctionProgressState.NOT_STARTED
@@ -468,6 +416,8 @@ export function useStatsBannerData(): StatsBannerData {
     totalBidVolumeFiatFormatted: totalBidVolume.fiatFormatted,
     currencyRaisedFormatted,
     requiredCurrencyFormatted,
+    committedVolumeBreakdown,
+    isLowVolumeHighFdv,
     isLoading,
     hasData,
     isAuctionEnded,

@@ -1,6 +1,10 @@
 // oxlint-disable eslint-js/no-restricted-syntax -- allow process.env access in these config files
-import type { BaseConfig } from '@universe/config'
+import type { BaseConfig, EnvFieldRules } from '@universe/config'
 import { AppId, boolFromString, Environment, NodeEnv, parseConfig } from '@universe/config'
+import {
+  getUniswapServiceUrls as getUniswapServiceUrlsFromOverrides,
+  type UniswapServiceUrls,
+} from 'uniswap/src/constants/urls'
 import { logger } from 'utilities/src/logger/logger'
 import { z } from 'zod'
 
@@ -14,17 +18,17 @@ const webConfigValues = {
   // #region API Keys
 
   /** Overrides base config — web requires this to be present (walletConnect.ts throws) */
-  walletConnectProjectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID,
+  walletConnectProjectId: process.env.WALLETCONNECT_PROJECT_ID ?? process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID,
 
   // #endregion
 
   // #region Endpoint URLs
 
-  /** REACT_APP_AWS_API_ENDPOINT — Apollo GraphQL API */
-  awsApiEndpoint: process.env.REACT_APP_AWS_API_ENDPOINT,
+  /** AWS_API_ENDPOINT — Apollo GraphQL API */
+  awsApiEndpoint: process.env.AWS_API_ENDPOINT ?? process.env.REACT_APP_AWS_API_ENDPOINT,
 
-  /** REACT_APP_UNISWAP_GATEWAY_DNS — gateway v2 (routing, order status, UniswapX) */
-  uniswapGatewayDns: process.env.REACT_APP_UNISWAP_GATEWAY_DNS,
+  /** UNISWAP_GATEWAY_DNS — gateway v2 (routing, order status, UniswapX) */
+  uniswapGatewayDns: process.env.UNISWAP_GATEWAY_DNS ?? process.env.REACT_APP_UNISWAP_GATEWAY_DNS,
 
   /** ENTRY_GATEWAY_API_URL — BFF proxy target; falls back to staging URL */
   // TODO(apps-infra): Clarify difference between entryGatewayApiUrl (server-side) and entryGatewayApiUrlOverride (BaseConfig)
@@ -33,29 +37,8 @@ const webConfigValues = {
   /** WEBSOCKET_URL — WebSocket proxy target; falls back to staging URL */
   websocketUrl: process.env.WEBSOCKET_URL,
 
-  /** VITE_BACKEND_URL — override proxy target URL in dev */
-  viteBackendUrl: process.env.VITE_BACKEND_URL,
-
-  /** REACT_APP_QUICKNODE_AVAX_RPC_URL */
-  quicknodeAvaxRpcUrl: process.env.REACT_APP_QUICKNODE_AVAX_RPC_URL,
-
-  /** REACT_APP_QUICKNODE_BASE_RPC_URL */
-  quicknodeBaseRpcUrl: process.env.REACT_APP_QUICKNODE_BASE_RPC_URL,
-
-  /** REACT_APP_QUICKNODE_BLAST_RPC_URL */
-  quicknodeBlastRpcUrl: process.env.REACT_APP_QUICKNODE_BLAST_RPC_URL,
-
-  /** REACT_APP_QUICKNODE_BNB_RPC_URL */
-  quicknodeBnbRpcUrl: process.env.REACT_APP_QUICKNODE_BNB_RPC_URL,
-
-  /** REACT_APP_QUICKNODE_CELO_RPC_URL */
-  quicknodeCeloRpcUrl: process.env.REACT_APP_QUICKNODE_CELO_RPC_URL,
-
-  /** REACT_APP_QUICKNODE_OP_RPC_URL */
-  quicknodeOpRpcUrl: process.env.REACT_APP_QUICKNODE_OP_RPC_URL,
-
-  /** REACT_APP_QUICKNODE_POLYGON_RPC_URL */
-  quicknodePolygonRpcUrl: process.env.REACT_APP_QUICKNODE_POLYGON_RPC_URL,
+  /** BACKEND_URL — override proxy target URL in dev */
+  viteBackendUrl: process.env.BACKEND_URL ?? process.env.VITE_BACKEND_URL,
 
   // #endregion
 
@@ -70,9 +53,6 @@ const webConfigValues = {
   /** ANVIL_PORT — port for local Anvil blockchain fork */
   anvilPort: process.env.ANVIL_PORT,
 
-  /** ENABLE_ANVIL_SNAPSHOTS — use Anvil state snapshots in e2e tests */
-  enableAnvilSnapshots: process.env.ENABLE_ANVIL_SNAPSHOTS,
-
   /** STORYBOOK_EXTENSION — enables extension mode in Storybook */
   storybookExtension: process.env.STORYBOOK_EXTENSION,
 
@@ -80,23 +60,20 @@ const webConfigValues = {
 
   // #region Build Settings
 
-  /** REACT_APP_GIT_COMMIT_HASH — from `git rev-parse HEAD` */
-  gitCommitHash: process.env.REACT_APP_GIT_COMMIT_HASH,
-
-  /** DEPLOY_TARGET — determines build output format */
-  deployTarget: process.env.DEPLOY_TARGET,
+  /** GIT_COMMIT_HASH — from `git rev-parse HEAD` */
+  gitCommitHash: process.env.GIT_COMMIT_HASH ?? process.env.REACT_APP_GIT_COMMIT_HASH,
 
   /** ENABLE_REACT_COMPILER — opt-in to React Compiler babel plugin */
   enableReactCompiler: process.env.ENABLE_REACT_COMPILER,
 
-  /** VITE_DISABLE_SOURCEMAP — skip sourcemap generation */
-  disableSourcemap: process.env.VITE_DISABLE_SOURCEMAP,
+  /** DISABLE_SOURCEMAP — skip sourcemap generation */
+  disableSourcemap: process.env.DISABLE_SOURCEMAP ?? process.env.VITE_DISABLE_SOURCEMAP,
 
-  /** VITE_DEBUG_PROXY — verbose entry-gateway proxy logging */
-  debugProxy: process.env.VITE_DEBUG_PROXY,
+  /** DEBUG_PROXY — verbose entry-gateway proxy logging */
+  debugProxy: process.env.DEBUG_PROXY ?? process.env.VITE_DEBUG_PROXY,
 
-  /** VITE_SKIP_CSP — skip CSP meta tag injection */
-  skipCsp: process.env.VITE_SKIP_CSP,
+  /** SKIP_CSP — skip CSP meta tag injection */
+  skipCsp: process.env.SKIP_CSP,
 
   /** CLOUDFLARE_ENV — wrangler environment name for CF deploys */
   cloudflareEnv: process.env.CLOUDFLARE_ENV,
@@ -105,20 +82,20 @@ const webConfigValues = {
 
   // #region Analytics & Monitoring
 
-  /** REACT_APP_ANALYTICS_ENABLED — gates remote reporting */
-  analyticsEnabled: process.env.REACT_APP_ANALYTICS_ENABLED,
+  /** ANALYTICS_ENABLED — gates remote reporting */
+  analyticsEnabled: process.env.ANALYTICS_ENABLED ?? process.env.REACT_APP_ANALYTICS_ENABLED,
 
-  /** REACT_APP_SENTRY_ENABLED — gates Sentry error reporting */
-  sentryEnabled: process.env.REACT_APP_SENTRY_ENABLED,
+  /** SENTRY_ENABLED — gates Sentry error reporting */
+  sentryEnabled: process.env.SENTRY_ENABLED ?? process.env.REACT_APP_SENTRY_ENABLED,
 
-  /** REACT_APP_SENTRY_TRACES_SAMPLE_RATE — 0–1 float */
-  sentryTracesSampleRate: process.env.REACT_APP_SENTRY_TRACES_SAMPLE_RATE,
+  /** SENTRY_TRACES_SAMPLE_RATE — 0–1 float */
+  sentryTracesSampleRate: process.env.SENTRY_TRACES_SAMPLE_RATE ?? process.env.REACT_APP_SENTRY_TRACES_SAMPLE_RATE,
 
   // #endregion
 }
 
 /** Zod schema for web-specific config fields */
-const webConfigSchema = z.object({
+export const webConfigSchema = z.object({
   // Environment & Build Metadata
   webBuildType: z.string().default('vite').describe('Web build tool identifier'),
   gitCommitHash: z.string().default('').describe('Git commit hash at build time'),
@@ -131,26 +108,14 @@ const webConfigSchema = z.object({
   entryGatewayApiUrl: z.string().optional().describe('URL for entry gateway BFF proxy'),
   websocketUrl: z.string().optional().describe('URL for WebSocket proxy'),
   viteBackendUrl: z.string().optional().describe('Override URL for Vite dev proxy target'),
-  quicknodeAvaxRpcUrl: z.string().optional().describe('QuickNode RPC URL for Avalanche'),
-  quicknodeBaseRpcUrl: z.string().optional().describe('QuickNode RPC URL for Base'),
-  quicknodeBlastRpcUrl: z.string().optional().describe('QuickNode RPC URL for Blast'),
-  quicknodeBnbRpcUrl: z.string().optional().describe('QuickNode RPC URL for BNB Chain'),
-  quicknodeCeloRpcUrl: z.string().optional().describe('QuickNode RPC URL for Celo'),
-  quicknodeOpRpcUrl: z.string().optional().describe('QuickNode RPC URL for Optimism'),
-  quicknodePolygonRpcUrl: z.string().optional().describe('QuickNode RPC URL for Polygon'),
 
   // Testing & CI
   ci: boolFromString.describe('Is the app running in CI'),
   reportToSlack: boolFromString.describe('Should Playwright results post to Slack'),
   anvilPort: z.coerce.number().default(8545).describe('Port for local Anvil blockchain fork'),
-  enableAnvilSnapshots: boolFromString.describe('Are Anvil state snapshots enabled for E2E'),
   storybookExtension: boolFromString.describe('Is Storybook extension mode enabled'),
 
   // Build Settings
-  deployTarget: z
-    .enum(['vercel', 'cloudflare'])
-    .default('cloudflare')
-    .describe('Deployment target platform, defaults to cloudflare'),
   enableReactCompiler: boolFromString.describe('Is the React Compiler babel plugin enabled'),
   disableSourcemap: boolFromString.describe('Is sourcemap generation disabled'),
   debugProxy: boolFromString.describe('Is verbose entry-gateway proxy logging enabled'),
@@ -165,6 +130,17 @@ const webConfigSchema = z.object({
 
 export type Config = Omit<BaseConfig, keyof z.infer<typeof webConfigSchema> & string> & z.infer<typeof webConfigSchema>
 
+/**
+ * Env-scoped field rules for the web app, enforced by parseConfig together
+ * with the base rules (URL overrides forbidden in production).
+ */
+export const webEnvFieldRules: EnvFieldRules<Config> = {
+  [Environment.Production]: {
+    required: ['statsigApiKey', 'tradingApiKey', 'uniswapApiKey'],
+    forbidden: ['viteBackendUrl', 'debugProxy'],
+  },
+}
+
 // Module-level cache for config to avoid recomputing on every call
 let cachedConfig: Config | undefined
 
@@ -175,6 +151,7 @@ export const getConfig = (): Config => {
   cachedConfig = parseConfig({
     values: webConfigValues,
     schema: webConfigSchema,
+    envFieldRules: webEnvFieldRules,
   })
   if (cachedConfig.environment !== Environment.Production && cachedConfig.nodeEnv !== NodeEnv.Test) {
     logger.debug('config.ts', 'getConfig', 'Using app config:', cachedConfig)
@@ -193,4 +170,8 @@ export function getPrivyConfig(isRequired = true): { appId: string; clientId: st
 
 export function getPrivyAppId(): string | undefined {
   return getPrivyConfig(false).appId || undefined
+}
+
+export function getUniswapServiceUrls(): UniswapServiceUrls {
+  return getUniswapServiceUrlsFromOverrides(getConfig())
 }

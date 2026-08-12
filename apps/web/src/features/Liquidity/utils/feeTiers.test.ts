@@ -16,24 +16,36 @@ import {
 import { FeeTierData } from '~/types/liquidity'
 
 describe('calculateTickSpacingFromFeeAmount', () => {
-  it('returns correct tick spacing for typical fee amounts', () => {
-    expect(calculateTickSpacingFromFeeAmount(100)).toBe(2) // .01%
-    expect(calculateTickSpacingFromFeeAmount(500)).toBe(10) // .05%
-    expect(calculateTickSpacingFromFeeAmount(3000)).toBe(60) // .3%
+  it('returns correct tick spacing for typical fee amounts (2x)', () => {
+    expect(calculateTickSpacingFromFeeAmount(100, false)).toBe(2) // .01%
+    expect(calculateTickSpacingFromFeeAmount(500, false)).toBe(10) // .05%
+    expect(calculateTickSpacingFromFeeAmount(3000, false)).toBe(60) // .3%
   })
 
   it('rounds to nearest whole number', () => {
-    expect(calculateTickSpacingFromFeeAmount(333)).toBe(7)
-    expect(calculateTickSpacingFromFeeAmount(250)).toBe(5)
+    expect(calculateTickSpacingFromFeeAmount(333, false)).toBe(7)
+    expect(calculateTickSpacingFromFeeAmount(250, false)).toBe(5)
   })
 
   it('returns at least 1 for very small fee amounts', () => {
-    expect(calculateTickSpacingFromFeeAmount(0.1)).toBe(1)
-    expect(calculateTickSpacingFromFeeAmount(0)).toBe(1)
+    expect(calculateTickSpacingFromFeeAmount(0.1, false)).toBe(1)
+    expect(calculateTickSpacingFromFeeAmount(0, false)).toBe(1)
   })
 
   it('handles large fee amounts', () => {
-    expect(calculateTickSpacingFromFeeAmount(10000)).toBe(200)
+    expect(calculateTickSpacingFromFeeAmount(10000, false)).toBe(200)
+  })
+
+  it('uses the 1x multiplier when the flag is enabled', () => {
+    expect(calculateTickSpacingFromFeeAmount(100, true)).toBe(1) // .01%
+    expect(calculateTickSpacingFromFeeAmount(500, true)).toBe(5) // .05%
+    expect(calculateTickSpacingFromFeeAmount(3000, true)).toBe(30) // .3%
+    expect(calculateTickSpacingFromFeeAmount(10000, true)).toBe(100)
+  })
+
+  it('still enforces a minimum of 1 when the flag is enabled', () => {
+    expect(calculateTickSpacingFromFeeAmount(0, true)).toBe(1)
+    expect(calculateTickSpacingFromFeeAmount(30, true)).toBe(1) // round(0.3) = 0, floored to 1
   })
 })
 
@@ -279,7 +291,12 @@ describe('getDefaultFeeTiersWithData', () => {
       protocolVersion: ProtocolVersion.V3,
     })
     // Only fee tiers present in both defaultFeeTiers and sharedFeeTierData for Mainnet
-    expect(result.map((f) => f.tier)).toEqual([FeeAmount.HIGH, FeeAmount.MEDIUM, FeeAmount.LOW, FeeAmount.LOWEST])
+    expect(result.map((f) => f.value.feeAmount)).toEqual([
+      FeeAmount.HIGH,
+      FeeAmount.MEDIUM,
+      FeeAmount.LOW,
+      FeeAmount.LOWEST,
+    ])
   })
 
   it('returns correct fee tiers for Base (V3)', () => {
@@ -289,7 +306,7 @@ describe('getDefaultFeeTiersWithData', () => {
       protocolVersion: ProtocolVersion.V3,
     })
     // All fee tiers present in both defaultFeeTiers and sharedFeeTierData for Base
-    expect(result.map((f) => f.tier)).toEqual([
+    expect(result.map((f) => f.value.feeAmount)).toEqual([
       FeeAmount.HIGH,
       FeeAmount.MEDIUM,
       FeeAmount.LOW,
@@ -310,7 +327,7 @@ describe('getDefaultFeeTiersWithData', () => {
       feeTierData: partialFeeTierData,
       protocolVersion: ProtocolVersion.V3,
     })
-    expect(result.map((f) => f.tier)).toEqual([FeeAmount.LOWEST, FeeAmount.LOW])
+    expect(result.map((f) => f.value.feeAmount)).toEqual([FeeAmount.LOWEST, FeeAmount.LOW])
   })
 
   it('returns empty array if no fee tiers match (V3)', () => {
@@ -352,7 +369,7 @@ describe('getDefaultFeeTiersWithData', () => {
       .sort((a, b) => parseFloat(b[1].tvl) - parseFloat(a[1].tvl))
       .slice(0, 4)
       .map(([feeAmount]) => Number(feeAmount))
-    expect(result.map((f) => f.tier)).toEqual(sortedTiers)
+    expect(result.map((f) => f.value.feeAmount)).toEqual(sortedTiers)
   })
 
   it('sorts V3 fee tiers by TVL descending', () => {
@@ -381,7 +398,7 @@ describe('getDefaultFeeTiersWithData', () => {
       protocolVersion: ProtocolVersion.V3,
     })
     // Should be sorted by TVL descending
-    expect(result.map((f) => f.tier)).toEqual([
+    expect(result.map((f) => f.value.feeAmount)).toEqual([
       FeeAmount.MEDIUM, // 400
       FeeAmount.LOWEST, // 300
       FeeAmount.HIGH, // 200

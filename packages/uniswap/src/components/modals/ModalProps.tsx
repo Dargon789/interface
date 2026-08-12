@@ -28,18 +28,28 @@ export type ModalProps = PropsWithChildren<{
   blurredBackground?: boolean
   dismissOnBackPress?: boolean
   isDismissible?: boolean
+  // defaults to isDismissible; set false to keep handle/backdrop dismissal but stop drags on the sheet content from dismissing (e.g. long scrollable content)
+  enableContentPanningGesture?: boolean
   overrideInnerContainer?: boolean
   position?: ComponentProps<typeof View>['position']
   renderBehindTopInset?: boolean
   renderBehindBottomInset?: boolean
   hideKeyboardOnDismiss?: boolean
   hideKeyboardOnSwipeDown?: boolean
+  // native only; 'restore' settles the sheet back to its resting position after the keyboard hides (gorhom default: 'none')
+  keyboardBlurBehavior?: ComponentProps<typeof BaseModal>['keyboardBlurBehavior']
+  // native only; blur the focused BottomSheetTextInput as soon as a sheet pan starts. Required when the sheet hosts a
+  // BottomSheetTextInput: with the keyboard registered as shown, gorhom's pan-end worklet calls Dimensions.get (a
+  // non-worklet host function) on the UI runtime and hard-crashes; blurring at pan start keeps that branch unreachable.
+  enableBlurKeyboardOnGesture?: boolean
   // extend the sheet to its maximum snap point when keyboard is visible
   extendOnKeyboardVisible?: boolean
   // defaults to `true`
   isModalOpen?: boolean
   analyticsProperties?: Record<string, unknown>
   skipLogImpression?: boolean
+  // web-only: skips Tamagui's built-in scroll lock for callers that already manage their own
+  disableRemoveScroll?: boolean
 
   // TODO MOB-2526 refactor Modal to more platform-agnostic
   alignment?: 'center' | 'top'
@@ -59,6 +69,7 @@ export type ModalProps = PropsWithChildren<{
   zIndex?: number
   borderWidth?: number
   borderColor?: ColorTokens
+  borderRadius?: ComponentProps<typeof View>['borderRadius']
   overlayOpacity?: number
   focusHook?: ComponentProps<typeof BottomSheetView>['focusHook']
   testID?: string

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { GetLatestCheckpointRequest } from '@uniswap/client-data-api/dist/data/v1/auction_pb'
 import { useEffect, useMemo } from 'react'
-import { auctionQueries } from 'uniswap/src/data/rest/auctions/auctionQueries'
+import { auctionQueries } from 'uniswap/src/data/apiClients/dataApiService/auctions/auctionQueries'
 import { EVMUniverseChainId } from 'uniswap/src/features/chains/types'
 import { AuctionProgressState } from '~/features/Toucan/Auction/store/types'
 import { useAuctionStore, useAuctionStoreActions } from '~/features/Toucan/Auction/store/useAuctionStore'
@@ -19,7 +19,7 @@ export function useLoadCheckpointData(
   chainId: EVMUniverseChainId | undefined,
   auctionAddress: string | undefined,
 ): void {
-  const { setCheckpointData, setOnchainCheckpoint } = useAuctionStoreActions()
+  const { setCheckpointData, setOnchainCheckpoint, setTotalCleared } = useAuctionStoreActions()
 
   // Only poll when auction is actively running - data is static before start and after end
   const isAuctionActive = useAuctionStore((state) => state.progress.state === AuctionProgressState.IN_PROGRESS)
@@ -57,5 +57,8 @@ export function useLoadCheckpointData(
     setCheckpointData(checkpointResponse.simulatedCheckpoint ?? checkpointResponse.checkpoint ?? null)
     // checkpoint for in-range detection (on-chain truth)
     setOnchainCheckpoint(checkpointResponse.checkpoint ?? null)
-  }, [checkpointResponse, setCheckpointData, setOnchainCheckpoint])
+    // total tokens cleared from the response-level field (not the deprecated Checkpoint.totalCleared);
+    // feeds the "% of supply sold" metric and remaining-supply math
+    setTotalCleared(checkpointResponse.totalCleared || null)
+  }, [checkpointResponse, setCheckpointData, setOnchainCheckpoint, setTotalCleared])
 }

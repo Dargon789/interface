@@ -1,14 +1,42 @@
 import { renderHook } from '@testing-library/react'
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import { Percent } from '@uniswap/sdk-core'
-import { useGetPoolsByTokens } from 'uniswap/src/data/rest/getPools'
+import { type Currency, Percent } from '@uniswap/sdk-core'
+import { DAI, USDT } from 'uniswap/src/constants/tokens'
+import { useGetPoolsByTokens } from 'uniswap/src/data/apiClients/dataApiService/pools/getPools'
 import { UniverseChainId } from 'uniswap/src/features/chains/types'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAllFeeTierPoolData } from '~/features/Liquidity/hooks/useAllFeeTierPoolData'
+import { usePoolLookupTokenAddresses } from '~/features/Liquidity/hooks/usePoolLookupTokenAddresses'
 import { TEST_TOKEN_1, TEST_TOKEN_2 } from '~/test-utils/constants'
 
-vi.mock('uniswap/src/data/rest/getPools', () => ({
+vi.mock('uniswap/src/data/apiClients/dataApiService/pools/getPools', () => ({
   useGetPoolsByTokens: vi.fn(),
+}))
+
+// The on-chain existence check (wagmi) is covered separately; default it to "no unavailable pools" here
+// so these tests focus on indexed-data merging without needing a WagmiProvider.
+vi.mock('~/features/Liquidity/hooks/useV4PoolsInitializedOnChain', () => ({
+  useV4PoolsInitializedOnChain: vi.fn(() => ({
+    unavailableFeeTierKeys: new Set(),
+    isLoading: false,
+    isError: false,
+  })),
+}))
+
+// Adapter mapping (permissioned pairs) is covered in usePoolLookupTokenAddresses.test.ts;
+// pass displayed addresses through so these tests need no QueryClientProvider.
+const passThroughLookup = vi.hoisted(
+  () =>
+    ({ token0, token1 }: { token0: Maybe<Currency>; token1: Maybe<Currency> }) => ({
+      lookupAddress0: token0?.isToken ? token0.address : undefined,
+      lookupAddress1: token1?.isToken ? token1.address : undefined,
+      orientationFlipped: false,
+      isLoading: false,
+    }),
+)
+
+vi.mock('~/features/Liquidity/hooks/usePoolLookupTokenAddresses', () => ({
+  usePoolLookupTokenAddresses: vi.fn(passThroughLookup),
 }))
 
 const useGetPoolsByTokensMock = vi.mocked(useGetPoolsByTokens)
@@ -54,6 +82,10 @@ describe('useAllFeeTierPoolData', () => {
   const sdkCurrencies = { TOKEN0: TEST_TOKEN_1, TOKEN1: TEST_TOKEN_2 }
   const hook = ''
 
+  beforeEach(() => {
+    vi.mocked(usePoolLookupTokenAddresses).mockImplementation(passThroughLookup)
+  })
+
   afterEach(() => {
     vi.clearAllMocks()
   })
@@ -64,6 +96,7 @@ describe('useAllFeeTierPoolData', () => {
     expect(result.current).toEqual({
       feeTierData: DEFAULT_FEE_TIER_DATA,
       hasExistingFeeTiers: false,
+      isLoading: false,
     })
   })
 
@@ -102,6 +135,7 @@ describe('useAllFeeTierPoolData', () => {
         },
       },
       hasExistingFeeTiers: true,
+      isLoading: false,
     })
   })
 
@@ -148,6 +182,7 @@ describe('useAllFeeTierPoolData', () => {
         },
       },
       hasExistingFeeTiers: true,
+      isLoading: false,
     })
   })
 
@@ -208,6 +243,7 @@ describe('useAllFeeTierPoolData', () => {
         },
       },
       hasExistingFeeTiers: true,
+      isLoading: false,
     })
   })
 
@@ -254,6 +290,7 @@ describe('useAllFeeTierPoolData', () => {
         },
       },
       hasExistingFeeTiers: true,
+      isLoading: false,
     })
   })
 
@@ -263,6 +300,7 @@ describe('useAllFeeTierPoolData', () => {
     expect(result.current).toEqual({
       feeTierData: DEFAULT_FEE_TIER_DATA,
       hasExistingFeeTiers: false,
+      isLoading: false,
     })
   })
 
@@ -279,6 +317,25 @@ describe('useAllFeeTierPoolData', () => {
     expect(result.current).toEqual({
       feeTierData: DEFAULT_FEE_TIER_DATA,
       hasExistingFeeTiers: false,
+      isLoading: false,
     })
+  })
+
+  it('should report loading while the permissions address mapping is loading', () => {
+    useGetPoolsByTokensMock.mockReturnValue({ data: undefined, isLoading: false } as any)
+    vi.mocked(usePoolLookupTokenAddresses).mockReturnValue({
+      lookupAddress0: undefined,
+      lookupAddress1: undefined,
+      orientationFlipped: false,
+      isLoading: true,
+    })
+
+    // TEST_TOKEN_1's address doubles as NEW_TOKEN_PLACEHOLDER_ADDRESS, which suppresses fetching
+    // (and therefore the loading state), so this test needs real token fixtures.
+    const { result } = renderHook(() =>
+      useAllFeeTierPoolData({ chainId, protocolVersion, sdkCurrencies: { TOKEN0: DAI, TOKEN1: USDT }, hook }),
+    )
+
+    expect(result.current.isLoading).toBe(true)
   })
 })

@@ -84,6 +84,14 @@ exports[`Routes > router definition should match snapshot 1`] = `
     "getElement": [Function],
     "getTitle": [Function],
     "nestedPaths": [],
+    "path": "/launches",
+  },
+  {
+    "enabled": [Function],
+    "getDescription": [Function],
+    "getElement": [Function],
+    "getTitle": [Function],
+    "nestedPaths": [],
     "path": "/liquidity/launch-auction",
   },
   {
@@ -164,6 +172,14 @@ exports[`Routes > router definition should match snapshot 1`] = `
     "getElement": [Function],
     "getTitle": [Function],
     "nestedPaths": [],
+    "path": "/onramp-return",
+  },
+  {
+    "enabled": [Function],
+    "getDescription": [Function],
+    "getElement": [Function],
+    "getTitle": [Function],
+    "nestedPaths": [],
     "path": "/swap",
   },
   {
@@ -179,15 +195,9 @@ exports[`Routes > router definition should match snapshot 1`] = `
     "getDescription": [Function],
     "getElement": [Function],
     "getTitle": [Function],
-    "nestedPaths": [],
-    "path": "/positions/add/:chainName/:poolAddress",
-  },
-  {
-    "enabled": [Function],
-    "getDescription": [Function],
-    "getElement": [Function],
-    "getTitle": [Function],
-    "nestedPaths": [],
+    "nestedPaths": [
+      ":chainName/:poolAddress",
+    ],
     "path": "/positions/add",
   },
   {
@@ -387,14 +397,6 @@ exports[`Routes > router definition should match snapshot 1`] = `
     "getTitle": [Function],
     "nestedPaths": [],
     "path": "/extension/uninstall",
-  },
-  {
-    "enabled": [Function],
-    "getDescription": [Function],
-    "getElement": [Function],
-    "getTitle": [Function],
-    "nestedPaths": [],
-    "path": "/wrapped",
   },
   {
     "enabled": [Function],

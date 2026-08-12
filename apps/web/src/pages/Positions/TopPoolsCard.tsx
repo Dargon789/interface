@@ -4,13 +4,15 @@ import { Flex, Text } from 'ui/src'
 import { useEnabledChains } from 'uniswap/src/features/chains/hooks/useEnabledChains'
 import { toGraphQLChain } from 'uniswap/src/features/chains/utils'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { supportedChainIdFromGQLChain } from '~/appGraphql/data/chainUtils'
-import { gqlToCurrency, unwrapToken } from '~/appGraphql/data/util'
 import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
+import { supportedChainIdFromGQLChain } from '~/data/chainUtils'
+import { gqlToCurrency, unwrapToken } from '~/data/util'
 import { LiquidityPositionInfoBadges } from '~/features/Liquidity/LiquidityPositionInfoBadges'
 import { LPIncentiveRewardsBadge } from '~/features/Liquidity/LPIncentives/LPIncentiveRewardsBadge'
 import { PoolStat } from '~/types/explore'
 
+// `pool.feeTier` and `pool.protocolFeePips` are both sourced from data-api GetProtocolFees by the
+// top-pools hook that builds the PoolStat.
 export function TopPoolsCard({ pool }: { pool: PoolStat }) {
   const { t } = useTranslation()
   const { defaultChainId } = useEnabledChains()
@@ -20,7 +22,7 @@ export function TopPoolsCard({ pool }: { pool: PoolStat }) {
   const token0 = pool.token0 ? gqlToCurrency(unwrapToken(chainId, pool.token0)) : undefined
   const token1 = pool.token1 ? gqlToCurrency(unwrapToken(chainId, pool.token1)) : undefined
 
-  const formattedApr = pool.boostedApr ? formatPercent(pool.boostedApr) : null
+  const formattedApr = pool.boostedApr ? formatPercent(pool.boostedApr, 2) : null
 
   return (
     <Flex
@@ -45,13 +47,18 @@ export function TopPoolsCard({ pool }: { pool: PoolStat }) {
             {token0?.symbol} / {token1?.symbol}
           </Text>
           <Flex row gap="$spacing2" alignItems="center">
-            <LiquidityPositionInfoBadges size="small" version={pool.protocolVersion} feeTier={pool.feeTier} />
+            <LiquidityPositionInfoBadges
+              size="small"
+              version={pool.protocolVersion}
+              feeTier={pool.feeTier}
+              protocolFeePips={pool.protocolFeePips}
+            />
           </Flex>
         </Flex>
       </Flex>
       <Flex alignItems="flex-end" gap="$gap4">
         <Text variant="body2" color="$neutral2">
-          {formatPercent(pool.apr.toFixed(3))} {t('pool.apr')}
+          {formatPercent(pool.apr.toFixed(3), 2)} {t('pool.apr')}
         </Text>
         {formattedApr && <LPIncentiveRewardsBadge formattedRewardApr={formattedApr} />}
       </Flex>

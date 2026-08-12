@@ -1,9 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
-import type {
-  MigrateV2ToV3LPPositionRequest,
-  MigrateV3ToV4LPPositionRequest,
-} from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
+import type { MigrateV3ToV4LPPositionRequest } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/api_pb'
+import type { MigrateV2ToV3LPPositionRequest } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/api_pb'
 import { type Currency, CurrencyAmount, NONFUNGIBLE_POSITION_MANAGER_ADDRESSES } from '@uniswap/sdk-core'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from 'react'
@@ -24,7 +22,7 @@ import {
 } from 'uniswap/src/features/transactions/liquidity/types'
 import { getErrorMessageToDisplay, parseErrorMessageTitle } from 'uniswap/src/features/transactions/liquidity/utils'
 import { TransactionStepType } from 'uniswap/src/features/transactions/steps/types'
-import { PermitMethod } from 'uniswap/src/features/transactions/swap/types/swapTxAndGasInfo'
+import { PermitMethod } from 'uniswap/src/features/transactions/swap/types/permitMethod'
 import { validatePermit, validateTransactionRequest } from 'uniswap/src/features/transactions/swap/utils/trade'
 import { logger } from 'utilities/src/logger/logger'
 import { ONE_SECOND_MS } from 'utilities/src/time/time'

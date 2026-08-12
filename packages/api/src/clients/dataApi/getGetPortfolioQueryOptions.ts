@@ -1,10 +1,11 @@
-import { type PartialMessage } from '@bufbuild/protobuf'
+import { type PartialMessage, type PlainMessage, toPlainMessage } from '@bufbuild/protobuf'
 import type { GetPortfolioRequest, GetPortfolioResponse } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { type DataApiServiceClient } from '@universe/api/src/clients/dataApi/createDataApiServiceClient'
 import { transformInput, type WithoutWalletAccount } from '@universe/api/src/connectRpc/utils'
 import { ReactQueryCacheKey } from 'utilities/src/reactQuery/cache'
 import { persistableQueryOptions } from 'utilities/src/reactQuery/persistableQueryOptions'
 import { type QueryOptionsResult } from 'utilities/src/reactQuery/queryOptions'
+import { ONE_MINUTE_MS } from 'utilities/src/time/time'
 
 /** Input used to build queryKey and queryFn. Config (enabled, refetchInterval, select) is applied by the caller. */
 export type GetPortfolioQueryParams = {
@@ -32,7 +33,12 @@ type GetPortfolioQueryKey = readonly [
 export function getGetPortfolioQueryOptions(
   client: DataApiServiceClient,
   { input }: GetPortfolioQueryParams,
-): QueryOptionsResult<GetPortfolioResponse | undefined, Error, GetPortfolioResponse | undefined, GetPortfolioQueryKey> {
+): QueryOptionsResult<
+  PlainMessage<GetPortfolioResponse> | undefined,
+  Error,
+  PlainMessage<GetPortfolioResponse> | undefined,
+  GetPortfolioQueryKey
+> {
   const transformedInput = transformInput(input)
 
   const { modifier: _modifier, walletAccount: _walletAccount, ...queryCacheInputs } = transformedInput ?? {}
@@ -44,15 +50,16 @@ export function getGetPortfolioQueryOptions(
 
   return persistableQueryOptions({
     queryKey: [ReactQueryCacheKey.GetPortfolio, addressKey, queryCacheInputs] as const,
-    queryFn: async (): Promise<GetPortfolioResponse | undefined> => {
+    queryFn: async (): Promise<PlainMessage<GetPortfolioResponse> | undefined> => {
       if (!transformedInput) {
         return undefined
       }
       const response: GetPortfolioResponse = await client.getPortfolio(
         transformedInput as PartialMessage<GetPortfolioRequest>,
       )
-      return response
+      return toPlainMessage(response)
     },
-    placeholderData: (prev: GetPortfolioResponse | undefined) => prev,
+    placeholderData: (prev: PlainMessage<GetPortfolioResponse> | undefined) => prev,
+    staleTime: ONE_MINUTE_MS,
   })
 }

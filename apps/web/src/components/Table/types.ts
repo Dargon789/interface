@@ -1,5 +1,16 @@
 import { ApolloError } from '@apollo/client'
 import { ColumnDef, Row, RowData, Table as TanstackTable } from '@tanstack/react-table'
+import { TableVirtualizationMode } from '~/components/Table/hooks/useTableVirtualizer'
+
+export type RenderUnifiedExpandableRow<T extends RowData> = (
+  row: Row<T>,
+  ctx: {
+    renderTableRow: () => JSX.Element
+    /** Full-width table rows for each expanded sub-row (e.g. per-issuer metrics). */
+    renderSubTableRows: () => JSX.Element
+    isExpanded: boolean
+  },
+) => JSX.Element
 
 /** Optional metadata on column definitions (read in TableRow, sizing helpers, etc.). */
 export interface TableColumnMeta {
@@ -12,15 +23,20 @@ export type TableBodyProps<T extends RowData = unknown> = {
   table: TanstackTable<T>
   loading?: boolean
   error?: ApolloError | boolean
-  v2: boolean
   rowWrapper?: (row: Row<T>, content: JSX.Element) => JSX.Element
+  topLevelRowWrapper?: (row: Row<T>, content: JSX.Element) => JSX.Element
+  subRowsWrapper?: (row: Row<T>, content: JSX.Element) => JSX.Element
+  renderUnifiedExpandableRow?: RenderUnifiedExpandableRow<T>
   loadingRowsCount?: number
   rowHeight?: number
   compactRowHeight?: number
   subRowHeight?: number
   hasPinnedColumns?: boolean
   dimmed?: boolean
-  virtualized?: boolean
+  /** Draw one pinned-column guide from the header instead of per-row borders (mWeb). */
+  extendedPinnedColumnDivider?: boolean
+  /** Flat row virtualization: scroll the window (e.g. Portfolio Activity) or the maxHeight container. Flat rows only — skips sub-row / expandable rendering. */
+  virtualization?: TableVirtualizationMode
 }
 
 export type TableProps<T extends RowData = unknown> = {
@@ -33,13 +49,15 @@ export type TableProps<T extends RowData = unknown> = {
   maxHeight?: number
   defaultPinnedColumns?: string[]
   forcePinning?: boolean
-  v2?: boolean
   hideHeader?: boolean
   externalScrollSync?: boolean
   scrollGroup?: string
   // oxlint-disable-next-line max-params -- matches @tanstack/react-table getRowId signature
   getRowId?: (originalRow: T, index: number, parent?: Row<T>) => string
   rowWrapper?: (row: Row<T>, content: JSX.Element) => JSX.Element
+  topLevelRowWrapper?: (row: Row<T>, content: JSX.Element) => JSX.Element
+  subRowsWrapper?: (row: Row<T>, content: JSX.Element) => JSX.Element
+  renderUnifiedExpandableRow?: RenderUnifiedExpandableRow<T>
   loadingRowsCount?: number
   rowHeight?: number
   compactRowHeight?: number
@@ -56,6 +74,6 @@ export type TableProps<T extends RowData = unknown> = {
   hideHiddenRowsLabel?: string
   /** When true, shows native browser scrollbar instead of hiding it */
   showScrollbar?: boolean
-  /** When true, only visible rows are rendered using window-based virtualization */
+  /** When true, only visible flat rows are rendered (window scroll, or container scroll when maxHeight is set). Does not support getSubRows / renderUnifiedExpandableRow — expansion UI is skipped. */
   virtualized?: boolean
 }

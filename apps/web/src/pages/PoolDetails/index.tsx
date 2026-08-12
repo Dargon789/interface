@@ -2,29 +2,31 @@ import { ProtocolVersion as RestProtocolVersion } from '@uniswap/client-data-api
 import { GraphQLApi, parseRestProtocolVersion } from '@universe/api'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useQueryState } from 'nuqs'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Helmet } from 'react-helmet-async/lib/index'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import { Flex, Separator, styled, Text, useIsDarkMode, useSporeColors } from 'ui/src'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
 import { fromGraphQLChain } from 'uniswap/src/features/chains/utils'
+import type { FeeData } from 'uniswap/src/features/positions/types'
 import { InterfacePageName, ModalName } from 'uniswap/src/features/telemetry/constants'
 import Trace from 'uniswap/src/features/telemetry/Trace'
 import { shouldReverseForWaterfall } from 'uniswap/src/features/tokens/waterfallPriority'
 import { AddressStringFormat, normalizeAddress } from 'uniswap/src/utils/addresses'
 import { isEVMAddress } from 'utilities/src/addresses/evm/evm'
-import { PoolData, usePoolData } from '~/appGraphql/data/pools/usePoolData'
-import { calculateApr } from '~/appGraphql/data/pools/useTopPools'
-import { gqlToCurrency, unwrapToken } from '~/appGraphql/data/util'
+import { MOBILE_BAR_MAX_HEIGHT } from '~/components/NavBar/MobileBottomBar'
 import { StickyCollapsibleHeader } from '~/components/StickyCollapsibleHeader/StickyCollapsibleHeader'
+import { PoolData, usePoolData } from '~/data/pools/usePoolData'
+import { calculateApr } from '~/data/pools/useTopPools'
+import { gqlToCurrency, unwrapToken } from '~/data/util'
+import { useServedProtocolFee } from '~/features/fees/useServedProtocolFees'
 import { LpIncentivesPoolDetailsRewardsDistribution } from '~/features/Liquidity/LPIncentives/LpIncentivesPoolDetailsRewardsDistribution'
 import { useColor } from '~/hooks/useColor'
 import { useScrollCompact } from '~/hooks/useScrollCompact'
 import { useDynamicMetatags } from '~/pages/metatags'
 import { ChartSection } from '~/pages/PoolDetails/components/ChartSection'
 import { OrderBook } from '~/pages/PoolDetails/components/ChartSection/OrderBook'
-import { PoolDetailsApr } from '~/pages/PoolDetails/components/PoolDetailsApr'
 import { PoolDetailsBreadcrumb } from '~/pages/PoolDetails/components/PoolDetailsHeader/PoolDetailsBreadcrumb'
 import { PoolDetailsHeader } from '~/pages/PoolDetails/components/PoolDetailsHeader/PoolDetailsHeader'
 import { PoolDetailsLink } from '~/pages/PoolDetails/components/PoolDetailsLink'
@@ -36,9 +38,13 @@ import { ThemeProvider } from '~/theme'
 import { ExploreTab } from '~/types/explore'
 import { useChainIdFromUrlParam } from '~/utils/params/chainParams'
 
+// Extra bottom padding so content (e.g. pool address links) can scroll above the fixed Swap/Add Liquidity CTA bar
+const STICKY_CTA_CLEARANCE = `calc(${MOBILE_BAR_MAX_HEIGHT}px + env(safe-area-inset-bottom))` as const
+
 const PageWrapper = styled(Flex, {
   row: true,
-  py: 48,
+  pt: 24,
+  pb: 48,
   px: 40,
   justifyContent: 'center',
   width: '100%',
@@ -46,12 +52,13 @@ const PageWrapper = styled(Flex, {
   alignItems: 'flex-start',
   $lg: {
     px: 20,
-    pb: 52,
+    pb: STICKY_CTA_CLEARANCE,
   },
   $xl: {
     flexDirection: 'column',
     alignItems: 'center',
     gap: '$none',
+    pb: STICKY_CTA_CLEARANCE,
   },
 })
 
@@ -114,8 +121,6 @@ export function PoolDetailsPage() {
   const { poolAddress } = useParams<{ poolAddress: string }>()
   const urlChain = useChainIdFromUrlParam()
   const chainInfo = urlChain ? getChainInfo(urlChain) : undefined
-  const [orderBookLoading, setOrderBookLoading] = useState(false)
-  const handleOrderBookLoadingChange = useCallback((l: boolean) => setOrderBookLoading(l), [])
   const isLiquidityDepthChartEnabled = useFeatureFlag(FeatureFlags.LpPdpDepthChart)
   const [chartParam] = useQueryState('chart')
   const showOrderBook = isLiquidityDepthChartEnabled && chartParam?.toLowerCase() === 'depth'
@@ -130,7 +135,6 @@ export function PoolDetailsPage() {
     protocolVersion: poolData?.protocolVersion,
   })
 
-  // oxlint-disable react-hooks/exhaustive-deps -- unwrappedTokens changes every render; use underlying stable deps instead
   const waterfallDefault = useMemo(() => {
     if (!unwrappedTokens[0] || !unwrappedTokens[1]) {
       return false
@@ -138,8 +142,8 @@ export function PoolDetailsPage() {
     const currA = gqlToCurrency(unwrappedTokens[0])
     const currB = gqlToCurrency(unwrappedTokens[1])
     return Boolean(currA && currB && shouldReverseForWaterfall(currA, currB))
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- unwrappedTokens changes every render; use underlying stable deps instead
   }, [poolData?.token0, poolData?.token1, chainInfo?.id, poolData?.protocolVersion])
-  // oxlint-enable react-hooks/exhaustive-deps
 
   const [userFlipCount, setUserFlipCount] = useState(0)
   const toggleReversed = () => setUserFlipCount((n) => n + 1)
@@ -148,14 +152,33 @@ export function PoolDetailsPage() {
   const [token0, token1] = isReversed ? [unwrappedTokens[1], unwrappedTokens[0]] : unwrappedTokens
   const isLPIncentivesEnabled = useFeatureFlag(FeatureFlags.LpIncentives)
 
+  // GraphQL pool data carries no protocol fee — both fees come from data-api GetProtocolFees.
+  const servedFees = useServedProtocolFee({
+    chainId: chainInfo?.id,
+    protocolVersion: parseRestProtocolVersion(poolData?.protocolVersion),
+    poolIdOrHash: poolData?.idOrAddress,
+    enabled: true,
+  })
+  const protocolFeePips = servedFees?.protocolFee
+  // GetProtocolFees is the source of truth for the tier so it always pairs with the protocol fee it
+  // was served with; it serves none for a dynamic-fee pool, where GraphQL's sentinel is what renders.
+  const feeTier = useMemo<FeeData | undefined>(() => {
+    if (!poolData?.feeTier || servedFees?.feeTier === undefined) {
+      return poolData?.feeTier
+    }
+    return { ...poolData.feeTier, feeAmount: servedFees.feeTier }
+  }, [poolData?.feeTier, servedFees?.feeTier])
   const poolApr = useMemo(
     () =>
       calculateApr({
         volume24h: poolData?.volumeUSD24H,
         tvl: poolData?.tvlUSD,
-        feeTier: poolData?.feeTier?.feeAmount,
+        feeTier: feeTier?.feeAmount,
+        isDynamic: feeTier?.isDynamic,
+        protocolVersion: parseRestProtocolVersion(poolData?.protocolVersion),
+        protocolFeePips,
       }),
-    [poolData?.volumeUSD24H, poolData?.tvlUSD, poolData?.feeTier],
+    [poolData?.volumeUSD24H, poolData?.tvlUSD, feeTier, poolData?.protocolVersion, protocolFeePips],
   )
   const [orderBookCurrencyA, orderBookCurrencyB] = useMemo(
     () => [
@@ -179,7 +202,7 @@ export function PoolDetailsPage() {
   })
 
   const isInvalidPool = !poolAddress || !chainInfo
-  const loading = poolLoading || orderBookLoading
+  const loading = poolLoading
   const poolNotFound = (!poolLoading && !poolData) || isInvalidPool
 
   const metatagProperties = useMemo(() => {
@@ -222,7 +245,7 @@ export function PoolDetailsPage() {
       token1={color1 !== colors.accent1.val ? color1 : undefined}
     >
       <Helmet>
-        <title>{getPoolDetailPageTitle(t, poolData)}</title>
+        <title>{getPoolDetailPageTitle(t, { token0, token1 })}</title>
         {metatags.map((tag, index) => (
           <meta key={index} {...tag} />
         ))}
@@ -233,7 +256,7 @@ export function PoolDetailsPage() {
         properties={{
           poolAddress,
           chainId: chainInfo.id,
-          feeTier: poolData?.feeTier,
+          feeTier,
           token0Address: poolData?.token0.address,
           token1Address: poolData?.token1.address,
           token0Symbol: poolData?.token0.symbol,
@@ -247,9 +270,10 @@ export function PoolDetailsPage() {
           <PoolDetailsHeader
             chainId={chainInfo.id}
             poolAddress={poolAddress}
+            poolId={poolData?.idOrAddress}
             token0={token0}
             token1={token1}
-            feeTier={poolData?.feeTier}
+            feeTier={feeTier}
             hookAddress={poolData?.hookAddress}
             protocolVersion={poolData?.protocolVersion}
             rewardsApr={poolData?.rewardsCampaign?.boostedApr}
@@ -282,47 +306,41 @@ export function PoolDetailsPage() {
             gap="$spacing24"
             width={360}
             flexShrink={0}
-            $lg={{ width: '100%', mt: 44, minWidth: 'unset', mb: 24 }}
-            $xl={{ width: '100%', mt: 44, minWidth: 'unset', mb: 24 }}
+            $lg={{ width: '100%', mt: 44, minWidth: 'unset' }}
+            $xl={{ width: '100%', mt: 44, minWidth: 'unset' }}
           >
-            {showOrderBook &&
-              poolData?.protocolVersion !== GraphQLApi.ProtocolVersion.V2 &&
-              poolData?.feeTier &&
-              orderBookCurrencyA &&
-              orderBookCurrencyB && (
-                <OrderBook
-                  tokenA={orderBookCurrencyA}
-                  tokenB={orderBookCurrencyB}
-                  feeTier={Number(poolData.feeTier.feeAmount)}
-                  isReversed={isReversed}
-                  chainId={fromGraphQLChain(chainInfo.backendChain.chain) ?? chainInfo.id}
-                  version={parseRestProtocolVersion(poolData.protocolVersion) ?? RestProtocolVersion.V3}
-                  hooks={poolData.hookAddress}
-                  poolId={poolData.idOrAddress}
-                  height={356}
-                  onLoadingChange={handleOrderBookLoadingChange}
-                />
-              )}
-            <Flex $lg={{ marginTop: -24 }} $xl={{ marginTop: -24 }} min-height="fit-content">
+            <Flex gap="$spacing24" min-height="fit-content">
               <PoolDetailsStatsButtons
                 chainId={chainInfo.id}
                 poolIdOrAddress={poolAddress}
                 token0={token0}
                 token1={token1}
-                feeTier={poolData?.feeTier?.feeAmount}
-                tickSpacing={poolData?.feeTier?.tickSpacing}
+                feeTier={feeTier?.feeAmount}
+                tickSpacing={feeTier?.tickSpacing}
                 hookAddress={poolData?.hookAddress}
-                isDynamic={poolData?.feeTier?.isDynamic}
+                isDynamic={feeTier?.isDynamic}
                 protocolVersion={poolData?.protocolVersion}
                 loading={loading}
               />
+              {showOrderBook &&
+                poolData &&
+                poolData.protocolVersion !== GraphQLApi.ProtocolVersion.V2 &&
+                feeTier &&
+                orderBookCurrencyA &&
+                orderBookCurrencyB && (
+                  <OrderBook
+                    tokenA={orderBookCurrencyA}
+                    tokenB={orderBookCurrencyB}
+                    feeTier={Number(feeTier.feeAmount)}
+                    isReversed={isReversed}
+                    chainId={fromGraphQLChain(chainInfo.backendChain.chain) ?? chainInfo.id}
+                    version={parseRestProtocolVersion(poolData.protocolVersion) ?? RestProtocolVersion.V3}
+                    hooks={poolData.hookAddress}
+                    poolId={poolData.idOrAddress}
+                    height={356}
+                  />
+                )}
             </Flex>
-            {poolData && (
-              <PoolDetailsApr
-                poolApr={poolApr}
-                rewardsApr={isLPIncentivesEnabled ? poolData.rewardsCampaign?.boostedApr : undefined}
-              />
-            )}
             {showRewardsDistribution && (
               <LpIncentivesPoolDetailsRewardsDistribution rewardsCampaign={poolData?.rewardsCampaign} />
             )}
@@ -333,6 +351,9 @@ export function PoolDetailsPage() {
               tokenBColor={color1}
               chainId={chainInfo.id}
               loading={loading}
+              poolApr={poolApr}
+              protocolFeePips={protocolFeePips}
+              rewardsApr={isLPIncentivesEnabled ? poolData?.rewardsCampaign?.boostedApr : undefined}
             />
             <TokenDetailsWrapper>
               <TokenDetailsHeader>{t('common.links')}</TokenDetailsHeader>

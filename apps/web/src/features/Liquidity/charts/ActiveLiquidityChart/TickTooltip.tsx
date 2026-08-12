@@ -5,7 +5,7 @@ import { Flex, FlexProps, Text } from 'ui/src'
 import { iconSizes } from 'ui/src/theme'
 import { useCurrentLocale } from 'uniswap/src/features/language/hooks'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
 import { NumberType } from 'utilities/src/format/types'
 import { DoubleCurrencyLogo } from '~/components/Logo/DoubleLogo'
 import { LiquidityBarData } from '~/features/Liquidity/charts/LiquidityChart/types'
@@ -85,39 +85,25 @@ function CurrencyAmountRow({
   currency,
   lockedUSD,
   lockedPercent,
-  densityPerBpsUSD,
 }: {
   currency: Currency
   lockedUSD: CurrencyAmount<Currency>
   lockedPercent: number | string
-  densityPerBpsUSD?: number
 }) {
-  const { t } = useTranslation()
   const { formatPercent, convertFiatAmountFormatted } = useLocalizationContext()
 
   return (
-    <Flex gap="$gap2">
-      <Flex justifyContent="space-between" row alignItems="center" gap="$gap8">
-        <Flex row gap="$gap4" alignItems="center">
-          <DoubleCurrencyLogo currencies={[currency]} size={iconSizes.icon16} />
-          <Text variant="body4">{currency.symbol}</Text>
-        </Flex>
-        <Flex row alignItems="center" gap="$gap4">
-          <Text variant="body4">{convertFiatAmountFormatted(lockedUSD.toExact(), NumberType.FiatTokenStats)}</Text>
-          <Text variant="body4" color="$neutral2">
-            {formatPercent(lockedPercent)}
-          </Text>
-        </Flex>
+    <Flex justifyContent="space-between" row alignItems="center" gap="$gap8">
+      <Flex row gap="$gap4" alignItems="center">
+        <DoubleCurrencyLogo currencies={[currency]} size={iconSizes.icon16} />
+        <Text variant="body4">{currency.symbol}</Text>
       </Flex>
-      {densityPerBpsUSD !== undefined && Number.isFinite(densityPerBpsUSD) && densityPerBpsUSD > 0 && (
-        <Flex row justifyContent="flex-end">
-          <Text variant="body4" color="$neutral2">
-            {t('chart.density.perBps', {
-              value: convertFiatAmountFormatted(densityPerBpsUSD.toString(), NumberType.FiatTokenStats),
-            })}
-          </Text>
-        </Flex>
-      )}
+      <Flex row alignItems="center" gap="$gap4">
+        <Text variant="body4">{convertFiatAmountFormatted(lockedUSD.toExact(), NumberType.FiatTokenStats)}</Text>
+        <Text variant="body4" color="$neutral2">
+          {formatPercent(lockedPercent)}
+        </Text>
+      </Flex>
     </Flex>
   )
 }
@@ -146,7 +132,7 @@ export function TickTooltipContent({
   protocolVersion: ProtocolVersion
 } & FlexProps) {
   const { t } = useTranslation()
-  const { formatNumberOrString } = useLocalizationContext()
+  const { formatNumberOrString, convertFiatAmountFormatted } = useLocalizationContext()
   const locale = useCurrentLocale()
   const amountBaseLockedUSD = useUSDCValue(
     tryParseCurrencyAmount(hoveredTick.amount1Locked?.toFixed(baseCurrency?.decimals ?? 0), baseCurrency),
@@ -248,10 +234,15 @@ export function TickTooltipContent({
     </Text>
   ) : null
 
-  const quoteDensity =
-    amountQuoteLockedUSD && segmentBps > 0 ? Number(amountQuoteLockedUSD.toExact()) / segmentBps : undefined
-  const baseDensity =
-    amountBaseLockedUSD && segmentBps > 0 ? Number(amountBaseLockedUSD.toExact()) / segmentBps : undefined
+  // $/bps density = total USD locked in the segment ÷ its bps width (1 tick = 1 bps in v3/v4). Both
+  // tokens are summed so the active bin — where the current price splits the segment between token0
+  // (above) and token1 (below) — uses the same "total ÷ full segment width" formula as neighbours
+  // that hold a single token. Splitting each token over its partial sub-range instead collapsed the
+  // active bin to one side and made a taller bar (higher L) read as lower density (LP-992).
+  const totalLockedUSD =
+    (amountQuoteLockedUSD ? Number(amountQuoteLockedUSD.toExact()) : 0) +
+    (amountBaseLockedUSD ? Number(amountBaseLockedUSD.toExact()) : 0)
+  const densityPerBpsUSD = segmentBps > 0 ? totalLockedUSD / segmentBps : undefined
 
   return (
     <Flex
@@ -313,7 +304,6 @@ export function TickTooltipContent({
                 ).toSignificant()
               : 100
           }
-          densityPerBpsUSD={quoteDensity}
         />
       )}
       {(!showQuoteCurrency || isCurrentTick) && amountBaseLockedUSD && (
@@ -328,8 +318,16 @@ export function TickTooltipContent({
                 ).toSignificant()
               : 100
           }
-          densityPerBpsUSD={baseDensity}
         />
+      )}
+      {densityPerBpsUSD !== undefined && Number.isFinite(densityPerBpsUSD) && densityPerBpsUSD > 0 && (
+        <Flex row justifyContent="flex-end">
+          <Text variant="body4" color="$neutral2">
+            {t('chart.density.perBps', {
+              value: convertFiatAmountFormatted(densityPerBpsUSD.toString(), NumberType.FiatTokenStats),
+            })}
+          </Text>
+        </Flex>
       )}
     </Flex>
   )

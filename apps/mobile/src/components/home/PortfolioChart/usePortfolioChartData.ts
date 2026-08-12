@@ -1,9 +1,20 @@
-import { ChartPeriod } from '@uniswap/client-data-api/dist/data/v1/api_pb'
+import { type PlainMessage } from '@bufbuild/protobuf'
+import { ChartPeriod, type ChartPoint, WalletBalanceCategory } from '@uniswap/client-data-api/dist/data/v1/api_pb'
 import { useEffect, useMemo } from 'react'
-import { type ChartData } from 'src/components/home/PortfolioChart/SparklineChart'
+import { type ChartData } from 'src/components/charts/SparklineChart'
 import { useSporeColors } from 'ui/src'
-import { useGetPortfolioHistoricalValueChartQuery } from 'uniswap/src/data/rest/getPortfolioChart'
+import { useGetPortfolioHistoricalValueChartQuery } from 'uniswap/src/data/apiClients/dataApiService/balances/getPortfolioChart'
+import { useWalletBalancesIncludeCategories } from 'uniswap/src/data/apiClients/dataApiService/balances/getWalletBalances/getWalletBalances'
+import { useRestPortfolioValueModifier } from 'uniswap/src/features/dataApi/balances/useRestPortfolioValueModifier'
 import { logger } from 'utilities/src/logger/logger'
+
+// API returns timestamps as bigint in seconds.
+function toChartData(points: readonly PlainMessage<ChartPoint>[] | undefined): ChartData {
+  if (!points || points.length === 0) {
+    return []
+  }
+  return points.map((point) => ({ timestamp: Number(point.timestamp), value: point.value }))
+}
 
 export function usePortfolioChartData({
   evmAddress,
@@ -17,11 +28,16 @@ export function usePortfolioChartData({
   enabled?: boolean
 }): {
   data: ChartData
+  tokensData: ChartData
+  poolsData: ChartData
+  earnData: ChartData
   loading: boolean
   error: Error | null
   chartColor: string
 } {
   const colors = useSporeColors()
+  const includeCategories = useWalletBalancesIncludeCategories()
+  const portfolioValueModifier = useRestPortfolioValueModifier(evmAddress)
 
   const {
     data: chartResponse,
@@ -33,6 +49,14 @@ export function usePortfolioChartData({
       evmAddress,
       chartPeriod,
       chainIds,
+      includeCategories,
+      includeOverrides: portfolioValueModifier?.includeOverrides,
+      excludeOverrides: portfolioValueModifier?.excludeOverrides,
+      includeSpamTokens: portfolioValueModifier?.includeSpamTokens,
+      ...(includeCategories.includes(WalletBalanceCategory.POOLS) && {
+        poolIncludeOverrides: portfolioValueModifier?.poolIncludeOverrides,
+        poolExcludeOverrides: portfolioValueModifier?.poolExcludeOverrides,
+      }),
     },
     enabled: enabled && !!evmAddress,
   })
@@ -46,17 +70,10 @@ export function usePortfolioChartData({
     }
   }, [error, evmAddress, chartPeriod])
 
-  const data = useMemo<ChartData>(() => {
-    if (!chartResponse?.points || chartResponse.points.length === 0) {
-      return []
-    }
-
-    return chartResponse.points.map((point) => ({
-      // API returns timestamp as bigint in seconds
-      timestamp: Number(point.timestamp),
-      value: point.value,
-    }))
-  }, [chartResponse?.points])
+  const data = useMemo<ChartData>(() => toChartData(chartResponse?.points), [chartResponse?.points])
+  const tokensData = useMemo<ChartData>(() => toChartData(chartResponse?.tokens), [chartResponse?.tokens])
+  const poolsData = useMemo<ChartData>(() => toChartData(chartResponse?.pools), [chartResponse?.pools])
+  const earnData = useMemo<ChartData>(() => toChartData(chartResponse?.earn), [chartResponse?.earn])
 
   const first = data[0]
   const last = data[data.length - 1]
@@ -64,6 +81,9 @@ export function usePortfolioChartData({
 
   return {
     data,
+    tokensData,
+    poolsData,
+    earnData,
     loading: isPending || isFetching,
     error: error ?? null,
     chartColor,

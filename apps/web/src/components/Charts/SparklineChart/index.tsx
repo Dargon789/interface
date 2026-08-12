@@ -1,24 +1,35 @@
 import { curveCardinal, scaleLinear } from 'd3'
 import { memo } from 'react'
 import { Flex, useSporeColors } from 'ui/src'
-import { SparklineMap } from '~/appGraphql/data/types'
-import { PricePoint } from '~/appGraphql/data/util'
 import { getPriceBounds } from '~/components/Charts/PriceChart/utils'
 import { LineChart } from '~/components/Charts/SparklineChart/LineChart'
 import { LoadingBubble } from '~/components/Tokens/loading'
-import { TokenStat } from '~/types/explore'
+import { SparklineMap } from '~/data/types'
+import { PricePoint } from '~/data/util'
 
 interface SparklineChartProps {
   width: number
   height: number
-  tokenData: TokenStat
+  multichainId: string | undefined
   pricePercentChange?: number | null
   sparklineMap: SparklineMap
+  /** Overrides the price-direction color (e.g. an extracted token accent). */
+  color?: string
+  /** Fade the stroke in left-to-right; see LineChart. */
+  strokeFadeIn?: boolean
 }
 
-function SparklineChartInner({ width, height, tokenData, pricePercentChange, sparklineMap }: SparklineChartProps) {
+function SparklineChartInner({
+  width,
+  height,
+  multichainId,
+  pricePercentChange,
+  sparklineMap,
+  color,
+  strokeFadeIn = false,
+}: SparklineChartProps) {
   const colors = useSporeColors()
-  const pricePoints = tokenData.id ? sparklineMap[tokenData.id] : null
+  const pricePoints = multichainId ? sparklineMap[multichainId] : null
 
   // Don't display if there's one or less pricepoints
   if (!pricePoints || pricePoints.length <= 1) {
@@ -51,8 +62,11 @@ function SparklineChartInner({ width, height, tokenData, pricePercentChange, spa
       getX={(p: PricePoint) => widthScale(p.timestamp)}
       getY={(p: PricePoint) => rdScale(p.value)}
       curve={curveCardinal.tension(curveTension)}
-      color={pricePercentChange && pricePercentChange < 0 ? colors.statusCritical.val : colors.statusSuccess.val}
+      color={
+        color ?? (pricePercentChange && pricePercentChange < 0 ? colors.statusCritical.val : colors.statusSuccess.val)
+      }
       strokeWidth={1.5}
+      strokeFadeIn={strokeFadeIn}
       width={width}
       height={height}
     />

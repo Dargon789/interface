@@ -9,6 +9,10 @@ vi.mock('~/hooks/useIsUniswapExtensionConnected', () => ({
   useIsUniswapExtensionConnected: vi.fn(),
 }))
 
+vi.mock('~/features/wallet/connection/hooks/useIsMetaMaskExtensionDetected', () => ({
+  useIsMetaMaskExtensionDetected: vi.fn(() => true),
+}))
+
 vi.mock('~/components/AccountDrawer/MiniPortfolio/hooks', async (importOriginal) => {
   const actual = await importOriginal<typeof import('~/components/AccountDrawer/MiniPortfolio/hooks')>()
   return {
@@ -58,7 +62,6 @@ vi.mock('uniswap/src/components/AnimatedNumber/AnimatedNumber', () => {
     return <div>{value}</div>
   }
   return {
-    BALANCE_CHANGE_INDICATION_DURATION: 1000,
     default: mockAnimatedNumber,
     AnimatedNumber: mockAnimatedNumber,
   }

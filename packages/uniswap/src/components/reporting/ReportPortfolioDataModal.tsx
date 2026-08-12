@@ -1,11 +1,12 @@
 import { isProdEnv } from '@universe/environment'
+import { FeatureFlags, useFeatureFlagWithExposureLoggingDisabled } from '@universe/gating'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { ChartBarCrossed } from 'ui/src/components/icons/ChartBarCrossed'
 import type { BaseModalProps } from 'uniswap/src/components/modals/ModalProps'
 import { ReportModal, ReportOption } from 'uniswap/src/components/reporting/ReportModal'
-import { DataServiceApiClient } from 'uniswap/src/data/apiClients/dataApi/DataApiClient'
+import { dataApiServiceClientV1 } from 'uniswap/src/data/apiClients/dataApiService/clients/DataApiClient'
 import { useActiveAddress } from 'uniswap/src/features/accounts/store/hooks'
 import { pushNotification } from 'uniswap/src/features/notifications/slice/slice'
 import { AppNotificationType } from 'uniswap/src/features/notifications/slice/types'
@@ -27,6 +28,8 @@ export function ReportPortfolioDataModal({
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const walletAddress = useActiveAddress(Platform.EVM)
+  // Read without logging; the pools exposure is logged only where the feature is actually shown (see usePoolsTabVisibility).
+  const portfolioPoolsBalancesEnabled = useFeatureFlagWithExposureLoggingDisabled(FeatureFlags.PortfolioPoolsBalances)
 
   const submitReport = useEvent(
     ({
@@ -44,16 +47,18 @@ export function ReportPortfolioDataModal({
 
       // Submit data report to Zerion via backend proxy
       if (checkedItems.has(PortfolioDataReportOption.Performance) && isProdEnv() && walletAddress) {
-        DataServiceApiClient.submitDataReport({
-          reportType: 'wallet',
-          tag: 'pnl',
-          details: reportTexts.get(PortfolioDataReportOption.Performance),
-          walletAddress,
-        }).catch((error: unknown) => {
-          logger.warn('ReportPortfolioDataModal', 'submitReport', 'Failed to submit data report to backend', {
-            error: error instanceof Error ? error.message : String(error),
+        dataApiServiceClientV1
+          .submitDataReport({
+            reportType: 'wallet',
+            tag: 'pnl',
+            details: reportTexts.get(PortfolioDataReportOption.Performance),
+            walletAddress,
           })
-        })
+          .catch((error: unknown) => {
+            logger.warn('ReportPortfolioDataModal', 'submitReport', 'Failed to submit data report to backend', {
+              error: error instanceof Error ? error.message : String(error),
+            })
+          })
       }
 
       onReportSuccess?.()
@@ -69,6 +74,22 @@ export function ReportPortfolioDataModal({
 
   const reportOptions: ReportOption<PortfolioDataReportOption>[] = useMemo(
     () => [
+      ...(portfolioPoolsBalancesEnabled
+        ? [
+            {
+              title: t('common.token.plural'),
+              subtitle: t('reporting.portfolio.data.options.tokens.subtitle'),
+              value: PortfolioDataReportOption.Tokens,
+              additionalTextInput: true,
+            },
+            {
+              title: t('common.pools'),
+              subtitle: t('reporting.portfolio.data.options.pools.subtitle'),
+              value: PortfolioDataReportOption.Pools,
+              additionalTextInput: true,
+            },
+          ]
+        : []),
       {
         title: t('reporting.portfolio.data.options.performance.title'),
         subtitle: t('reporting.portfolio.data.options.performance.subtitle'),
@@ -81,7 +102,7 @@ export function ReportPortfolioDataModal({
         additionalTextInput: true,
       },
     ],
-    [t],
+    [t, portfolioPoolsBalancesEnabled],
   )
 
   return (

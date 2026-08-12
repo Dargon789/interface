@@ -2,6 +2,7 @@ import { dirname, join, resolve } from 'path'
 import type { StorybookConfig } from '@storybook/react-webpack5'
 import TerserPlugin from 'terser-webpack-plugin'
 import { DefinePlugin } from 'webpack'
+import { globals as testEnvGlobals } from '../../../config/vitest-presets/vitest/globals.js'
 
 /**
  * This function is used to resolve the absolute path of a package.
@@ -39,7 +40,13 @@ const config: StorybookConfig = {
 
     config.plugins.push(
       new DefinePlugin({
+        // Inject the shared test/dev config placeholders so getConfig() resolves in the
+        // Storybook bundle. Mirrors the vitest test env (config/vitest-presets/vitest/globals.js).
+        ...Object.fromEntries(
+          Object.entries(testEnvGlobals).map(([key, value]) => [`process.env.${key}`, JSON.stringify(String(value))]),
+        ),
         __DEV__: process.env.NODE_ENV === 'development',
+        // Keep the explicit APP_ID after the spread so the extension/web toggle wins.
         'process.env.APP_ID': JSON.stringify(process.env.STORYBOOK_EXTENSION === 'true' ? 'extension' : 'web'),
       }),
     )
@@ -134,10 +141,21 @@ const config: StorybookConfig = {
     config.resolve.fallback = {
       ...(config.resolve.fallback || {}),
       os: false,
+      // @hpke/common (via @universe/embedded-wallet's seed-phrase export) references the
+      // Node crypto builtin behind a runtime guard; browsers use WebCrypto. Webpack 5 has
+      // no automatic node polyfills, so map it to an empty module like the others.
+      crypto: false,
       tty: require.resolve('./__mocks__/tty.js'),
       fs: false,
       path: false,
       util: false,
+      // wagmi v3's @wagmi/core and @wagmi/connectors reference optional peer deps we don't install
+      // (porto / Base account / account-abstraction / MetaMask Connect). Vite skips these optional
+      // imports, but Storybook's webpack resolves them eagerly and errors. Map them to empty modules.
+      '@metamask/connect-evm': false,
+      '@base-org/account': false,
+      accounts: false,
+      porto: false,
     }
 
     // Configure webpack aliases for React Native and compatibility

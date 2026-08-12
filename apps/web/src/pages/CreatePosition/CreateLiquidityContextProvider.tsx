@@ -1,11 +1,12 @@
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
+import type { HookEntry } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v2/types_pb'
 import { Currency, Price, Token } from '@uniswap/sdk-core'
 import { Pair } from '@uniswap/v2-sdk'
 import { Pool as V3Pool } from '@uniswap/v3-sdk'
 import { Pool as V4Pool } from '@uniswap/v4-sdk'
 import { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
 import { TransactionStep } from 'uniswap/src/features/transactions/steps/types'
-import { useEvent } from 'utilities/src/react/hooks'
+import { useEvent, usePrevious } from 'utilities/src/react/hooks'
 import { useDerivedPositionInfo } from '~/features/Liquidity/Create/hooks/useDerivedPositionInfo'
 import { useLiquidityUrlState } from '~/features/Liquidity/Create/hooks/useLiquidityUrlState'
 import {
@@ -45,6 +46,9 @@ interface BaseCreateLiquidityState {
   protocolVersion: ProtocolVersion
   creatingPoolOrPair?: boolean
   poolId?: string
+  // Protocol fee (integer pips) for the selected tier's pool, carried on the poolInfo response so every
+  // create surface reads the same value; undefined for a not-yet-created pool.
+  protocolFee?: number
   poolOrPairLoading?: boolean
   poolOrPair: V4Pool | V3Pool | Pair | undefined
   price: Price<Currency, Currency> | undefined
@@ -56,6 +60,8 @@ interface BaseCreateLiquidityState {
   step: PositionFlowStep
   currentTransactionStep?: { step: TransactionStep; accepted: boolean }
   feeTierSearchModalOpen: boolean
+  hookSearchModalOpen: boolean
+  selectedHookEntry?: HookEntry
   dynamicFeeTierSpeedbumpData: DynamicFeeTierSpeedbumpData
 
   // From PriceRangeContext
@@ -107,6 +113,8 @@ type CreateLiquidityContextType = CreateLiquidityState & {
     React.SetStateAction<{ step: TransactionStep; accepted: boolean } | undefined>
   >
   setFeeTierSearchModalOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setHookSearchModalOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setSelectedHookEntry: React.Dispatch<React.SetStateAction<HookEntry | undefined>>
   setDynamicFeeTierSpeedbumpData: React.Dispatch<React.SetStateAction<DynamicFeeTierSpeedbumpData>>
   setPriceRangeState: React.Dispatch<React.SetStateAction<PriceRangeState>>
   setDepositState: React.Dispatch<React.SetStateAction<DepositState>>
@@ -154,6 +162,8 @@ export function CreateLiquidityContextProvider({
   >()
 
   const [feeTierSearchModalOpen, setFeeTierSearchModalOpen] = useState(false)
+  const [hookSearchModalOpen, setHookSearchModalOpen] = useState(false)
+  const [selectedHookEntry, setSelectedHookEntry] = useState<HookEntry | undefined>()
   const [dynamicFeeTierSpeedbumpData, setDynamicFeeTierSpeedbumpData] = useState<DynamicFeeTierSpeedbumpData>({
     open: false,
     wishFeeData: undefined,
@@ -174,7 +184,21 @@ export function CreateLiquidityContextProvider({
     ...initialDepositState,
   })
 
-  // Derived info
+  // Hooks are chain-specific: clear any selected hook when the selected tokens move to a different chain
+  const tokenChainId = currencyInputs.tokenA?.chainId ?? currencyInputs.tokenB?.chainId
+  const previousTokenChainId = usePrevious(tokenChainId)
+  useEffect(() => {
+    if (!tokenChainId || !previousTokenChainId || tokenChainId === previousTokenChainId) {
+      return
+    }
+    setSelectedHookEntry(undefined)
+    setPositionState((prevState) =>
+      prevState.hook ? { ...prevState, hook: undefined, userApprovedHook: undefined, fee: undefined } : prevState,
+    )
+  }, [tokenChainId, previousTokenChainId, setSelectedHookEntry, setPositionState])
+
+  // Derived info — the poolInfo response carries the pool's protocol fee (integer pips), so the flow no
+  // longer fetches it separately; it's undefined for a not-yet-created pool.
   const derivedPositionInfo = useDerivedPositionInfo(currencyInputs, positionState)
 
   // Get URL sync function from consolidated hook
@@ -275,6 +299,7 @@ export function CreateLiquidityContextProvider({
     // State
     ...protocolSpecificValues,
     poolId: derivedPositionInfo.poolId,
+    protocolFee: derivedPositionInfo.protocolFee,
     poolOrPairLoading: derivedPositionInfo.poolOrPairLoading,
     creatingPoolOrPair: derivedPositionInfo.creatingPoolOrPair,
     price: derivedPriceRangeInfo?.price,
@@ -287,6 +312,8 @@ export function CreateLiquidityContextProvider({
     step,
     currentTransactionStep,
     feeTierSearchModalOpen,
+    hookSearchModalOpen,
+    selectedHookEntry,
     dynamicFeeTierSpeedbumpData,
     priceRangeState,
     depositState,
@@ -297,6 +324,8 @@ export function CreateLiquidityContextProvider({
     setStep: setHistoryState,
     setCurrentTransactionStep,
     setFeeTierSearchModalOpen,
+    setHookSearchModalOpen,
+    setSelectedHookEntry,
     setDynamicFeeTierSpeedbumpData,
     setPriceRangeState,
     setDepositState,

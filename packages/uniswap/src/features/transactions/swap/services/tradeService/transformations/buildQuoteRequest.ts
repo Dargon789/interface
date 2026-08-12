@@ -1,5 +1,5 @@
 import { Currency, CurrencyAmount } from '@uniswap/sdk-core'
-import { GasStrategy, TradingApi } from '@universe/api'
+import { GasStrategy, TradingApi, UNCONNECTED_ADDRESS } from '@universe/api'
 import { FeatureFlags, getFeatureFlag } from '@universe/gating'
 import { getActiveGasStrategy } from 'uniswap/src/features/gas/utils'
 import {
@@ -18,13 +18,10 @@ import {
   toTradingApiSupportedChainId,
 } from 'uniswap/src/features/transactions/swap/utils/tradingApi'
 
-// The TradingAPI requires an address for the swapper field; we supply a placeholder address if no account is connected.
-// Note: This address was randomly generated.
-export const UNCONNECTED_ADDRESS = '0xAAAA44272dc658575Ba38f43C438447dDED45358'
-
 export interface QuoteRequestResult {
   amount: string
   generatePermitAsTransaction?: boolean
+  earnIntent?: TradingApi.EarnIntent
   // Flag-off path: legacy `gasStrategies` array. Omitted on the flag-on path.
   gasStrategies?: GasStrategy[]
   isUSDQuote?: boolean
@@ -52,6 +49,7 @@ export interface ValidatedTradeInput {
   tokenInAddress: string
   tokenOutAddress: string
   generatePermitAsTransaction?: boolean
+  earnIntent?: TradingApi.EarnIntent
   isUSDQuote?: boolean
   walletExecutionContext?: TradingApi.WalletExecutionContext
   gasOverrides?: TradingApi.UrgencyOverrides
@@ -84,6 +82,7 @@ export function createBuildQuoteRequest(
     const base = {
       amount: validatedInput.amount.quotient.toString(),
       generatePermitAsTransaction: validatedInput.generatePermitAsTransaction,
+      earnIntent: validatedInput.earnIntent,
       isUSDQuote: validatedInput.isUSDQuote,
       swapper: validatedInput.activeAccountAddress ?? UNCONNECTED_ADDRESS,
       tokenIn: validatedInput.tokenInAddress,
@@ -137,6 +136,7 @@ export interface ParsedTradeInput {
   tokenInAddress?: string
   tokenOutAddress?: string
   generatePermitAsTransaction?: boolean
+  earnIntent?: TradingApi.EarnIntent
   isUSDQuote?: boolean
   walletExecutionContext?: TradingApi.WalletExecutionContext
   gasOverrides?: TradingApi.UrgencyOverrides
@@ -144,6 +144,7 @@ export interface ParsedTradeInput {
 
 export function parseTradeInputForTradingApiQuote(input: UseTradeArgs): ParsedTradeInput {
   const { currencyIn, currencyOut, requestTradeType } = parseQuoteCurrencies(input)
+
   return {
     currencyIn,
     currencyOut,
@@ -151,10 +152,11 @@ export function parseTradeInputForTradingApiQuote(input: UseTradeArgs): ParsedTr
     requestTradeType,
     activeAccountAddress: input.account?.address,
     tokenInChainId: toTradingApiSupportedChainId(currencyIn?.chainId),
-    tokenOutChainId: toTradingApiSupportedChainId(currencyOut?.chainId),
+    tokenOutChainId: input.quoteOutputOverride?.tokenOutChainId ?? toTradingApiSupportedChainId(currencyOut?.chainId),
     tokenInAddress: getTokenAddressForApi(currencyIn),
-    tokenOutAddress: getTokenAddressForApi(currencyOut),
+    tokenOutAddress: input.quoteOutputOverride?.tokenOutAddress ?? getTokenAddressForApi(currencyOut),
     generatePermitAsTransaction: input.generatePermitAsTransaction,
+    earnIntent: input.earnIntent,
     isUSDQuote: input.isUSDQuote ?? false,
     walletExecutionContext: input.walletExecutionContext,
     gasOverrides: input.gasOverrides,
@@ -174,7 +176,7 @@ export function validateParsedInput(input: ParsedTradeInput): ValidatedTradeInpu
     !input.currencyIn ||
     !input.currencyOut ||
     isZeroAmount(input.amount) ||
-    areCurrenciesEqual(input.currencyIn, input.currencyOut)
+    (!input.earnIntent && areCurrenciesEqual(input.currencyIn, input.currencyOut))
   ) {
     return undefined
   }
@@ -192,6 +194,7 @@ export function validateParsedInput(input: ParsedTradeInput): ValidatedTradeInpu
     tokenInAddress: input.tokenInAddress,
     tokenOutAddress: input.tokenOutAddress,
     generatePermitAsTransaction: input.generatePermitAsTransaction,
+    earnIntent: input.earnIntent,
     isUSDQuote: input.isUSDQuote,
     walletExecutionContext: input.walletExecutionContext,
     gasOverrides: input.gasOverrides,

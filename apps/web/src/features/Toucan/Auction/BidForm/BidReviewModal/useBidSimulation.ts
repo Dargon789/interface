@@ -1,8 +1,8 @@
 import { ChainId } from '@uniswap/client-liquidity/dist/uniswap/liquidity/v1/types_pb'
 import { useCallback, useRef, useState } from 'react'
-import { useSubmitBidMutation } from 'uniswap/src/data/rest/auctions/useSubmitBidMutation'
+import { useSubmitBidMutation } from 'uniswap/src/data/apiClients/dataApiService/auctions/useSubmitBidMutation'
 import { logger } from 'utilities/src/logger/logger'
-import { PreparedBidTransaction } from '~/features/Toucan/Auction/hooks/useBidFormSubmit'
+import type { PreparedBidTransaction } from '~/features/Toucan/Auction/hooks/useBidFormSubmit'
 
 export enum BidSimulationErrorType {
   BELOW_CLEARING_PRICE = 'BELOW_CLEARING_PRICE',

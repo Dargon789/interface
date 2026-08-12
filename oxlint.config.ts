@@ -33,13 +33,13 @@ export const rootIgnorePatterns = [
   '**/vitest.config*',
   '**/vitest-setup*',
   '**/vitest-package-mocks*',
-  '**/jest-setup*',
-  '**/jest-package-mocks*',
   '**/webpack.*',
   '**/webpack-plugins/**',
   '**/.wxt/**',
   '**/wxt.config.*',
   '**/tailwind-config.*',
+  // -- shared configs --
+  'config/**',
   // ── apps/mobile ──
   'apps/mobile/metro.config.js',
   'apps/mobile/ReactotronConfig.ts',
@@ -62,7 +62,6 @@ export const rootIgnorePatterns = [
   // ── apps/extension ──
   'apps/extension/dev/**',
   'apps/extension/webpack*.js',
-  'apps/extension/jest*.js',
   'apps/extension/babel*.js',
   // ── apps/dev-portal ──
   'apps/dev-portal/functions/**',
@@ -72,10 +71,8 @@ export const rootIgnorePatterns = [
   'packages/uniswap/src/abis/types/**',
   'packages/uniswap/vite/**',
   'packages/uniswap/vitest*.ts',
-  'packages/uniswap/jest*.js',
   'packages/uniswap/babel*.js',
   // ── packages/wallet ──
-  'packages/wallet/jest*.js',
   'packages/wallet/babel*.js',
   // ── packages/ui ──
   'packages/ui/src/components/icons/**',
@@ -83,7 +80,7 @@ export const rootIgnorePatterns = [
   // ── packages/api ──
   'packages/api/codegen.ts',
   // ── tools/uniswap-nx ──
-  'tools/uniswap-nx/src/generators/**/files/**',
+  'tools/uniswap-nx/src/generators/**',
 ]
 
 // ── Shared no-restricted-imports definitions ──────────────────────────
@@ -229,9 +226,31 @@ export const sharedRestrictedImportPaths = [
 ] as const
 
 /** Pattern that blocks deep imports into @universe/* packages. */
+// `**` is required — gitignore-style `*` doesn't cross `/`, so `@universe/*/src/*`
+// would miss nested paths like `@universe/api/src/clients/trading/types`.
 export const crossPackageDeepImportPattern = {
-  group: ['@universe/*/src', '@universe/*/src/*'],
+  group: ['@universe/*/src', '@universe/*/src/**'],
   message: 'Deep imports from @universe/* packages are forbidden. Import from the package root instead.',
+} as const
+
+/**
+ * Pattern that blocks imports of labs/ projects from everywhere outside labs/.
+ * labs/ is experimental and .nxignore'd — shipped apps and packages must never
+ * depend on it. labs/* projects may still import each other: the labs/**
+ * override below redefines no-restricted-imports without this pattern.
+ * Add new labs/* package names to this group when creating a labs project.
+ */
+export const labsRestrictedImportPattern = {
+  group: [
+    '@universe/workbench',
+    '@universe/workbench/**',
+    '@universe/sandbox',
+    '@universe/sandbox/**',
+    'labs/**',
+    '**/labs/**',
+  ],
+  message:
+    'labs/ projects are experimental and must not be imported outside labs/. Move shared code into packages/ instead.',
 } as const
 
 export const sharedRestrictedImportPatterns = [
@@ -241,6 +260,7 @@ export const sharedRestrictedImportPatterns = [
       'Please do not import SVG files directly from `ui/src/assets/icons/*.svg`. Use generated icon components instead.',
   },
   crossPackageDeepImportPattern,
+  labsRestrictedImportPattern,
 ] as const
 
 /**
@@ -251,7 +271,7 @@ export function restrictedImportPatternsForUniversePackage(packageName: string) 
   return [
     ...sharedRestrictedImportPatterns.filter((p) => p !== crossPackageDeepImportPattern),
     {
-      group: ['@universe/*/src', '@universe/*/src/*', `!${packageName}/src`, `!${packageName}/src/*`],
+      group: ['@universe/*/src', '@universe/*/src/**', `!${packageName}/src`, `!${packageName}/src/**`],
       message: 'Deep imports from @universe/* packages are forbidden. Import from the package root instead.',
     },
   ]
@@ -337,7 +357,9 @@ export default defineConfig({
         'eslint-plugin-no-unsanitized',
         // TODO: Remove oxlint-plugin-eslint after oxlint ships native object-shorthand
         // (https://github.com/oxc-project/oxc/pull/17688)
-        'oxlint-plugin-eslint',
+        // Aliased: the plugin registers as 'eslint', which oxlint reserves for its
+        // native rules. The alias keeps our existing 'eslint-js/*' rule ids.
+        { name: 'eslint-js', specifier: 'oxlint-plugin-eslint' },
       ],
   options: isFastLint
     ? {}
@@ -412,14 +434,23 @@ export default defineConfig({
     'require-yield': 'error',
     'typescript/explicit-function-return-type': ['error', { allowExpressions: true }],
     'jest/no-disabled-tests': 'error',
-    'jest/expect-expect': 'error',
+    // assertFunctionNames covers redux-saga-test-plan assertions (expectSaga/testSaga),
+    // which oxlint does not recognize implicitly.
+    'jest/expect-expect': ['error', { assertFunctionNames: ['expect*', 'testSaga'] }],
     'jest/no-conditional-expect': 'off',
+    // oxlint reports jest and vitest variants of shared rules independently,
+    // so jest/* options must be mirrored on the vitest/* counterparts.
+    'vitest/expect-expect': ['error', { assertFunctionNames: ['expect*', 'testSaga'] }],
+    'vitest/no-conditional-expect': 'off',
+    'vitest/valid-title': ['error', { ignoreTypeOfDescribeName: true }],
+    'vitest/require-to-throw-message': 'off',
     'vitest/require-mock-type-parameters': 'off',
 
     // ── security ───────────────────────────────────────────────────────
     'react/no-danger': 'error',
     'react/no-danger-with-children': 'error',
     'no-eval': 'error',
+    'no-implied-eval': 'error',
     'unicorn/no-new-buffer': 'error',
     'unicorn/no-new-array': 'off',
 
@@ -520,7 +551,7 @@ export default defineConfig({
     'typescript/no-unsafe-return': 'error',
     'typescript/no-unnecessary-condition': ['error', { allowConstantLoopConditions: true }],
     'typescript/no-redundant-type-constituents': 'off',
-    'typescript/unbound-method': 'off',
+    'typescript/unbound-method': ['error', { ignoreStatic: true }],
     'typescript/restrict-template-expressions': 'off',
     'typescript/no-base-to-string': 'off',
 
@@ -560,6 +591,8 @@ export default defineConfig({
     'no-useless-backreference': 'error',
     'no-var': 'error',
     'no-with': 'warn',
+    'unicorn/explicit-timer-delay': 'error',
+    'unicorn/no-confusing-array-with': 'error',
 
     // TODO(apps-infra): The following rules were used in eslint or biome but are not currently
     // supported by oxlint or require tweaking with a custom plugin. Re-enable when possible.
@@ -570,6 +603,8 @@ export default defineConfig({
 
     // ── jsPlugin rules (excluded when ENABLE_FAST_LINT=true) ──────────
     ...(!isFastLint && {
+      // correctness
+      'import/no-cycle': ['error', { ignoreExternal: true }],
       // security
       'security/detect-unsafe-regex': 'error',
       'security/detect-buffer-noassert': 'error',
@@ -604,6 +639,8 @@ export default defineConfig({
       ],
       'universe-custom/no-redux-modals': 'error',
       'universe-custom/no-tolowercase-address-currencyid': 'warn',
+      'universe-custom/no-platform-gate-in-chain-flags': 'error',
+      'universe-custom/no-tamagui-styling': 'error',
       // typed-redux-saga
       '@jambit/typed-redux-saga/use-typed-effects': 'error',
       '@jambit/typed-redux-saga/delegate-effects': 'error',
@@ -624,6 +661,18 @@ export default defineConfig({
         'typescript/no-unsafe-return': 'off',
       },
     },
+
+    // ── Saga files ──────────────────────
+    {
+      files: ['**/*saga.ts', '**/*saga.tsx', '**/*Saga.ts', '**/*Saga.tsx'],
+      rules: {
+        // redux-saga's call/fork/etc. bind the receiver via the
+        // [obj, method] array form, an idiom unbound-method can't model, so it
+        // false-positives on the bound method reference. Disable it for sagas.
+        'typescript/unbound-method': 'off',
+      },
+    },
+
     // ── Logger, scripts, devtools: allow console ──────────────────────
     {
       files: [
@@ -670,6 +719,20 @@ export default defineConfig({
         ...(!isFastLint && {
           'eslint-js/no-restricted-syntax': ['error', ...sharedRestrictedSyntaxSelectors],
         }),
+      },
+    },
+    {
+      // cli's internal imports use the @universe/cli/src prefix (see
+      // no-relative-import-paths below), so exclude its own deep imports.
+      files: ['apps/cli/**'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [...sharedRestrictedImportPaths],
+            patterns: restrictedImportPatternsForUniversePackage('@universe/cli'),
+          },
+        ],
       },
     },
     ...(!isFastLint
@@ -940,6 +1003,27 @@ export default defineConfig({
         'typescript/no-floating-promises': 'off',
       },
     },
+
+    // ── @universe/embedded-wallet web protocol layer ──────────────────
+    // Migrated from apps/web (INFRA-2911) where these rules are off; EIP-1193
+    // request/event plumbing is inherently loosely typed. Tightening is
+    // tracked in INFRA-2942.
+    {
+      files: ['packages/embedded-wallet/src/connection/**'],
+      rules: {
+        'typescript/explicit-function-return-type': 'off',
+        'typescript/no-floating-promises': 'off',
+        'typescript/no-explicit-any': 'off',
+        'typescript/no-non-null-assertion': 'off',
+      },
+    },
+    {
+      // Local uSES helpers (getSnapshot/subscribe) predate the package's stricter rules.
+      files: ['packages/embedded-wallet/src/state/**'],
+      rules: {
+        'typescript/explicit-function-return-type': 'off',
+      },
+    },
     ...(!isFastLint
       ? [
           {
@@ -950,6 +1034,7 @@ export default defineConfig({
                 { allowSameFolder: false, rootDir: 'src' },
               ],
               'universe-custom/import-boundary': 'error' as const,
+              'universe-custom/no-direct-viem-ethers-import': 'error' as const,
             },
           },
         ]
@@ -985,6 +1070,14 @@ export default defineConfig({
           },
         ]
       : []),
+    // Disable the no-cycles lint rule for web/state/sagas
+    // The sagas and redux store have many cycles, deep refactoring is needed
+    {
+      files: ['apps/web/src/state/sagas/**/*.ts'],
+      rules: {
+        'import/no-cycle': 'off',
+      },
+    },
     {
       files: [
         'apps/web/vite.config.*',
@@ -1028,10 +1121,6 @@ export default defineConfig({
                 message: 'Styled components is deprecated, please use Flex or styled from "ui/src" instead.',
               },
               {
-                name: 'ethers',
-                message: "Please import from '@ethersproject/module' directly to support tree-shaking.",
-              },
-              {
                 name: 'ui/src/components/icons',
                 message:
                   'Please import icons directly from their respective files to avoid importing the entire icons folder.',
@@ -1056,6 +1145,12 @@ export default defineConfig({
                   'useWatchBlockNumber',
                 ],
                 message: 'Import wrapped utilities from internal hooks instead.',
+              },
+              {
+                name: '@privy-io/react-auth',
+                importNames: ['usePrivy', 'useLoginWithOAuth', 'useLoginWithEmail', 'useAuthorizationSignature'],
+                message:
+                  'Use the gated `useMaybe*` hooks from `~/hooks/useMaybePrivy` instead. `MaybePrivyProvider` only mounts <PrivyProvider> when Privy is configured (PRIVY_APP_ID / PRIVY_CLIENT_ID); Privy hooks read provider-backed contexts at render and crash the page when it is not.',
               },
               {
                 name: 'i18next',
@@ -1104,6 +1199,88 @@ export default defineConfig({
     {
       files: ['apps/web/**/*.e2e.test.ts', 'apps/web/**/*.anvil.e2e.test.ts'],
       rules: { 'no-restricted-imports': 'off' },
+    },
+
+    // ── labs ──────────────────────────────────────────────────────────
+    // labs/* projects may import each other, so redefine no-restricted-imports
+    // without labsRestrictedImportPattern (rule options are replaced, not
+    // merged). Everywhere else the shared pattern blocks labs/ imports.
+    {
+      files: ['labs/**'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: sharedRestrictedImportPaths,
+            patterns: sharedRestrictedImportPatterns.filter((p) => p !== labsRestrictedImportPattern),
+          },
+        ],
+        // labs/ is experimental and outside the Tamagui → Tailwind migration
+        // surface; the generated baseline only covers apps/ + packages/.
+        ...(!isFastLint && {
+          'universe-custom/no-tamagui-styling': 'off' as const,
+        }),
+      },
+    },
+
+    // ── labs/workbench ────────────────────────────────────────────────
+    // labs/ is .nxignore'd so this never runs in CI; the workbench keeps
+    // itself lintable for manual `oxlint -c oxlint.config.ts labs/workbench`.
+    {
+      files: ['labs/workbench/**'],
+      rules: {
+        // The workbench chrome is shadcn/ui-based; shadcn components (and the
+        // chrome composing them) render plain divs by design.
+        'react/forbid-elements': 'off',
+        // react-router.config.ts reads process.env.VERCEL at the build boundary
+        // (mirrors mission-control); redefine the rule without
+        // processEnvRestrictedSyntaxSelector.
+        ...(!isFastLint && {
+          'eslint-js/no-restricted-syntax': ['error', ...sharedRestrictedSyntaxSelectors],
+        }),
+      },
+    },
+    {
+      // Vendored shadcn/ui sources (what `bunx shadcn add` emits) are kept
+      // pristine so upstream diffs stay reviewable.
+      files: [
+        'labs/workbench/app/components/ui/**',
+        'labs/workbench/app/hooks/use-mobile.ts',
+        'labs/workbench/app/lib/utils.ts',
+      ],
+      rules: {
+        'typescript/explicit-function-return-type': 'off',
+        'max-lines': 'off',
+        'no-shadow': 'off',
+      },
+    },
+
+    // ── labs/rh-cca ───────────────────────────────────────────────────
+    {
+      // Runtime boundaries read process.env directly (SERVER_RUNTIME/PORT are
+      // deploy-time, not app config) and implement react-router's 4-param
+      // handleRequest contract — same relaxations dev-portal's boundary gets.
+      // teaserMode.ts is the build-time teaser switch: Node-only, resolved
+      // before Vite exists, so getConfig() can't serve it.
+      files: ['labs/rh-cca/server.ts', 'labs/rh-cca/app/entry.server.tsx', 'labs/rh-cca/teaserMode.ts'],
+      rules: {
+        'max-params': 'off',
+        ...(!isFastLint && {
+          'eslint-js/no-restricted-syntax': ['error', ...sharedRestrictedSyntaxSelectors],
+        }),
+      },
+    },
+    {
+      // Vendored shadcn/ui sources (what `bunx shadcn add` emits) are kept
+      // pristine so upstream diffs stay reviewable; shadcn components render
+      // plain divs by design.
+      files: ['labs/rh-cca/app/components/ui/**', 'labs/rh-cca/app/lib/utils.ts'],
+      rules: {
+        'typescript/explicit-function-return-type': 'off',
+        'react/forbid-elements': 'off',
+        'max-lines': 'off',
+        'no-shadow': 'off',
+      },
     },
 
     // ── packages/uniswap ──────────────────────────────────────────────
@@ -1234,7 +1411,19 @@ export default defineConfig({
 
     // ── @universe/* packages with standard pattern ────────────────────
     // (no-relative-import-paths + restrictedImportPatternsForUniversePackage)
-    ...(['api', 'config', 'gating', 'notifications', 'sessions', 'transactional', 'websocket'] as const).map((pkg) => ({
+    ...(
+      [
+        'api',
+        'compliance',
+        'config',
+        'embedded-wallet',
+        'gating',
+        'notifications',
+        'sessions',
+        'transactional',
+        'websocket',
+      ] as const
+    ).map((pkg) => ({
       files: [`packages/${pkg}/**`],
       rules: {
         ...(!isFastLint && {
@@ -1280,11 +1469,13 @@ export default defineConfig({
         'no-console': 'off',
         'no-lone-blocks': 'off',
         'no-unsafe-optional-chaining': 'off',
+        'import/no-cycle': 'off',
         'typescript/triple-slash-reference': 'off',
         'typescript/await-thenable': 'off',
         'typescript/no-unsafe-return': 'off',
         'typescript/no-misused-spread': 'off',
         'typescript/no-var-requires': 'off',
+        'typescript/unbound-method': 'off',
         'prefer-const': 'off',
         'vitest/hoisted-apis-on-top': 'error',
         ...(!isFastLint && {
@@ -1295,6 +1486,7 @@ export default defineConfig({
           'universe-custom/no-unwrapped-t': 'off',
           'universe-custom/custom-map-sort': 'off',
           'universe-custom/no-hex-string-casting': 'off',
+          'universe-custom/no-direct-viem-ethers-import': 'off',
           'security/detect-non-literal-regexp': 'off',
           'eslint-js/no-restricted-syntax': 'off',
           '@jambit/typed-redux-saga/use-typed-effects': 'off',

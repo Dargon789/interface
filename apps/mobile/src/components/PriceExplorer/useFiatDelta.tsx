@@ -1,16 +1,18 @@
 import { useCallback, useMemo } from 'react'
-import { runOnJS, SharedValue, useAnimatedReaction, useDerivedValue, useSharedValue } from 'react-native-reanimated'
-import { useLineChart } from 'react-native-wagmi-charts'
+import { SharedValue, useAnimatedReaction, useDerivedValue, useSharedValue } from 'react-native-reanimated'
+import { scheduleOnRN } from 'react-native-worklets'
+import { usePriceChart } from 'src/components/charts/PriceChartContext'
 import { useFormatChartFiatDelta } from 'uniswap/src/features/fiatCurrency/hooks/useFormatChartFiatDelta'
-import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
 
 interface UseFiatDeltaParams {
+  /** Already fiat-converted, like the context's chart data */
   startingPrice?: number
   shouldTreatAsStablecoin?: boolean
 }
 
 interface FiatDeltaResult {
   formatted: SharedValue<string>
+  idleNumericDelta: number | undefined
 }
 
 /**
@@ -21,8 +23,7 @@ export function useLineChartFiatDelta({
   startingPrice,
   shouldTreatAsStablecoin = false,
 }: UseFiatDeltaParams): FiatDeltaResult {
-  const { currentIndex, data, isActive } = useLineChart()
-  const { conversionRate } = useLocalizationContext()
+  const { currentIndex, data, isActive } = usePriceChart()
   const { formatChartFiatDelta } = useFormatChartFiatDelta()
 
   // Shared value for the current scrubbing delta
@@ -30,30 +31,28 @@ export function useLineChartFiatDelta({
 
   // Pre-calculate only the last point's delta (for non-scrubbing state)
   const lastPointDelta = useMemo(() => {
-    if (!startingPrice || !data || !conversionRate || data.length === 0) {
-      return ''
+    if (!startingPrice || data.length === 0) {
+      return { formatted: '', numericDelta: undefined }
     }
 
-    const convertedStartPrice = startingPrice * conversionRate
     const lastPoint = data[data.length - 1]
     if (!lastPoint) {
-      return ''
+      return { formatted: '', numericDelta: undefined }
     }
-    const convertedEndPrice = lastPoint.value * conversionRate
 
     const delta = formatChartFiatDelta({
-      startingPrice: convertedStartPrice,
-      endingPrice: convertedEndPrice,
+      startingPrice,
+      endingPrice: lastPoint.value,
       isStablecoin: shouldTreatAsStablecoin,
     })
 
-    return delta.formatted
-  }, [startingPrice, data, conversionRate, formatChartFiatDelta, shouldTreatAsStablecoin])
+    return { formatted: delta.formatted, numericDelta: delta.rawDelta }
+  }, [startingPrice, data, formatChartFiatDelta, shouldTreatAsStablecoin])
 
   // Calculate delta for current scrubbing position
   const calculateCurrentDelta = useMemo(() => {
     return (index: number) => {
-      if (!startingPrice || !data || !conversionRate) {
+      if (!startingPrice) {
         return ''
       }
 
@@ -62,18 +61,15 @@ export function useLineChartFiatDelta({
         return ''
       }
 
-      const convertedStartPrice = startingPrice * conversionRate
-      const convertedEndPrice = currentPoint.value * conversionRate
-
       const delta = formatChartFiatDelta({
-        startingPrice: convertedStartPrice,
-        endingPrice: convertedEndPrice,
+        startingPrice,
+        endingPrice: currentPoint.value,
         isStablecoin: shouldTreatAsStablecoin,
       })
 
       return delta.formatted
     }
-  }, [startingPrice, data, conversionRate, formatChartFiatDelta, shouldTreatAsStablecoin])
+  }, [startingPrice, data, formatChartFiatDelta, shouldTreatAsStablecoin])
 
   // Callback for updating the scrubbing delta from the UI thread
   const updateScrubbingDelta = useCallback(
@@ -90,18 +86,17 @@ export function useLineChartFiatDelta({
       return currentIndex.value
     },
     (currentIndexValue) => {
-      if (data && data.length > 0) {
+      if (data.length > 0) {
         const safeIndex = Math.min(Math.max(0, Math.round(currentIndexValue)), data.length - 1)
-        runOnJS(updateScrubbingDelta)(safeIndex)
+        scheduleOnRN(updateScrubbingDelta, safeIndex)
       }
     },
     [data, updateScrubbingDelta],
   )
 
   // Create a derived value that decides which delta to show
-  /* oxlint-disable react/exhaustive-deps -- isActive and scrubbingDeltaSharedValue are Reanimated shared values tracked automatically */
   const formatted = useDerivedValue(() => {
-    if (!data || data.length === 0) {
+    if (data.length === 0) {
       return ''
     }
 
@@ -111,9 +106,9 @@ export function useLineChartFiatDelta({
     }
 
     // When not scrubbing, use the pre-calculated last point delta
-    return lastPointDelta
+    return lastPointDelta.formatted
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- isActive and scrubbingDeltaSharedValue are Reanimated shared values tracked automatically
   }, [lastPointDelta, data])
-  /* oxlint-enable react/exhaustive-deps */
 
-  return { formatted }
+  return { formatted, idleNumericDelta: lastPointDelta.numericDelta }
 }

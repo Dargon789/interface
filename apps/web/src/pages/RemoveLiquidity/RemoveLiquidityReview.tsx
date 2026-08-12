@@ -1,5 +1,6 @@
 import { ProtocolVersion } from '@uniswap/client-data-api/dist/data/v1/poolTypes_pb'
 import { CurrencyAmount } from '@uniswap/sdk-core'
+import { useGetPasskeyAuthStatus } from '@universe/embedded-wallet'
 import { FeatureFlags, useFeatureFlag } from '@universe/gating'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -12,8 +13,7 @@ import { CurrencyLogo } from 'uniswap/src/components/CurrencyLogo/CurrencyLogo'
 import { NetworkLogo } from 'uniswap/src/components/CurrencyLogo/NetworkLogo'
 import { PollingInterval } from 'uniswap/src/constants/misc'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
-import { useGetPasskeyAuthStatus } from 'uniswap/src/features/passkey/hooks/useGetPasskeyAuthStatus'
-import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPriceWrapper'
+import { useUSDCValue } from 'uniswap/src/features/transactions/hooks/useUSDCPrice'
 import { isValidLiquidityTxContext } from 'uniswap/src/features/transactions/liquidity/types'
 import { TransactionStep } from 'uniswap/src/features/transactions/steps/types'
 import { useWallet } from 'uniswap/src/features/wallet/hooks/useWallet'
@@ -239,7 +239,7 @@ export function RemoveLiquidityReview({ onClose }: { onClose: () => void }) {
               LineItem={{
                 Label: () => (
                   <Text variant="body3" color="$neutral2">
-                    {t('pool.newSpecificPosition', { symbol: currency0Amount.currency.symbol })}
+                    {t('pool.newSpecificPosition', { symbol: currency0Amount.currency.symbol ?? t('common.token') })}
                   </Text>
                 ),
                 Value: () => (
@@ -259,7 +259,7 @@ export function RemoveLiquidityReview({ onClose }: { onClose: () => void }) {
               LineItem={{
                 Label: () => (
                   <Text variant="body3" color="$neutral2">
-                    {t('pool.newSpecificPosition', { symbol: currency1Amount.currency.symbol })}
+                    {t('pool.newSpecificPosition', { symbol: currency1Amount.currency.symbol ?? t('common.token') })}
                   </Text>
                 ),
                 Value: () => (

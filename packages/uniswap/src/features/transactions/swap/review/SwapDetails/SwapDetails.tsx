@@ -8,7 +8,7 @@ import { type Warning, WarningLabel } from 'uniswap/src/components/modals/Warnin
 import type { CurrencyInfo } from 'uniswap/src/features/dataApi/types'
 import { EstimatedSwapTime } from 'uniswap/src/features/transactions/swap/components/EstimatedBridgeTime'
 import { MaxSlippageRow } from 'uniswap/src/features/transactions/swap/components/MaxSlippageRow/MaxSlippageRow'
-import { PriceImpactRow } from 'uniswap/src/features/transactions/swap/components/PriceImpactRow/PriceImpactRow'
+import { PriceDifferenceRow } from 'uniswap/src/features/transactions/swap/components/PriceDifferenceRow/PriceDifferenceRow'
 import { RoutingInfo } from 'uniswap/src/features/transactions/swap/components/RoutingInfo/RoutingInfo'
 import { SwapRateRatio } from 'uniswap/src/features/transactions/swap/components/SwapRateRatio'
 import { AcceptNewQuoteRow } from 'uniswap/src/features/transactions/swap/review/SwapDetails/AcceptNewQuoteRow'
@@ -41,7 +41,9 @@ interface SwapDetailsProps {
   setTokenWarningChecked?: (checked: boolean) => void
   txSimulationErrors?: TradingApi.TransactionFailureReason[]
   includesDelegation?: boolean
+  BannerSlot?: React.ReactNode
   NetworkCostRowSlot?: React.ReactNode
+  sponsorshipInfo?: TradingApi.SponsorshipInfo
 }
 
 export function SwapDetails({
@@ -61,15 +63,18 @@ export function SwapDetails({
   setTokenWarningChecked,
   txSimulationErrors,
   includesDelegation,
+  BannerSlot,
   NetworkCostRowSlot,
+  sponsorshipInfo,
 }: SwapDetailsProps): JSX.Element {
   const { t } = useTranslation()
 
-  const isBridgeTrade = derivedSwapInfo.trade.trade && isBridge(derivedSwapInfo.trade.trade)
-  const routing = derivedSwapInfo.trade.trade?.routing
-
-  const trade = derivedSwapInfo.trade.trade ?? derivedSwapInfo.trade.indicativeTrade
   const acceptedTrade = acceptedDerivedSwapInfo.trade.trade ?? acceptedDerivedSwapInfo.trade.indicativeTrade
+  const routedTrade = derivedSwapInfo.trade.trade
+  const trade = derivedSwapInfo.trade.trade ?? derivedSwapInfo.trade.indicativeTrade
+
+  const isBridgeTrade = routedTrade && isBridge(routedTrade)
+  const routing = routedTrade?.routing
 
   const swapFeeUsd = getSwapFeeUsdFromDerivedSwapInfo(derivedSwapInfo)
 
@@ -81,7 +86,7 @@ export function SwapDetails({
     throw new Error('Invalid render of `SwapDetails` with no `acceptedTrade`')
   }
 
-  const tradeQuote = derivedSwapInfo.trade.trade?.quote
+  const tradeQuote = routedTrade?.quote
 
   const estimatedSwapTime: number | undefined = useMemo(() => {
     if (!tradeQuote) {
@@ -100,18 +105,20 @@ export function SwapDetails({
 
   const showNetworkLogo = !isMultiChainGasQuote(tradeQuote)
   const showCollapsedPriceImpactRow =
-    warning?.type === WarningLabel.PriceImpactHigh || warning?.type === WarningLabel.PriceImpactMedium
+    warning?.type === WarningLabel.PriceDifferenceHigh || warning?.type === WarningLabel.PriceDifferenceMedium
 
   return (
     <HeightAnimator animationDisabled={isMobileApp || isMobileWeb}>
       <TransactionDetails
         banner={
-          newTradeRequiresAcceptance && (
+          newTradeRequiresAcceptance ? (
             <AcceptNewQuoteRow
               acceptedDerivedSwapInfo={acceptedDerivedSwapInfo}
               derivedSwapInfo={derivedSwapInfo}
               onAcceptTrade={onAcceptTrade}
             />
+          ) : (
+            BannerSlot
           )
         }
         chainId={acceptedTrade.inputAmount.currency.chainId}
@@ -135,8 +142,9 @@ export function SwapDetails({
         txSimulationErrors={txSimulationErrors}
         includesDelegation={includesDelegation}
         NetworkCostRowSlot={NetworkCostRowSlot}
+        sponsorshipInfo={sponsorshipInfo}
         CollapsedInfoRow={
-          showCollapsedPriceImpactRow ? <PriceImpactRow derivedSwapInfo={acceptedDerivedSwapInfo} /> : undefined
+          showCollapsedPriceImpactRow ? <PriceDifferenceRow derivedSwapInfo={acceptedDerivedSwapInfo} /> : undefined
         }
         RateInfo={
           <Flex row alignItems="center" justifyContent="space-between">
@@ -159,7 +167,7 @@ export function SwapDetails({
         {!acceptedTrade.indicative && (
           <RoutingInfo trade={acceptedTrade} gasFee={gasFee} chainId={acceptedTrade.inputAmount.currency.chainId} />
         )}
-        <PriceImpactRow derivedSwapInfo={acceptedDerivedSwapInfo} />
+        <PriceDifferenceRow derivedSwapInfo={acceptedDerivedSwapInfo} />
       </TransactionDetails>
     </HeightAnimator>
   )

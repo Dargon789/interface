@@ -19,7 +19,7 @@ import { sendAnalyticsEvent } from 'uniswap/src/features/telemetry/send'
 import { UNITAG_SUFFIX } from 'uniswap/src/features/unitags/constants'
 import { useCanClaimUnitagName } from 'uniswap/src/features/unitags/hooks/useCanClaimUnitagName'
 import { UnitagName } from 'uniswap/src/features/unitags/UnitagName'
-import { parseUnitagErrorCode } from 'uniswap/src/features/unitags/utils'
+import { parseUnitagErrorCode, normalizeUnitagUsernameInput } from 'uniswap/src/features/unitags/utils'
 import { TestID } from 'uniswap/src/test/fixtures/testIDs'
 import { dismissNativeKeyboard } from 'utilities/src/device/keyboard/dismissNativeKeyboard'
 import { uniqueIdQuery } from 'utilities/src/device/uniqueIdQuery'
@@ -50,16 +50,24 @@ export function ChangeUnitagModal({
   const account = useAccount(address)
   const signerManager = useWalletSigners()
 
-  const [newUnitag, setNewUnitag] = useState(unitag)
+  const [newUnitag, setNewUnitag] = useState(() => normalizeUnitagUsernameInput(unitag))
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [isChangeResponseLoading, setIsChangeResponseLoading] = useState(false)
 
-  const { error: canClaimUnitagNameError, loading: canClaimUnitagLoading } = useCanClaimUnitagName(newUnitag, address)
+  const {
+    error: canClaimUnitagNameError,
+    loading: canClaimUnitagLoading,
+    isDebouncing: isDebouncingUnitag,
+  } = useCanClaimUnitagName({
+    unitag: newUnitag,
+    claimerAddress: address,
+  })
   const { errorCode } = useCanAddressClaimUnitag(address, true)
   const resetUnitagsQueries = useResetUnitagsQueries()
 
   const isUnitagEdited = unitag !== newUnitag
-  const isUnitagValid = !!newUnitag && isUnitagEdited && !canClaimUnitagNameError && !canClaimUnitagLoading
+  const isCheckingUnitag = isUnitagEdited && !canClaimUnitagNameError && (canClaimUnitagLoading || isDebouncingUnitag)
+  const isUnitagValid = !!newUnitag && isUnitagEdited && !canClaimUnitagNameError && !isCheckingUnitag
   const hasReachedAddressLimit = errorCode === UnitagErrorCode.UNITAG_ERROR_ADDRESS_LIMIT_REACHED
   const isSubmitButtonDisabled = !deviceId || hasReachedAddressLimit || !isUnitagValid
 
@@ -194,9 +202,9 @@ export function ChangeUnitagModal({
                   px="$none"
                   py="$spacing20"
                   returnKeyType="done"
-                  defaultValue={newUnitag}
+                  value={newUnitag}
                   width="100%"
-                  onChangeText={(text: string) => setNewUnitag(text.trim().toLowerCase())}
+                  onChangeText={(text: string) => setNewUnitag(normalizeUnitagUsernameInput(text))}
                   onSubmitEditing={onFinishEditing}
                 />
                 <Flex position="absolute" right="$spacing20" top="$spacing20">
@@ -243,7 +251,7 @@ export function ChangeUnitagModal({
             </Flex>
             <ChangeUnitagConfirmButton
               isSubmitButtonDisabled={isSubmitButtonDisabled}
-              isCheckingUnitag={canClaimUnitagLoading}
+              isCheckingUnitag={isCheckingUnitag}
               isChangeResponseLoading={isChangeResponseLoading}
               onPressSaveChanges={onPressSaveChanges}
             />

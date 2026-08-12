@@ -1,20 +1,23 @@
-import type { MultichainToken } from '@uniswap/client-data-api/dist/data/v1/types_pb'
-import { ReactNode, useMemo } from 'react'
+import type { RankedMultichainToken } from '@uniswap/client-data-api/dist/data/v2/types_pb'
+import { type ReactNode, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flex, Popover, Text, TouchableArea, useIsTouchDevice, useShadowPropsMedium } from 'ui/src'
+import { Flex, Popover, Text, useIsTouchDevice, useShadowPropsMedium } from 'ui/src'
 import { iconSizes, zIndexes } from 'ui/src/theme'
 import { NetworkLogo } from 'uniswap/src/components/CurrencyLogo/NetworkLogo'
 import { NetworkPile } from 'uniswap/src/components/network/NetworkPile/NetworkPile'
 import { getChainInfo } from 'uniswap/src/features/chains/chainInfo'
-import { isUniverseChainId } from 'uniswap/src/features/chains/utils'
+import type { UniverseChainId } from 'uniswap/src/features/chains/types'
 import { useLocalizationContext } from 'uniswap/src/features/language/LocalizationContext'
+import { type TdpChainSelection, TdpChainSelectionType } from 'uniswap/src/utils/linking'
 import useResizeObserver from 'use-resize-observer'
 import { NumberType } from 'utilities/src/format/types'
-import { TimePeriod } from '~/appGraphql/data/util'
+import { useEvent } from 'utilities/src/react/hooks'
+import { stopPropagation, stopPropagationPressProps } from 'utilities/src/react/stopPropagation'
 import { adjustItemWidths, MIN_BAR_WIDTH } from '~/components/PercentageAllocationChart/chartUtils'
 import { PercentageBars } from '~/components/PercentageAllocationChart/PercentageBars'
 import type { PercentageAllocationItem } from '~/components/PercentageAllocationChart/types'
 import { useChartHover } from '~/components/PercentageAllocationChart/useChartHover'
+import { TimePeriod } from '~/data/util'
 import { useTopNetworkBarColors } from '~/pages/Explore/tables/Tokens/VolumeByNetworkPopover/useTopNetworkBarColors'
 import {
   getPercentageDisplay,
@@ -22,24 +25,30 @@ import {
   getVolumeLabelForTimePeriod,
   navigateVolumePopoverToTokenDetails,
 } from '~/pages/Explore/tables/Tokens/VolumeByNetworkPopover/utils'
+import {
+  VolumeBreakdownRow,
+  VolumeBreakdownRowLabel,
+  type VolumeHoverSource,
+} from '~/pages/Explore/tables/Tokens/VolumeByNetworkPopover/VolumeBreakdownRow'
 import { useNavigateToTokenDetails } from '~/pages/Portfolio/Tokens/hooks/useNavigateToTokenDetails'
 
 const MAX_VISIBLE_NETWORKS = 3
-const POPOVER_MIN_WIDTH = 280
+const POPOVER_MIN_WIDTH = 300
 const COLOR_DOT_SIZE = 6
 
 interface VolumeByNetworkPopoverProps {
-  mcToken: MultichainToken | undefined
+  rankedToken: RankedMultichainToken | undefined
   timePeriod: TimePeriod
-  volumeFormatted: string
+  /** The row's registry + rollout-flag filtered networks; breakdown rows are restricted to it. */
+  visibleChainIds: readonly UniverseChainId[]
   children: ReactNode
   minBarWidth?: number
 }
 
 export function VolumeByNetworkPopover({
-  mcToken,
+  rankedToken,
   timePeriod,
-  volumeFormatted,
+  visibleChainIds,
   children,
   minBarWidth = MIN_BAR_WIDTH,
 }: VolumeByNetworkPopoverProps): JSX.Element {
@@ -48,12 +57,24 @@ export function VolumeByNetworkPopover({
   const isTouchDevice = useIsTouchDevice()
   const { convertFiatAmountFormatted } = useLocalizationContext()
   const { hoveredItemId, onHover } = useChartHover()
+  const [hoverSource, setHoverSource] = useState<VolumeHoverSource | null>(null)
+  const [listSurfaceItemId, setListSurfaceItemId] = useState<string | null>(null)
+
+  const onBarHover = useEvent((id: string | null) => {
+    onHover(id)
+    setHoverSource(id === null ? null : 'bar')
+  })
+
+  const onRowHover = useEvent((id: string | null) => {
+    onHover(id)
+    setHoverSource(id === null ? null : 'row')
+  })
   const { ref: barContainerRef, width: chartWidth } = useResizeObserver<HTMLElement>()
   const navigateToTokenDetails = useNavigateToTokenDetails()
 
   const breakdown = useMemo(
-    () => getVolumeBreakdownForPeriod(mcToken, timePeriod).filter((b) => isUniverseChainId(b.chainId)),
-    [mcToken, timePeriod],
+    () => getVolumeBreakdownForPeriod({ rankedToken, timePeriod, visibleChainIds }),
+    [rankedToken, timePeriod, visibleChainIds],
   )
   const totalVolume = useMemo(() => breakdown.reduce((sum, { volume }) => sum + volume, 0), [breakdown])
 
@@ -120,14 +141,7 @@ export function VolumeByNetworkPopover({
       offset={{ mainAxis: 10 }}
     >
       <Popover.Trigger>
-        <Flex
-          cursor="default"
-          flex={1}
-          minWidth={0}
-          onPressIn={(e) => e.stopPropagation()}
-          onPressOut={(e) => e.stopPropagation()}
-          onPress={(e) => e.stopPropagation()}
-        >
+        <Flex cursor="default" flex={1} minWidth={0} {...stopPropagationPressProps}>
           {children}
         </Flex>
       </Popover.Trigger>
@@ -142,58 +156,62 @@ export function VolumeByNetworkPopover({
         animation="quick"
         animateOnly={['transform', 'opacity']}
         p="$spacing16"
+        px="$spacing8"
         minWidth={POPOVER_MIN_WIDTH}
-        onPress={(e) => e.stopPropagation()}
+        onPress={stopPropagation}
+        onOpenAutoFocus={(e) => e.preventDefault()}
         {...shadowProps}
       >
-        <Flex gap="$spacing16" width="100%">
-          <Flex row justifyContent="space-between" alignItems="baseline">
+        <Flex gap="$spacing8" width="100%">
+          <Flex row justifyContent="space-between" alignItems="baseline" px="$spacing8">
             <Text variant="body2" color="$neutral2">
               {getVolumeLabelForTimePeriod(t, timePeriod)}
             </Text>
+            {/* Sum of the visible rows (the percentage denominator), not the unfiltered
+                aggregate, so the header always matches the breakdown below it. */}
             <Text variant="body2" color="$neutral1">
-              {volumeFormatted}
+              {convertFiatAmountFormatted(totalVolume, NumberType.FiatTokenStats)}
             </Text>
           </Flex>
 
-          <Flex ref={barContainerRef} width="100%">
+          <Flex ref={barContainerRef} width="100%" px="$spacing4">
             <PercentageBars
               adjustedItems={adjustedItems}
               hoveredItemId={hoveredItemId}
-              onHover={onHover}
+              onHover={onBarHover}
               minBarWidth={minBarWidth}
               colorSegments
             />
           </Flex>
 
           {breakdown.length > 0 && (
-            <Flex gap="$spacing8">
+            <Flex>
               {breakdown.slice(0, MAX_VISIBLE_NETWORKS).map(({ chainId, volume }, i) => {
                 const itemId = `chain-${chainId}`
 
                 return (
-                  <TouchableArea
+                  <VolumeBreakdownRow
                     key={chainId}
-                    row
-                    alignItems="center"
-                    justifyContent="space-between"
-                    gap="$spacing8"
-                    opacity={1}
-                    cursor="pointer"
-                    onMouseEnter={() => onHover(itemId)}
-                    onMouseLeave={() => onHover(null)}
+                    hoveredItemId={hoveredItemId}
+                    hoverSource={hoverSource}
+                    listSurfaceItemId={listSurfaceItemId}
+                    itemId={itemId}
+                    onRowHover={onRowHover}
+                    onListSurfaceHover={setListSurfaceItemId}
                     onPress={() =>
                       navigateVolumePopoverToTokenDetails({
                         navigateToTokenDetails,
-                        mcToken,
+                        rankedToken,
                         chainId,
-                        chainQueryFilter: chainId,
                       })
                     }
                   >
                     <Flex row alignItems="center" gap="$spacing8" flex={1} minWidth={0}>
                       <NetworkLogo chainId={chainId} size={iconSizes.icon20} />
-                      <Text variant="body3">{convertFiatAmountFormatted(volume, NumberType.FiatTokenStats)}</Text>
+                      <VolumeBreakdownRowLabel
+                        primaryLabel={convertFiatAmountFormatted(volume, NumberType.FiatTokenStats)}
+                        hoverLabel={getChainInfo(chainId).name}
+                      />
                     </Flex>
                     <Flex row alignItems="center" gap="$spacing8">
                       <Text variant="body3" color="$neutral2">
@@ -207,27 +225,29 @@ export function VolumeByNetworkPopover({
                         flexShrink={0}
                       />
                     </Flex>
-                  </TouchableArea>
+                  </VolumeBreakdownRow>
                 )
               })}
               {breakdown.length > MAX_VISIBLE_NETWORKS && (
-                <TouchableArea
-                  row
-                  alignItems="center"
-                  justifyContent="space-between"
-                  gap="$spacing8"
-                  onMouseEnter={() => onHover('other')}
-                  onMouseLeave={() => onHover(null)}
-                  cursor="pointer"
+                <VolumeBreakdownRow
+                  hoveredItemId={hoveredItemId}
+                  hoverSource={hoverSource}
+                  listSurfaceItemId={listSurfaceItemId}
+                  itemId="other"
+                  onRowHover={onRowHover}
+                  onListSurfaceHover={setListSurfaceItemId}
                   onPress={() => {
                     const firstOtherBreakdown = breakdown[MAX_VISIBLE_NETWORKS]
-                    const chainQueryFilter =
-                      breakdown.length === MAX_VISIBLE_NETWORKS + 1 ? firstOtherBreakdown.chainId : undefined
+                    // One hidden network: open its chain-specific page (omit selection). Multiple: open the aggregate view.
+                    const chainSelection: TdpChainSelection | undefined =
+                      breakdown.length === MAX_VISIBLE_NETWORKS + 1
+                        ? undefined
+                        : { type: TdpChainSelectionType.Multichain }
                     navigateVolumePopoverToTokenDetails({
                       navigateToTokenDetails,
-                      mcToken,
+                      rankedToken,
                       chainId: firstOtherBreakdown.chainId,
-                      chainQueryFilter,
+                      chainSelection,
                     })
                   }}
                 >
@@ -236,7 +256,10 @@ export function VolumeByNetworkPopover({
                       chainIds={breakdown.slice(MAX_VISIBLE_NETWORKS).map(({ chainId }) => chainId)}
                       size="small"
                     />
-                    <Text variant="body3">{convertFiatAmountFormatted(otherVolumeSum, NumberType.FiatTokenStats)}</Text>
+                    <VolumeBreakdownRowLabel
+                      primaryLabel={convertFiatAmountFormatted(otherVolumeSum, NumberType.FiatTokenStats)}
+                      hoverLabel={t('common.others')}
+                    />
                   </Flex>
                   <Flex row alignItems="center" gap="$spacing8">
                     <Text variant="body3" color="$neutral2">
@@ -250,7 +273,7 @@ export function VolumeByNetworkPopover({
                       flexShrink={0}
                     />
                   </Flex>
-                </TouchableArea>
+                </VolumeBreakdownRow>
               )}
             </Flex>
           )}

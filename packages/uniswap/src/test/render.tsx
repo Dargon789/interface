@@ -10,6 +10,8 @@ import {
   render as RNRender,
   renderHook as RNRenderHook,
 } from '@testing-library/react-native'
+import { SharedQueryClient } from '@universe/api'
+import { PriceServiceProvider } from '@universe/prices'
 import { ParsedQs } from 'qs'
 import { PropsWithChildren } from 'react'
 import { Provider as ReduxProvider } from 'react-redux'
@@ -17,7 +19,7 @@ import { TamaguiProvider as OGTamaguiProvider, TamaguiProviderProps } from 'ui/s
 import { config } from 'ui/src/tamagui.config'
 import { UniswapProvider } from 'uniswap/src/contexts/UniswapContext'
 import { UrlContext } from 'uniswap/src/contexts/UrlContext'
-import { SharedPersistQueryClientProvider } from 'uniswap/src/data/apiClients/SharedPersistQueryClientProvider'
+import { SharedPersistQueryClientProvider } from 'uniswap/src/data/reactQuery/SharedPersistQueryClientProvider'
 import { UniswapState, uniswapReducer } from 'uniswap/src/state/uniswapReducer'
 import { createMockFn } from 'uniswap/src/test/mockFn'
 import { AutoMockedApolloProvider } from 'uniswap/src/test/mocks'
@@ -176,9 +178,11 @@ function SharedUniswapProvider({ children }: Pick<TamaguiProviderProps, 'childre
     <UniswapProvider {...mockUniswapContext}>
       <UrlContext.Provider value={{ useParsedQueryString: () => ({}) as ParsedQs, usePathname: () => '' }}>
         <SharedPersistQueryClientProvider>
-          <OGTamaguiProvider config={config} defaultTheme="dark">
-            {children}
-          </OGTamaguiProvider>
+          <PriceServiceProvider queryClient={SharedQueryClient}>
+            <OGTamaguiProvider config={config} defaultTheme="dark">
+              {children}
+            </OGTamaguiProvider>
+          </PriceServiceProvider>
         </SharedPersistQueryClientProvider>
       </UrlContext.Provider>
     </UniswapProvider>
